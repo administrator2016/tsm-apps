@@ -227,7 +227,14 @@ const VERTICALS = [
       { kind: 'goto', path: '/war-rooms/schools-command/schools-command.html' },
       { kind: 'clickId', id: 'btnLoadSampleDocs' },
       { kind: 'sleep', ms: 500 },
-      { kind: 'clickId', id: 'analyze-btn' },
+      // An analysis type must be selected first — runDocAnalysis() otherwise
+      // hits `if(!selectedAnalysis){alert(...);return;}` and a native alert()
+      // freezes the page's JS context, which hangs every subsequent
+      // CDP call that needs page evaluation (not just this step's own
+      // timeout). Selecting a type here is a correctness requirement, not
+      // an optional extra step.
+      { kind: 'clickOnclick', fn: 'selectAnalysis' },
+      { kind: 'clickId', id: 'doc-analyze-btn' },
       { kind: 'sleep', ms: 2000 },
       { kind: 'goto', path: '/war-rooms/schools-command/schools-strategist.html' },
       { kind: 'waitForTextGone', text: 'Awaiting relay', timeout: 15000 },
@@ -332,6 +339,21 @@ async function runVertical(browser, vertical) {
   const page = await browser.newPage();
   page.setDefaultTimeout(STEP_TIMEOUT);
   const failures = [];
+  // Defense in depth: a native alert()/confirm()/prompt() freezes the page's
+  // JS execution context, which stalls every subsequent CDP call that needs
+  // page evaluation (waitForSelector, click, etc.) — not just the step that
+  // triggered it. That reads as a full hang with zero further output, well
+  // past any individual step's own timeout. Auto-dismissing here means a
+  // stray dialog surfaces as a normal step failure instead of an unbounded
+  // hang, for any vertical, not just the ones already known to have one.
+  page.on('dialog', (dialog) => {
+    failures.push({
+      stepIndex: -1,
+      step: { kind: 'unexpectedDialog' },
+      error: `Unexpected ${dialog.type()} dialog: ${dialog.message()}`,
+    });
+    dialog.dismiss().catch(() => {});
+  });
 
   try {
     for (const [i, step] of vertical.steps.entries()) {
