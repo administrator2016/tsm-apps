@@ -83,6 +83,7 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
 </div>
 <div class="wrap" id="wrap"><!-- populated by JS --></div>
 <div class="wrap" id="excWrap" style="padding-top:0;"><div id="tsm-exception-queue"></div></div>
+<div class="wrap" id="caseWrap" style="padding-top:0;"><div id="tsm-case-queue"></div></div>
 <div class="toast" id="toast"></div>
 <script src="/html/shared/tsm-exec-framework.js"></script>
 <!-- canonical source: html/war-rooms/cpq/cpq-executive-portal.html -->
@@ -289,6 +290,9 @@ function render(){
     window.TSMExecFramework && window.TSMExecFramework.feedExceptions(CFG.domain.toLowerCase(), CFG, data);
     window.TSMExceptionWidget.mount('tsm-exception-queue', { sector: CFG.domain.toLowerCase() });
   }
+  if(window.TSMCaseWidget){
+    window.TSMCaseWidget.mount('tsm-case-queue', { sector: CFG.domain.toLowerCase() });
+  }
 }
 
 function escapeHtml(s){
@@ -342,6 +346,8 @@ window.addEventListener('TSM_RELAY_EVENT', e => { if(e.detail && e.detail.domain
 </script>
   <script src="/html/shared/tsm-exceptions.js"></script>
   <script src="/html/js/widgets/tsm-exception-widget.js"></script>
+  <script src="/html/shared/tsm-case-manager.js"></script>
+  <script src="/html/js/widgets/tsm-case-widget.js"></script>
   <script src="/html/core/tsm-runtime.js"></script>
   <script src="/shared/tsm-guided-how-to.js" defer></script>
 </body>

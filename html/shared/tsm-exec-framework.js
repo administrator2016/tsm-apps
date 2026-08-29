@@ -175,9 +175,21 @@
    * tsm-exceptions.js. Driven entirely by each vertical's own CFG.lists
    * data (already relayed, no fabricated fields), so it works identically
    * across every generic-template vertical without per-file wiring.
-   * Self-dedupes per page load via a module-level seen-set.
+   *
+   * Dedup: `key` is passed as `sourceKey` to TSMExceptions.add(), which
+   * checks the persisted store itself (see findOpenBySourceKey) rather
+   * than an in-memory set — so re-running this on a page reload finds the
+   * same open exception instead of creating a duplicate every time.
+   *
+   * Case creation: every exception this feeder touches (new or an
+   * already-open one returned by the sourceKey dedup) is also passed
+   * through TSMCaseManager.createFromException() + requestApproval(), so
+   * it becomes a real governed case. Both of those are themselves
+   * dedup'd/idempotent (createFromException by exceptionId,
+   * requestApproval by approval/execution status), so calling them on
+   * every feed pass is safe and does not spin up duplicate cases or reset
+   * an already-decided one.
    */
-  var _exceptionsSeen = {};
   function feedExceptions(sector, cfg, data) {
     if (!global.TSMExceptions || !data) return;
     (cfg.lists || []).forEach(function (l) {
@@ -189,11 +201,10 @@
         if (!text) return;
         var rawSeverity = String((it && (it.severity || it.priority || it.status)) || 'med');
         var key = sector + ':' + l.path + ':' + text.slice(0, 60);
-        if (_exceptionsSeen[key]) return;
-        _exceptionsSeen[key] = true;
         var severity = /high|crit|breach/i.test(rawSeverity) ? 'high' : (/med/i.test(rawSeverity) ? 'med' : 'low');
         try {
-          global.TSMExceptions.add({
+          var exceptionRecord = global.TSMExceptions.add({
+            sourceKey: key,
             sector: sector,
             entityType: (cfg.domain || sector).toLowerCase() + '-item',
             entityId: key,
@@ -201,6 +212,12 @@
             severity: severity,
             source: cfg.title || cfg.domain
           });
+          if (exceptionRecord && global.TSMCaseManager) {
+            var caseRecord = global.TSMCaseManager.createFromException(exceptionRecord, { sector: sector });
+            if (caseRecord) {
+              global.TSMCaseManager.requestApproval(caseRecord.caseId, { note: 'Auto-fed from ' + (cfg.title || cfg.domain) });
+            }
+          }
         } catch (e) {}
       });
     });
