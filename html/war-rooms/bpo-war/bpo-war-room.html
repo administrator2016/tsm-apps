@@ -30,6 +30,8 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 .tb-stat span{color:var(--green);}
 .tb-stat.warn span{color:var(--amber);}
 .tb-stat.crit span{color:var(--red);animation:pulse 1.5s infinite;}
+#tbClientSelect{background:transparent;color:var(--green);border:1px solid var(--muted);border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:1px 4px;}
+#tbClientSelect:focus{outline:1px solid var(--green);}
 .topbar-right{display:flex;align-items:center;gap:16px;}
 .tb-time{font-family:'Orbitron',sans-serif;font-size:.78rem;color:var(--amber);}
 .tb-avatar{width:30px;height:30px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:.6rem;color:#fff;font-weight:700;}
@@ -320,6 +322,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
     <div class="tb-stat crit">INCIDENT: <span id="tbSeverity">DETECTED</span></div>
     <div class="tb-stat warn">SECTOR: <span id="tbSector">—</span></div>
     <div class="tb-stat">DOC TYPE: <span id="tbDocType">—</span></div>
+    <div class="tb-stat">CLIENT: <select id="tbClientSelect" title="Attribute this case to a client"><option value="">— Unassigned —</option></select></div>
     <div class="tb-stat crit">DECISION WINDOW: <span id="tbWindow">—</span></div>
   </div>
   <div class="topbar-right">
@@ -541,6 +544,42 @@ let extractionResult = '';
 let engineFired = false;
 let decisionWindowSecs = 6 * 3600;
 let windowStart = Date.now();
+let selectedClientId = null;
+
+// ── CLIENT SELECTOR ──
+// Populates the CLIENT dropdown from the real BPO client roster and keeps
+// selectedClientId in sync so storeWarRoomRelay() can thread it through to
+// the strategist relay + the server-side work-item persist. Restores the
+// last choice from sessionStorage so re-runs in the same tab don't force
+// re-selecting on every extraction.
+(function initClientSelector() {
+  const sel = document.getElementById('tbClientSelect');
+  if (!sel) return;
+  try {
+    const saved = sessionStorage.getItem('TSM_BPO_SELECTED_CLIENT_ID');
+    if (saved) selectedClientId = saved;
+  } catch (e) {}
+  fetch('/api/bpo/client-directory', { credentials: 'same-origin' })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+    .then(data => {
+      const clients = (data && data.clients) || [];
+      clients.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name || c.id;
+        if (selectedClientId === c.id) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    })
+    .catch(e => console.warn('[BPO client directory] load failed (non-fatal, selector stays Unassigned):', e.message));
+  sel.addEventListener('change', () => {
+    selectedClientId = sel.value || null;
+    try {
+      if (selectedClientId) sessionStorage.setItem('TSM_BPO_SELECTED_CLIENT_ID', selectedClientId);
+      else sessionStorage.removeItem('TSM_BPO_SELECTED_CLIENT_ID');
+    } catch (e) {}
+  });
+})();
 
 // ── CLOCK ──
 setInterval(()=>{
@@ -1172,6 +1211,7 @@ function storeWarRoomRelay(extracted) {
     extraction: extracted,
     caseId,
     documentId: pendingDocId,
+    clientId: selectedClientId || null,
     engines: {
       engine1: extracted.situationSummary || '',
       engine2: (extracted.risks || []).map(r => r.text).join(' | '),
@@ -1194,7 +1234,7 @@ function storeWarRoomRelay(extracted) {
         id: caseId,
         tenantId: (window.TSMActiveMember && window.TSMActiveMember.getId()) || 'default',
         vertical: 'bpo',
-        client: null,
+        client: selectedClientId || null,
         extraction: extracted,
         classification: { docType: payload.selectedDocType, sector: payload.selectedSector }
       });
@@ -1219,6 +1259,7 @@ function storeWarRoomRelay(extracted) {
         vertical: 'bpo',
         stage: 'war-room',
         status: 'open',
+        clientId: selectedClientId || null,
         payload
       })
     }).catch((e) => console.warn('BPO work-item persist failed (non-fatal):', e.message));

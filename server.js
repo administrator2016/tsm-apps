@@ -910,6 +910,23 @@ app.post('/api/bpo/clients/:id/backfill-login', requireRole(BPO_MANAGE_ROLES), a
   } catch (e) { res.status(400).json({ ok: false, error: e.message }); }
 });
 
+// Lightweight client list for the war-room's CLIENT selector (2026-08-29).
+// Deliberately separate from /api/bpo/clients (full management list, likely
+// BPO_MANAGE_ROLES-gated with more fields than a dropdown needs) -- any
+// internal role working a case needs to attribute it to a client, not just
+// managers. Returns only id/name, active clients only, so the dropdown
+// doesn't fill up with closed accounts. This is the fix for the gap where
+// bpo-war-room.html never set clientId at all, leaving every case created
+// through the real UI with clientId: null end to end (the sticky-clientId
+// fix in bpoUpsertWorkItem above only preserves a value once one exists --
+// it doesn't create one).
+app.get('/api/bpo/client-directory', requireRole(BPO_INTERNAL_ROLES), async (req, res) => {
+  try {
+    const clients = await tsmLedger.bpoListClients({ status: 'active' });
+    res.json({ ok: true, clients: clients.map(c => ({ id: c.id, name: c.name })) });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // Work items: any internal role can create/advance one (that's the normal
 // flow of working a case through the war room), not just managers. A
 // client-role session may only read — never create/advance (still gated
