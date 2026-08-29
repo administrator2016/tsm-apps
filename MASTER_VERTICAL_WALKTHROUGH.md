@@ -6,6 +6,18 @@
 
 ---
 
+## ⚠ PRE-DEMO CHECK — verify before Monday (added 2026-08-29)
+
+A Playwright crawl of every link on `suite-hub.html`, run against a logged-in browser session on the live Codespace deployment, found a console-level `401 (Unauthorized)` firing on page load on **11 of 13 Executive Portal pages** — every chained vertical except Real Estate and Insurance's exec portals came back clean in that run; the pattern held across HC, Construction, Legal, FinOps, RE\*, Insurance\*, Mortgage, Schools, HotelOps, BPO, and Concierge (\*RE and Insurance's own exec portals actually passed clean in the run that produced this note — re-verify the current list live, since which pages fire this depends on which auto-load calls each portal makes). Every affected page still returned **HTTP 200** and rendered — the 401 is a background resource (a `fetch()` that runs automatically on `DOMContentLoaded`, not something a click triggers), so it may not be visually obvious during a live demo, but it means at least one panel on each of those pages is silently failing to load real data.
+
+**What's confirmed by reading the source (not live-tested — no credentials/network access to the Codespace from this pass):**
+- `middleware/require-auth.js`'s `requireAnyAuth` and `requireRole()` both 401 only on a missing/invalid `tsm_session` cookie — role mismatches are a separate `403`, not `401`. So this is unlikely to be a "test account has the wrong role" issue; if it were, we'd expect `403`s instead.
+- Several exec portals (HC, Construction, Schools, Mortgage) share a `NODE_REPORTS_API` fetch bound to `DOMContentLoaded` that calls `requireAnyAuth`-gated endpoints (`/api/hc/node-reports`, `/api/construction/node-reports`, etc.) — a plausible culprit for those four, but doesn't explain the other 7 pages that also 401'd, so there's more than one call involved.
+
+**Before Monday:** open one affected Executive Portal (e.g. `html/healthcare/executive-portal.html`) in a real logged-in browser tab with DevTools Network open, reload, and find the exact request(s) returning 401. That'll show whether it's a session/cookie issue (e.g. `Secure` cookie flag vs. the Codespace's https/http boundary — see the PM Copilot §9 note on a similar cookie bug that was already fixed once, `98acb70e`) or something else. Fix or confirm it's cosmetic (i.e., the panel that fails just shows empty/stale data rather than breaking the page) before it's live in front of anyone.
+
+---
+
 ## 0. The Story (use before touching any vertical)
 
 **Talk points:**
@@ -475,3 +487,5 @@ RCM-OS ("Reconciliation Command Center") does not follow the War Room → Strate
 *Re-audited 2026-08-26 against `origin/main` @ `e45cd205`: every file path, escalation function, export function, and button ID across all 13 chained verticals plus RCM-OS re-confirmed present and wired exactly as documented — including the RE and BPO `exportClientPackage()` exceptions, HotelOps' `sections: {financials, riskRegister, portfolio}` passthrough, and Concierge's `lastKpis` passthrough. The healthcare hub nav fix (`ec82fc37`) was independently re-verified: all 13 rewritten links resolve to real files. No drift found; no corrections required.*
 
 *Re-audited 2026-08-28: the Slack Notifications section (BPO, added after the 2026-08-26 pass) checked against live source — `server/integrations/slack-notifier.js` require and call site confirmed in `server/tsm-ledger-service.js`, default-off gating (`SLACK_BPO_NOTIFY_ENABLED` + `SLACK_BPO_WEBHOOK_URL`) confirmed, non-fatal try/catch confirmed, `resolved`-only default confirmed, and the "19-assertion regression test" claim confirmed by running `scripts/test-bpo-slack-notify.js` (19/19 pass). No `SLACK_BPO_*` env var is set anywhere in CI/config, so the feature stays genuinely off by default. No drift found. This file also absorbs the duplicate `MASTER_VERTICAL_WALKTHROUGH (2).md`, which diverged only in missing this Slack section — that copy has been deleted; this is the single canonical version going forward.*
+
+*2026-08-29: a Playwright crawl of all 40 `suite-hub.html` links against a live logged-in session found the Executive Portal 401 pattern documented in the new "PRE-DEMO CHECK" section near the top of this file — added as a flag for Monday's presentation, not yet root-caused or fixed. This entry was written from static source review only (`middleware/require-auth.js`, the `NODE_REPORTS_API` pattern) — no live browser/network access was available to confirm the exact failing request(s), so treat the "before Monday" verification step as still outstanding until someone checks it in a real session. Unrelated to this: `suite-hub.html` also picked up three small nav-only additions today (Client-Selector Smoke Test, Sentinel Client Portal, Login) — internal QA/routing links, not part of any documented demo chain, so no vertical section above needed updating for them.*
