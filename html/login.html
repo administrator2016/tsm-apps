@@ -38,7 +38,7 @@ document.getElementById('f').addEventListener('submit', async (e) => {
       // Clients land on their workspace by default; admin keeps the old
       // default landing page. An explicit ?next= always wins (e.g. when
       // the client-facing gate redirected here from a specific page).
-      const fallback = data.role === 'client' ? '/client-portal.html' : '/suite-hub.html';
+      const fallback = data.role === 'client' ? '/client-portal.html' : '/bpo-files/suite-hub.html';
       const next = new URLSearchParams(location.search).get('next') || fallback;
       location.href = next;
     } else {
