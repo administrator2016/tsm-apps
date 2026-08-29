@@ -30,6 +30,7 @@
 // is a wait-and-verify rather than a click, followed by a plain nav link
 // over to the executive portal.
 
+const fs = require('fs');
 const path = require('path');
 const puppeteer = require('puppeteer');
 
@@ -37,8 +38,40 @@ const BASE_URL = process.env.TSM_BASE_URL || 'http://localhost:3000';
 const HEADLESS = process.env.TSM_HEADLESS !== 'false';
 const NAV_TIMEOUT = 20000;
 const STEP_TIMEOUT = 15000;
+const SCREENSHOT_DIR = path.join(__dirname, 'screenshots');
+// TSM FIX: the app now sits behind a login gate (/html/login.html ->
+// POST /api/auth/login), confirmed by tests/e2e/debug-hc.js. Every page
+// in this suite was being loaded unauthenticated, which is why selectors
+// that are unquestionably present in the raw HTML (verified via curl)
+// were unfindable once a real browser session with JS actually ran on
+// the page — auth-gated behavior curl never triggers and never shows.
+// Deliberately NOT hardcoded: read from env so this file can be
+// committed without baking a live credential into git history.
+const AUTH_PASSWORD = process.env.TSM_AUTH_PASSWORD || '';
 
 // ── step helpers ─────────────────────────────────────────────────────────
+
+async function login(page) {
+  if (!AUTH_PASSWORD) {
+    console.log('  ⚠ TSM_AUTH_PASSWORD not set — skipping login, pages will 401/redirect');
+    return;
+  }
+  await page.goto(BASE_URL.replace(/\/$/, '') + '/html/login.html', {
+    waitUntil: 'domcontentloaded',
+    timeout: NAV_TIMEOUT,
+  });
+  const result = await page.evaluate(async (pw) => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw }),
+    });
+    return { status: res.status, ok: res.ok };
+  }, AUTH_PASSWORD);
+  if (!result.ok) {
+    console.log(`  ⚠ login POST returned ${result.status} — proceeding anyway`);
+  }
+}
 
 async function gotoPage(page, urlPath) {
   const url = BASE_URL.replace(/\/$/, '') + urlPath;
@@ -48,6 +81,11 @@ async function gotoPage(page, urlPath) {
 
 async function clickOnclick(page, fnName, timeout = STEP_TIMEOUT) {
   const sel = `[onclick^="${fnName}("]`;
+  await page.waitForSelector(sel, { timeout, visible: true });
+  await page.click(sel);
+}
+
+async function clickSelector(page, sel, timeout = STEP_TIMEOUT) {
   await page.waitForSelector(sel, { timeout, visible: true });
   await page.click(sel);
 }
@@ -103,6 +141,8 @@ async function runStep(page, step) {
       return sleep(step.ms);
     case 'clickOnclick':
       return clickOnclick(page, step.fn, step.timeout);
+    case 'clickSelector':
+      return clickSelector(page, step.selector, step.timeout);
     case 'clickId':
       return clickId(page, step.id, step.timeout);
     case 'fillId':
@@ -169,7 +209,14 @@ const VERTICALS = [
     name: 'Legal',
     steps: [
       { kind: 'goto', path: '/war-rooms/legal-war/legal-war-room.html' },
-      { kind: 'clickId', id: 'sbSample' },
+      // TSM FIX: 'sbSample' is a passive status <span> in the status bar
+      // (id="sbSample", no click handler) — it only ever displays "READY"
+      // / "SAMPLE · X" text, it doesn't load anything. The real sample
+      // loaders are the 4 buttons in the sidebar's "QUICK SAMPLES" row
+      // (smp-complaint / smp-contract / smp-regulatory / smp-employment),
+      // each calling loadSample('type') inline. Target that function
+      // directly instead of a non-interactive element.
+      { kind: 'clickOnclick', fn: 'loadSample' },
       { kind: 'sleep', ms: 500 },
       { kind: 'clickId', id: 'fireBtn' },
       { kind: 'waitForSelector', selector: '#escalateBottom', timeout: 30000 },
@@ -225,6 +272,17 @@ const VERTICALS = [
     name: 'Schools',
     steps: [
       { kind: 'goto', path: '/war-rooms/schools-command/schools-command.html' },
+      // TSM FIX: btnLoadSampleDocs and analyze-btn both live inside the
+      // "DOC UPLOAD" tab panel (id="tab-docupload"), which is
+      // display:none until switchTab('docupload') runs — it's not the
+      // default active tab (that's 'dashboard'). Switch tabs first.
+      // Note: many nav buttons share the onclick fn name "switchTab", so
+      // a plain fn-prefix match (clickOnclick) would hit the Dashboard
+      // tab, the first switchTab(...) button in DOM order — use the
+      // unique data-tab attribute instead.
+      { kind: 'clickSelector', selector: '[data-tab="docupload"]' },
+      { kind: 'sleep', ms: 300 },
+      { kind: 'clickSelector', selector: '.ntab[data-tab="docupload"]' },
       { kind: 'clickId', id: 'btnLoadSampleDocs' },
       { kind: 'sleep', ms: 500 },
       // An analysis type must be selected first — runDocAnalysis() otherwise
@@ -336,8 +394,40 @@ const VERTICALS = [
 // ── runner ───────────────────────────────────────────────────────────────
 
 async function runVertical(browser, vertical) {
-  const page = await browser.newPage();
+  // TSM FIX: all these pages share the same origin and several relay/
+  // session keys are read/written globally (RELAY_REGISTRY in
+  // tsm-auto-pipeline.js, TSM_AUTO_LAUNCH, per-vertical *_WAR_RELAY
+  // keys). A prior vertical's run — especially a failed one that broke
+  // mid-chain — can leave stale localStorage that changes how the NEXT
+  // vertical's page behaves on load (e.g. auto-launching an analysis it
+  // never asked for). A dedicated browser context per vertical gives
+  // each one a genuinely isolated storage partition, with no risk of
+  // wiping out a war room's OWN relay write to its own strategist page
+  // later in the same chain (which page.evaluateOnNewDocument-based
+  // manual clearing would do, since that hook fires before every
+  // navigation, including the in-chain war-room -> strategist hop).
+  const context = await browser.createBrowserContext();
+  const page = await context.newPage();
   page.setDefaultTimeout(STEP_TIMEOUT);
+
+  const consoleLogs = [];
+  page.on('console', (msg) => {
+    consoleLogs.push(`[${msg.type()}] ${msg.text()}`);
+  });
+
+  // Nearly every war room (Healthcare, Legal, Construction, Insurance,
+  // FinOps, RealEstate, PM Copilot at minimum) auto-fires its own engine
+  // pipeline ~800-900ms after page load unless
+  // localStorage.tsm_auto_mode === 'off' — a demo/kiosk auto-play
+  // feature. Left on, it races the test's own manual clickId/
+  // clickOnclick steps and can navigate the page out from under them.
+  // Safe to set on every navigation (idempotent, same key/value).
+  await page.evaluateOnNewDocument(() => {
+    try { localStorage.setItem('tsm_auto_mode', 'off'); } catch (e) {}
+  });
+
+  await login(page);
+
   const failures = [];
   // Defense in depth: a native alert()/confirm()/prompt() freezes the page's
   // JS execution context, which stalls every subsequent CDP call that needs
@@ -360,7 +450,33 @@ async function runVertical(browser, vertical) {
       try {
         await runStep(page, step);
       } catch (err) {
-        failures.push({ stepIndex: i, step, error: err.message });
+        let screenshotPath = null;
+        try {
+          fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
+          screenshotPath = path.join(
+            SCREENSHOT_DIR,
+            `${vertical.name}-step${i}-${Date.now()}.png`
+          );
+          await page.screenshot({ path: screenshotPath, fullPage: true });
+    const __debugInfo = await page.evaluate(() => ({
+      bodyLen: document.body.innerHTML.length,
+      sampleBtnCount: document.querySelectorAll('[onclick^="loadSample("]').length,
+      sampleBtnHTML: document.querySelector('.sample-row')?.outerHTML || 'NOT FOUND',
+      hasErrorBanner: !!document.querySelector('.error, .error-banner, [class*="error"]'),
+    })).catch(e => ({ evalFailed: e.message }));
+    console.log('    DOM check:', JSON.stringify(__debugInfo, null, 2));
+    console.log('    Console/page errors:\\n' + (consoleLogs.join('\\n') || '(none)'));
+        } catch (shotErr) {
+          // screenshot capture is best-effort; don't let it mask the real failure
+          screenshotPath = null;
+        }
+        failures.push({
+          stepIndex: i,
+          step,
+          error: err.message,
+          url: page.url(),
+          screenshot: screenshotPath,
+        });
         // stop this vertical's chain on first failure — later steps assume
         // earlier ones succeeded (relay data, page navigation, etc.)
         break;
@@ -368,6 +484,7 @@ async function runVertical(browser, vertical) {
     }
   } finally {
     await page.close();
+    await context.close();
   }
 
   return { name: vertical.name, pass: failures.length === 0, failures };
@@ -376,6 +493,7 @@ async function runVertical(browser, vertical) {
 async function main() {
   const browser = await puppeteer.launch({
     headless: HEADLESS,
+    defaultViewport: { width: 1440, height: 900 },
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
@@ -387,9 +505,12 @@ async function main() {
     if (result.pass) {
       console.log(`  ✓ ${vertical.name} PASS`);
     } else {
-      console.log(`  ✗ ${vertical.name} FAIL at step ${result.failures[0].stepIndex}`);
-      console.log(`    ${JSON.stringify(result.failures[0].step)}`);
-      console.log(`    ${result.failures[0].error}`);
+      const fail = result.failures[0];
+      console.log(`  ✗ ${vertical.name} FAIL at step ${fail.stepIndex}`);
+      console.log(`    ${JSON.stringify(fail.step)}`);
+      console.log(`    ${fail.error}`);
+      console.log(`    url: ${fail.url}`);
+      if (fail.screenshot) console.log(`    screenshot: ${fail.screenshot}`);
     }
   }
 
