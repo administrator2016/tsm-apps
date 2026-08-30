@@ -69,8 +69,8 @@ require.cache[mongodbPath] = {
 process.env.MONGODB_URI = 'mongodb://fake-host/test?loadBalanced=true';
 process.env.TSM_SESSION_SECRET = process.env.TSM_SESSION_SECRET || 'test-secret-for-hmac';
 
-const tsmLedger = require('/home/claude/tsm-apps/server/tsm-ledger-service.js');
-const clientRegistry = require('/home/claude/tsm-apps/middleware/client-registry.js');
+const tsmLedger = require('../server/tsm-ledger-service.js');
+const clientRegistry = require('../middleware/client-registry.js');
 
 (async () => {
   const MEMBER_ID = 'member-combined-flow-test';
