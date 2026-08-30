@@ -862,6 +862,12 @@ const BPO_MANAGE_ROLES = ['admin', 'manager'];
 // each one enforces that.
 const BPO_CLIENT_VIEW_ROLES = [...BPO_INTERNAL_ROLES, 'client'];
 
+// Shared internal-only role list for governance/integration/MDM admin
+// actions (approve/reject/merge/reset). These subsystems previously used
+// requireAuth (any valid session, including client role) with no role
+// check — tightened to match the BPO_INTERNAL_ROLES pattern above.
+const ENTERPRISE_INTERNAL_ROLES = ['admin', 'manager', 'analyst'];
+
 app.get('/api/bpo/clients', requireRole(BPO_INTERNAL_ROLES), async (req, res) => {
   try {
     const clients = await tsmLedger.bpoListClients({ status: req.query.status });
@@ -6595,7 +6601,7 @@ app.patch('/api/wip/decision/:id', requireAuth, (req, res) => {
 });
 
 // ── TREND INTELLIGENCE ─────────────────────────────────────────────────────────
-app.post('/api/wip/trend', (req, res) => {
+app.post('/api/wip/trend', requireRole(ENTERPRISE_INTERNAL_ROLES), (req, res) => {
   const { vertical, event, date, resolutionHours, notes } = req.body || {};
   if (!ensureWipVertical(vertical)) return res.status(400).json({ ok: false, error: 'valid vertical required' });
   if (!event) return res.status(400).json({ ok: false, error: 'event required' });
@@ -6707,15 +6713,16 @@ function governanceId(prefix) {
   return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
 }
 
-app.post('/api/governance/audit', (req, res) => {
-  const { actor, action, resource, vertical } = req.body || {};
-  if (!actor || !action) return res.status(400).json({ ok: false, error: "actor and action required" });
+app.post('/api/governance/audit', requireRole(ENTERPRISE_INTERNAL_ROLES), (req, res) => {
+  const { action, resource, vertical } = req.body || {};
+  if (!action) return res.status(400).json({ ok: false, error: "action required" });
+  const actor = req.tsmSession.label || req.tsmSession.role;
   const entry = { id: governanceId('audit'), actor, action, resource: resource || null, vertical: vertical || null, ts: Date.now() };
   GOVERNANCE_AUDIT_LOG.push(entry);
   res.json({ ok: true, entry });
 });
 
-app.get('/api/governance/audit', (req, res) => {
+app.get('/api/governance/audit', requireRole(ENTERPRISE_INTERNAL_ROLES), (req, res) => {
   const { vertical, limit } = req.query;
   let entries = GOVERNANCE_AUDIT_LOG;
   if (vertical) entries = entries.filter(e => e.vertical === vertical);
@@ -6740,8 +6747,8 @@ app.get('/api/governance/risk', (req, res) => {
 // replaces the old single /resolve route (no frontend called it, so this is
 // a safe swap, not a breaking change) with the same pattern MDM already uses
 // for recommendation approvals.
-app.post('/api/governance/risk/:id/approve', requireAuth, (req, res) => {
-  const { actor } = req.body || {};
+app.post('/api/governance/risk/:id/approve', requireRole(ENTERPRISE_INTERNAL_ROLES), (req, res) => {
+  const actor = req.tsmSession.label || req.tsmSession.role;
   const risk = GOVERNANCE_RISK_REGISTER.find(r => r.id === req.params.id);
   if (!risk) return res.status(404).json({ ok: false, error: "Risk not found" });
   if (risk.status !== 'OPEN') return res.status(409).json({ ok: false, error: `Risk already ${risk.status}` });
@@ -6755,8 +6762,8 @@ app.post('/api/governance/risk/:id/approve', requireAuth, (req, res) => {
   res.json({ ok: true, risk, decision });
 });
 
-app.post('/api/governance/risk/:id/reject', requireAuth, (req, res) => {
-  const { actor } = req.body || {};
+app.post('/api/governance/risk/:id/reject', requireRole(ENTERPRISE_INTERNAL_ROLES), (req, res) => {
+  const actor = req.tsmSession.label || req.tsmSession.role;
   const risk = GOVERNANCE_RISK_REGISTER.find(r => r.id === req.params.id);
   if (!risk) return res.status(404).json({ ok: false, error: "Risk not found" });
   if (risk.status !== 'OPEN') return res.status(409).json({ ok: false, error: `Risk already ${risk.status}` });
@@ -6914,7 +6921,7 @@ app.post('/api/integration/:id/sync', requireAuth, (req, res) => {
   res.json({ ok: true, integration: item });
 });
 
-app.post('/api/integration/:id/error', (req, res) => {
+app.post('/api/integration/:id/error', requireRole(ENTERPRISE_INTERNAL_ROLES), (req, res) => {
   const { records, live } = getActiveIntegrationCatalog();
   const item = records.find(i => i.id === req.params.id);
   if (!item) return res.status(404).json({ ok: false, error: "Integration not found" });
@@ -6938,8 +6945,8 @@ app.get('/api/integration/health', (req, res) => {
 // silent auto-heal). Only applies to integrations currently 'degraded';
 // 'healthy' or 'warning' items aren't gated since they don't need a
 // go/no-go decision yet.
-app.post('/api/integration/:id/remediate/approve', requireAuth, (req, res) => {
-  const { actor } = req.body || {};
+app.post('/api/integration/:id/remediate/approve', requireRole(ENTERPRISE_INTERNAL_ROLES), (req, res) => {
+  const actor = req.tsmSession.label || req.tsmSession.role;
   const { records, live } = getActiveIntegrationCatalog();
   const item = records.find(i => i.id === req.params.id);
   if (!item) return res.status(404).json({ ok: false, error: "Integration not found" });
@@ -6956,8 +6963,8 @@ app.post('/api/integration/:id/remediate/approve', requireAuth, (req, res) => {
   res.json({ ok: true, integration: item, decision });
 });
 
-app.post('/api/integration/:id/remediate/reject', requireAuth, (req, res) => {
-  const { actor } = req.body || {};
+app.post('/api/integration/:id/remediate/reject', requireRole(ENTERPRISE_INTERNAL_ROLES), (req, res) => {
+  const actor = req.tsmSession.label || req.tsmSession.role;
   const { records, live } = getActiveIntegrationCatalog();
   const item = records.find(i => i.id === req.params.id);
   if (!item) return res.status(404).json({ ok: false, error: "Integration not found" });
@@ -7282,8 +7289,9 @@ const MDM_LAST_VALIDATED = {};
 // the rest of the platform's in-memory-state pattern; swap for the Fly volume if needed).
 const MDM_MERGE_LOG = [];
 
-app.post('/api/mdm/merge', requireAuth, (req, res) => {
-  const { domain, survivorId, mergedId, actor, decision } = req.body || {};
+app.post('/api/mdm/merge', requireRole(ENTERPRISE_INTERNAL_ROLES), (req, res) => {
+  const { domain, survivorId, mergedId, decision } = req.body || {};
+  const actor = req.tsmSession.label || req.tsmSession.role;
   if (!domain || !survivorId || !mergedId) {
     return res.status(400).json({ ok: false, error: 'domain, survivorId, mergedId required' });
   }
@@ -7298,7 +7306,7 @@ app.post('/api/mdm/merge', requireAuth, (req, res) => {
     domain, survivorId, mergedId,
     survivorName: survivor.name, mergedName: merged.name,
     decision: decision === 'REJECTED' ? 'REJECTED' : 'APPROVED',
-    actor: actor || 'Unassigned',
+    actor,
     ts: new Date().toISOString()
   };
   MDM_MERGE_LOG.push(entry);
@@ -7335,8 +7343,8 @@ app.get('/api/mdm/recommendations', (req, res) => {
   res.json({ ok: true, count: recs.length, recommendations: recs });
 });
 
-app.post('/api/mdm/recommendations/:id/approve', requireAuth, (req, res) => {
-  const { actor } = req.body || {};
+app.post('/api/mdm/recommendations/:id/approve', requireRole(ENTERPRISE_INTERNAL_ROLES), (req, res) => {
+  const actor = req.tsmSession.label || req.tsmSession.role;
   const recs = generateRecommendations(MDM_SEED_DATA, MDM_RESOLVED_RECS);
   const rec = recs.find(r => r.id === req.params.id);
   if (!rec) return res.status(404).json({ ok: false, error: 'Recommendation not found or already resolved' });
@@ -7350,7 +7358,7 @@ app.post('/api/mdm/recommendations/:id/approve', requireAuth, (req, res) => {
       id: `MRG-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       domain: rec.domain, survivorId: rec.survivorId, mergedId: rec.mergedId,
       survivorName: survivor.name, mergedName: merged.name,
-      decision: 'APPROVED', actor: actor || 'Unassigned', ts: new Date().toISOString(),
+      decision: 'APPROVED', actor, ts: new Date().toISOString(),
       recommendationId: rec.id
     };
     MDM_MERGE_LOG.push(entry);
@@ -7362,13 +7370,13 @@ app.post('/api/mdm/recommendations/:id/approve', requireAuth, (req, res) => {
   MDM_RECOMMENDATION_DECISIONS.push({
     id: `DEC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     recommendationId: rec.id, domain: rec.domain, type: rec.type,
-    decision: 'APPROVED', actor: actor || 'Unassigned', ts: new Date().toISOString()
+    decision: 'APPROVED', actor, ts: new Date().toISOString()
   });
   res.json({ ok: true, resolved: rec });
 });
 
-app.post('/api/mdm/recommendations/:id/reject', requireAuth, (req, res) => {
-  const { actor } = req.body || {};
+app.post('/api/mdm/recommendations/:id/reject', requireRole(ENTERPRISE_INTERNAL_ROLES), (req, res) => {
+  const actor = req.tsmSession.label || req.tsmSession.role;
   const recs = generateRecommendations(MDM_SEED_DATA, MDM_RESOLVED_RECS);
   const rec = recs.find(r => r.id === req.params.id);
   if (!rec) return res.status(404).json({ ok: false, error: 'Recommendation not found or already resolved' });
@@ -7378,7 +7386,7 @@ app.post('/api/mdm/recommendations/:id/reject', requireAuth, (req, res) => {
       id: `MRG-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       domain: rec.domain, survivorId: rec.survivorId, mergedId: rec.mergedId,
       survivorName: rec.survivorName, mergedName: rec.mergedName,
-      decision: 'REJECTED', actor: actor || 'Unassigned', ts: new Date().toISOString(),
+      decision: 'REJECTED', actor, ts: new Date().toISOString(),
       recommendationId: rec.id
     });
   }
@@ -7388,7 +7396,7 @@ app.post('/api/mdm/recommendations/:id/reject', requireAuth, (req, res) => {
   MDM_RECOMMENDATION_DECISIONS.push({
     id: `DEC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     recommendationId: rec.id, domain: rec.domain, type: rec.type,
-    decision: 'REJECTED', actor: actor || 'Unassigned', ts: new Date().toISOString()
+    decision: 'REJECTED', actor, ts: new Date().toISOString()
   });
   res.json({ ok: true, resolved: rec });
 });
@@ -7540,9 +7548,8 @@ app.get('/api/mdm/mission-queue', (req, res) => {
   res.json({ ok: true, summary: mdmSummarizeQueue(queue), queue });
 });
 
-app.post('/api/mdm/mission-queue/:id/claim', requireAuth, (req, res) => {
-  const { actor } = req.body || {};
-  if (!actor) return res.status(400).json({ ok: false, error: 'actor required' });
+app.post('/api/mdm/mission-queue/:id/claim', requireRole(ENTERPRISE_INTERNAL_ROLES), (req, res) => {
+  const actor = req.tsmSession.label || req.tsmSession.role;
   const queue = mdmBuildQueue(MDM_SEED_DATA, MDM_RESOLVED_RECS, MDM_MISSION_CLAIMS);
   const mission = queue.find(m => m.id === req.params.id);
   if (!mission) return res.status(404).json({ ok: false, error: 'Mission not found or already resolved' });
@@ -7562,7 +7569,7 @@ app.post('/api/mdm/mission-queue/:id/release', requireAuth, (req, res) => {
 // Real reset: restores every domain to its original seeded state (undoes any
 // approved merges) and clears the decision log. Previously "RESET DATA" just
 // re-fetched current state with no way to actually undo anything.
-app.post('/api/mdm/reset', requireAuth, (req, res) => {
+app.post('/api/mdm/reset', requireRole(ENTERPRISE_INTERNAL_ROLES), (req, res) => {
   Object.keys(MDM_SEED_DATA_ORIGINAL).forEach(domain => {
     MDM_SEED_DATA[domain] = JSON.parse(JSON.stringify(MDM_SEED_DATA_ORIGINAL[domain]));
   });
