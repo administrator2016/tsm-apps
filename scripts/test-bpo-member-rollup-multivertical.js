@@ -62,7 +62,7 @@ const mongodb = require('mongodb');
 
 process.env.MONGODB_URI = 'mongodb://fake-host/test?loadBalanced=true';
 
-const tsmLedger = require('/home/claude/tsm-apps/server/tsm-ledger-service.js');
+const tsmLedger = require('../server/tsm-ledger-service.js');
 
 // ── Seed a realistic multi-vertical case set for one test Member ────────
 const MEMBER_ID = 'member-acme-test';

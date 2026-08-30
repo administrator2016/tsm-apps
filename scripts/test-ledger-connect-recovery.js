@@ -40,7 +40,7 @@ require.cache[mongodbPath] = {
 
 process.env.MONGODB_URI = 'mongodb://fake-host/test?loadBalanced=true';
 
-const tsmLedger = require('/home/claude/tsm-apps/server/tsm-ledger-service.js');
+const tsmLedger = require('../server/tsm-ledger-service.js');
 
 (async () => {
   let firstCallFailed = false;
