@@ -551,6 +551,7 @@ window.loadInphusionAnomaly = function() {
       Ready for analysis
     </span>
     <div class="tsm-dj-aplus-group">
+      <a class="tsm-dj-aplus-link learn" href="/html/l1-copilot/l1-exec-portal.html" target="_blank">EXEC SUMMARY →</a>
       <a class="tsm-dj-aplus-link learn" href="/html/l1-copilot/aplus/aplus-learn.html" target="_blank">A+ LEARN →</a>
       <a class="tsm-dj-aplus-link" href="/html/l1-copilot/aplus/aplus-practice.html" target="_blank">A+ PRACTICE →</a>
       <a class="tsm-dj-aplus-link" href="/html/l1-copilot/aplus/aplus-readiness.html" target="_blank">A+ READINESS →</a>
@@ -655,6 +656,7 @@ window.loadInphusionAnomaly = function() {
     <a href="/l1-copilot/enterprise-command-center.html">Command Center</a>
     <a href="/l1-copilot/vmware-copilot.html">VMware SME</a>
     <a href="/l1-copilot/noc/noc-war-room.html">NOC Command</a>
+    <a href="/l1-copilot/l1-exec-portal.html">Exec Summary</a>
   </div>
   <div class="nav-right">
     <span id="navStatus">ENGINE: IDLE</span>
@@ -2414,12 +2416,32 @@ TICKET DESCRIPTION</div>
     };
     const provided = Object.entries(ticket).filter(([,v]) => v && String(v).trim()).map(([k]) => k);
     const causes = Array.isArray(a.likely_causes) ? a.likely_causes.join('; ') : (a.likely_causes || 'none identified');
-    return [
+    const description = document.getElementById('tkDescription') ? document.getElementById('tkDescription').value : '';
+    const notProvided = '(not provided)';
+    const truncate = (s, n) => s.length > n ? s.slice(0, n) + '…' : s;
+
+    // Summary rows: what the model concluded and why.
+    const summaryItems = [
       { label: 'Confidence', detail: `${a.confidence != null ? a.confidence + '%' : 'unscored'} — self-reported by the model, based on the description text and the ${provided.length} ticket field(s) that were filled in.` },
       { label: 'Severity driver', detail: `${a.severity || 'unscored'} severity, driven by: ${causes}.` },
       { label: 'Affected system', detail: `${a.affected_system || 'unspecified'}${ticket.asset ? ' — asset ' + ticket.asset : ''}${ticket.manufacturer ? ' (' + ticket.manufacturer + (ticket.model ? ' ' + ticket.model : '') + ')' : ''}.` },
       { label: 'Grounded on', detail: provided.length ? `${provided.length} ticket field(s) provided: ${provided.join(', ')}.` : 'No structured ticket fields were filled in — analysis is based on the pasted description text only.' }
     ];
+
+    // Itemized rows: the actual ticket field values the analysis was grounded on.
+    const fieldItems = [
+      { label: 'Priority', detail: ticket.priority || notProvided },
+      { label: 'Department', detail: ticket.department || notProvided },
+      { label: 'Assignment Group', detail: ticket.assignmentGroup || notProvided },
+      { label: 'Asset', detail: ticket.asset || notProvided },
+      { label: 'Manufacturer', detail: ticket.manufacturer || notProvided },
+      { label: 'Model', detail: ticket.model || notProvided },
+      { label: 'Warranty', detail: ticket.warranty || notProvided },
+      { label: 'Description', detail: description && description.trim() ? truncate(description.trim(), 160) : notProvided },
+      { label: 'AI Severity', detail: a.severity || 'unscored' }
+    ];
+
+    return summaryItems.concat(fieldItems);
   }
 
   function renderExplainItems(items){

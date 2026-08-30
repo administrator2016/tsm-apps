@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSM &middot; L1 Ticket Copilot Executive Summary</title>
+<style>
+:root {
+  --bg:#0a0e12;--bg2:#0d1216;--bg3:#11161b;
+  --border:rgba(0,229,255,.14);
+  --cyan:#00e5ff;--cyan-dim:rgba(0,229,255,.6);
+  --green:#00ff50;--gold:#ffd700;--red:#ff3b3b;--amber:#ff9500;--purple:#c084fc;
+  --text:#c9d6dc;--text-dim:#5a7684;--card:#0d1418;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;font-size:12px;min-height:100vh;padding-bottom:60px}
+
+.nav{display:flex;align-items:center;gap:0;background:#080b0e;border-bottom:1px solid var(--border);height:38px;padding:0 16px}
+.nav-back{color:var(--text-dim);text-decoration:none;font-size:10px;letter-spacing:1px;margin-right:16px}
+.nav-back:hover{color:var(--cyan)}
+.nav-brand{color:var(--cyan);font-weight:700;font-size:11px;letter-spacing:2px}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:16px;color:var(--text-dim);font-size:10px}
+.nav-clock{color:var(--cyan-dim)}
+
+.wrap{max-width:1100px;margin:0 auto;padding:24px 20px}
+
+.hdr{margin-bottom:22px}
+.hdr h1{font-size:16px;letter-spacing:1px;color:var(--cyan)}
+.hdr p{font-size:11px;color:var(--text-dim);margin-top:6px;line-height:1.6;max-width:760px}
+
+.sec{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:16px 18px;margin-bottom:16px}
+.sec-hdr{font-size:11px;letter-spacing:1.5px;color:var(--cyan);text-transform:uppercase;margin-bottom:14px}
+
+.kpi-row,.tsm-rate-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi,.tsm-rate-card{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px;text-align:center}
+.kpi-val,.tsm-rate-val{font-size:18px;font-weight:700;color:var(--cyan)}
+.tsm-rate-val.green{color:var(--green)}.tsm-rate-val.red{color:var(--red)}.tsm-rate-val.cyan{color:var(--cyan)}
+.kpi-lbl,.tsm-rate-lbl{font-size:9px;letter-spacing:1px;color:var(--text-dim);margin-top:6px;text-transform:uppercase}
+
+.arc{display:flex;flex-wrap:wrap;gap:0;align-items:stretch}
+.arc-step{flex:1;min-width:130px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;position:relative}
+.arc-step + .arc-step{margin-left:8px}
+.arc-num{font-size:9px;color:var(--text-dim);letter-spacing:1px}
+.arc-label{font-size:11px;color:var(--cyan);margin-top:4px;letter-spacing:.5px}
+.arc-sub{font-size:9px;color:var(--text-dim);margin-top:4px;line-height:1.5}
+.arc-arrow{align-self:center;color:var(--text-dim);padding:0 4px;font-size:14px}
+
+.hitl-banner{border:1px solid var(--green);background:rgba(0,255,80,.06);color:var(--green);border-radius:6px;padding:10px 14px;font-size:10.5px;letter-spacing:.4px;margin-bottom:16px}
+
+.no-items{color:var(--text-dim);font-size:11px;padding:10px 0}
+
+.dec-item{border-top:1px solid var(--border);padding:12px 0}
+.dec-item:first-child{border-top:none}
+.dec-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dec-incident{color:var(--cyan);font-weight:700;font-size:11.5px}
+.dec-badge{font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:3px;border:1px solid;text-transform:uppercase}
+.dec-badge.approved{color:var(--green);border-color:var(--green)}
+.dec-badge.rejected{color:var(--amber);border-color:var(--amber)}
+.dec-text{font-size:10.5px;color:var(--text);margin-top:6px;line-height:1.6}
+.dec-meta{font-size:9px;color:var(--text-dim);margin-top:6px;letter-spacing:.4px}
+
+.refresh-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text-dim);font-family:inherit;font-size:9px;letter-spacing:1px;padding:6px 12px;border-radius:4px;cursor:pointer;text-transform:uppercase}
+.refresh-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.sec-hdr-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-hdr-row .sec-hdr{margin-bottom:0}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <a class="nav-back" href="/html/l1-copilot/l1-ticket-copilot.html">← L1 SHELL</a>
+  <div class="nav-brand">TSM // L1 TICKET COPILOT — EXECUTIVE SUMMARY</div>
+  <div class="nav-right">
+    <span id="navClock">--:--:--</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="hdr">
+    <h1>Executive Summary</h1>
+    <p>
+      A recap of every ticket that reached a human decision point, and what the technician
+      chose to do about TSM's recommendation. This is the same
+      <code>/api/exec-portal/l1-copilot/decisions</code> gate every Human Decision step in the
+      Ticket Copilot writes to — nothing here is re-entered or summarized by hand.
+    </p>
+  </div>
+
+  <div class="hitl-banner">
+    ✓ HUMAN IN THE LOOP — TSM never changes a ticket's priority on its own. Every mismatch it
+    finds is surfaced for a technician to accept, override, or send for review, and that choice
+    is what's recorded below.
+  </div>
+
+  <div class="sec">
+    <div class="sec-hdr">The Ticket-to-Decision Arc</div>
+    <div class="arc">
+      <div class="arc-step"><div class="arc-num">01</div><div class="arc-label">TICKET</div><div class="arc-sub">Incident opened, fields captured</div></div>
+      <div class="arc-arrow">→</div>
+      <div class="arc-step"><div class="arc-num">02</div><div class="arc-label">TSM ANALYSIS</div><div class="arc-sub">Severity &amp; root cause assessed</div></div>
+      <div class="arc-arrow">→</div>
+      <div class="arc-step"><div class="arc-num">03</div><div class="arc-label">PRIORITY ALIGNMENT</div><div class="arc-sub">Ticket priority checked against AI severity</div></div>
+      <div class="arc-arrow">→</div>
+      <div class="arc-step"><div class="arc-num">04</div><div class="arc-label">EXPLAIN</div><div class="arc-sub">Every field the assessment used, shown</div></div>
+      <div class="arc-arrow">→</div>
+      <div class="arc-step"><div class="arc-num">05</div><div class="arc-label">HUMAN DECISION</div><div class="arc-sub">Technician has final authority</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hdr">Decision Outcomes</div>
+    <div id="l1-rate-panel" class="tsm-rate-grid">
+      <div class="no-items">Loading…</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hdr-row">
+      <div class="sec-hdr">Decision History</div>
+      <button class="refresh-btn" id="btnRefresh" type="button">Refresh</button>
+    </div>
+    <div id="dec-history"><div class="no-items">Loading…</div></div>
+  </div>
+
+</div>
+
+<script src="/html/l1-copilot/l1-human-decision-wiring.js"></script>
+<script>
+(function(){
+  function tick(){
+    var el = document.getElementById('navClock');
+    if (el) el.textContent = new Date().toLocaleTimeString();
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function badgeClass(decision){
+    return decision === 'APPROVED' ? 'approved' : 'rejected';
+  }
+
+  function badgeText(decision, meta){
+    // Map back onto the technician-facing verbs from the Human Decision step
+    // rather than the gate's internal APPROVED/REJECTED vocabulary — a
+    // "REJECTED" entry here just means the technician kept the current
+    // priority, not that TSM's assessment was wrong.
+    if (decision === 'APPROVED') return 'Accepted recommendation';
+    return 'Kept current priority';
+  }
+
+  function renderHistory(log){
+    var host = document.getElementById('dec-history');
+    if (!log || !log.length) {
+      host.innerHTML = '<div class="no-items">No decisions recorded yet — resolve a ticket through the Decision Journey\'s Human Decision step to see it here.</div>';
+      return;
+    }
+    host.innerHTML = log.map(function(entry){
+      var meta = entry.meta || {};
+      var incident = meta.incident || entry.entityId || 'Unknown incident';
+      var when = entry.ts ? new Date(entry.ts).toLocaleString() : '';
+      var priorityLine = (meta.ticketPriority || meta.aiSeverity || meta.recommendedPriority)
+        ? 'Ticket: ' + escapeHtml(meta.ticketPriority || '--') +
+          ' · AI severity: ' + escapeHtml(meta.aiSeverity || '--') +
+          ' · Recommended: ' + escapeHtml(meta.recommendedPriority || '--')
+        : '';
+      return '<div class="dec-item">' +
+        '<div class="dec-top">' +
+          '<span class="dec-incident">' + escapeHtml(incident) + '</span>' +
+          '<span class="dec-badge ' + badgeClass(entry.decision) + '">' + badgeText(entry.decision) + '</span>' +
+        '</div>' +
+        (meta.text ? '<div class="dec-text">' + escapeHtml(meta.text) + '</div>' : '') +
+        '<div class="dec-meta">' + (priorityLine ? priorityLine + ' · ' : '') + escapeHtml(entry.actor || 'Unknown') + (when ? ' · ' + escapeHtml(when) : '') + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function load(){
+    document.getElementById('dec-history').innerHTML = '<div class="no-items">Loading…</div>';
+    if (typeof loadL1ApprovalRate === 'function') loadL1ApprovalRate();
+    fetch('/api/exec-portal/l1-copilot/decisions')
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        if (!res || !res.ok) throw new Error('bad response');
+        renderHistory(res.log || []);
+      })
+      .catch(function(){
+        document.getElementById('dec-history').innerHTML = '<div class="no-items">Decision history unavailable this session.</div>';
+      });
+  }
+
+  document.getElementById('btnRefresh').addEventListener('click', load);
+  load();
+})();
+</script>
+
+</body>
+</html>
