@@ -459,6 +459,21 @@ async function bpoGetClient(id) {
   return { ...doc, hasLogin: clientRegistry.idExists(id) };
 }
 
+// Reverse lookup of bpoGetClient — resolves a Member's tenantId to the BPO
+// client it's linked to (set via saveTenantLink() / PATCH /api/bpo/clients/:id
+// in bpo-clients-admin.html), so a caller holding only a tenantId (e.g. the
+// client-side-resolved TSMActiveMember.getId(), never guessed server-side)
+// can attribute a record to a real clientId instead of leaving it null.
+// Returns null on no tenantId, no match, or an unlinked/ambiguous tenantId —
+// callers must treat null the same as "no client known", never as an error.
+async function bpoGetClientByTenantId(tenantId) {
+  if (!tenantId) return null;
+  const col = await bpoClientsCollection();
+  const doc = await col.findOne({ tenantId });
+  if (!doc) return null;
+  return { ...doc, hasLogin: clientRegistry.idExists(doc.id) };
+}
+
 /**
  * Creates a client. id is slugified from name, then de-duped by
  * appending -2, -3, ... if it collides with an existing client.
@@ -2288,6 +2303,7 @@ module.exports = {
   // BPO operational persistence
   bpoListClients,
   bpoGetClient,
+  bpoGetClientByTenantId,
   bpoCreateClient,
   bpoUpdateClient,
   BPO_PRICING_TIERS,

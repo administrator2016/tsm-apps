@@ -1656,7 +1656,7 @@ function tsmConfirmExec(){
   fetch('/api/exec-portal/construction/decide', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ index: Date.now(), verdict: 'approved', text: 'Executive authorization', actor: 'Executive' })
+    body: JSON.stringify({ index: Date.now(), verdict: 'approved', text: 'Executive authorization', actor: 'Executive', tenantId: (typeof TSMActiveMember !== 'undefined' && TSMActiveMember) ? TSMActiveMember.getId() : null })
   }).catch(function(){ /* offline/unreachable -- localStorage marker above still set */ });
 }
 </script>

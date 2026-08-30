@@ -1087,7 +1087,7 @@ function confirmAuthorization() {
   fetch('/api/exec-portal/legal/decide', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ index: Date.now(), verdict: 'approved', text: `${currentActionName} — ${note}`, actor: exec })
+    body: JSON.stringify({ index: Date.now(), verdict: 'approved', text: `${currentActionName} — ${note}`, actor: exec, tenantId: (typeof TSMActiveMember !== 'undefined' && TSMActiveMember) ? TSMActiveMember.getId() : null })
   }).catch(() => { /* offline/unreachable -- action still logged to sessionStorage above */ });
 
   closeModal();
@@ -1619,6 +1619,7 @@ function tsmWriteScopedExec(vertical, missionId){
   global.legalFeedExceptions = legalFeedExceptions;
 })(window);
 </script>
+  <script src="/html/shared/tsm-active-member.js"></script>
   <script src="/js/tsm-guide-engine.js" defer></script>
   <script src="/shared/tsm-guided-how-to.js" defer></script>
 </body>

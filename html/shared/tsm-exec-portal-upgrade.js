@@ -567,13 +567,22 @@
     // this just makes sure the audit trail is real, not just DOM state.
     const vertical = detectVertical();
     const text = itemEl?.querySelector('.tsm-decision-text')?.firstChild?.textContent?.trim() || null;
+    // TSMActiveMember is read-mostly and never guesses (see
+    // tsm-active-member.js): getId() returns the tenantId only when a
+    // Member was explicitly selected (URL param or command-center pick),
+    // else null. Passed through so the server can resolve a real,
+    // non-guessed clientId for the BPO relay below -- omitted entirely on
+    // pages that haven't loaded tsm-active-member.js, same as before.
+    const tenantId = (typeof global.TSMActiveMember !== 'undefined' && global.TSMActiveMember)
+      ? global.TSMActiveMember.getId()
+      : null;
 
     _logExec(`Persisting ${verdict} decision to server…`, 'tsm-log-muted');
 
     fetch(`/api/exec-portal/${vertical}/decide`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ index, verdict, text, actor: 'Executive' })
+      body: JSON.stringify({ index, verdict, text, actor: 'Executive', tenantId })
     }).then(async r => {
       const data = await r.json().catch(() => null);
       if (!r.ok || !data || data.ok === false) {

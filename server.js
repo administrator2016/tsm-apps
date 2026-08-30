@@ -7029,12 +7029,12 @@ EXEC_PORTAL_VERTICALS.forEach(v => {
 // vertical it forms a stable entityId so re-deciding the same item (e.g. a
 // hold later upgraded to approve) is traceable to one entity across calls.
 // GCU PILOT FIX 2026-08-26: exec decisions across all verticals, no auth check.
-app.post('/api/exec-portal/:vertical/decide', requireAnyAuth, (req, res) => {
+app.post('/api/exec-portal/:vertical/decide', requireAnyAuth, async (req, res) => {
   const vertical = req.params.vertical;
   const gate = EXEC_PORTAL_HITL_GATES[vertical];
   if (!gate) return res.status(404).json({ ok: false, error: `Unknown vertical: ${vertical}` });
 
-  const { index, verdict, text, actor, meta } = req.body || {};
+  const { index, verdict, text, actor, meta, tenantId } = req.body || {};
   if (index === undefined || index === null) return res.status(400).json({ ok: false, error: 'index required' });
   if (!['approved', 'rejected', 'hold'].includes(verdict)) {
     return res.status(400).json({ ok: false, error: "verdict must be 'approved', 'rejected', or 'hold'" });
@@ -7067,15 +7067,30 @@ app.post('/api/exec-portal/:vertical/decide', requireAnyAuth, (req, res) => {
   // endpoint (bpo-executive-portal.html's markExecuted()), so relaying here
   // too would double-write the same case.
   //
-  // clientId is deliberately left null here -- see commit message for why
-  // -- and is safe to leave null on repeat calls too, since PR #119 made
-  // clientId sticky in bpoUpsertWorkItem: a later upsert that omits it
-  // will no longer overwrite a clientId a BPO analyst has since set.
+  // clientId resolution: an optional client-supplied `tenantId` (sourced
+  // from TSMActiveMember.getId() -- never guessed, see tsm-active-member.js)
+  // is looked up against bpo_clients here, server-side, so a spoofed/invalid
+  // tenantId just resolves to no match rather than an attacker-chosen
+  // clientId. No tenantId, or no client linked to it, leaves clientId null
+  // exactly as before -- the "never guess" contract this relay started with
+  // is unchanged, this only adds a real (non-guessed) resolution path on
+  // top of it. Safe to leave null on repeat calls too: PR #119 made
+  // clientId sticky in bpoUpsertWorkItem, so a later omit no longer
+  // overwrites a clientId an analyst (or this resolution) has since set.
   if (verdict === 'approved' && vertical !== 'bpo') {
+    let resolvedClientId = null;
+    if (tenantId) {
+      try {
+        const client = await tsmLedger.bpoGetClientByTenantId(tenantId);
+        if (client) resolvedClientId = client.id;
+      } catch (e) {
+        console.warn(`[bpo-relay] tenantId lookup failed for ${vertical} decision ${index}:`, e.message);
+      }
+    }
     tsmLedger.bpoUpsertWorkItem(
       `${vertical.toUpperCase()}-${index}`,
       {
-        clientId: null,
+        clientId: resolvedClientId,
         vertical,
         stage: 'exec-approved',
         status: 'open',

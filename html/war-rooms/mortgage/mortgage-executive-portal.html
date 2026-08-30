@@ -199,7 +199,7 @@ function recordExecAction(actionType, note){
   fetch('/api/exec-portal/mortgage/decide', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ index: Date.now(), verdict, text: note, actor: 'Executive' })
+    body: JSON.stringify({ index: Date.now(), verdict, text: note, actor: 'Executive', tenantId: (typeof TSMActiveMember !== 'undefined' && TSMActiveMember) ? TSMActiveMember.getId() : null })
   }).then(r => r.json()).then(res => {
     if (res && res.ok && res.recorded) loadApprovalRate();
   }).catch(() => { /* offline/unreachable -- exec action still logged to relay above */ });

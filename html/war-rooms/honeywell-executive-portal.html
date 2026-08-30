@@ -189,7 +189,7 @@ function recordExecutiveAction(action, note){
   fetch('/api/exec-portal/honeywell/decide', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ index: Date.now(), verdict, text: `[${incidentType}] ${note}`, actor: 'Executive' })
+    body: JSON.stringify({ index: Date.now(), verdict, text: `[${incidentType}] ${note}`, actor: 'Executive', tenantId: (typeof TSMActiveMember !== 'undefined' && TSMActiveMember) ? TSMActiveMember.getId() : null })
   }).catch(() => { /* offline/unreachable -- action still logged to audit trail above */ });
 }
 
@@ -643,6 +643,7 @@ window.addEventListener('storage', e => { if(e.key === RELAY_KEY) render(); });
 </script>
   <script src="/html/shared/tsm-delivery-package.js"></script>
   <script src="/html/shared/tsm-memory-engine.js"></script>
+  <script src="/html/shared/tsm-active-member.js"></script>
   <script src="../../js/tsm-guide-engine.js" defer></script>
   <script src="/shared/tsm-guided-how-to.js" defer></script>
 </body>

@@ -50,7 +50,7 @@ function recordHumanDecision(choice, ctx) {
   return fetch(L1_DECIDE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ index, verdict, text, actor: 'Technician', meta: ctx })
+    body: JSON.stringify({ index, verdict, text, actor: 'Technician', meta: ctx, tenantId: (typeof TSMActiveMember !== 'undefined' && TSMActiveMember) ? TSMActiveMember.getId() : null })
   }).then(r => r.json());
 }
 

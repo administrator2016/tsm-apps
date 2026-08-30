@@ -167,7 +167,7 @@ function recordExecutiveAction(action, note){
   fetch('/api/exec-portal/schools/decide', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ index: Date.now(), verdict, text: note, actor: 'Executive' })
+    body: JSON.stringify({ index: Date.now(), verdict, text: note, actor: 'Executive', tenantId: (typeof TSMActiveMember !== 'undefined' && TSMActiveMember) ? TSMActiveMember.getId() : null })
   }).catch(() => { /* offline/unreachable -- action still logged to audit trail above */ });
 }
 
@@ -924,5 +924,6 @@ window.exportClientPackage = function () {
   }
 })();
 </script>
+<script src="/html/shared/tsm-active-member.js"></script>
 </body>
 </html>
