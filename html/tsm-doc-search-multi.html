@@ -4416,6 +4416,16 @@ async function openGenNodeWithDoc(docId, vertical) {
   if (!doc) doc = (typeof DEMO_DOCS !== 'undefined' ? DEMO_DOCS : []).find(d => d.id === docId);
   if (!doc) { console.warn('TSM: doc not found', docId); return; }
 
+  // BUG FIX (2026-08-30): this generic-playbook path (fo/ins/bpo/re/leg)
+  // wrote the relay payload and opened the war room but never advanced the
+  // card's own status — unlike runDocTypeAction()'s hc/con path, which sets
+  // in_review before firing. Result: those five verticals' cards stayed on
+  // the green "Ready" pill forever after being worked, with no way to tell
+  // "actually untouched" from "opened but this button never marks it."
+  // setDocStatus() only touches the status field (see its own comment) so
+  // this is safe to call unconditionally here, same as runDocTypeAction.
+  setDocStatus(docId, "in_review");
+
   const excCode = (doc.exclusionCode || '').toUpperCase();
   const docType = (doc.documentType || '').toUpperCase();
   const amount  = Number(doc.amount) || 0;
