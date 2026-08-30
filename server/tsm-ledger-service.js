@@ -42,15 +42,37 @@ async function connect() {
   }
 
   connecting = (async () => {
-    client = new MongoClient(uri, {
-      // Firestore's Mongo-compat layer wants these explicit; harmless
-      // no-ops against real MongoDB if this code ever points elsewhere.
-      serverSelectionTimeoutMS: 10000,
-    });
-    await client.connect();
-    db = client.db(DEFAULT_DB_NAME);
-    connecting = null;
-    return db;
+    try {
+      client = new MongoClient(uri, {
+        // Firestore's Mongo-compat layer wants these explicit; harmless
+        // no-ops against real MongoDB if this code ever points elsewhere.
+        serverSelectionTimeoutMS: 10000,
+        // Bounds the initial TCP/TLS handshake — without this, a stalled
+        // network path to the endpoint hangs client.connect() indefinitely
+        // (serverSelectionTimeoutMS only bounds topology *selection*, not
+        // the handshake itself), and every concurrent caller sharing this
+        // same in-flight `connecting` promise hangs with it.
+        connectTimeoutMS: 10000,
+        // Bounds any individual socket read/write after connection — the
+        // driver default is 0 (no timeout), so a connection that goes
+        // stale mid-operation (half-open TCP, LB drop) would otherwise
+        // hang that operation forever instead of surfacing an error.
+        socketTimeoutMS: 15000,
+      });
+      await client.connect();
+      db = client.db(DEFAULT_DB_NAME);
+      connecting = null;
+      return db;
+    } catch (err) {
+      // Without this reset, a single failed/timed-out connection attempt
+      // would permanently wedge every ledger-touching route for the rest
+      // of the process's life — every future call would keep re-awaiting
+      // this same rejected promise instead of retrying. Clearing both lets
+      // the next request attempt a fresh connect() if the network recovers.
+      client = null;
+      connecting = null;
+      throw err;
+    }
   })();
 
   return connecting;
