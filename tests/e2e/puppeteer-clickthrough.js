@@ -48,6 +48,11 @@ const SCREENSHOT_DIR = path.join(__dirname, 'screenshots');
 // Deliberately NOT hardcoded: read from env so this file can be
 // committed without baking a live credential into git history.
 const AUTH_PASSWORD = process.env.TSM_AUTH_PASSWORD || '';
+// TSM FIX: no way to run a single vertical existed, so any debug run
+// paid the cost of all 11 verticals sequentially. TSM_ONLY restricts
+// the run to one vertical by name (case-insensitive, matches
+// vertical.name), for fast iteration during debugging.
+const ONLY = process.env.TSM_ONLY || '';
 
 // ── step helpers ─────────────────────────────────────────────────────────
 
@@ -508,8 +513,16 @@ async function main() {
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
+  const targets = ONLY
+    ? VERTICALS.filter((v) => v.name.toLowerCase() === ONLY.toLowerCase())
+    : VERTICALS;
+  if (ONLY && targets.length === 0) {
+    console.error(`No vertical matches TSM_ONLY="${ONLY}". Valid names: ${VERTICALS.map((v) => v.name).join(', ')}`);
+    process.exit(1);
+  }
+
   const results = [];
-  for (const vertical of VERTICALS) {
+  for (const vertical of targets) {
     console.log(`→ ${vertical.name}`);
     const result = await runVertical(browser, vertical);
     results.push(result);
