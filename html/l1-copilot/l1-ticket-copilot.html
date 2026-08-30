@@ -2337,6 +2337,13 @@ TICKET DESCRIPTION</div>
       applyExtractedFields(currentAnalysis.extracted_fields);
       saveCurrentTicket();
       try { TSM.relay.write('L1COPILOT', { ticket: document.getElementById('tkIncident').value, analysis: currentAnalysis, ts: Date.now() }); } catch(e){ console.warn('Relay write failed', e); }
+      // Feed the Decision Journey overlay via its documented public hook
+      // (see window.tsmDecisionJourney.setAnalysis below) instead of
+      // relying on window.currentAnalysis, which nothing in this file
+      // ever actually sets — getAnalysisObject() checks window-scoped
+      // names, but `currentAnalysis` above is a local closure variable,
+      // so the overlay never saw real data through that path.
+      try { window.tsmDecisionJourney && window.tsmDecisionJourney.setAnalysis(currentAnalysis); } catch(e){ console.warn('Decision Journey setAnalysis failed', e); }
     } catch (e) {
       out.className = 'ai-output';
       out.innerHTML = `<span class="err">Analysis failed: ${e.message}. Confirm /api/l1-copilot/analyze is wired server-side.</span>`;
@@ -2518,7 +2525,11 @@ TICKET DESCRIPTION</div>
         const el = document.getElementById(id);
         if (el) el.value = state.values[id];
       });
-      if (state.currentAnalysis) { currentAnalysis = state.currentAnalysis; renderAnalysis(currentAnalysis); }
+      if (state.currentAnalysis) {
+        currentAnalysis = state.currentAnalysis;
+        renderAnalysis(currentAnalysis);
+        try { window.tsmDecisionJourney && window.tsmDecisionJourney.setAnalysis(currentAnalysis); } catch(e){ console.warn('Decision Journey setAnalysis failed', e); }
+      }
       if (state.checklistState) { checklistState = state.checklistState; renderChecklist(); }
       if (state.selectedTeam) {
         selectedTeam = state.selectedTeam;
