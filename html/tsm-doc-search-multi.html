@@ -1783,7 +1783,7 @@ const FIELD_POLICY = {
 };
 
 const INTERNAL_ONLY_DOC_TYPES = new Set(['ESCALATION']);
-const GEN_PLAYBOOK_VERTICALS = new Set(['fo', 'ins', 'con', 're', 'leg', 'bpo']);
+const GEN_PLAYBOOK_VERTICALS = new Set(['fo', 'ins', 'con', 're', 'leg', 'bpo', 'pm']);
 function docTypeIsClientSafe(documentType) {
   return !INTERNAL_ONLY_DOC_TYPES.has(documentType);
 }
@@ -2586,7 +2586,7 @@ function confirmClearAll() {
 // now delegates to launchWarRoom(), the same already-working relay mechanism the
 // "Send to War Room" picker uses (writes both the manual and autorun keys, which every
 // war room's own load handler does read).
-const DOCSEARCH_ROOM_KEYS = { fo:'fo-war-room', ins:'ins-war-room', con:'con-war-room', bpo:'bpo-war-room', re:'re-war-room', leg:'leg-war-room', hc:'hc-war-room' };
+const DOCSEARCH_ROOM_KEYS = { fo:'fo-war-room', ins:'ins-war-room', con:'con-war-room', bpo:'bpo-war-room', re:'re-war-room', leg:'leg-war-room', hc:'hc-war-room', pm:'pm-war-room' };
 
 const WAR_ROOM_ROUTES = {
   'fo-war-room':  { label:'FinOps War Room',       url:'/html/finops-suite/finops-war/finops-war-room.html',            relay:'tsm_fo_docsearch_relay',    autoKey:'TSM_FIN_WAR_RELAY' },
@@ -4406,6 +4406,14 @@ function resolveGenNodeId(vertical, doc, nodes) {
 async function openGenNodeWithDoc(docId, vertical) {
   const def = VERTICALS[vertical];
   if (!def) { console.warn('TSM: unknown vertical for generic node routing:', vertical); return; }
+
+  // Mirrors runDocTypeAction()'s hc/con pattern (line ~1654): this is the
+  // fo/ins/con/re/leg/bpo/pm "Open Node" path and was never advancing the
+  // card's status pill, so a worked document stayed on "Ready" forever with
+  // no way to tell "never touched" apart from "opened but unmarked."
+  // setDocStatus() only touches the status field, so safe to call
+  // unconditionally here.
+  setDocStatus(docId, "in_review");
 
   let doc = null;
   for (const c of getClientRegistry()) {
