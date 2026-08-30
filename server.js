@@ -3895,7 +3895,21 @@ app.post('/api/l1-copilot/assistant', async (req, res) => {
   try {
     var scenario = (req.body.scenario || req.body.question || req.body.query || '').trim();
     if (!scenario) return res.status(400).json({ ok: false, error: 'scenario is required' });
-    var a = await groqChat(SP.l1Assistant, scenario, req.body.maxTokens || 700);
+    // TSM FIX: req.body.ticket was accepted by nothing -- the assistant's
+    // own system prompt (SP.l1Assistant) tells the model to factor in
+    // warranty/model info, but no caller ever sent it, so that instruction
+    // was always a no-op. Fold whatever ticket fields the caller does send
+    // into the user message; older/standalone callers that omit `ticket`
+    // (e.g. the generic embeddable widget) are unaffected.
+    var t = req.body.ticket || null;
+    var ticketLines = t ? Object.entries(t)
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join('\n') : '';
+    var userMessage = ticketLines
+      ? `CURRENT TICKET CONTEXT:\n${ticketLines}\n\nTECHNICIAN QUESTION:\n${scenario}`
+      : scenario;
+    var a = await groqChat(SP.l1Assistant, userMessage, req.body.maxTokens || 700);
     return res.json({ ok: true, answer: a, createdAt: new Date().toISOString() });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message });
@@ -4702,6 +4716,110 @@ app.get('/api/l1-copilot/gcp/instance/:identifier', async (req, res) => {
     const status = e.code === 'GCP_NOT_CONFIGURED' ? 503 : 502;
     res.status(status).json({ ok: false, error: e.message });
   }
+});
+
+// --- Onboarding: imaging + account provisioning ---------------------------
+// TSM FIX (2026-08-30): these two routes didn't exist at all -- the New
+// Hire Onboarding tab's "Start Imaging"/"Provision Account" buttons always
+// 404'd. No real imaging-platform (MDT/SCCM/Intune/JAMF) or identity-write
+// (Entra ID/Okta/Workspace) adapter exists yet, and account provisioning in
+// particular is a real write against a live directory -- not something to
+// wire to whatever read-only credentials happen to be configured for the
+// AD/Intune device-lookup routes above. So these honestly no-op (503) same
+// as the other unconfigured connectors, with a demo-mode fallback so the
+// tab is fully clickable/demoable. Real wiring needs a dedicated,
+// explicitly-configured adapter — see backend spec §3/§5.
+const ONBOARDING_IMAGING_CONFIGURED = () => !!process.env.L1_COPILOT_IMAGING_WEBHOOK_URL;
+const ONBOARDING_IDENTITY_CONFIGURED = () => !!process.env.L1_COPILOT_PROVISIONING_WEBHOOK_URL;
+
+app.post('/api/l1-copilot/onboarding/image', async (req, res) => {
+  const { assetTag, profileId } = req.body || {};
+  if (!assetTag) return res.status(400).json({ ok: false, error: 'assetTag required' });
+  if (!ONBOARDING_IMAGING_CONFIGURED()) {
+    if (demoData.isDemoModeEnabled()) {
+      return res.json({ ok: true, ...demoData.demoImagingJob(assetTag, profileId), demoMode: true });
+    }
+    return res.status(503).json({ ok: false, error: 'No imaging platform is configured (set L1_COPILOT_IMAGING_WEBHOOK_URL to your MDT/SCCM/Intune/JAMF trigger).' });
+  }
+  try {
+    const hookRes = await fetch(process.env.L1_COPILOT_IMAGING_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assetTag, profileId })
+    });
+    if (!hookRes.ok) throw new Error('Imaging platform returned ' + hookRes.status);
+    const data = await hookRes.json();
+    return res.json({ ok: true, jobId: data.jobId, status: data.status || 'Running', percent: data.percent || 10 });
+  } catch (e) {
+    return res.status(502).json({ ok: false, error: e.message });
+  }
+});
+
+app.post('/api/l1-copilot/onboarding/provision', async (req, res) => {
+  const { name, email, department, role } = req.body || {};
+  if (!name || !email) return res.status(400).json({ ok: false, error: 'name and email required' });
+  if (!ONBOARDING_IDENTITY_CONFIGURED()) {
+    if (demoData.isDemoModeEnabled()) {
+      return res.json({ ok: true, ...demoData.demoProvisionedAccount(name, email), demoMode: true });
+    }
+    return res.status(503).json({ ok: false, error: 'No identity provider write-integration is configured (set L1_COPILOT_PROVISIONING_WEBHOOK_URL to your Entra ID/Okta/Workspace provisioning flow).' });
+  }
+  try {
+    const hookRes = await fetch(process.env.L1_COPILOT_PROVISIONING_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, department, role })
+    });
+    if (!hookRes.ok) throw new Error('Identity provider returned ' + hookRes.status);
+    const data = await hookRes.json();
+    return res.json({ ok: true, userId: data.userId, mfaEnrollmentLink: data.mfaEnrollmentLink || null });
+  } catch (e) {
+    return res.status(502).json({ ok: false, error: e.message });
+  }
+});
+
+// --- Security Context: zero-trust / IAM lookup -----------------------------
+// device-status is genuinely real when Graph/Intune is configured (reuses
+// the same tested graph-intune-adapter.js getDevice() call the AD/Intune
+// routes above already use) -- complianceState just gets mapped into the
+// Title-Case shape this panel expects. user-status has no live-risk-signal
+// adapter yet (that needs IdentityRiskyUser.Read.All / auth-methods Graph
+// scopes on top of the device-read scope already granted) -- honestly
+// no-ops to demo data rather than fabricating a risk score from nothing.
+function mapComplianceState(state) {
+  if (state === 'compliant') return 'Compliant';
+  if (state === 'noncompliant') return 'Non-Compliant';
+  return 'Unknown';
+}
+
+app.get('/api/l1-copilot/security/user-status', async (req, res) => {
+  const query = (req.query.query || '').trim();
+  if (!query) return res.status(400).json({ ok: false, error: 'query required' });
+  if (demoData.isDemoModeEnabled()) {
+    return res.json({ ok: true, ...demoData.demoUserSecurityStatus(query), demoMode: !graphAdapter.isConfigured() });
+  }
+  return res.status(503).json({ ok: false, error: 'No identity-risk adapter is configured for live user-status lookups yet.' });
+});
+
+app.get('/api/l1-copilot/security/device-status', async (req, res) => {
+  const asset = (req.query.asset || '').trim();
+  if (!asset) return res.status(400).json({ ok: false, error: 'asset required' });
+  if (graphAdapter.isConfigured()) {
+    try {
+      const device = await graphAdapter.getDevice(asset);
+      if (!device) return res.status(404).json({ ok: false, error: `No managed device found for "${asset}".` });
+      return res.json({ ok: true, asset, complianceStatus: mapComplianceState(device.complianceState) });
+    } catch (e) {
+      if (demoData.isDemoModeEnabled()) {
+        return res.json({ ok: true, ...demoData.demoDeviceSecurityStatus(asset), demoMode: true });
+      }
+      return res.status(502).json({ ok: false, error: e.message });
+    }
+  }
+  if (demoData.isDemoModeEnabled()) {
+    return res.json({ ok: true, ...demoData.demoDeviceSecurityStatus(asset), demoMode: true });
+  }
+  return res.status(503).json({ ok: false, error: 'Graph/Intune is not configured for live device-status lookups.' });
 });
 
 // GCU PILOT FIX 2026-08-26: core Schools endpoint, no auth check.

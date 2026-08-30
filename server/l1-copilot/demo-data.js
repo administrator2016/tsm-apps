@@ -94,11 +94,53 @@ function demoGcpInstance(name) {
   };
 }
 
+function demoImagingJob(assetTag, profileId) {
+  return {
+    jobId: 'IMG-' + Math.random().toString(36).slice(2, 8).toUpperCase(),
+    assetTag: assetTag || 'FIN-LT-0042',
+    profileId: profileId || 'default-win11',
+    status: 'Running',
+    percent: 10,
+    demo: true
+  };
+}
+
+function demoProvisionedAccount(name, email) {
+  const local = (email || '').split('@')[0] || (name || 'new.hire').toLowerCase().replace(/\s+/g, '.');
+  return {
+    userId: local + '@example.com',
+    mfaEnrollmentLink: 'https://mysignins.microsoft.com/security-info?demo=1',
+    demo: true
+  };
+}
+
+function demoUserSecurityStatus(query) {
+  return {
+    query: query || 'jane.doe',
+    accountStatus: 'Active',
+    mfaEnabled: true,
+    riskLevel: 'Low',
+    demo: true
+  };
+}
+
+function demoDeviceSecurityStatus(asset) {
+  return {
+    asset: asset || 'FIN-LT-0042',
+    complianceStatus: 'Compliant',
+    demo: true
+  };
+}
+
 module.exports = {
   isDemoModeEnabled,
   demoAsset,
   demoTicket,
   demoAwsInstance,
   demoDevice,
-  demoGcpInstance
+  demoGcpInstance,
+  demoImagingJob,
+  demoProvisionedAccount,
+  demoUserSecurityStatus,
+  demoDeviceSecurityStatus
 };

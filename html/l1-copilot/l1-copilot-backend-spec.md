@@ -4,6 +4,11 @@ This covers what needs to exist behind the current front-end so a company can po
 
 **Status (2026-08-20): the ServiceNow adapter in §3 is now real, not just designed.** `server/l1-copilot/servicenow-adapter.js` implements `getAsset`/`getTicket`/`searchAssetsByUser`/`writeWorkNote`/`updateTicketStatus` against the actual ServiceNow Table API, wired into `/api/l1-copilot/servicenow/*` routes and into `analyze`/`resolution` for CMDB-enriched analysis and work-note writeback. It's config-driven (`SERVICENOW_INSTANCE_URL`, `SERVICENOW_USERNAME`/`SERVICENOW_PASSWORD` or `SERVICENOW_OAUTH_TOKEN`) — no per-customer code changes needed, per-customer field-name overrides supported via a `fieldMap`. 22/22 unit tests pass against a mock Table API server (`tests/unit/l1-copilot/servicenow-adapter.test.js`); **not yet smoke-tested against a real ServiceNow instance** — do that before rollout to a live customer. Everything else below (auth/multi-tenancy, other CMDB platforms, the assistant endpoint's own writeback) is unchanged from the original design.
 
+**Status (2026-08-30): onboarding + security-context routes now exist (previously 404'd).** `/api/l1-copilot/onboarding/image`, `/api/l1-copilot/onboarding/provision`, `/api/l1-copilot/security/user-status`, `/api/l1-copilot/security/device-status` are wired server-side. `device-status` is genuinely real when Graph/Intune is configured (reuses `graph-intune-adapter.js`'s `getDevice()`). The other three honestly no-op to demo data (`L1_COPILOT_DEMO_MODE`, defaults on) until real write/risk adapters exist:
+- `onboarding/image` needs an imaging-platform webhook at `L1_COPILOT_IMAGING_WEBHOOK_URL` (MDT/SCCM/Intune/JAMF trigger).
+- `onboarding/provision` needs an identity-write webhook at `L1_COPILOT_PROVISIONING_WEBHOOK_URL` (Entra ID/Okta/Workspace) — intentionally NOT wired to the read-only Graph credentials already configured for AD/Intune device lookups, since provisioning is a real directory write and shouldn't silently inherit read-only scope.
+- `security/user-status` has no live risk-signal adapter yet (would need `IdentityRiskyUser.Read.All` + auth-methods Graph scopes beyond what device-read requires) — always demo data until built.
+
 ---
 
 ## 1. Scope of the gap

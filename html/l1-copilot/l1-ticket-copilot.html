@@ -4309,6 +4309,35 @@ TICKET DESCRIPTION</div>
       if (loadingEl) loadingEl.classList.toggle('l1a-show', isLoading);
     }
 
+    // TSM FIX: the ticket-field values (asset/manufacturer/model/warranty/
+    // etc.) are collected by getCurrentTicket() elsewhere in this file, but
+    // that function lives inside a different IIFE and is never exposed on
+    // window -- unreachable from here. The assistant was sending the raw
+    // scenario text with zero ticket context even though the tech is
+    // usually asking about the exact ticket already open on screen, and the
+    // backend's own system prompt explicitly expects warranty/model info
+    // ("If the scenario mentions Dell hardware, factor in ProSupport vs
+    // Basic warranty guidance..."). Read the same field IDs directly here
+    // (they're plain global DOM ids, no scoping issue) rather than relying
+    // on the tech to retype what's already on the ticket.
+    function getAssistantTicketContext() {
+      const value = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+      const ticket = {
+        incident: value('tkIncident'),
+        priority: value('tkPriority'),
+        requester: value('tkRequester'),
+        department: value('tkDept'),
+        assignmentGroup: value('tkGroup'),
+        asset: value('tkAsset'),
+        manufacturer: value('tkMfr'),
+        model: value('tkModel'),
+        warranty: value('tkWarranty'),
+        description: value('tkDescription')
+      };
+      const hasAny = Object.values(ticket).some(v => v);
+      return hasAny ? ticket : null;
+    }
+
     async function submitScenario() {
       const scenario = input ? input.value.trim() : '';
       if (!scenario) return;
@@ -4321,7 +4350,7 @@ TICKET DESCRIPTION</div>
         const res = await fetch('/api/l1-copilot/assistant', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scenario: scenario })
+          body: JSON.stringify({ scenario: scenario, ticket: getAssistantTicketContext() })
         });
         const data = await res.json();
 
