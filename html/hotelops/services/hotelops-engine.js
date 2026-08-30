@@ -522,6 +522,16 @@
     /* ---------- AI + relay (mirrors Mortgage/NOC) ---------- */
 
     async runAnalysis() {
+      // TSM FIX: this call was only forwarding 5 of the 12 operational
+      // categories the engine actually tracks (see buildRelayPayload /
+      // getExplainItems, which both treat all of these as one situation).
+      // reservation_risks, front_desk_breaches, vip_readiness,
+      // housekeeping_breaches, staffing_gaps, open_incidents, and
+      // airbnb_risks were computed and relayed to the strategist as raw
+      // data, but never reached the LLM synthesis prompt itself -- so
+      // "AI OPERATIONS ANALYSIS" was silently blind to VIP arrivals,
+      // staffing shortfalls, open incidents, etc. Added below; nothing
+      // invented, these are the same engine getters buildRelayPayload uses.
       const res = await fetch('/api/hotelops/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -530,7 +540,14 @@
           maintenance_breaches: this.getMaintenanceBreaches(),
           ota_exposure: this.getOtaExposure(),
           compliance_risk: this.getComplianceRisk(),
-          iot_alerts: this.getIotAlerts()
+          iot_alerts: this.getIotAlerts(),
+          reservation_risks: this.getReservationRisks(),
+          front_desk_breaches: this.getFrontDeskBreaches(),
+          vip_readiness: this.getVipReadiness(),
+          housekeeping_breaches: this.getHousekeepingBreaches(),
+          staffing_gaps: this.getStaffingGaps(),
+          open_incidents: this.getOpenIncidents(),
+          airbnb_risks: this.getAirbnbRisks()
         })
       });
       if (!res.ok) throw new Error('HotelOps analysis endpoint returned ' + res.status);

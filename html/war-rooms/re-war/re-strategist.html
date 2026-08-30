@@ -779,6 +779,15 @@ async function generateAutoBrief() {
     context = warRoomPayload.outputs.slice(0, 5)
       .map(o => `=== ${o.title} ===\n${o.text.substring(0, 600)}`)
       .join('\n\n');
+  } else if (hasFeed) {
+    // TSM FIX: this branch was documented in the comment above but never
+    // implemented -- hasFeed was computed and then never read, so a relay
+    // with real docText/feedText but no saved module outputs fell all the
+    // way through to the fully hardcoded demo prompt below ("22 loans,
+    // $18.4M pipeline..."), silently discarding the actual deal document.
+    context = warRoomPayload.docText
+      ? `=== DEAL DOCUMENT ===\n${warRoomPayload.docText.substring(0, 3000)}`
+      : `=== INTELLIGENCE FEED ===\n${warRoomPayload.feedText.substring(0, 3000)}`;
   }
   if (warRoomPayload && warRoomPayload.rescuePack) {
     context += `\n\n=== RESCUE PACK ===\n${JSON.stringify(warRoomPayload.rescuePack).substring(0,300)}`;
