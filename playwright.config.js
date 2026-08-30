@@ -15,7 +15,7 @@ reporter:[
 
 use:{
 
-baseURL:"http://localhost:8080",
+baseURL:"http://localhost:3000",
 
 headless:true,
 
@@ -29,16 +29,5 @@ trace:"retain-on-failure"
 
 },
 
-webServer:{
-
-command:"node server.js",
-
-url:"http://localhost:8080",
-
-reuseExistingServer:true,
-
-timeout:30000
-
-}
 
 });

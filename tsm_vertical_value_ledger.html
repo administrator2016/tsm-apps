@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSM Consultz — Vertical Value Ledger</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --bg:#0A0C10;
+  --panel:#12151C;
+  --panel-2:#171B24;
+  --ink:#E9E6DC;
+  --ink-dim:#8B92A3;
+  --ink-faint:#565D6D;
+  --certified:#E8A33D;
+  --beta:#4FD1C5;
+  --rule:#262B36;
+  --friction:#B5533A;
+  --edge:#7EC88F;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:15px;
+  line-height:1.55;
+}
+.mono{font-family:'IBM Plex Mono',monospace;}
+h1,h2,h3,.display{
+  font-family:'Space Grotesk',sans-serif;
+  letter-spacing:-0.01em;
+}
+a{color:inherit;}
+
+/* ── background texture: faint ledger rule lines ─────────────────── */
+.ruled{
+  background-image:repeating-linear-gradient(to bottom, transparent 0 39px, var(--rule) 39px 40px);
+  background-attachment:local;
+}
+
+/* ── hero ──────────────────────────────────────────────────────── */
+.hero{
+  padding:72px 32px 56px;
+  max-width:1180px;
+  margin:0 auto;
+  border-bottom:1px solid var(--rule);
+}
+.eyebrow{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:18px;
+}
+.eyebrow::before{
+  content:"";
+  width:7px;height:7px;border-radius:50%;
+  background:var(--certified);
+  box-shadow:0 0 0 3px rgba(232,163,61,0.15);
+}
+.hero h1{
+  font-size:clamp(34px,5vw,54px);
+  font-weight:700;
+  margin:0 0 14px;
+  color:var(--ink);
+}
+.hero h1 span{color:var(--ink-dim);font-weight:500;}
+.hero p.sub{
+  max-width:640px;
+  color:var(--ink-dim);
+  font-size:16px;
+  margin:0 0 40px;
+}
+.hero-stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:1px;
+  background:var(--rule);
+  border:1px solid var(--rule);
+}
+.stat{
+  background:var(--panel);
+  padding:22px 24px;
+}
+.stat .label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  margin-bottom:8px;
+}
+.stat .value{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:28px;
+  font-weight:700;
+}
+.stat .value.amber{color:var(--certified);}
+.stat .value.cyan{color:var(--beta);}
+.stat .note{font-size:12px;color:var(--ink-faint);margin-top:6px;}
+
+/* legend */
+.legend{
+  display:flex;gap:28px;flex-wrap:wrap;
+  margin-top:28px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12px;
+  color:var(--ink-dim);
+}
+.legend .item{display:flex;align-items:center;gap:8px;}
+.stampdot{width:10px;height:10px;border-radius:2px;transform:rotate(45deg);}
+.stampdot.amber{background:var(--certified);}
+.stampdot.cyan{background:var(--beta);}
+
+/* ── index nav ─────────────────────────────────────────────────── */
+.index-bar{
+  position:sticky;top:0;z-index:20;
+  background:rgba(10,12,16,0.92);
+  backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--rule);
+  overflow-x:auto;
+  white-space:nowrap;
+  padding:12px 32px;
+}
+.index-bar a{
+  display:inline-block;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11.5px;
+  letter-spacing:0.03em;
+  color:var(--ink-faint);
+  text-decoration:none;
+  padding:6px 12px;
+  border:1px solid var(--rule);
+  border-radius:3px;
+  margin-right:8px;
+  transition:color .15s,border-color .15s;
+}
+.index-bar a:hover{color:var(--certified);border-color:var(--certified);}
+
+/* ── vertical cards ────────────────────────────────────────────── */
+.wrap{max-width:1180px;margin:0 auto;padding:0 32px;}
+.cards{display:flex;flex-direction:column;gap:2px;padding:2px 0 80px;}
+
+.card{
+  background:var(--panel);
+  border:1px solid var(--rule);
+  scroll-margin-top:70px;
+}
+.card-head{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  gap:24px;
+  padding:28px 30px 20px;
+  border-bottom:1px solid var(--rule);
+}
+.card-head .rank{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;color:var(--ink-faint);
+  margin-bottom:6px;
+}
+.card-head h2{
+  font-size:26px;margin:0;font-weight:700;
+}
+.card-head .chain{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11.5px;color:var(--ink-dim);
+  margin-top:10px;
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.chain .node{
+  padding:3px 9px;border:1px solid var(--rule);border-radius:3px;
+  color:var(--ink-dim);
+}
+.chain .arrow{color:var(--ink-faint);}
+
+/* stamp badge */
+.stamp{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;
+  padding:8px 14px;
+  border:1.5px solid;
+  border-radius:2px;
+  transform:rotate(2deg);
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.stamp.certified{color:var(--certified);border-color:var(--certified);}
+.stamp.beta{color:var(--beta);border-color:var(--beta);transform:rotate(-2deg);}
+
+.card-body{
+  display:grid;
+  grid-template-columns:1.15fr 1fr;
+  gap:0;
+}
+@media(max-width:840px){.card-body{grid-template-columns:1fr;}}
+
+.col{padding:24px 30px;}
+.col + .col{border-left:1px solid var(--rule);}
+@media(max-width:840px){.col + .col{border-left:none;border-top:1px solid var(--rule);}}
+
+.col h3{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--ink-faint);margin:0 0 14px;
+}
+ul.feat{list-style:none;margin:0;padding:0;}
+ul.feat li{
+  position:relative;padding-left:16px;margin-bottom:11px;
+  font-size:13.5px;color:var(--ink);
+}
+ul.feat li::before{
+  content:"—";position:absolute;left:0;color:var(--ink-faint);
+}
+
+.market-row{margin-bottom:14px;}
+.market-row .k{
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.08em;
+  text-transform:uppercase;color:var(--ink-faint);margin-bottom:4px;
+}
+.market-row .v{font-size:13.5px;}
+.market-row.incumbents .v{color:var(--ink-dim);}
+.market-row.friction .v{color:var(--friction);}
+.market-row.edge .v{color:var(--edge);}
+
+/* ledger table */
+.ledger{
+  border-top:1px solid var(--rule);
+  padding:22px 30px 26px;
+  background:var(--panel-2);
+}
+.ledger h3{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--ink-faint);margin:0 0 14px;
+}
+table.value{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+table.value th{
+  text-align:right;font-weight:500;color:var(--ink-faint);
+  padding:6px 10px;border-bottom:1px solid var(--rule);
+  text-transform:uppercase;font-size:10px;letter-spacing:0.06em;
+}
+table.value th:first-child,table.value td:first-child{text-align:left;}
+table.value td{text-align:right;padding:9px 10px;color:var(--ink);border-bottom:1px solid rgba(38,43,54,0.6);}
+table.value tr:last-child td{border-bottom:none;}
+table.value td.blend{color:var(--certified);font-weight:600;}
+table.value tr.beta-row td.blend{color:var(--beta);}
+table.value td.rate{color:var(--ink-dim);}
+
+/* sample scenario picker */
+.samples{
+  border-top:1px solid var(--rule);
+  padding:22px 30px 28px;
+}
+.samples h3{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--ink-faint);margin:0 0 14px;
+}
+.sample-btns{display:flex;gap:10px;flex-wrap:wrap;}
+.sample-btn{
+  flex:1 1 200px;
+  text-align:left;
+  background:var(--panel-2);
+  border:1px solid var(--rule);
+  border-radius:4px;
+  padding:12px 14px;
+  cursor:pointer;
+  color:var(--ink);
+  font-family:'IBM Plex Sans',sans-serif;
+  transition:border-color .15s,background .15s;
+}
+.sample-btn:hover{border-color:var(--ink-dim);}
+.sample-btn.active{border-color:var(--certified);background:rgba(232,163,61,0.08);}
+.card[data-status="beta"] .sample-btn.active{border-color:var(--beta);background:rgba(79,209,197,0.08);}
+.sample-btn .s-label{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+  letter-spacing:0.02em;margin-bottom:4px;color:var(--ink);
+}
+.sample-btn .s-blurb{font-size:12px;color:var(--ink-dim);line-height:1.4;}
+.sample-result{
+  margin-top:16px;
+  padding:16px 18px;
+  border:1px dashed var(--rule);
+  border-radius:4px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:13px;
+  color:var(--ink-faint);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.sample-result .payout{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:22px;font-weight:700;color:var(--certified);
+}
+.card[data-status="beta"] .sample-result .payout{color:var(--beta);}
+.sample-result .breakdown{color:var(--ink-dim);font-size:11.5px;}
+
+/* footer */
+footer{
+  border-top:1px solid var(--rule);
+  padding:50px 32px 70px;
+}
+.foot-wrap{max-width:1180px;margin:0 auto;}
+footer h3{font-size:18px;margin:0 0 10px;}
+footer p{color:var(--ink-dim);font-size:13.5px;max-width:680px;}
+.foot-total{
+  margin-top:30px;
+  display:flex;gap:40px;flex-wrap:wrap;
+  padding-top:24px;border-top:1px solid var(--rule);
+}
+.foot-total .stat .label{color:var(--ink-faint);}
+</style>
+</head>
+<body class="ruled">
+
+<div class="hero">
+  <div class="eyebrow">TSM Consultz · Internal — BPO Pricing &amp; Positioning Reference</div>
+  <h1>Vertical Value Ledger <span>/ 12 verticals, ranked by blended monthly value</span></h1>
+  <p class="sub">Each entry pairs what's actually built and verified in <span class="mono">tsm-rcm</span> against
+    the incumbent tools it competes with, and prices it under a straight 22% commission-on-recoveries
+    model — discounted to 12% for verticals not yet Level-C certified.</p>
+
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="label">Portfolio Blended / mo</div>
+      <div class="value amber" id="stat-blend">—</div>
+      <div class="note">one client per vertical, default mix</div>
+    </div>
+    <div class="stat">
+      <div class="label">Portfolio Blended / yr</div>
+      <div class="value" id="stat-annual">—</div>
+    </div>
+    <div class="stat">
+      <div class="label">Certified verticals</div>
+      <div class="value amber" id="stat-certified">—</div>
+      <div class="note">22% commission rate</div>
+    </div>
+    <div class="stat">
+      <div class="label">Beta / not-wired verticals</div>
+      <div class="value cyan" id="stat-beta">—</div>
+      <div class="note">12% commission rate</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="item"><span class="stampdot amber"></span> Level-C certified — full 22% rate</div>
+    <div class="item"><span class="stampdot cyan"></span> Beta / not wired — discounted 12% rate</div>
+    <div class="item">Client mix: 50% SMB · 35% Mid-market · 15% Enterprise (editable in the workbook)</div>
+  </div>
+</div>
+
+<nav class="index-bar" id="index-bar"></nav>
+
+<div class="wrap">
+  <div class="cards" id="cards"></div>
+</div>
+
+<footer>
+  <div class="foot-wrap">
+    <h3>Methodology &amp; honesty notes</h3>
+    <p>The dollar figures below are placeholder monthly-recoverable-value estimates, not measured
+      client data — TSM has no live financial-recovery run-rate yet across most verticals. Replace
+      them with real numbers as HonorHealth, First American, and Ameris (and future pilots) generate
+      actual recovery figures. Commission rates and client-mix weights are the two levers that drive
+      every number here; both live in the companion workbook's Assumptions tab, not hardcoded per row.</p>
+    <p>Feature claims are drawn from <span class="mono">MASTER_VERTICAL_WALKTHROUGH.md</span> — a
+      document built by confirming onClick bindings, relay writes, and export functions directly
+      against the live HTML/JS, not by naming convention. Market-incumbent comparisons are
+      category-level, not sourced from current published pricing — verify competitor pricing before
+      using these in a client-facing deck.</p>
+
+    <div class="foot-total">
+      <div class="stat" style="background:none;padding:0;">
+        <div class="label mono" style="color:var(--ink-faint);font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">Companion file</div>
+        <div class="value" style="font-size:16px;font-family:'IBM Plex Mono',monospace;color:var(--ink);">TSM_BPO_Monthly_Value_Pricing_Model.xlsx</div>
+        <div class="note" style="color:var(--ink-faint);font-size:12px;margin-top:6px;">source of every number on this page — edit there, this page's numbers are copied from its recalculated output</div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const DATA = [
+  {
+    id:"healthcare", name:"Healthcare", status:"certified", rate:0.22,
+    chain:["War Room","Strategist","Executive Portal"],
+    features:[
+      "Fire 5 engines at once — eligibility, coding, prior-auth friction, appeal drafting, payer-pattern detection — against real loaded denial codes (CO-29, PR-96, CO-4, CO-11), not sample data",
+      "One-click board brief generation with the actual denial rate and dollars-at-risk baked into the narrative",
+      "Generate-appeal-from-selected-case, tied to the specific claim on screen",
+      "Payer-specific strategy presets (Medicare, Aetna) and site-variance analysis across locations"
+    ],
+    incumbents:"Waystar, Change Healthcare / Optum, Availity",
+    friction:"Enterprise RCM suites are built for claims processing at scale, not a single connected desk that goes from denial detection to a board-ready appeal in one session — multi-month implementations and per-transaction fees are the norm.",
+    edge:"Same-session escalation from denial data to a board brief with real dollar figures — no separate reporting tool or analyst hand-off required.",
+    smb:8000, mid:35000, ent:150000,
+    samples:[
+      {label:"Regional Clinic Group", blurb:"2-site outpatient group, moderate denial volume", recoverable:6200},
+      {label:"Multi-Site Health System", blurb:"7 facilities, active payer disputes across sites", recoverable:42000},
+      {label:"National Payer-Facing Network", blurb:"Enterprise RCM contract, high-volume appeals", recoverable:165000}
+    ]
+  },
+  {
+    id:"mortgage", name:"Mortgage", status:"certified", rate:0.22,
+    chain:["War Room","Strategist","Executive Portal"],
+    features:[
+      "Load real loan data, run AI analysis, relay to strategist — writes both sessionStorage and localStorage so the handoff survives a new tab",
+      "Acknowledge / Escalate actions are logged to an audit trail with a specific message, not just a UI state flip",
+      "The reference template the newer relay pattern (Schools, PM Copilot, HotelOps) was standardized from"
+    ],
+    incumbents:"ICE Mortgage Technology (Encompass), Black Knight / ICE Servicing",
+    friction:"LOS platforms own loan origination end-to-end but don't give an exception-desk operator a lightweight, AI-assisted triage-to-escalation flow without a full re-platform.",
+    edge:"Purpose-built exception handling that sits alongside an existing LOS instead of replacing it — audit-logged acknowledge/escalate actions a compliance reviewer can point to directly.",
+    smb:7000, mid:30000, ent:120000,
+    samples:[
+      {label:"Community Lender", blurb:"Small local shop, low exception volume", recoverable:5500},
+      {label:"Regional Mortgage Bank", blurb:"Multi-branch, steady exception-desk backlog", recoverable:28000},
+      {label:"National Loan Servicer", blurb:"High loan-count portfolio, frequent escalations", recoverable:110000}
+    ]
+  },
+  {
+    id:"construction", name:"Construction", status:"certified", rate:0.22,
+    chain:["War Room","Strategist","Executive Portal"],
+    features:[
+      "Fire 6 engines together — budget variance, retainage, lien waivers, pay-app matching, GL reconciliation, compliance",
+      "Deadline-honesty guard: the engine only cites deadlines actually present in the source document, writes \"NOT STATED IN SOURCE DOCUMENT\" rather than inferring one — a real regression here was caught and fixed, not just a design intent",
+      "AUTHORIZE is a genuine state change that unlocks client-package export",
+      "Anomaly feed shared across AuditOps Pro and FieldOps, not siloed per tool"
+    ],
+    incumbents:"Procore, Buildertrend",
+    friction:"Project-management suites track schedules and documents well but don't run a same-session variance/lien/compliance audit that escalates straight to an authorize-and-export decision.",
+    edge:"The deadline-honesty guard is a real, tested safety property — most AI-in-construction tools don't document (or test) that their model won't hallucinate a compliance deadline.",
+    smb:6000, mid:25000, ent:100000,
+    samples:[
+      {label:"General Contractor, 3 jobs", blurb:"Small crew, single-digit active job sites", recoverable:5000},
+      {label:"Regional GC, $40M pipeline", blurb:"Multiple concurrent jobs, retainage tracking matters", recoverable:27000},
+      {label:"National Builder, multi-state", blurb:"Large pay-app volume, compliance sweep across states", recoverable:95000}
+    ]
+  },
+  {
+    id:"pm-copilot", name:"PM Copilot", status:"certified", rate:0.22,
+    chain:["War Room","Strategist","Executive Portal","+4-panel decision stack"],
+    features:[
+      "Executive Portal stacks four governed engines under the sign-off panel: a deterministic decision queue (no LLM), a portfolio-intelligence twin, a Decide → Execute → Verify → Explain action center, and a predictive risk outlook",
+      "Every /api/pm/* route is role-gated (admin/manager/analyst) — no anonymous API access",
+      "Vendor dispatch ties a specific vendor to a specific work order, a real state change, not a demo button"
+    ],
+    incumbents:"Buildium, AppFolio, Yardi Voyager",
+    friction:"Property-management software tracks units, leases, and work orders, but doesn't layer a deterministic, role-gated decision-and-verification stack with dollar-exposure ranking on top.",
+    edge:"The V1–V4 stack is explicitly deterministic where it should be (no LLM guessing a priority ranking) and generative where it shouldn't — a defensible governance story most PM software can't tell.",
+    smb:5000, mid:20000, ent:85000,
+    samples:[
+      {label:"Single-property manager", blurb:"One property, light work-order volume", recoverable:4200},
+      {label:"Regional portfolio (300 units)", blurb:"Multiple properties, active vendor dispatch load", recoverable:19500},
+      {label:"National REIT portfolio", blurb:"Large multi-market portfolio, high dollar-exposure ranking need", recoverable:80000}
+    ]
+  },
+  {
+    id:"real-estate", name:"Real Estate", status:"certified", rate:0.22,
+    chain:["War Room","Strategist","Executive Portal"],
+    features:[
+      "Quick-fire presets: cross-node synthesis, highest-risk deal, compliance sweep (TRID / HMDA / Fair Housing / FinCEN), REO disposition, market intel",
+      "DEAL RESCUE — same generator as the standard brief, scoped to a deal about to fall apart, flagged amber for urgency",
+      "Exec portal exports a board report rather than the standard client package — a deliberate exception, not a gap"
+    ],
+    incumbents:"Yardi, AppFolio, MRI Software",
+    friction:"Property/portfolio ERPs manage the transaction record well but don't generate an urgency-scoped \"deal rescue\" brief or a compliance sweep across four regulatory regimes in one click.",
+    edge:"DEAL RESCUE and the compliance-sweep preset are built for the moment a deal or a filing is about to go wrong, not just after-the-fact reporting.",
+    smb:5000, mid:20000, ent:80000,
+    samples:[
+      {label:"Independent brokerage", blurb:"Small team, occasional deal-rescue need", recoverable:4800},
+      {label:"Regional brokerage network", blurb:"Multiple offices, regular compliance sweeps", recoverable:21000},
+      {label:"National RE investment firm", blurb:"Large deal volume, multi-regime compliance exposure", recoverable:78000}
+    ]
+  },
+  {
+    id:"schools", name:"Schools", status:"certified", rate:0.22,
+    chain:["Command Center","Strategist","Executive Portal"],
+    features:[
+      "Prompt library spans 11 regulatory domains in one operator seat — subrecipient monitoring, single audit/SEFA, grant closeout, ESSER, MOE, 501(c)(3)/Form 990, bond arbitrage, excess-benefit transactions, ADA/504, SOX, K-12 cybersecurity",
+      "The one button on the platform documented to fail safely — if the AI call errors, the KPI relay still fires so downstream screens never go dark or stale",
+      "Acknowledge/Escalate actions name the specific program officer being notified"
+    ],
+    incumbents:"PowerSchool, Frontline Education, Tyler Technologies",
+    friction:"SIS/finance platforms run the district's core data but don't carry a compliance prompt library spanning federal grants, tax-exempt status, bond compliance, and cybersecurity in a single desk.",
+    edge:"One operator screen replacing what would otherwise be several compliance specialists' worth of domain-specific tooling.",
+    smb:4000, mid:15000, ent:60000,
+    samples:[
+      {label:"Single district", blurb:"One district, one program officer relationship", recoverable:3800},
+      {label:"County-wide consortium", blurb:"Multiple districts, shared grant/audit exposure", recoverable:14500},
+      {label:"State-level education agency", blurb:"Statewide compliance desk, ESSER/SEFA at scale", recoverable:58000}
+    ]
+  },
+  {
+    id:"insurance", name:"Insurance", status:"beta", rate:0.12,
+    chain:["War Room","Strategist","Executive Portal"],
+    features:[
+      "RUN STRATEGIST CHAIN is a genuinely sequential pipeline — claims triage → coverage analysis → reserve recommendation, each step feeding the next",
+      "Fire 6 engines together in the war room before escalation"
+    ],
+    incumbents:"Guidewire, Duck Creek",
+    friction:"Core policy/claims systems are heavy, long-implementation platforms; standing up a claims-triage-to-reserve pipeline inside them is a multi-quarter IT project.",
+    edge:"A chained triage-to-reserve recommendation an operator can run same-session, without a core-system migration.",
+    smb:5000, mid:22000, ent:95000,
+    samples:[
+      {label:"Regional MGA", blurb:"Small book, occasional triage-to-reserve runs", recoverable:5200},
+      {label:"Mid-size carrier", blurb:"Steady claims volume across a few lines", recoverable:24000},
+      {label:"National carrier", blurb:"High claims volume, frequent reserve escalations", recoverable:98000}
+    ]
+  },
+  {
+    id:"rcm-os", name:"RCM-OS (standalone)", status:"beta", rate:0.12,
+    chain:["Standalone — no relay chain"],
+    features:[
+      "GL-reconciliation simulation tool living under the FinOps suite",
+      "Companion how-to and presentation pages ship alongside it",
+      "Explicitly does not follow the War Room → Strategist → Executive Portal pattern — no escalation chain, no relay, no client-package export"
+    ],
+    incumbents:"Waystar, Change Healthcare / Optum (same category as Healthcare RCM, different tool)",
+    friction:"Standalone reconciliation tools from RCM vendors are usually bundled into a much larger, harder-to-buy suite.",
+    edge:"A lighter-weight entry point into the RCM category — priced at the beta rate on purpose, since it's the least architecturally mature item in this ledger.",
+    smb:5000, mid:20000, ent:90000,
+    samples:[
+      {label:"Single facility GL recon", blurb:"One facility, periodic reconciliation runs", recoverable:4800},
+      {label:"Multi-facility health system", blurb:"Several facilities, recurring recon backlog", recoverable:19000},
+      {label:"National RCM vendor client", blurb:"High-volume recon across many client accounts", recoverable:85000}
+    ]
+  },
+  {
+    id:"finops", name:"FinOps", status:"beta", rate:0.12,
+    chain:["War Room","Strategist","Executive Portal"],
+    features:[
+      "Two separate engine stacks: 6 in the war room for GL/AP posture, 4 in the strategist for document-level analysis",
+      "Relay-source chips let the strategist choose which upstream session (exec vs war room) feeds the report",
+      "Log-approvals flow relays straight to the executive layer"
+    ],
+    incumbents:"Ramp, Brex, Bill.com, NetSuite",
+    friction:"Modern spend-management tools automate expense/AP capture well but don't pair that with a GL-reconciliation strategist and a document-analysis engine in the same operator chain.",
+    edge:"Dual engine stacks feeding one relay-aware strategist — an operator isn't stuck choosing between a spend tool and a reconciliation tool.",
+    smb:4000, mid:18000, ent:75000,
+    samples:[
+      {label:"Growth-stage startup", blurb:"Small finance team, light AP/GL volume", recoverable:3900},
+      {label:"Mid-market company", blurb:"Established finance org, regular document-level analysis", recoverable:17500},
+      {label:"Enterprise finance org", blurb:"High transaction volume, multi-entity GL posture", recoverable:72000}
+    ]
+  },
+  {
+    id:"hotelops", name:"HotelOps", status:"beta", rate:0.12,
+    chain:["War Room","Strategist","Executive Portal"],
+    features:[
+      "IoT sensor import is a genuine preview-then-commit flow, not a one-click black box",
+      "Exec portal export carries real financials, maintenance/compliance/Airbnb risk, and portfolio data as a passthrough"
+    ],
+    incumbents:"Cloudbeds, StayNTouch, Mews",
+    friction:"Hotel PMS platforms manage bookings and front-desk operations but don't pair that with an Airbnb/OTA risk exec-portal or a preview-then-commit IoT maintenance import.",
+    edge:"The preview-then-commit IoT flow gives an operator a real check-before-you-commit step most PMS integrations skip.",
+    smb:3500, mid:14000, ent:55000,
+    samples:[
+      {label:"Boutique property", blurb:"Single property, light IoT/maintenance volume", recoverable:3400},
+      {label:"Regional hotel group (12 properties)", blurb:"Multiple properties, active Airbnb/OTA risk exposure", recoverable:13800},
+      {label:"National hospitality brand", blurb:"Large portfolio, high maintenance/compliance volume", recoverable:52000}
+    ]
+  },
+  {
+    id:"legal", name:"Legal", status:"beta", rate:0.12,
+    chain:["War Room","Case Strategist","Chief Strategist","Executive Portal"],
+    features:[
+      "Only vertical with two altitudes of strategist — a single case escalates to the case strategist, portfolio-wide legal risk escalates to the chief",
+      "Litigation Node surfaces procedural risk, venue analysis, and motion sequencing once damages figures are entered",
+      "APPROVE is tied to a named, audit-logged action (\"Discovery Expansion\"), not a generic status flip"
+    ],
+    incumbents:"Clio, MyCase, Litera",
+    friction:"Practice-management tools handle billing, calendars, and documents, but don't escalate a single case up two altitudes to portfolio-level risk with named, audit-logged approvals.",
+    edge:"Named approval actions and a two-tier escalation chain built for firms that need both case-level and portfolio-level decisions in one platform.",
+    smb:3000, mid:12000, ent:50000,
+    samples:[
+      {label:"Solo/small firm", blurb:"Handful of active cases, occasional escalation", recoverable:2900},
+      {label:"Mid-size litigation firm", blurb:"Steady case load, regular discovery-expansion approvals", recoverable:11500},
+      {label:"AmLaw-tier firm", blurb:"Portfolio-wide legal risk, frequent chief-strategist escalations", recoverable:48000}
+    ]
+  },
+  {
+    id:"bpo", name:"BPO (general ops)", status:"beta", rate:0.12,
+    chain:["War Room","Strategist","Executive Portal","+Client Portal"],
+    features:[
+      "Executive brief exports as a real text-file report pulling resolution audit and cross-vertical supervisor rollup — footer states \"nothing here is re-derived or estimated at export time\"",
+      "Client Admin creates one-time access codes and links a client login to a cross-vertical Member, switching their view from BPO-only to full cross-vertical rollup",
+      "Real external client portal backed by live endpoints — rollup, document list, document download — gated to that client's own data only",
+      "Slack notification on case resolution, off by default, non-fatal if it fails"
+    ],
+    incumbents:"Traditional BPO/MSP delivery (Infosys BPM, TCS, Cognizant) — headcount-scaled labor, not software",
+    friction:"Traditional BPO pricing scales with headcount and manual case handling; there's usually no client-facing self-serve portal with live document access.",
+    edge:"Software-governed case work with a real client portal — the differentiator already in use in outreach to the larger BPO/MSP firms.",
+    smb:3000, mid:12000, ent:50000,
+    samples:[
+      {label:"Single-client BPO desk", blurb:"One client, moderate case-resolution volume", recoverable:2900},
+      {label:"Multi-client BPO shop", blurb:"Several clients, active cross-vertical rollup use", recoverable:11800},
+      {label:"Enterprise MSP contract", blurb:"Large client roster, full client-portal usage", recoverable:49000}
+    ]
+  }
+];
+
+const fmt = n => "$" + Math.round(n).toLocaleString("en-US");
+const fmtPct = r => (r*100).toFixed(0) + "%";
+
+function build(){
+  const cardsEl = document.getElementById("cards");
+  const navEl = document.getElementById("index-bar");
+
+  const ranked = [...DATA].sort((a,b)=>{
+    const blendA = a.smb*0.5 + a.mid*0.35 + a.ent*0.15;
+    const blendB = b.smb*0.5 + b.mid*0.35 + b.ent*0.15;
+    return blendA*a.rate - blendB*b.rate < 0 ? 1 : -1;
+  }).map(v=>({
+    ...v,
+    smbVal:v.smb*v.rate, midVal:v.mid*v.rate, entVal:v.ent*v.rate,
+    blended:(v.smb*0.5+v.mid*0.35+v.ent*0.15)*v.rate
+  }));
+
+  let totalBlend=0, certified=0, beta=0;
+  ranked.forEach(v=>{
+    totalBlend += v.blended;
+    if(v.status==="certified") certified++; else beta++;
+  });
+
+  document.getElementById("stat-blend").textContent = fmt(totalBlend) + "/mo";
+  document.getElementById("stat-annual").textContent = fmt(totalBlend*12) + "/yr";
+  document.getElementById("stat-certified").textContent = certified;
+  document.getElementById("stat-beta").textContent = beta;
+
+  ranked.forEach((v,i)=>{
+    const rank = String(i+1).padStart(2,"0");
+    navEl.insertAdjacentHTML("beforeend", `<a href="#${v.id}">${rank} · ${v.name}</a>`);
+
+    const chainHtml = v.chain.map((n,idx)=>
+      `<span class="node">${n}</span>${idx<v.chain.length-1?'<span class="arrow">→</span>':''}`
+    ).join("");
+
+    cardsEl.insertAdjacentHTML("beforeend", `
+      <section class="card" id="${v.id}" data-status="${v.status}">
+        <div class="card-head">
+          <div>
+            <div class="rank mono">RANK ${rank} · BLENDED ${fmt(v.blended)}/MO</div>
+            <h2>${v.name}</h2>
+            <div class="chain">${chainHtml}</div>
+          </div>
+          <div class="stamp ${v.status}">${v.status==="certified" ? "Level-C Certified" : "Beta · Not Wired"}</div>
+        </div>
+        <div class="card-body">
+          <div class="col">
+            <h3>What's actually built</h3>
+            <ul class="feat">${v.features.map(f=>`<li>${f}</li>`).join("")}</ul>
+          </div>
+          <div class="col">
+            <h3>Vs. market</h3>
+            <div class="market-row incumbents">
+              <div class="k">Incumbents</div><div class="v">${v.incumbents}</div>
+            </div>
+            <div class="market-row friction">
+              <div class="k">Typical friction</div><div class="v">${v.friction}</div>
+            </div>
+            <div class="market-row edge">
+              <div class="k">TSM edge</div><div class="v">${v.edge}</div>
+            </div>
+          </div>
+        </div>
+        <div class="ledger">
+          <h3>Monthly value ledger — ${fmtPct(v.rate)} commission on recoveries</h3>
+          <table class="value">
+            <thead>
+              <tr><th>Tier</th><th>Est. Recoverable</th><th>Rate</th><th>Monthly Value</th></tr>
+            </thead>
+            <tbody>
+              <tr class="${v.status==='beta'?'beta-row':''}">
+                <td>SMB / single-location</td><td>${fmt(v.smb)}</td><td class="rate">${fmtPct(v.rate)}</td><td>${fmt(v.smbVal)}</td>
+              </tr>
+              <tr class="${v.status==='beta'?'beta-row':''}">
+                <td>Mid-market</td><td>${fmt(v.mid)}</td><td class="rate">${fmtPct(v.rate)}</td><td>${fmt(v.midVal)}</td>
+              </tr>
+              <tr class="${v.status==='beta'?'beta-row':''}">
+                <td>Enterprise</td><td>${fmt(v.ent)}</td><td class="rate">${fmtPct(v.rate)}</td><td>${fmt(v.entVal)}</td>
+              </tr>
+              <tr class="${v.status==='beta'?'beta-row':''}">
+                <td><strong>Blended (mix-weighted)</strong></td><td>—</td><td class="rate">—</td><td class="blend">${fmt(v.blended)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="samples">
+          <h3>Try a sample client — what your ${fmtPct(v.rate)} would bring</h3>
+          <div class="sample-btns" id="samplebtns-${v.id}">
+            ${v.samples.map((s,si)=>`
+              <button class="sample-btn" data-vid="${v.id}" data-si="${si}">
+                <div class="s-label">${s.label}</div>
+                <div class="s-blurb">${s.blurb}</div>
+              </button>
+            `).join("")}
+          </div>
+          <div class="sample-result" id="sampleresult-${v.id}">
+            <span>Pick a sample above to see the payout.</span>
+          </div>
+        </div>
+      </section>
+    `);
+  });
+
+  // wire up sample-scenario buttons
+  const rateById = {};
+  ranked.forEach(v => rateById[v.id] = {rate:v.rate, samples:v.samples});
+
+  cardsEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".sample-btn");
+    if(!btn) return;
+    const vid = btn.dataset.vid;
+    const si = Number(btn.dataset.si);
+    const {rate, samples} = rateById[vid];
+    const sample = samples[si];
+    const payout = sample.recoverable * rate;
+
+    // toggle active state within this vertical's button group
+    document.querySelectorAll(`#samplebtns-${vid} .sample-btn`).forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+
+    document.getElementById(`sampleresult-${vid}`).innerHTML = `
+      <span>${sample.label} — est. recoverable ${fmt(sample.recoverable)}/mo at ${fmtPct(rate)}</span>
+      <span class="payout">${fmt(payout)}/mo</span>
+    `;
+  });
+}
+build();
+</script>
+</body>
+</html>

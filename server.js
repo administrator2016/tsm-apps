@@ -3838,8 +3838,22 @@ app.post('/api/insurance/query', async (req, res) => {
   const { system, message, maxTokens, question, query } = req.body || {};
   const msg = message || question || query || '';
   if (!msg) return res.status(400).json({ ok: false, error: 'message required' });
-  try { const answer = await groqChat(system || SP.insurance, msg, maxTokens || 600); recordVerticalMemory('insurance', msg, answer); res.json({ ok: true, answer }); }
-  catch (e) { console.error('GROQ ERROR:', e.message); res.status(500).json({ ok: false, error: e.message, detail: e.stack }); }
+  try {
+    const answer = await groqChat(system || SP.insurance, msg, maxTokens || 600);
+    recordVerticalMemory('insurance', msg, answer);
+    res.json({ ok: true, answer });
+  } catch (e) {
+    console.error('GROQ ERROR:', e.message);
+    const isCapacityIssue = /rate.?limit|429|All Groq models returned empty/i.test(e.message);
+    if (isCapacityIssue) {
+      return res.json({
+        ok: true,
+        degraded: true,
+        answer: `[Live AI temporarily unavailable — Groq capacity limit reached. This is a transient issue, not a data or account problem; please retry shortly.]\n\nRequest: "${msg.slice(0, 200)}"`,
+      });
+    }
+    res.status(500).json({ ok: false, error: e.message, detail: e.stack });
+  }
 });
 
 app.post('/api/insurance/quiz', async (req, res) => {
@@ -7034,11 +7048,23 @@ app.post('/api/exec-portal/:vertical/decide', requireAnyAuth, async (req, res) =
   const gate = EXEC_PORTAL_HITL_GATES[vertical];
   if (!gate) return res.status(404).json({ ok: false, error: `Unknown vertical: ${vertical}` });
 
-  const { index, verdict, text, actor, meta, tenantId } = req.body || {};
+  const { index, verdict, text, meta, tenantId } = req.body || {};
   if (index === undefined || index === null) return res.status(400).json({ ok: false, error: 'index required' });
   if (!['approved', 'rejected', 'hold'].includes(verdict)) {
     return res.status(400).json({ ok: false, error: "verdict must be 'approved', 'rejected', or 'hold'" });
   }
+
+  // Identity comes from the verified session (req.tsmSession, set by
+  // requireAnyAuth), never from the request body. The endpoint previously
+  // trusted a client-supplied `actor` field with a fallback to the literal
+  // string 'Executive' — any authenticated session (including a client-role
+  // one) could attribute a decision to any name, and approved decisions
+  // auto-relay into the BPO ledger below, so a spoofed actor propagated
+  // into real downstream work items.
+  const actor = req.tsmSession.label
+    || req.tsmSession.staffId
+    || (req.tsmSession.role === 'admin' ? 'Admin' : null)
+    || 'Unknown';
 
   const entityId = `exec-${vertical}-${index}`;
 
@@ -7055,7 +7081,7 @@ app.post('/api/exec-portal/:vertical/decide', requireAnyAuth, async (req, res) =
     entityId,
     entityType: 'exec-decision',
     decision: verdict === 'approved' ? 'APPROVED' : 'REJECTED',
-    actor: actor || 'Executive',
+    actor,
     meta: Object.assign({ text: text || null, vertical, index }, meta || {})
   });
 
@@ -7096,7 +7122,7 @@ app.post('/api/exec-portal/:vertical/decide', requireAnyAuth, async (req, res) =
         status: 'open',
         payload: { text: text || null, sourceVertical: vertical, sourceIndex: index, meta: meta || {} },
       },
-      actor || 'Executive'
+      actor
     ).catch(err => console.warn(`[bpo-relay] failed to relay ${vertical} decision ${index} into BPO ledger:`, err.message));
   }
 

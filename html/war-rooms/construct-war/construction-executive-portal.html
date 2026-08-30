@@ -1199,15 +1199,11 @@ document.getElementById("execCompliance").textContent=compliance;
       bus.emit('EXECUTIVE_APPROVED', { vertical, decision, ts: Date.now() });
     }
   }
-  // Hook into any approve button
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('[id*="approve"],[class*="approve"],[data-action="approve"]').forEach(btn => {
-      btn.addEventListener('click', function() {
-        _emitApproval({ approved: true, approvedBy: 'executive', ts: Date.now() });
-      });
-    });
-  });
-  // Expose globally so manual calls work too
+  // No automatic click-binding here — that previously matched ANY element
+  // with "approve" in its id/class/data-action, which is how this ended up
+  // hardcoding approvedBy: 'executive' with no real identity check. The
+  // real approve action (tsmConfirmExec, below) now calls window.TSMApprove
+  // directly with identity fetched from /api/auth/status instead.
   window.TSMApprove = _emitApproval;
 })();
 </script>
@@ -1652,12 +1648,31 @@ function tsmConfirmExec(){
   // Also record to the real server-side HITL decision log (server.js:
   // /api/exec-portal/construction/decide), same pattern as Mortgage/PM
   // Copilot. This button has no reject/escalate counterpart, so an
-  // AUTHORIZE click is always an approval.
+  // AUTHORIZE click is always an approval. server.js's /decide handler now
+  // derives the real actor from the authenticated session (req.tsmSession)
+  // instead of trusting a client-supplied actor field, so we no longer
+  // send one here.
   fetch('/api/exec-portal/construction/decide', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ index: Date.now(), verdict: 'approved', text: 'Executive authorization', actor: 'Executive', tenantId: (typeof TSMActiveMember !== 'undefined' && TSMActiveMember) ? TSMActiveMember.getId() : null })
+    body: JSON.stringify({ index: Date.now(), verdict: 'approved', text: 'Executive authorization', tenantId: (typeof TSMActiveMember !== 'undefined' && TSMActiveMember) ? TSMActiveMember.getId() : null })
   }).catch(function(){ /* offline/unreachable -- localStorage marker above still set */ });
+
+  // Also emit to the client-side event bus (best-effort, non-blocking) so
+  // the in-page audit log / TSMState update carries real identity. This is
+  // a separate channel from the server-side decide call above, consumed by
+  // core/tsm-event-bus.js's EXECUTIVE_APPROVED listener.
+  fetch('/api/auth/status').then(function(r){ return r.ok ? r.json() : null; }).then(function(me){
+    if (me && me.authenticated && window.TSMApprove) {
+      window.TSMApprove({
+        approved: true,
+        approvedBy: me.staffId || me.clientId || 'unknown',
+        approvedByName: me.label || null,
+        approvedByRole: me.role,
+        ts: Date.now()
+      });
+    }
+  }).catch(function(){ /* best-effort, non-fatal */ });
 }
 </script>
 <!-- TSM KERNEL ENGINE -->

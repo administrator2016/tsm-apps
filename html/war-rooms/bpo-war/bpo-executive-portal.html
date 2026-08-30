@@ -1566,6 +1566,25 @@ function dcAct(type) {
   entry.innerHTML = '<span>✓</span>' + labels[type] + ' · ' + new Date().toLocaleTimeString('en-US',{hour12:false});
   log.prepend(entry);
   if (window.TSMMemory) TSMMemory.timeline(labels[type]);
+
+  // 'approve' specifically also emits to the client-side event bus
+  // (best-effort, non-blocking) with real identity from /api/auth/status,
+  // so the in-page audit log / TSMState update reflects who actually
+  // clicked it, not a hardcoded string. assign/notify aren't approval
+  // actions and don't emit this event.
+  if (type === 'approve') {
+    fetch('/api/auth/status').then(function(r){ return r.ok ? r.json() : null; }).then(function(me){
+      if (me && me.authenticated && window.TSMApprove) {
+        window.TSMApprove({
+          approved: true,
+          approvedBy: me.staffId || me.clientId || 'unknown',
+          approvedByName: me.label || null,
+          approvedByRole: me.role,
+          ts: Date.now()
+        });
+      }
+    }).catch(function(){ /* best-effort, non-fatal */ });
+  }
 }
 
 function initThreeBlocks(data) {
@@ -1635,15 +1654,11 @@ function buildExplainability(data) {
       bus.emit('EXECUTIVE_APPROVED', { vertical, decision, ts: Date.now() });
     }
   }
-  // Hook into any approve button
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('[id*="approve"],[class*="approve"],[data-action="approve"]').forEach(btn => {
-      btn.addEventListener('click', function() {
-        _emitApproval({ approved: true, approvedBy: 'executive', ts: Date.now() });
-      });
-    });
-  });
-  // Expose globally so manual calls work too
+  // No automatic click-binding here — that previously matched ANY element
+  // with "approve" in its id/class/data-action, which is how this ended up
+  // hardcoding approvedBy: 'executive' with no real identity check. The
+  // real approve action (dcAct('approve'), below) now calls
+  // window.TSMApprove directly with identity fetched from /api/auth/status.
   window.TSMApprove = _emitApproval;
 })();
 </script>

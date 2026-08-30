@@ -1,57 +1,150 @@
-// scripts/test-ledger-connection.js
-require('dotenv').config();
-const ledger = require('../server/services/tsm-ledger-service');
+'use strict';
 
-const TEST_PROPERTY_ID = '__connection_test__';
+require('dotenv').config();
+
+const ledger = require('../server/tsm-ledger-service');
+
+const TEST_MISSION_ID = '__ledger_connection_test__';
 
 async function main() {
-  console.log('1. Posting a debit entry...');
-  const debitId = await ledger.postJournalEntry({
-    propertyId: TEST_PROPERTY_ID,
-    account: 'Construction Expense',
-    side: 'debit',
-    amount: 100,
-    memo: 'connection test debit',
-  });
-  console.log('   OK, doc id:', debitId);
+  console.log('=== CANONICAL LEDGER CONNECTION TEST ===');
 
-  console.log('2. Reading ledger back...');
-  const entries = await ledger.getLedger(TEST_PROPERTY_ID);
-  if (entries.length !== 1) throw new Error(`Expected 1 entry, got ${entries.length}`);
-  console.log('   OK, entry:', entries[0]);
+  console.log('\n1. Creating test mission...');
+  const mission = await ledger.paResetMission(
+    TEST_MISSION_ID,
+    {
+      property: 'Connection Test Property',
+      period: '2026-08',
+      budget: 1000,
+      actual: 0,
+    }
+  );
 
-  console.log('3. Checking balance (should be false, only 1 debit posted)...');
-  const balancedBefore = await ledger.isBalanced(TEST_PROPERTY_ID);
-  if (balancedBefore !== false) throw new Error('Expected unbalanced, got balanced');
-  console.log('   OK, unbalanced as expected');
+  if (!mission || mission.missionId !== TEST_MISSION_ID) {
+    throw new Error('Failed to create test mission');
+  }
 
-  console.log('4. Posting matching credit...');
-  await ledger.postJournalEntry({
-    propertyId: TEST_PROPERTY_ID,
-    account: 'Cash',
-    side: 'credit',
-    amount: 100,
-    memo: 'connection test credit',
-  });
+  console.log('   OK:', mission);
 
-  console.log('5. Checking balance again (should be true now)...');
-  const balancedAfter = await ledger.isBalanced(TEST_PROPERTY_ID);
-  if (balancedAfter !== true) throw new Error('Expected balanced, got unbalanced');
-  console.log('   OK, balanced');
+  console.log('\n2. Reading mission back...');
+  const loaded = await ledger.paGetMission(TEST_MISSION_ID);
 
-  console.log('6. Cleaning up test data...');
+  if (!loaded || loaded.missionId !== TEST_MISSION_ID) {
+    throw new Error('Failed to read test mission');
+  }
+
+  console.log('   OK:', loaded);
+
+  console.log('\n3. Updating budget...');
+  const updatedBudget = await ledger.paUpdateBudget(
+    TEST_MISSION_ID,
+    2500
+  );
+
+  if (!updatedBudget || Number(updatedBudget.budget) !== 2500) {
+    throw new Error('Budget update failed');
+  }
+
+  console.log('   OK: budget =', updatedBudget.budget);
+
+  console.log('\n4. Adjusting actual...');
+  const updatedActual = await ledger.paAdjustActual(
+    TEST_MISSION_ID,
+    400
+  );
+
+  if (!updatedActual || Number(updatedActual.actual) !== 400) {
+    throw new Error('Actual adjustment failed');
+  }
+
+  console.log('   OK: actual =', updatedActual.actual);
+
+  console.log('\n5. Posting GL debit...');
+  const debit = await ledger.paPostGlEntry(
+    TEST_MISSION_ID,
+    {
+      date: '2026-08-28',
+      account: 'Construction Expense',
+      type: 'debit',
+      amount: 400,
+      description: 'Canonical ledger connection test',
+    }
+  );
+
+  if (!debit || debit.missionId !== TEST_MISSION_ID) {
+    throw new Error('GL debit failed');
+  }
+
+  console.log('   OK:', debit);
+
+  console.log('\n6. Posting GL credit...');
+  const credit = await ledger.paPostGlEntry(
+    TEST_MISSION_ID,
+    {
+      date: '2026-08-28',
+      account: 'Cash',
+      type: 'credit',
+      amount: 400,
+      description: 'Canonical ledger connection test',
+    }
+  );
+
+  if (!credit || credit.missionId !== TEST_MISSION_ID) {
+    throw new Error('GL credit failed');
+  }
+
+  console.log('   OK:', credit);
+
+  console.log('\n7. Reading GL entries...');
+  const entries = await ledger.paListGlEntries(TEST_MISSION_ID);
+
+  if (entries.length !== 2) {
+    throw new Error(`Expected 2 GL entries, got ${entries.length}`);
+  }
+
+  console.log('   OK: found', entries.length, 'entries');
+
+  console.log('\n8. Cleaning up test mission...');
+  await ledger.paResetMission(
+    TEST_MISSION_ID,
+    {
+      property: 'Connection Test Property',
+      period: '2026-08',
+      budget: 1000,
+      actual: 0,
+    }
+  );
+
+  // paResetMission recreates the mission, so remove it explicitly.
   const db = await ledger.getDb();
-  const result = await db.collection('gl_entries').deleteMany({ propertyId: TEST_PROPERTY_ID });
-  console.log('   OK, cleaned up', result.deletedCount, 'test docs');
+  await db.collection('pa_gl_entries').deleteMany({
+    missionId: TEST_MISSION_ID,
+  });
+  await db.collection('pa_ap_invoices').deleteMany({
+    missionId: TEST_MISSION_ID,
+  });
+  await db.collection('pa_missions').deleteOne({
+    missionId: TEST_MISSION_ID,
+  });
 
-  console.log('\nALL CHECKS PASSED — MongoDB-compatible Firestore read/write confirmed working.');
-  await ledger.closeConnection();
-  process.exit(0);
+  console.log('   OK: test data removed');
+
+  await ledger.close();
+
+  console.log('\n==========================================');
+  console.log('ALL CANONICAL LEDGER CHECKS PASSED');
+  console.log('==========================================');
 }
 
 main().catch(async (err) => {
-  console.error('\nCONNECTION TEST FAILED:', err.message);
+  console.error('\n==========================================');
+  console.error('CANONICAL LEDGER TEST FAILED');
+  console.error('==========================================');
   console.error(err);
-  await ledger.closeConnection();
+
+  try {
+    await ledger.close();
+  } catch (_) {}
+
   process.exit(1);
 });
