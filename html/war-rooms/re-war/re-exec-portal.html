@@ -1927,7 +1927,7 @@ function showPanel(id) {
 function goto(url) { window.location.href = url; }
 
 // ─── AI GENERATION (no streaming — robust fetch) ─────────
-async function callAI(prompt, outputEl, loadingMsg = 'GENERATING ANALYSIS...') {
+async function callAI(prompt, outputEl, loadingMsg = 'GENERATING ANALYSIS...', isSynthetic = false) {
   state.modulesRun++;
   document.getElementById('modules-run').textContent = state.modulesRun;
 
@@ -1951,8 +1951,17 @@ async function callAI(prompt, outputEl, loadingMsg = 'GENERATING ANALYSIS...') {
 
     if (!text) throw new Error('Empty response');
 
-    // Format output
-    outputEl.innerHTML = formatOutput(text);
+    // Format output. When no real case data was loaded, the model was
+    // asked to generate an illustrative example instead — that must be
+    // visibly labeled in the UI itself, not just implied by the prompt,
+    // so it can't be mistaken for analysis of a real case in front of
+    // anyone viewing this screen.
+    const syntheticBanner = isSynthetic ? `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;margin-bottom:10px;background:rgba(255,171,0,0.12);border:1px solid var(--amber,#ffab00);border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.5px;color:var(--amber,#ffab00);">
+        <span style="font-size:13px;">&#9888;</span>
+        <span><strong>ILLUSTRATIVE EXAMPLE — NOT REAL CASE DATA.</strong> No live case was loaded; this is a representative sample for demonstration only.</span>
+      </div>` : '';
+    outputEl.innerHTML = syntheticBanner + formatOutput(text);
     state.briefContent = text;
     return text;
 
@@ -2033,7 +2042,7 @@ async function generateBrief(mode = 'standard') {
   const prompt = mode === 'rescue'
     ? `You are an executive AI for a real estate and mortgage company. Generate a DEAL RESCUE executive brief. Format with clear sections: CRITICAL DEALS AT RISK, IMMEDIATE ACTIONS (24-48hr), COMPLIANCE EXPOSURE, RECOMMENDED RESCUE STRATEGY. Be specific with dollar amounts, loan numbers, and timelines.${ctx ? ' Base this entirely on the following real case data, citing specific figures and details from it: ' + ctx : ' No live case data is loaded — generate a representative illustrative example: Pipeline $18.4M, 22 loans, 68% pull-through, 5 closings this week. Critical issues: Appraisal gap 123 Maple St ($26K gap), TRID violation Loan #2847 ($1,247 cure), 2 AML holds, REO portfolio $2.1M. Phoenix market.'}`
     : `You are an executive AI for a real estate and mortgage company. Generate a concise EXECUTIVE INTELLIGENCE BRIEF. Sections: PORTFOLIO OVERVIEW, KEY PERFORMANCE INDICATORS, TOP RISKS (3), STRATEGIC RECOMMENDATIONS (3), 30-DAY OUTLOOK. Be specific with metrics and dollar amounts.${ctx ? ' Base this entirely on the following real case data, citing specific figures and details from it: ' + ctx : ' No live case data is loaded — generate a representative illustrative example: Pipeline $18.4M, 22 active loans, 68% pull-through (target 75%), 5 closings this week ($2.3M), REO portfolio $2.1M (6 assets), $47K risk exposure (3 violations), Phoenix AZ market focus.'}`;
-  await callAI(prompt, briefText, 'LOADING EXECUTIVE BRIEF...');
+  await callAI(prompt, briefText, 'LOADING EXECUTIVE BRIEF...', !ctx);
 }
 
 async function generateActions() {
@@ -2041,7 +2050,7 @@ async function generateActions() {
   const ctx = buildRelayContext();
   await callAI(
     `You are a real estate and mortgage executive AI. Generate a prioritized ACTION ITEMS list with 5-7 items. Format each as: [PRIORITY P1/P2/P3] | [TITLE] | [DETAIL with specific steps] | [OWNER].${ctx ? ' Base this entirely on the following real case data, citing specific figures and details from it: ' + ctx : ' No live case data is loaded — generate a representative illustrative example: TRID cure Loan #2847 $1,247 deadline 18hrs, appraisal gap 123 Maple St $26K seller negotiation needed, REO 6 assets $2.1M need disposition plan, pull-through 68% vs 75% target, 2 AML compliance holds, Phoenix market BPO review needed.'}`,
-    el, 'GENERATING ACTION ITEMS...'
+    el, 'GENERATING ACTION ITEMS...', !ctx
   );
 }
 
@@ -2050,7 +2059,7 @@ async function generatePipeline() {
   const ctx = buildRelayContext();
   await callAI(
     `You are a real estate mortgage pipeline analyst. Analyze this pipeline and provide: PIPELINE HEALTH SCORE, TOP 3 AT-RISK LOANS with specific rescue steps, PULL-THROUGH OPTIMIZATION recommendations, CLOSING FORECAST for next 30 days.${ctx ? ' Base this entirely on the following real case data, citing specific figures and details from it: ' + ctx : ' No live case data is loaded — generate a representative illustrative example: Pipeline $18.4M, 22 loans, Conv 42% / FHA 28% / VA 18% / DSCR 12%, overall pull-through 68%. Critical: 123 Maple St (appraisal gap), Loan #2847 (TRID), 2200 Sunrise DSCR (conditions pending).'}`,
-    el, 'ANALYZING PIPELINE...'
+    el, 'ANALYZING PIPELINE...', !ctx
   );
 }
 
@@ -2059,7 +2068,7 @@ async function generateBoard() {
   const ctx = buildRelayContext();
   await callAI(
     `You are a real estate executive AI preparing a BOARD REPORT. Generate a concise board-ready summary with: EXECUTIVE SUMMARY (2-3 sentences), FINANCIAL PERFORMANCE (key metrics), OPERATIONAL HIGHLIGHTS, RISK REGISTER (top 3), STRATEGIC INITIATIVES, Q3 OUTLOOK. Board audience only sees outcomes and decisions. Keep it executive-level only.${ctx ? ' Base this entirely on the following real case data, citing specific figures and details from it: ' + ctx : ' No live case data is loaded — generate a representative illustrative example: Pipeline $18.4M (+12% QoQ), 68% pull-through, $276K est revenue, REO $2.1M portfolio, 5 closings this week, Phoenix AZ market.'}`,
-    el, 'GENERATING BOARD REPORT...'
+    el, 'GENERATING BOARD REPORT...', !ctx
   );
 }
 
@@ -2068,7 +2077,7 @@ async function generateSnapshot() {
   const ctx = buildRelayContext();
   await callAI(
     `You are a real estate deal analyst. Generate a DEAL SNAPSHOT analysis for the active deals. For each: DEAL NAME, RISK LEVEL (HIGH/MEDIUM/LOW), STATUS, KEY ISSUE, RECOMMENDED ACTION. Be specific and actionable.${ctx ? ' Base this entirely on the following real case data, citing specific figures and details from it: ' + ctx : ' No live case data is loaded — generate a representative illustrative example for 5 deals: 1) 123 Maple St appraisal gap $26K, 2) Loan #2847 TRID violation, 3) REO 445 Pine Dr ready to list, 4) 2200 Sunrise DSCR conditions open, 5) 1010 Desert Rose VA on track.'}`,
-    el, 'ANALYZING DEALS...'
+    el, 'ANALYZING DEALS...', !ctx
   );
 }
 
@@ -2077,7 +2086,7 @@ async function generateCompliance() {
   const ctx = buildRelayContext();
   await callAI(
     `You are a real estate compliance officer AI. Run a COMPLIANCE SWEEP and generate findings with: VIOLATION SEVERITY, REGULATION (TRID/RESPA/AML/HMDA), SPECIFIC ISSUE, CURE STEPS, DEADLINE, DOLLAR EXPOSURE. Format as compliance report.${ctx ? ' Base this entirely on the following real case data, citing specific figures and details from it: ' + ctx : ' No live case data is loaded — generate a representative illustrative example: TRID CD tolerance Loan #2847 $1,247, AML beneficial ownership 2 loans pending, RESPA referral relationships 3 flagged for annual review, Title lien 445 Pine Dr $12,400 resolved.'}`,
-    el, 'RUNNING COMPLIANCE SWEEP...'
+    el, 'RUNNING COMPLIANCE SWEEP...', !ctx
   );
 }
 
@@ -2086,7 +2095,7 @@ async function generateRescue() {
   const ctx = buildRelayContext();
   await callAI(
     `You are a real estate deal rescue specialist AI. Generate a DEAL RESCUE PACK for at-risk transactions. Include: TRIAGE (rank deals by rescue priority), RESCUE PLAYBOOK for each critical deal with step-by-step actions, TIMELINE (next 24hr, 48hr, 72hr), ESCALATION TRIGGERS, SUCCESS METRICS. Be tactical and specific.${ctx ? ' Base this entirely on the following real case data, citing specific figures and details from it: ' + ctx : ' No live case data is loaded — generate a representative illustrative example: 1) 123 Maple St appraisal gap $26K - seller negotiation needed, 2) Loan #2847 TRID cure 18hr window $1,247, 3) 2 AML holds blocking closing, 4) Pull-through at 68% vs 75% target with 3 loans at risk.'}`,
-    el, 'LAUNCHING RESCUE PROTOCOLS...'
+    el, 'LAUNCHING RESCUE PROTOCOLS...', !ctx
   );
 }
 
@@ -2095,7 +2104,7 @@ async function generateREO() {
   const ctx = buildRelayContext();
   await callAI(
     `You are a real estate REO disposition specialist AI. Generate a 60-DAY REO DISPOSITION PLAN. Include: ASSET CLASSIFICATION (retail vs investor vs distressed), DISPOSITION STRATEGY by asset type, WEEK-BY-WEEK TIMELINE (Days 1-60), PRICING STRATEGY, BPO METHODOLOGY, REVENUE OPTIMIZATION.${ctx ? ' Base this entirely on the following real case data, citing specific figures and details from it: ' + ctx : ' No live case data is loaded — generate a representative illustrative example: portfolio of 6 assets ($2.1M total). MLS Retail nets $1.85M, Investor Direct $1.68M, Bulk $1.37M. Phoenix AZ market - DOM trending up. Recommended: MLS for 4 assets, Investor Direct for 2 distressed. Net uplift vs bulk: $480K.'}`,
-    el, 'GENERATING REO PLAN...'
+    el, 'GENERATING REO PLAN...', !ctx
   );
 }
 
@@ -2104,7 +2113,7 @@ async function generateMortgage() {
   const ctx = buildRelayContext();
   await callAI(
     `You are a mortgage portfolio analyst AI. Generate a MORTGAGE POSITION ANALYSIS with: PRODUCT MIX ASSESSMENT, PULL-THROUGH BY PRODUCT, VOLUME OPTIMIZATION recommendations, RATE ENVIRONMENT impact, INVESTOR/DSCR pipeline risk assessment, 90-DAY ORIGINATION FORECAST. Provide specific loan officer and product mix recommendations.${ctx ? ' Base this entirely on the following real case data, citing specific figures and details from it: ' + ctx : ' No live case data is loaded — generate a representative illustrative example: Conv 42%/FHA 28%/VA 18%/DSCR 12%, pull-through VA 84%/FHA 74%/Conv 66%/DSCR 51%, total pipeline $18.4M, 22 loans, target pull-through 75% vs actual 68%, Phoenix market.'}`,
-    el, 'ANALYZING MORTGAGE POSITION...'
+    el, 'ANALYZING MORTGAGE POSITION...', !ctx
   );
 }
 
@@ -2144,7 +2153,7 @@ function exportBoard() {
   <script src="/core/tsm-kernel.js"></script>
   
 <script>
-/* TSM EXECUTIVE_APPROVED — Control Plane wiring */
+/* TSM EXECUTIVE_APPROVED — Control Plane wiring (identity-verified) */
 (function(){
   function _emitApproval(decision) {
     const bus = window.TSMBus || window.TSMEventBus;
@@ -2153,11 +2162,30 @@ function exportBoard() {
       bus.emit('EXECUTIVE_APPROVED', { vertical, decision, ts: Date.now() });
     }
   }
-  // Hook into any approve button
+  // Only elements explicitly opted in via data-tsm-approve — no substring
+  // matching on id/class, which could bind to unrelated buttons.
   document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('[id*="approve"],[class*="approve"],[data-action="approve"]').forEach(btn => {
-      btn.addEventListener('click', function() {
-        _emitApproval({ approved: true, approvedBy: 'executive', ts: Date.now() });
+    document.querySelectorAll('[data-tsm-approve="true"]').forEach(btn => {
+      btn.addEventListener('click', async function() {
+        let me;
+        try {
+          const res = await fetch('/api/auth/me');
+          if (!res.ok) throw new Error('not authenticated');
+          me = await res.json();
+        } catch {
+          alert('Cannot record approval: no authenticated session found. Please sign in again.');
+          return;
+        }
+        const label = btn.dataset.approveLabel || 'this item';
+        if (!confirm(`Confirm approval of ${label} as ${me.name} (${me.role})?`)) return;
+
+        _emitApproval({
+          approved: true,
+          approvedBy: me.id,
+          approvedByName: me.name,
+          approvedByRole: me.role,
+          ts: Date.now() // client-side; server should re-stamp on receipt if used for audit
+        });
       });
     });
   });
