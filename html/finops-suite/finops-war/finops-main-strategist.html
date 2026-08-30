@@ -982,8 +982,14 @@ const relayLabels = {
   exec:'Pulling from: Executive Portal — decisions queue',
   manual:'Manual input — no relay source'
 };
+// TSM FIX: these two strings used to be presented to the LLM as if they
+// were the live relay, unconditionally for 'exec' and racily (DOM-timing
+// dependent) for 'warroom'. They are now explicitly labeled DEMO/SAMPLE
+// fallbacks, only used when no real relay payload is available -- see
+// buildWarRoomRelayContext() below, which is what actually feeds the
+// prompt when live war-room data exists.
 const relayContexts = {
-  warroom:`WAR ROOM RELAY DATA:
+  warroom:`WAR ROOM RELAY DATA (DEMO/SAMPLE — no live War Room relay found this session):
 - Risk Score: 70/100 — 7 exceptions flagged
 - Financial Exposure: $91,800 – $112,200
 - Compliance Status: ★★ HIGH regulatory posture
@@ -998,7 +1004,7 @@ const relayContexts = {
 - CFO Items: YES — memo and sign-off required
 - War Room Engines: 0/6 complete (ready to fire)
 - ERA Batch: Relay received — review & authorize`,
-  exec:`EXECUTIVE PORTAL RELAY DATA:
+  exec:`EXECUTIVE PORTAL RELAY DATA (DEMO/SAMPLE — no live Executive Portal relay is wired into this page yet):
 - Decisions Required: 3 AUTHORIZE items pending
   · $44,200 — obtain missing documentation (Finance, 2026-03-15)
   · $29,400 — address LabCore Diagnostics vendor flags (Vendor Mgmt, 2026-03-18)
@@ -1010,6 +1016,36 @@ const relayContexts = {
   manual:`MANUAL STRATEGIST INPUT:
 Provide your own financial data context for BNCA synthesis. No relay source selected.`
 };
+
+// TSM FIX: builds the real War Room prompt context directly from
+// tsm_war_relay_finops-suite (all 6 engines, by label) instead of relying
+// on window.injectFinOpsContext() having already written "WAR ROOM
+// ANOMALY" into #stratOutput before generateReport() fires. That injection
+// path is a 600ms setTimeout race against the 2200ms auto-generate timer
+// and against a user manually clicking Generate early -- if the timing
+// lost the race, or injectFinOpsContext() threw for any reason (its own
+// try/catch swallows errors silently), the LLM prompt silently fell back
+// to the fully fabricated relayContexts.warroom string above with no
+// indication to the user. This reads the relay synchronously every time
+// the prompt is built, so real engine data reaches the model whenever it
+// exists, independent of DOM/timer state.
+const FINOPS_ENGINE_LABELS = [
+  'DOCUMENT INTEL', 'RISK CLASSIFIER', 'FINANCIAL IMPACT',
+  'RECOVERY STRATEGY', 'ANOMALY ADVISOR', 'NAVIGATOR'
+];
+function buildWarRoomRelayContext(){
+  try {
+    const raw = sessionStorage.getItem('tsm_war_relay_finops-suite') || localStorage.getItem('tsm_war_relay_finops-suite');
+    if (!raw) return null;
+    const brief = JSON.parse(raw);
+    const eo = brief.engineOutputs || [];
+    if (!eo.length || !eo.some(t => t && t.trim())) return null;
+    const engineBlock = FINOPS_ENGINE_LABELS.map((label, i) =>
+      `ENGINE 0${i + 1} — ${label}:\n${(eo[i] || 'Not available').slice(0, 500)}`
+    ).join('\n\n');
+    return `WAR ROOM RELAY DATA (live):\nDOCUMENT TYPE: ${brief.selectedDocType || 'Unknown'}\nRECEIVED: ${brief.timestamp ? new Date(brief.timestamp).toLocaleString() : '—'}\n\n${engineBlock}`;
+  } catch(e) { return null; }
+}
 function setRelaySource(src, btn){
   relaySource = src;
   document.querySelectorAll('.relay-chip').forEach(c=>c.classList.remove('active'));
@@ -1050,8 +1086,10 @@ async function callGroq(messages, onChunk){
 function buildStrategistPrompt(){
   let ctx = relayContexts[relaySource];
   if (relaySource === 'warroom') {
-    const live = document.getElementById('stratOutput')?.textContent || '';
-    if (live && live.includes('WAR ROOM ANOMALY')) ctx = live;
+    // TSM FIX: read the real relay directly rather than depending on the
+    // #stratOutput banner injection having already run (see
+    // buildWarRoomRelayContext() above for why that was unreliable).
+    ctx = buildWarRoomRelayContext() || ctx;
   }
   return `You are the TSM FinOps Main Strategist — a senior financial operations AI system synthesizing War Room and Executive Portal intelligence.
 
@@ -1581,10 +1619,14 @@ function showRelayToast(msg){
       relaySource='warroom';
 
       // Live-update ticker / relay bar / risk snapshot from real relay data
+      // TSM FIX: engineOutputs is a 0-indexed array ([0]=E1 ... [5]=E6), but
+      // this was reading [1]/[2]/[3] and labeling them e1/e2/e3 -- actually
+      // pulling E2/E3/E4's text into variables named for E1/E2/E3. Corrected
+      // to the real 0-based positions (E1=[0], E2=[1], E3=[2]).
       try {
-        const e1 = brief.engineOutputs?.[1] || '';
-        const e3 = brief.engineOutputs?.[3] || '';
-        const e2 = brief.engineOutputs?.[2] || '';
+        const e1 = brief.engineOutputs?.[0] || '';
+        const e2 = brief.engineOutputs?.[1] || '';
+        const e3 = brief.engineOutputs?.[2] || '';
         const riskM = (e1+' '+e3).match(/(?:FINANCIAL RISK SCORE|DOCUMENT RISK SCORE)[:\s]+(\d+)/i);
         const expM = e3.match(/TOTAL EXPOSURE[:\s]+([^\n]+)/i);
         const excM = e2.match(/EXCEPTION COUNT[:\s]+([^\n]+)/i);

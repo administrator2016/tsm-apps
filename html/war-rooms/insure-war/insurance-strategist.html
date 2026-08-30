@@ -426,7 +426,15 @@ ENGINE 04 — COMPLIANCE:
 ${(warRoomData.engines?.e4||'').slice(0,300)}
 
 ENGINE 05 — RECOVERY PLAN:
-${(warRoomData.engines?.e5||'').slice(0,400)}`;
+${(warRoomData.engines?.e5||'').slice(0,400)}
+
+ENGINE 06 — APP DISPATCH:
+${(warRoomData.engines?.e6||'').slice(0,300)}`;
+    // TSM FIX: Engine 06 (App Dispatch) was computed and stored in the
+    // relay by the war room but never included in the Strategist's LLM
+    // context -- the synthesis was silently generated off only 5 of the
+    // 6 engines. Added here to match Engine 06's presence in the war
+    // room UI (card-e6 / buildAppDispatch()) and the summary box above.
   }
   if(manual) ctx+='\n\nADDITIONAL CONTEXT:\n'+manual;
   return ctx;
