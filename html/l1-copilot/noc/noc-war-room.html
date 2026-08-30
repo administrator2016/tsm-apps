@@ -229,6 +229,65 @@ tr:hover td{background:rgba(45,212,191,.03)}
   const ENTITY_LABELS = { incidents: 'INCIDENTS', alerts: 'ALERTS', devices: 'DEVICES' };
   const ID_FIELDS = { incidents: 'incident_id', alerts: 'alert_id', devices: 'device_id' };
 
+  // ── DOC SEARCH RELAY (inbound) ───────────────────────────────────────────
+  // NOC has no single-document intake box like PM Copilot's #docIntake --
+  // TSMNOCEngine only ever operates over the whole incidents/alerts/devices
+  // dataset (see runAnalysis()/buildRelayPayload() in noc-engine.js), the
+  // same way the CSV-paste importer below works: shape a record, then
+  // engine.loadRecords('incidents', [record]) + saveToStorage() + re-render.
+  // This does the same for a single document relayed from
+  // tsm-doc-search-multi.html's Redispatch button, which already writes the
+  // correct WAR_ROOM_ROUTES['noc-war-room'] keys (tsm_noc_docsearch_relay /
+  // TSM_NOC_WAR_RELAY) -- nothing on this page read them before now, so a
+  // relayed document silently went nowhere.
+  // Severity/stage reuse the existing normalizeSeverity()/normalizeStage()
+  // regexes below (same ones the paste-importer uses) rather than a second
+  // parallel set of rules, run against the synthesized doc text since the
+  // exclusion code (e.g. "SEV-2") is embedded in it, not a separate field.
+  (function () {
+    try {
+      const raw = localStorage.getItem('tsm_noc_docsearch_relay') || localStorage.getItem('TSM_NOC_WAR_RELAY');
+      if (!raw) return;
+      const relay = JSON.parse(raw);
+      if (!relay.docText && !relay.fileName) return;
+      localStorage.removeItem('tsm_noc_docsearch_relay');
+      localStorage.removeItem('TSM_NOC_WAR_RELAY');
+
+      const idSeed = (relay.ref || relay.fileName || 'DOC-' + Date.now()).toString();
+      const incidentId = 'DOC-' + idSeed.replace(/[^A-Za-z0-9-]/g, '').slice(0, 24);
+      const normText = (relay.docText || '').replace(/-/g, ' ');
+
+      let waited = 0;
+      const waitForEngine = setInterval(() => {
+        waited += 200;
+        if (engine) {
+          clearInterval(waitForEngine);
+          const record = {
+            incident_id: incidentId,
+            title: relay.docType || 'Relayed Document',
+            affected_system: relay.client || 'Unspecified',
+            severity: normalizeSeverity(normText),
+            stage: normalizeStage(normText) || 'new',
+            entered_stage_at_hours_ago: 0,
+            owner: 'Unassigned',
+            notes: `Relayed from Document Search: ${relay.fileName || relay.ref || ''}\n${(relay.docText || '').slice(0, 500)}`.trim()
+          };
+          engine.loadRecords('incidents', [record]);
+          engine.saveToStorage();
+          activeEntity = 'incidents';
+          renderTabs(); renderStageList(); renderAll();
+          const banner = document.createElement('div');
+          banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(14,165,233,.12);border-bottom:1px solid rgba(14,165,233,.3);padding:7px 20px;font-family:var(--mono,monospace);font-size:10px;color:#0ea5e9;letter-spacing:1px;display:flex;justify-content:space-between';
+          banner.innerHTML = `<span>⚡ DOC RELAY — ${relay.docType || 'DOCUMENT'} · loaded as ${incidentId}</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:#0ea5e9;cursor:pointer">✕</button>`;
+          document.body.prepend(banner);
+        } else if (waited >= 10000) {
+          clearInterval(waitForEngine);
+          console.warn('[NOC] doc search relay gave up waiting for engine init');
+        }
+      }, 200);
+    } catch (e) { console.warn('[NOC] doc search relay error:', e); }
+  })();
+
   function setClock() {
     const el = document.getElementById('navClock');
     if (el) el.textContent = new Date().toLocaleTimeString();
