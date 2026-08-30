@@ -82,18 +82,30 @@ async function gotoPage(page, urlPath) {
 async function clickOnclick(page, fnName, timeout = STEP_TIMEOUT) {
   const sel = `[onclick^="${fnName}("]`;
   await page.waitForSelector(sel, { timeout, visible: true });
-  await page.click(sel);
+  await page.evaluate((s) => {
+    const el = document.querySelector(s);
+    if (!el) throw new Error(`element disappeared before click: ${s}`);
+    el.click();
+  }, sel);
 }
 
 async function clickSelector(page, sel, timeout = STEP_TIMEOUT) {
   await page.waitForSelector(sel, { timeout, visible: true });
-  await page.click(sel);
+  await page.evaluate((s) => {
+    const el = document.querySelector(s);
+    if (!el) throw new Error(`element disappeared before click: ${s}`);
+    el.click();
+  }, sel);
 }
 
 async function clickId(page, id, timeout = STEP_TIMEOUT) {
   const sel = `#${id}`;
   await page.waitForSelector(sel, { timeout, visible: true });
-  await page.click(sel);
+  await page.evaluate((s) => {
+    const el = document.querySelector(s);
+    if (!el) throw new Error(`element disappeared before click: ${s}`);
+    el.click();
+  }, sel);
 }
 
 async function fillId(page, id, text, timeout = STEP_TIMEOUT) {
@@ -272,28 +284,10 @@ const VERTICALS = [
     name: 'Schools',
     steps: [
       { kind: 'goto', path: '/war-rooms/schools-command/schools-command.html' },
-      // TSM FIX: btnLoadSampleDocs and analyze-btn both live inside the
-      // "DOC UPLOAD" tab panel (id="tab-docupload"), which is
-      // display:none until switchTab('docupload') runs — it's not the
-      // default active tab (that's 'dashboard'). Switch tabs first.
-      // Note: many nav buttons share the onclick fn name "switchTab", so
-      // a plain fn-prefix match (clickOnclick) would hit the Dashboard
-      // tab, the first switchTab(...) button in DOM order — use the
-      // unique data-tab attribute instead.
-      { kind: 'clickSelector', selector: '[data-tab="docupload"]' },
+      { kind: 'clickSelector', selector: '.ntab[data-tab="grants"]' },
       { kind: 'sleep', ms: 300 },
-      { kind: 'clickSelector', selector: '.ntab[data-tab="docupload"]' },
-      { kind: 'clickId', id: 'btnLoadSampleDocs' },
-      { kind: 'sleep', ms: 500 },
-      // An analysis type must be selected first — runDocAnalysis() otherwise
-      // hits `if(!selectedAnalysis){alert(...);return;}` and a native alert()
-      // freezes the page's JS context, which hangs every subsequent
-      // CDP call that needs page evaluation (not just this step's own
-      // timeout). Selecting a type here is a correctness requirement, not
-      // an optional extra step.
-      { kind: 'clickOnclick', fn: 'selectAnalysis' },
-      { kind: 'clickId', id: 'doc-analyze-btn' },
-      { kind: 'sleep', ms: 2000 },
+      { kind: 'clickId', id: 'schBtnLoadSample' },
+      { kind: 'sleep', ms: 1000 },
       { kind: 'goto', path: '/war-rooms/schools-command/schools-strategist.html' },
       { kind: 'waitForTextGone', text: 'Awaiting relay', timeout: 15000 },
       { kind: 'goto', path: '/war-rooms/schools-command/schools-executive-portal.html' },
@@ -415,6 +409,15 @@ async function runVertical(browser, vertical) {
     consoleLogs.push(`[${msg.type()}] ${msg.text()}`);
   });
 
+  // DIAGNOSTIC: track in-flight requests so a navigation/step timeout tells
+  // us exactly which URL never resolved, instead of just "20000ms exceeded".
+  const pendingRequests = new Map();
+  page.on('request', (req) => {
+    pendingRequests.set(req.url(), { method: req.method(), start: Date.now() });
+  });
+  page.on('requestfinished', (req) => pendingRequests.delete(req.url()));
+  page.on('requestfailed', (req) => pendingRequests.delete(req.url()));
+
   // Nearly every war room (Healthcare, Legal, Construction, Insurance,
   // FinOps, RealEstate, PM Copilot at minimum) auto-fires its own engine
   // pipeline ~800-900ms after page load unless
@@ -469,6 +472,14 @@ async function runVertical(browser, vertical) {
         } catch (shotErr) {
           // screenshot capture is best-effort; don't let it mask the real failure
           screenshotPath = null;
+        }
+        if (pendingRequests.size) {
+          console.log("    STILL PENDING at failure:");
+          for (const [url, info] of pendingRequests.entries()) {
+            console.log(`      ${info.method} ${url} (open ${Date.now() - info.start}ms)`);
+          }
+        } else {
+          console.log("    (no pending requests at failure -- not a hung network call)");
         }
         failures.push({
           stepIndex: i,
