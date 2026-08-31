@@ -1329,15 +1329,11 @@ function storeSession() {
 
 function escalateToChief() {
   storeSession();
-  try {
-    localStorage.setItem('TSM_CURE_RELAY', JSON.stringify({
-      vertical: 'Legal',
-      appName: 'Legal War Room',
-      anomalies: [],
-      docText: document.getElementById('docPaste')?.value || '',
-      timestamp: Date.now()
-    }));
-  } catch(e) {}
+  // Previously wrote a TSM_CURE_RELAY entry here, but nothing in Legal's own
+  // escalation chain (legal-main-strategist.html) reads that key, and leaving
+  // it in localStorage would incorrectly re-trigger the
+  // /shared/tsm-cure-cheatsheet.js panel on this same page (legal-war-room.html)
+  // the next time someone loads it directly. Removed as dead/stale-prone code.
   pushCollectiveSignal_LEGAL();
   document.getElementById('ss4').className = 'sstep active';
   setTimeout(() => nav('legal-main-strategist.html'), 700);
@@ -1739,5 +1735,6 @@ function tsmWriteRelay(payload){
 </script>
   <script src="/js/tsm-guide-engine.js" defer></script>
   <script src="/shared/tsm-guided-how-to.js" defer></script>
+  <script src="/shared/tsm-cure-cheatsheet.js"></script>
 </body>
 </html>
