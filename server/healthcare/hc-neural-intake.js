@@ -1,0 +1,196 @@
+'use strict';
+
+/**
+ * TSM HC Neural Intake
+ *
+ * Neural front door for the Healthcare specialist network.
+ *
+ * Responsibilities:
+ *
+ *   1. Accept canonical document input.
+ *   2. Preserve existing classifier decisions.
+ *   3. Consume HC OM suggested routing.
+ *   4. Determine candidate specialist nodes.
+ *   5. Create standardized node requests.
+ *   6. Collect standardized node findings.
+ *   7. Correlate findings across nodes.
+ *   8. Build a Strategist-ready envelope.
+ *
+ * IMPORTANT:
+ * This module does not replace routeDocument().
+ * Existing classifier routing remains authoritative.
+ */
+
+const registry = require('./hc-node-registry');
+const contract = require('./hc-node-contract');
+
+function unique(values) {
+  return Array.from(
+    new Set(
+      (Array.isArray(values) ? values : [])
+        .filter(Boolean)
+        .map(String)
+    )
+  );
+}
+
+function collectCandidateNodes(input) {
+  const source = input || {};
+  const classification = source.classification || {};
+
+  /*
+   * HC Office Manager routing is supplied at the top-level `routing`
+   * envelope. Some legacy callers may still place routing under
+   * classification.routing, so preserve that path as a fallback.
+   */
+  const routing =
+    source.routing ||
+    classification.routing ||
+    {};
+
+  const candidates = [];
+
+  if (Array.isArray(source.suggestedNodes)) {
+    candidates.push.apply(candidates, source.suggestedNodes);
+  }
+
+  if (Array.isArray(routing.nodes)) {
+    candidates.push.apply(candidates, routing.nodes);
+  }
+
+  // HC Office Manager provides scored advisory routes as:
+  // routing.advisoryRoutes = [{ node, score }, ...]
+  // Preserve the scores upstream; this layer only extracts canonical
+  // registered node IDs for node-request fan-out.
+  if (Array.isArray(routing.advisoryRoutes)) {
+    candidates.push.apply(
+      candidates,
+      routing.advisoryRoutes.map(function (route) {
+        return route && route.node;
+      })
+    );
+  }
+
+  if (Array.isArray(routing.healthcare && routing.healthcare.nodes)) {
+    candidates.push.apply(
+      candidates,
+      routing.healthcare.nodes
+    );
+  }
+
+  return unique(candidates).filter(function (node) {
+    return registry.hasNode(node);
+  });
+}
+
+function createIntakeEnvelope(input) {
+  const source = input || {};
+
+  const envelope = {
+    platform: 'TSM',
+    vertical: 'healthcare',
+    intake: {
+      source: source.source || 'hc-office-manager-doc-intake',
+      persona: source.persona || 'Office Manager',
+      timestamp: new Date().toISOString()
+    },
+    document: source.document || {},
+    extraction: source.extraction || {},
+    classification: source.classification || {},
+    routing: source.routing || {},
+    candidateNodes: collectCandidateNodes(source),
+    nodeRequests: [],
+    nodeFindings: [],
+    correlations: [],
+    strategist: null
+  };
+
+  envelope.nodeRequests = envelope.candidateNodes.map(function (node) {
+    return {
+      node: node,
+      request: contract.createNodeRequest({
+        document: envelope.document,
+        extraction: envelope.extraction,
+        classification: envelope.classification,
+        routing: envelope.routing,
+        context: {
+          source: envelope.intake.source,
+          persona: envelope.intake.persona
+        }
+      })
+    };
+  });
+
+  return envelope;
+}
+
+function collectNodeFinding(envelope, node, result) {
+  if (!registry.hasNode(node)) {
+    throw new Error('Unknown HC node: ' + node);
+  }
+
+  const normalized = contract.createNodeResult(node, result);
+
+  envelope.nodeFindings.push(normalized);
+
+  return normalized;
+}
+
+function correlateFindings(envelope) {
+  const findings = Array.isArray(envelope.nodeFindings)
+    ? envelope.nodeFindings
+    : [];
+
+  const active = findings.filter(function (finding) {
+    return Number(finding.relevance) > 0 ||
+      finding.findings.length > 0 ||
+      finding.risks.length > 0;
+  });
+
+  envelope.correlations = active.map(function (finding) {
+    return {
+      node: finding.node,
+      relevance: finding.relevance,
+      confidence: finding.confidence,
+      findingCount: finding.findings.length,
+      riskCount: finding.risks.length,
+      evidenceCount: finding.evidence.length
+    };
+  });
+
+  return envelope.correlations;
+}
+
+function buildStrategistEnvelope(envelope) {
+  correlateFindings(envelope);
+
+  envelope.strategist = {
+    destination: '/html/healthcare/hc-strategist/index.html',
+    mode: 'HC_CROSS_NODE_BNCA',
+    persona: envelope.intake.persona,
+    candidateNodes: envelope.candidateNodes,
+    nodeFindings: envelope.nodeFindings,
+    correlations: envelope.correlations
+  };
+
+  return envelope.strategist;
+}
+
+function intake(input) {
+  const envelope = createIntakeEnvelope(input);
+
+  return {
+    envelope: envelope,
+    candidateNodes: envelope.candidateNodes,
+    strategist: buildStrategistEnvelope(envelope)
+  };
+}
+
+module.exports = {
+  intake,
+  createIntakeEnvelope,
+  collectCandidateNodes,
+  collectNodeFinding,
+  correlateFindings,
+  buildStrategistEnvelope
+};
