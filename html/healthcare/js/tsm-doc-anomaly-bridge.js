@@ -422,6 +422,35 @@
     } catch (e) {}
   }
 
+  // ── 6b. AUTO-APPLY ROUTED CLIENT DATA ───────────────────────────────────
+  // If the office-manager routing extracted structured client/claim fields
+  // from the source document (see extractClientData() in
+  // hc-office-manager-doc-intake.html), fill this node's own "SET CLIENT
+  // MISSION" intake fields with them and apply the mission automatically —
+  // no operator click required. Without this, the data sits in the payload
+  // but the operator still has to retype it by hand into the exact same
+  // fields it was just extracted from.
+  //
+  // Each node page that wants this declares, before this script tag:
+  //   window.TSM_CLIENT_INTAKE_MAP = { patient:'intake-patient', claim:'intake-claim', ... }
+  //   window.TSM_CLIENT_INTAKE_APPLY_FN = 'applyIntake'   // the page's own apply function name
+  // Pages that don't declare these (or whose field schema doesn't match a
+  // billing/claims mission — e.g. hc-financial, hc-legal) are left alone;
+  // nothing here runs for them.
+  function autoApplyClientData(payload) {
+    if (!payload || !payload.clientData || payload.source !== 'office-manager-intake') return;
+    const map = window.TSM_CLIENT_INTAKE_MAP;
+    const applyFnName = window.TSM_CLIENT_INTAKE_APPLY_FN;
+    if (!map || !applyFnName || typeof window[applyFnName] !== 'function') return;
+    const cd = payload.clientData;
+    Object.keys(map).forEach(function (key) {
+      if (cd[key] == null) return;
+      const el = document.getElementById(map[key]);
+      if (el) el.value = cd[key];
+    });
+    try { window[applyFnName](); } catch (e) { /* leave fields filled even if apply itself throws */ }
+  }
+
   // ── 7. MAIN INIT ────────────────────────────────────────────────────────
   function init() {
     const nodeId = resolveNodeId();
@@ -450,6 +479,7 @@
     if (!affinity.has(nodeId)) return;
 
     renderBanner(payload, nodeId);
+    autoApplyClientData(payload);
   }
 
   // Run after DOM ready

@@ -64,6 +64,15 @@
     // TSM_ANB.nodeId), return its steps array. Otherwise null, so callers
     // fall back to the page's own generic TAB_CONFIG steps unchanged.
     function liveAnomalySteps() {
+      // A manually-applied client mission (SET MISSION FROM CLIENT DATA)
+      // always wins over the auto-routed anomaly checklist. Without this,
+      // resolveCfg() below silently discards whatever the operator just
+      // typed into the intake form and keeps using the generic routed
+      // checklist text for every AI prompt, even though the visible step
+      // text (written directly to the DOM by applyIntake/rebuildStepsFromClient)
+      // shows the intake data. That mismatch is what makes it look like the
+      // intake form "isn't registering."
+      if (global.TSM_INTAKE_APPLIED) return null;
       var anb = global.TSM_ANB;
       if (!anb || !anb.payload || !anb.nodeId) return null;
       if (anb.nodeId !== config.vertical) return null;

@@ -554,6 +554,7 @@ function applyLegalIntake(){
 
   document.getElementById('guide-meta').innerHTML='Client: <span>'+cl+'</span> &nbsp;·&nbsp; Matter: <span>'+mt+'</span> &nbsp;·&nbsp; Opposing: <span>'+op+'</span>';
 
+  window.TSM_INTAKE_APPLIED = true; // manual mission now takes priority over any auto-routed anomaly checklist
   rebuildStepsFromClient();
   toggleIntake(false);
   resetSteps();

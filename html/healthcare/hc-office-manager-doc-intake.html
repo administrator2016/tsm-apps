@@ -300,10 +300,65 @@ async function findQueueEvent(id){
   } catch (e) { return null; }
 }
 
+// Deterministic, regex-only extraction of the structured client/claim
+// fields a billing/insurance/compliance node's "SET CLIENT MISSION" intake
+// form asks for — pulled straight out of the routed document text (same
+// text already shown to the office manager and the destination node's
+// Executive Narrative panel). No LLM call and nothing invented: every
+// field is either a direct labeled match in the source text or left out
+// entirely so the destination node's own defaults show through instead of
+// a guessed value. This exists so the destination node doesn't make an
+// operator manually retype data that was already sitting in the document
+// they just classified — see routeIntake() below.
+//
+// Deliberately NOT extracted: the appeal/response deadline date. Getting
+// that wrong silently (e.g. off-by-one on a "within N days of notice"
+// clause) risks a missed deadline, which is a worse outcome than asking a
+// human to set it. Instead, if an explicit appeal window is found, it's
+// surfaced as text in the issue field so the operator sees it without
+// having to reread the whole document, but still sets the actual date.
+function extractClientData(text){
+  const t = String(text || '');
+  const grab = (re) => { const m = t.match(re); return m ? m[1].trim() : ''; };
+
+  const patient = grab(/Patient Name:?\s*([A-Z][A-Za-z.'-]+(?:\s+[A-Z][A-Za-z.'-]+){1,3})(?=\s+(?:Date of Birth|Patient ID|Member ID))/);
+  const claim = grab(/Claim\s*#:?\s*([A-Za-z0-9-]{4,20})/i);
+  let payer = grab(/\*\*\*\s*([A-Z][A-Za-z0-9&.,'-][A-Za-z0-9&.,'\- ]{1,58}?)\s*Prior Authorization Request Form/);
+  if (!payer) payer = grab(/Medical Director,\s*([A-Z][A-Za-z0-9&.,'\- ]{2,60})/);
+
+  const denialMatch = t.match(/Denial Reason Code:?\s*([A-Z]{1,3}-?\d{1,4})\s*(?:—|-|–)\s*([A-Za-z0-9/,'\s]{3,80}?)(?=\s+(?:[A-Z][A-Za-z]*(?:\s[A-Z][A-Za-z]*){0,3}:|Explanation|Dear|Sincerely)|$)/);
+  const denial = denialMatch ? denialMatch[1].trim() : '';
+  const denialReason = denialMatch ? denialMatch[2].trim() : '';
+
+  const cpt = grab(/CPT Code:?\s*(\d{5})/) || grab(/CPT\s+(\d{5})/);
+  const amount = grab(/Amount Billed:?\s*(\$[\d,]+(?:\.\d{2})?)/) || grab(/Est\.?\s*Charge Amount:?\s*(\$[\d,]+(?:\.\d{2})?)/);
+  const appealWindow = grab(/within\s+(\d{1,3}\s+days)\s+of\s+this\s+notice/i);
+
+  const issueParts = [];
+  if (denial && denialReason) issueParts.push(denial + ' \u2014 ' + denialReason + '.');
+  else if (denialReason) issueParts.push(denialReason + '.');
+  if (appealWindow) issueParts.push('Appeal window found in source doc: ' + appealWindow + ' of notice date \u2014 verify exact deadline before filing.');
+
+  const data = {};
+  if (patient) data.patient = patient;
+  if (claim) data.claim = claim;
+  if (payer) data.payer = payer;
+  if (denial) data.denial = denial;
+  if (cpt) data.cpt = cpt;
+  if (amount) data.amount = amount;
+  if (issueParts.length) data.issue = issueParts.join(' ');
+
+  return Object.keys(data).length ? data : null;
+}
+
 function relayToAnomalyBridge(ev, nodeKey){
   const findings = [`Confidence: ${(ev.confidence || '—').toUpperCase()}`, ev.reason].filter(Boolean);
   if (ev.alternates && ev.alternates.length) {
     findings.push(`Also considered: ${ev.alternates.map(a => a.label).join(', ')}`);
+  }
+  const clientData = extractClientData(ev.description);
+  if (clientData) {
+    findings.push(`Client data auto-filled: ${Object.keys(clientData).filter(k => k !== 'issue').join(', ')}`);
   }
   const payload = {
     checkStatus: 'OFFICE_MANAGER_ROUTED',
@@ -311,12 +366,18 @@ function relayToAnomalyBridge(ev, nodeKey){
     sourceBadge: '📥 FROM OFFICE MANAGER',
     narrative: ev.description,
     findings,
-    steps: [
+    steps: clientData ? [
+      'Review the case above against this node\u2019s Mission Objectives panel',
+      'Client/claim data was auto-filled from the routed document \u2014 verify the amount and set the appeal deadline (not auto-filled)',
+      'Work Step 1 \u2192 Submit Step Response, then Step 2 \u2192 Submit Step Response',
+      'Relay to Strategist only if this reveals a cross-domain issue'
+    ] : [
       'Review the case above against this node\u2019s Mission Objectives panel',
       'Update this node\u2019s own client/claim intake fields to match, if they don\u2019t already',
       'Work Step 1 \u2192 Submit Step Response, then Step 2 \u2192 Submit Step Response',
       'Relay to Strategist only if this reveals a cross-domain issue'
     ],
+    clientData: clientData || undefined,
     fileName: ev.sourceFileName || undefined,
     ref: ev.id,
     targetNodeIds: [nodeKey],

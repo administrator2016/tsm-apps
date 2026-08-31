@@ -521,6 +521,13 @@ let currentTab = 'dash';
 const stepsCompleted = { 1: false, 2: false };
 let clientData = { patient:'Maria Santos', claim:'27447', payer:'BlueCross BlueShield', denial:'CMS-Audit', cpt:'99215', amount:'$42,000', issue:'Prior Authorization SLA breaches and CPT 99215 upcoding pattern creating audit risk.', deadline:'' };
 
+// Lets tsm-doc-anomaly-bridge.js auto-fill + auto-apply this node's own
+// intake fields when a case is routed here with extracted client data,
+// instead of making the operator retype what the office manager already
+// classified. See autoApplyClientData() in that file.
+window.TSM_CLIENT_INTAKE_MAP = { patient:'intake-patient', claim:'intake-claim', payer:'intake-payer', denial:'intake-denial', cpt:'intake-cpt', amount:'intake-amount', issue:'intake-issue' };
+window.TSM_CLIENT_INTAKE_APPLY_FN = 'applyIntake';
+
 function v(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
 
 function applyIntake(){
@@ -546,6 +553,7 @@ function applyIntake(){
     +'<button onclick="draftAppeal()" style="width:100%;padding:6px;background:var(--r);color:#fff;font-family:inherit;font-size:9px;font-weight:700;border:none;border-radius:3px;cursor:pointer;letter-spacing:1px;margin-bottom:4px">⚡ BUILD '+dn+' CORRECTIVE PLAN</button>'
     +'<button onclick="draftAR()" style="width:100%;padding:6px;background:transparent;border:1px solid var(--g);color:var(--g);font-family:inherit;font-size:9px;font-weight:700;border-radius:3px;cursor:pointer;letter-spacing:1px">COMPLIANCE DEFENSE PLAN ↗</button>';
   document.getElementById('guide-meta').innerHTML='Patient: <span>'+p+'</span> &nbsp;·&nbsp; Claim: <span>'+cl+'</span> &nbsp;·&nbsp; Payer: <span>'+py+'</span>';
+  window.TSM_INTAKE_APPLIED = true; // manual mission now takes priority over any auto-routed anomaly checklist
   rebuildStepsFromClient();
   toggleIntake(false);
   resetSteps();

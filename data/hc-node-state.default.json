@@ -1,0 +1,12 @@
+{
+  "billing": {
+    "status": "ONLINE",
+    "findings": "intake-submitted — relay fired, no case-level detail captured",
+    "source": "tsm-node-relay-bridge",
+    "relayTrigger": "intake-submitted",
+    "relayedAt": "2026-08-31T08:38:12.235Z",
+    "nodeKey": "billing",
+    "updatedAt": "2026-08-31T08:38:13.762Z",
+    "bnca": "TOP ISSUE\nintake-submitted — relay fired, no case-level detail captured\n\nWHY IT MATTERS\nLive telemetry received for this system · all locations.\n\nMETRICS\nQueue Depth: N/A · Intake Backlog: N/A · Staffing: N/A%\nDenial Rate: N/A% · Claim Lag: N/A days · AR >30: N/A\nAuth Backlog: N/A · Auth Delay: N/Ah · Pending Claims: N/A\n\nBEST NEXT COURSE OF ACTION\n1. Clear highest-value backlog first\n2. Escalate auth and documentation blockers older than 24-72 hours\n3. Align intake, billing, and scheduling handoffs for the next shift\n\nOWNER LANES\nOperations · Billing · Insurance\n\nCONFIDENCE\n92%"
+  }
+}

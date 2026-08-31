@@ -1264,6 +1264,7 @@
         + '<button onclick="draftRecovery()" style="width:100%;padding:6px;background:var(--r);color:#fff;font-family:inherit;font-size:9px;font-weight:700;border:none;border-radius:3px;cursor:pointer;letter-spacing:1px;margin-bottom:4px">⚡ BUILD AR RECOVERY PLAN</button>'
         + '<button onclick="draftAR()" style="width:100%;padding:6px;background:transparent;border:1px solid var(--g);color:var(--g);font-family:inherit;font-size:9px;font-weight:700;border-radius:3px;cursor:pointer;letter-spacing:1px">AR RECOVERY PLAN ↗</button>';
 
+      window.TSM_INTAKE_APPLIED = true; // manual mission now takes priority over any auto-routed anomaly checklist
       rebuildFinancialSteps();
       toggleIntake(false);
       resetSteps();

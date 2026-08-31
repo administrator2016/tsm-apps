@@ -509,6 +509,13 @@ let currentTab = 'dash';
 // ─────────────────────────────────────────────
 let clientData = { patient:'Maria Santos', claim:'CLM-0334', payer:'BlueCross BlueShield', denial:'CO-29', cpt:'93454', amount:'$3,800', issue:'Timely filing deadline — 48hr window to file appeal or write off $3,800.', deadline:'' };
 
+// Lets tsm-doc-anomaly-bridge.js auto-fill + auto-apply this node's own
+// intake fields when a case is routed here with extracted client data,
+// instead of making the operator retype what the office manager already
+// classified. See autoApplyClientData() in that file.
+window.TSM_CLIENT_INTAKE_MAP = { patient:'intake-patient', claim:'intake-claim', payer:'intake-payer', denial:'intake-denial', cpt:'intake-cpt', amount:'intake-amount', issue:'intake-issue' };
+window.TSM_CLIENT_INTAKE_APPLY_FN = 'applyIntake';
+
 function v(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
 
 function applyIntake(){
@@ -536,6 +543,7 @@ function applyIntake(){
   const dc=document.getElementById('guide-denial-codes');
   if(dc) dc.textContent=dn+' flagged · CPT '+cp+' · '+py;
   document.getElementById('guide-meta').innerHTML='Patient: <span>'+p+'</span> &nbsp;·&nbsp; Claim: <span>'+cl+'</span> &nbsp;·&nbsp; Payer: <span>'+py+'</span>';
+  window.TSM_INTAKE_APPLIED = true; // manual mission now takes priority over any auto-routed anomaly checklist
   rebuildStepsFromClient();
   toggleIntake(false);
   resetSteps();

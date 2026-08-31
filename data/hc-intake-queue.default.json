@@ -1,5 +1,202 @@
 [
   {
+    "id": "intk_mtgzjslrqclk",
+    "description": "*** SAMPLE / SYNTHETIC DATA — REMITTANCE ADVICE — FOR TESTING & DEMO USE ONLY ***\nArizona Health Network\nElectronic Remittance Advice (ERA) — Summary\nPayer / Payee Information\nPayer: Arizona Health Network\nPayer ID: AHN-00447\nPayee (Provider): Desert Cardiac Partners\nPayee NPI: 1740882931\nCheck / EFT #: EFT-9931207\nPayment Date: 2026-08-19\nPayment Amount: $2,940.10\nClaim Detail\nClaim #: CLM-88340\nPatient: Denise K. Alvarado (PT-99201)\nStatement Dates: 08/05/2026 - 08/05/2026\nCPT Billed Allowed Deduct Coins (20%) Paid\n93000 — EKG $180.00 $96.40 $0.00 $19.28 $77.12\n78452 — Cardiac stress imaging $2,450.00 $1,610.75 $0.00 $322.15 $1,288.60\n99213 — Office visit $165.00 $121.05 $0.00 $24.21 $96.84\nClaim Total — Billed: $2,795.00 | Allowed: $1,828.20 | Patient Responsibility: $365.64 | Plan Paid: $1,462.56\nAdjustment Reason Codes (CARC)\nCO-45: Charge exceeds fee schedule/maximum allowable amount. PR-3: Co-payment amount is patient responsibility.\nCO-96: Non-covered charge(s) per plan benefit design.\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and payment\nfigures are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 1 of 2 --\n\n*** SAMPLE / SYNTHETIC DATA — EXPLANATION OF BENEFITS (EOB) — FOR TESTING & DEMO USE ONLY ***\nArizona Health Network\nExplanation of Benefits — This is Not a Bill\nMember Information\nMember Name: Denise K. Alvarado\nMember ID: AHN-88201-C\nGroup Number: GRP-40587\nClaim #: CLM-88340\nDate of Service: 08/05/2026\nProvider: Desert Cardiac Partners\nService Summary\nService Billed Allowed Deduct You Owe Plan Paid\n93000 — EKG $180.00 $96.40 $0.00 $19.28 $77.12\n78452 — Stress imaging $2,450.00 $1,610.75 $0.00 $322.15 $1,288.60\n99213 — Office visit $165.00 $121.05 $0.00 $24.21 $96.84\nTotal Billed: $2,795.00 | Total Allowed: $1,828.20 | Your Total Responsibility: $365.64 | Plan Paid: $1,462.56\nHow to Read This EOB\n\"Billed\" is the amount your provider charged. \"Allowed\" is the maximum amount Arizona Health Network covers for this\nservice based on your plan's negotiated rate. \"You Owe\" reflects your applicable coinsurance after any deductible. This\nis not a bill — your provider will send a separate invoice for any balance due.\nQuestions About This EOB?\nCall Member Services at (800) 555-0163, Monday-Friday, 8am-6pm MST, or visit\nmember.arizonahealthnetwork-sample.com to view claim details online.\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and payment\nfigures are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 2 of 2 --",
+    "sourceFileName": "File4_Remittance_EOB_2.pdf",
+    "suggestedNode": "billing",
+    "suggestedLabel": "Billing",
+    "confidence": "high",
+    "matched": [
+      "claim",
+      "cpt",
+      "remit",
+      "era",
+      "eob"
+    ],
+    "reason": "Matched: \"claim\", \"cpt\", \"remit\", \"era\", \"eob\"",
+    "alternates": [
+      {
+        "key": "operations",
+        "label": "Operations",
+        "matched": [
+          "schedul"
+        ]
+      },
+      {
+        "key": "insurance",
+        "label": "Insurance",
+        "matched": [
+          "payer"
+        ]
+      }
+    ],
+    "status": "routed",
+    "createdAt": "2026-08-31T08:37:46.767Z",
+    "routedAt": "2026-08-31T08:37:56.125Z"
+  },
+  {
+    "id": "intk_mtgz7jlu71mo",
+    "description": "*** SAMPLE / SYNTHETIC DATA — PRIOR AUTHORIZATION REQUEST — FOR TESTING & DEMO USE ONLY ***\nMeridian Health Plan\nPrior Authorization Request Form — Outpatient Services\nRequesting Provider Information\nProvider Name: Dr. Anita Coleman, MD\nPractice: Westbrook Orthopedic Associates\nNPI: 1922837465\nTax ID: 88-1039221\nContact Phone: (602) 555-0148\nFax: (602) 555-0149\nPatient Information\nPatient Name: Marcus T. Reeves\nPatient ID: PT-559201\nDate of Birth: 04/11/1978\nMember ID: MHP-77410-A\nGroup Number: GRP-22190\nRequested Service\nCPT Code: 29881 — Arthroscopy, knee, surgical; with meniscectomy\nICD-10 Code: M23.221 — Derangement of medial meniscus, right knee\nPlace of Service: Outpatient Surgical Center\nRequested Date: 2026-07-15\nUnits: 1\nEst. Charge Amount: $18,900.00\nClinical Justification\nPatient presents with persistent right knee pain and mechanical locking symptoms for 10 weeks, unresponsive to 6\nweeks of conservative therapy including physical therapy, NSAIDs, and activity modification. MRI dated 06/02/2026\nconfirms a complex tear of the medial meniscus. Surgical intervention is recommended to restore function and prevent\nfurther joint degeneration.\nSubmitted By: Westbrook Orthopedic Associates — Authorizations Dept.\nSubmission Date: 2026-06-25\nReference #: PA-2026-661204\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 1 of 2 --\n\n*** SAMPLE / SYNTHETIC DATA — ADVERSE DETERMINATION / DENIAL LETTER — FOR TESTING & DEMO USE ONLY ***\nMeridian Health Plan\nUtilization Management Department\n1400 Concourse Parkway, Suite 300, Phoenix, AZ 85034\nDate: 2026-07-02\nMarcus T. Reeves\nPT-559201\nMember ID: MHP-77410-A\nRE: Notice of Adverse Benefit Determination\nReference #: PA-2026-661204\nClaim #: HC-CLM-77410\nService: CPT 29881 — Knee Arthroscopy w/ Meniscectomy\nRequested Date: 2026-07-15\nDetermination: DENIED\nDenial Reason Code: MN-07 — Medical necessity not established\nExplanation\nDear Mr. Reeves,\nAfter review by our Medical Director, the requested procedure (CPT 29881) has been denied. Our clinical review\ndetermined that the submitted documentation does not demonstrate that a minimum of 6 weeks of conservative\ntreatment was fully exhausted and documented per Meridian Health Plan's Musculoskeletal Surgery Guideline\nMSK-014. Specifically, physical therapy visit notes and a formal re-evaluation following the conservative treatment\ncourse were not included with this request.\nAppeal Rights\nYou or your provider have the right to request a formal appeal of this decision within 180 days of this notice. Appeals\nshould be submitted in writing to the address above, Attn: Appeals & Grievances, and should include any additional\nsupporting clinical documentation, including physical therapy records and a physician re-evaluation note.\nSincerely,\nDr. Rachel Okafor, MD\nMedical Director, Meridian Health Plan\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 2 of 2 --",
+    "sourceFileName": "File1_PriorAuth_Denial.pdf",
+    "suggestedNode": "billing",
+    "suggestedLabel": "Billing",
+    "confidence": "high",
+    "matched": [
+      "denial",
+      "claim",
+      "cpt",
+      "era",
+      "appeal"
+    ],
+    "reason": "Matched: \"denial\", \"claim\", \"cpt\", \"era\", \"appeal\"",
+    "alternates": [
+      {
+        "key": "medical",
+        "label": "Medical",
+        "matched": [
+          "clinical",
+          "physician"
+        ]
+      },
+      {
+        "key": "insurance",
+        "label": "Insurance",
+        "matched": [
+          "prior auth",
+          "authorization"
+        ]
+      }
+    ],
+    "status": "routed",
+    "createdAt": "2026-08-31T08:28:15.234Z",
+    "routedAt": "2026-08-31T08:28:28.794Z"
+  },
+  {
+    "id": "intk_mtgyf84utlyb",
+    "description": "*** SAMPLE / SYNTHETIC DATA — PRIOR AUTHORIZATION REQUEST — FOR TESTING & DEMO USE ONLY ***\nArizona Health Network\nPrior Authorization Request Form — Cardiology Services\nRequesting Provider Information\nProvider Name: Dr. Samuel Herrera, MD\nPractice: Desert Cardiac Partners\nNPI: 1740882931\nTax ID: 86-2210047\nContact Phone: (480) 555-0192\nFax: (480) 555-0193\nPatient Information\nPatient Name: Denise K. Alvarado\nPatient ID: PT-99201\nDate of Birth: 09/22/1965\nMember ID: AHN-88201-C\nGroup Number: GRP-40587\nRequested Service\nCPT Code: 93458 — Left heart catheterization, coronary angiography\nICD-10 Code: I25.10 — Atherosclerotic heart disease, without angina pectoris\nPlace of Service: Hospital Outpatient — Cath Lab\nRequested Date: 2026-07-09\nUnits: 1\nEst. Charge Amount: $14,500.00\nClinical Justification\nPatient with known coronary artery disease and an abnormal stress test dated 06/20/2026 showing reversible ischemia\nin the anterior wall. Diagnostic left heart catheterization is requested to evaluate coronary anatomy prior to determining\nfurther treatment plan.\nSubmitted By: Desert Cardiac Partners — Scheduling Dept.\nSubmission Date: 2026-07-01\nReference #: PA-2026-702118\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 1 of 2 --\n\n*** SAMPLE / SYNTHETIC DATA — ADVERSE DETERMINATION / DENIAL LETTER — FOR TESTING & DEMO USE ONLY ***\nArizona Health Network\nClaims & Utilization Management Department\n2200 E. Camelback Rd, Suite 500, Phoenix, AZ 85016\nDate: 2026-08-01\nDenise K. Alvarado\nPT-99201\nMember ID: AHN-88201-C\nRE: Notice of Claim Denial\nClaim #: CLM-88201\nService: CPT 93458 — Left Heart Catheterization\nDate of Service: 2026-07-09\nAmount Billed: $14,500.00\nDetermination: DENIED\nDenial Reason Code: CO-197 — Precertification/Authorization Absent\nExplanation\nDear Ms. Alvarado,\nClaim CLM-88201 has been denied because our records show no prior authorization was obtained for CPT 93458 prior\nto the date of service. Arizona Health Network's plan requires precertification for all cardiac catheterization procedures\nperformed in an outpatient hospital setting. As no prior authorization token is on file for this claim, payment cannot be\nissued.\nAppeal Rights\nThe provider may submit a retrospective authorization request with clinical documentation demonstrating medical\nurgency, or file a formal appeal within 90 days of this notice. Appeals should be sent in writing to the address above,\nAttn: Appeals Department.\nSincerely,\nDr. Priya Nandakumar, MD\nMedical Director, Arizona Health Network\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 2 of 2 --",
+    "sourceFileName": "File3_PriorAuth_Denial_CO197.pdf",
+    "suggestedNode": "billing",
+    "suggestedLabel": "Billing",
+    "confidence": "high",
+    "matched": [
+      "denial",
+      "claim",
+      "cpt",
+      "era",
+      "appeal"
+    ],
+    "reason": "Matched: \"denial\", \"claim\", \"cpt\", \"era\", \"appeal\"",
+    "alternates": [
+      {
+        "key": "medical",
+        "label": "Medical",
+        "matched": [
+          "clinical",
+          "diagnos"
+        ]
+      },
+      {
+        "key": "insurance",
+        "label": "Insurance",
+        "matched": [
+          "prior auth",
+          "authorization"
+        ]
+      }
+    ],
+    "status": "routed",
+    "createdAt": "2026-08-31T08:06:13.998Z",
+    "routedAt": "2026-08-31T08:07:08.442Z"
+  },
+  {
+    "id": "intk_mtgxxeeaf3os",
+    "description": "*** SAMPLE / SYNTHETIC DATA — PRIOR AUTHORIZATION REQUEST — FOR TESTING & DEMO USE ONLY ***\nTriCore Regional Health\nPrior Authorization Request Form — Outpatient Surgical Services\nRequesting Provider Information\nProvider Name: Dr. Felix Okonkwo, MD\nPractice: Sonoran Surgical Group\nNPI: 1558820047\nTax ID: 84-7729103\nContact Phone: (602) 555-0221\nFax: (602) 555-0222\nPatient Information\nPatient Name: Angela M. Brooks\nPatient ID: PT-410872\nDate of Birth: 01/30/1982\nMember ID: TC-50117-B\nGroup Number: GRP-33810\nRequested Service\nCPT Code: 47562 — Laparoscopic cholecystectomy\nICD-10 Code: K80.20 — Calculus of gallbladder without obstruction\nPlace of Service: Outpatient Surgical Center\nRequested Date: 2026-06-18\nUnits: 1\nEst. Charge Amount: $22,400.00\nClinical Justification\nPatient presents with recurrent right upper quadrant pain confirmed by ultrasound to be secondary to symptomatic\ncholelithiasis. Conservative dietary management has not resolved symptoms over the past 8 weeks. Surgical removal\nis recommended.\nSubmitted By: Sonoran Surgical Group — Authorizations Dept.\nSubmission Date: 2026-06-18\nReference #: PA-2026-711560\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 1 of 2 --\n\n*** SAMPLE / SYNTHETIC DATA — ADVERSE DETERMINATION / DENIAL LETTER — FOR TESTING & DEMO USE ONLY ***\nTriCore Regional Health\nUtilization Management Department\n900 N. Central Ave, Suite 220, Phoenix, AZ 85004\nDate: 2026-06-10\nAngela M. Brooks\nPT-410872\nMember ID: TC-50117-B\nRE: Notice of Adverse Benefit Determination\nReference #: PA-2026-711560\nClaim #: TC-CLM-50117\nAmount Billed: $24,150.00\nService: CPT 47562 — Laparoscopic Cholecystectomy\nRequested Date: 2026-06-18\nDetermination: DENIED\nDenial Reason Code: MN-11 — Medical necessity not established\nRendering Provider NPI: 1558820074\nExplanation\nDear Ms. Brooks,\nAfter review by our Medical Director, the requested procedure (CPT 47562) has been denied. The submitted\ndocumentation does not demonstrate a trial of conservative management consistent with TriCore Regional Health's\nGallbladder Surgery Guideline GB-009, which requires a minimum 12-week documented dietary modification period\nprior to surgical intervention for non-obstructive cholelithiasis.\nAppeal Rights\nYou or your provider have the right to request a formal appeal of this decision. Appeals must be received in writing at\nthe address above, Attn: Appeals & Grievances, within 15 days of this notice, and should include any additional\nsupporting clinical documentation.\nSincerely,\nDr. Wendell Marsh, MD\nMedical Director, TriCore Regional Health\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 2 of 2 --",
+    "sourceFileName": "File5_PriorAuth_Denial_ANOMALY.pdf",
+    "suggestedNode": "billing",
+    "suggestedLabel": "Billing",
+    "confidence": "high",
+    "matched": [
+      "denial",
+      "claim",
+      "cpt",
+      "era",
+      "appeal"
+    ],
+    "reason": "Matched: \"denial\", \"claim\", \"cpt\", \"era\", \"appeal\"",
+    "alternates": [
+      {
+        "key": "insurance",
+        "label": "Insurance",
+        "matched": [
+          "prior auth",
+          "authorization"
+        ]
+      },
+      {
+        "key": "medical",
+        "label": "Medical",
+        "matched": [
+          "clinical"
+        ]
+      }
+    ],
+    "status": "routed",
+    "createdAt": "2026-08-31T07:52:22.306Z",
+    "routedAt": "2026-08-31T07:52:49.154Z"
+  },
+  {
+    "id": "intk_mtgxdgw434se",
+    "description": "*** SAMPLE / SYNTHETIC DATA — PRIOR AUTHORIZATION REQUEST — FOR TESTING & DEMO USE ONLY ***\nMeridian Health Plan\nPrior Authorization Request Form — Outpatient Services\nRequesting Provider Information\nProvider Name: Dr. Anita Coleman, MD\nPractice: Westbrook Orthopedic Associates\nNPI: 1922837465\nTax ID: 88-1039221\nContact Phone: (602) 555-0148\nFax: (602) 555-0149\nPatient Information\nPatient Name: Marcus T. Reeves\nPatient ID: PT-559201\nDate of Birth: 04/11/1978\nMember ID: MHP-77410-A\nGroup Number: GRP-22190\nRequested Service\nCPT Code: 29881 — Arthroscopy, knee, surgical; with meniscectomy\nICD-10 Code: M23.221 — Derangement of medial meniscus, right knee\nPlace of Service: Outpatient Surgical Center\nRequested Date: 2026-07-15\nUnits: 1\nEst. Charge Amount: $18,900.00\nClinical Justification\nPatient presents with persistent right knee pain and mechanical locking symptoms for 10 weeks, unresponsive to 6\nweeks of conservative therapy including physical therapy, NSAIDs, and activity modification. MRI dated 06/02/2026\nconfirms a complex tear of the medial meniscus. Surgical intervention is recommended to restore function and prevent\nfurther joint degeneration.\nSubmitted By: Westbrook Orthopedic Associates — Authorizations Dept.\nSubmission Date: 2026-06-25\nReference #: PA-2026-661204\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 1 of 2 --\n\n*** SAMPLE / SYNTHETIC DATA — ADVERSE DETERMINATION / DENIAL LETTER — FOR TESTING & DEMO USE ONLY ***\nMeridian Health Plan\nUtilization Management Department\n1400 Concourse Parkway, Suite 300, Phoenix, AZ 85034\nDate: 2026-07-02\nMarcus T. Reeves\nPT-559201\nMember ID: MHP-77410-A\nRE: Notice of Adverse Benefit Determination\nReference #: PA-2026-661204\nClaim #: HC-CLM-77410\nService: CPT 29881 — Knee Arthroscopy w/ Meniscectomy\nRequested Date: 2026-07-15\nDetermination: DENIED\nDenial Reason Code: MN-07 — Medical necessity not established\nExplanation\nDear Mr. Reeves,\nAfter review by our Medical Director, the requested procedure (CPT 29881) has been denied. Our clinical review\ndetermined that the submitted documentation does not demonstrate that a minimum of 6 weeks of conservative\ntreatment was fully exhausted and documented per Meridian Health Plan's Musculoskeletal Surgery Guideline\nMSK-014. Specifically, physical therapy visit notes and a formal re-evaluation following the conservative treatment\ncourse were not included with this request.\nAppeal Rights\nYou or your provider have the right to request a formal appeal of this decision within 180 days of this notice. Appeals\nshould be submitted in writing to the address above, Attn: Appeals & Grievances, and should include any additional\nsupporting clinical documentation, including physical therapy records and a physician re-evaluation note.\nSincerely,\nDr. Rachel Okafor, MD\nMedical Director, Meridian Health Plan\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 2 of 2 --",
+    "sourceFileName": "File1_PriorAuth_Denial.pdf",
+    "suggestedNode": "billing",
+    "suggestedLabel": "Billing",
+    "confidence": "high",
+    "matched": [
+      "denial",
+      "claim",
+      "cpt",
+      "era",
+      "appeal"
+    ],
+    "reason": "Matched: \"denial\", \"claim\", \"cpt\", \"era\", \"appeal\"",
+    "alternates": [
+      {
+        "key": "medical",
+        "label": "Medical",
+        "matched": [
+          "clinical",
+          "physician"
+        ]
+      },
+      {
+        "key": "insurance",
+        "label": "Insurance",
+        "matched": [
+          "prior auth",
+          "authorization"
+        ]
+      }
+    ],
+    "status": "routed",
+    "createdAt": "2026-08-31T07:36:52.420Z",
+    "routedAt": "2026-08-31T07:37:14.624Z"
+  },
+  {
+    "id": "intk_mtgxcp4y2157",
+    "description": "Denial",
+    "suggestedNode": "billing",
+    "suggestedLabel": "Billing",
+    "confidence": "high",
+    "matched": [
+      "denial"
+    ],
+    "reason": "Matched: \"denial\"",
+    "alternates": [],
+    "status": "routed",
+    "createdAt": "2026-08-31T07:36:16.450Z",
+    "routedAt": "2026-08-31T07:36:34.288Z"
+  },
+  {
     "id": "intk_mtgu35bw0lwc",
     "description": "Denial received for CPT 99214, timely filing appeal needed",
     "suggestedNode": "billing",
@@ -13,8 +210,8 @@
     ],
     "reason": "Matched: \"denial\", \"cpt\", \"appeal\", \"timely filing\"",
     "alternates": [],
-    "status": "suggested",
+    "status": "routed",
     "createdAt": "2026-08-31T06:04:52.028Z",
-    "routedAt": null
+    "routedAt": "2026-08-31T07:37:26.672Z"
   }
 ]
