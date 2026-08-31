@@ -587,8 +587,7 @@ let docText='', selectedDocType='Change Order', engOut={}, enginesComplete=0;
         if (typeof fireEngines === 'function') await fireEngines();
         // Auto-escalate to Strategist disabled here too, for the same reason
         // as the main fireEngines() completion handler: it was cutting off
-        // the Anomaly Advisor / Build Remediation Mission flow before the
-        // user could interact with it. Escalation is manual only now.
+        // interaction with post-analysis flows. Escalation is manual only now.
       }, 900);
     }
     const ta = document.getElementById('docPaste');
@@ -1437,12 +1436,9 @@ async function fireEngines() {
   storeSession(e);
   reportConstructionNodes(e);
   fireCapabilitySweep(e);
-  showAnomalyAdvisorPanel(e, docText);
   // Auto-escalate to Strategist disabled by design: this was firing 2s after
-  // engines complete regardless of tsm_auto_mode, cutting off the Anomaly
-  // Advisor reveal and the Build Remediation Mission / permits-routing flow
-  // before the user could interact with it. Escalation is now manual only
-  // via the "⚡ ESCALATE TO STRATEGIST →" button.
+  // engines complete regardless of tsm_auto_mode. Escalation is now manual
+  // only via the "⚡ ESCALATE TO STRATEGIST →" button.
 }
 
 // ═══════════════════════════════
@@ -1645,136 +1641,6 @@ function clearAll(){
 })();
 
 addLog('Construction War Room initialized','6 engines standing by — load construction document to begin','g');
-</script>
-<script>
-function showAnomalyAdvisorPanel(outputs, docText) {
-  const existing = document.getElementById('anomaly-slide-panel');
-  if (existing) existing.remove();
-
-  const panel = document.createElement('div');
-  panel.id = 'anomaly-slide-panel';
-  panel.style.cssText = `
-    position:fixed; bottom:0; right:0; width:420px; max-height:60vh;
-    background:#0a0f0a; border-top:2px solid #1ee8b6; border-left:2px solid #1ee8b6;
-    z-index:300; display:flex; flex-direction:column;
-    transform:translateY(100%); transition:transform 0.4s cubic-bezier(0.16,1,0.3,1);
-    font-family:'JetBrains Mono',monospace;
-  `;
-
-  panel.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #1ee8b633;background:#0d1a0d;">
-      <span style="color:#1ee8b6;font-size:11px;font-weight:700;letter-spacing:2px;">⬡ ANOMALY ADVISOR — CONSTRUCTION DEFECT SCAN</span>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button onclick="document.getElementById('anomaly-slide-panel').remove()" style="background:transparent;border:none;color:#666;font-size:16px;cursor:pointer;line-height:1;padding:0 2px;">✕</button>
-      </div>
-    </div>
-    <div id="anomaly-panel-body" style="flex:1;overflow-y:auto;padding:12px 14px;font-size:11px;line-height:1.8;color:#a0b8a0;">
-      <div id="anomaly-scan-msg" style="color:#1ee8b6;font-size:10px;letter-spacing:1px;">⬡ SCANNING PROJECT DOCUMENTS FOR DEFECTS...</div>
-    </div>
-    <div id="tsm-mission-panel" style="display:none;padding:0 14px 14px;"></div>
-    <button id="tsm-build-mission-btn" onclick="tsmLaunchMission()" style="display:none;margin:0 14px 14px;width:calc(100% - 28px);background:rgba(30,232,182,.1);border:1px solid rgba(30,232,182,.4);color:#1ee8b6;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.12em;padding:10px;cursor:pointer;text-transform:uppercase;">⚡ BUILD REMEDIATION MISSION</button>
-  `;
-
-  document.body.appendChild(panel);
-  requestAnimationFrame(() => { panel.style.transform = 'translateY(0)'; });
-
-  const body = document.getElementById('anomaly-panel-body');
-  const context = `ENGINE 1 (DOCUMENT INTEL):\n${(outputs[1]||'').slice(0,400)}\n\nENGINE 2 (RISK & ANOMALY):\n${(outputs[2]||'').slice(0,400)}\n\nENGINE 3 (FINANCIAL IMPACT):\n${(outputs[3]||'').slice(0,300)}\n\nENGINE 4 (COMPLIANCE):\n${(outputs[4]||'').slice(0,300)}\n\nDOC SAMPLE:\n${(docText||'').slice(0,500)}`;
-
-  const sys = `You are TSM Anomaly Advisor, a field-level defect detection engine for construction project documents. Analyze the engine outputs and identify specific actionable defects. Output ONLY a numbered list. Each item must follow this exact format:
-⚠ [FIELD/SECTION] — what is wrong — exact fix instruction (which document, which line item, which spec section, what to correct or flag).
-Maximum 8 items. No preamble. No headers. No summary. Start immediately with item 1.`;
-
-  let firstChunk = true;
-  groqStreamModel(
-    'openai/gpt-oss-120b', sys, context,
-    (chunk) => {
-      if (firstChunk) {
-        firstChunk = false;
-        const scanMsg = document.getElementById('anomaly-scan-msg');
-        if (scanMsg) scanMsg.remove();
-      }
-      const span = document.createElement('span');
-      span.innerHTML = chunk
-        .replace(/⚠/g, '<span style="color:#f59e0b">⚠</span>')
-        .replace(/—/g, '<span style="color:#1ee8b660"> — </span>');
-      body.appendChild(span);
-      body.scrollTop = body.scrollHeight;
-    },
-    () => {
-      const footer = document.createElement('div');
-      footer.style.cssText = 'margin-top:14px;padding-top:10px;border-top:1px solid #1ee8b620;color:#1ee8b650;font-size:9px;letter-spacing:1px;';
-      footer.textContent = '⬡ SCAN COMPLETE — PROJECT DEFECTS PACKAGED FOR STRATEGIST RELAY';
-      body.appendChild(footer);
-      const btn = document.getElementById('tsm-build-mission-btn');
-      if (btn) { btn.dataset.anomaly = body.innerText || ''; btn.style.display = 'block'; }
-    },
-    (err) => {
-      console.warn('[TSM] Anomaly Advisor live call failed, using local fallback:', err);
-      if (firstChunk) {
-        firstChunk = false;
-        const scanMsg = document.getElementById('anomaly-scan-msg');
-        if (scanMsg) scanMsg.remove();
-      }
-      const manifest = buildDefectManifest(outputs);
-      const synthesized = manifest.split('\n').filter(Boolean).map((line, i) => {
-        const clean = line.replace(/^DEFECT \d+:\s*/, '');
-        return `⚠ ITEM ${i + 1} — ${clean} — cross-reference with source engine output and flag for remediation.`;
-      }).join('\n');
-      const span = document.createElement('span');
-      span.innerHTML = synthesized
-        .replace(/⚠/g, '<span style="color:#f59e0b">⚠</span>')
-        .replace(/—/g, '<span style="color:#1ee8b660"> — </span>')
-        .replace(/\n/g, '<br>');
-      body.appendChild(span);
-      body.scrollTop = body.scrollHeight;
-      const footer = document.createElement('div');
-      footer.style.cssText = 'margin-top:14px;padding-top:10px;border-top:1px solid #1ee8b620;color:#1ee8b650;font-size:9px;letter-spacing:1px;';
-      footer.textContent = '⬡ LOCAL FALLBACK — SYNTHESIZED FROM ENGINE OUTPUT (LIVE API UNREACHABLE)';
-      body.appendChild(footer);
-      const btn = document.getElementById('tsm-build-mission-btn');
-      if (btn) { btn.dataset.anomaly = body.innerText || ''; btn.style.display = 'block'; }
-    },
-    600
-  );
-}
-
-// Thin wrapper around the same /api/construction/query endpoint the 6 engines
-// use, with a typewriter-style reveal so the Anomaly Advisor panel streams
-// the same way it would with a true SSE endpoint. Calls onError (rather than
-// throwing) on any failure so callers can fall back to local synthesis.
-function groqStreamModel(model, sys, userContext, onChunk, onDone, onError, maxTokens) {
-  (async () => {
-    try {
-      const r = await fetch('/api/construction/query', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ system: sys, question: userContext, maxTokens: maxTokens || 400 })
-      });
-      if (!r.ok) throw new Error('API ' + r.status);
-      const d = await r.json();
-      const text = (d.answer || d.response || '').trim();
-      if (!text) throw new Error('empty response');
-      await tsmRevealText(text, onChunk);
-      onDone();
-    } catch (err) {
-      onError(err.message || String(err));
-    }
-  })();
-}
-
-function tsmRevealText(text, onChunk) {
-  return new Promise(resolve => {
-    let i = 0;
-    (function step() {
-      if (i >= text.length) { resolve(); return; }
-      const n = 3 + Math.floor(Math.random() * 4);
-      onChunk(text.slice(i, i + n));
-      i += n;
-      setTimeout(step, 12);
-    })();
-  });
-}
 </script>
 <!-- HOW-TO GUIDE MODAL -->
 <div id="howtoOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:10001;overflow-y:auto;padding:2rem 1rem">
@@ -2005,130 +1871,6 @@ function speechPlay(){if(typeof responsiveVoice==='undefined'){alert('Responsive
 function speechPause(){if(typeof responsiveVoice!=='undefined')responsiveVoice.pause();speechSetState('paused');}
 function speechStop(){if(typeof responsiveVoice!=='undefined')responsiveVoice.cancel();speechSetState('idle');}
 function speechSetState(state){const pb=document.getElementById('speechPlayBtn'),ps=document.getElementById('speechPauseBtn'),st=document.getElementById('speechStopBtn');if(!pb)return;if(state==='speaking'){pb.style.display='none';ps.style.display='';st.style.display='';ps.className='hud-speech-btn speaking';}else if(state==='paused'){pb.style.display='';pb.textContent='▶ RESUME';pb.className='hud-speech-btn paused';ps.style.display='none';st.style.display='';}else{pb.style.display='';pb.textContent='🔊 SPEAK';pb.className='hud-speech-btn';ps.style.display='none';st.style.display='none';}}
-const TSM_MISSION_VERTICAL = 'construction';
-
-// Splits the Anomaly Advisor's numbered list into individual defect lines.
-function tsmSplitAnomalyItems(text) {
-  const numbered = String(text || '')
-    .split(/\n(?=\s*\d+[\.\)])/)
-    .map(s => s.trim())
-    .filter(Boolean);
-  if (numbered.length > 1) return numbered;
-  return String(text || '').split('\n').map(s => s.trim()).filter(Boolean);
-}
-
-// Classifies one defect line as PERMITS (city/zoning/permit filings) or
-// FIELDOPS (safety/schedule/crew/site coordination). Uses the same
-// /api/construction/query endpoint as the 6 engines; falls back to a
-// keyword heuristic if the call fails or comes back unclear.
-async function tsmClassifyDefectLine(line) {
-  try {
-    const prompt = `Classify this construction project defect into exactly one category. Respond with ONLY one word: PERMITS or FIELDOPS.
-PERMITS = permit filings, zoning, city/municipal approvals, licensing, entitlements.
-FIELDOPS = safety, OSHA, schedule, crew, RFI, site conditions, equipment, subcontractor field coordination.
-Item: "${String(line).replace(/"/g, "'")}"`;
-    const answer = await callGroq(prompt, 4);
-    const upper = (answer || '').toUpperCase();
-    if (upper.includes('PERMIT')) return { target: 'PERMITS', viaAI: true };
-    if (upper.includes('FIELD')) return { target: 'FIELDOPS', viaAI: true };
-  } catch (e) {
-    console.warn('[TSM] Classification call failed, using keyword fallback:', e);
-  }
-  return { target: /permit|zoning|\bcity\b|entitlement|licens/i.test(line) ? 'PERMITS' : 'FIELDOPS', viaAI: false };
-}
-
-function tsmRenderMissionCard(panel, mission, permitsItems, fieldOpsItems) {
-  const list = (arr) => arr.map(i => `<div style="margin-top:3px;color:#a0b8a0;">• ${esc(i)}</div>`).join('') || '<div style="color:#4a5a4a;">— none —</div>';
-  panel.innerHTML = `
-    <div style="border:1px solid rgba(30,232,182,.3);padding:10px;font-size:10px;">
-      <div style="color:#1ee8b6;font-weight:700;letter-spacing:1px;margin-bottom:8px;">⚡ MISSION ${esc(mission.id)} — READY</div>
-      <div style="color:#ffc400;font-size:9px;letter-spacing:1px;margin-bottom:2px;">PERMITS & PROPOSALS (${permitsItems.length})</div>
-      ${list(permitsItems)}
-      <div style="color:#ffc400;font-size:9px;letter-spacing:1px;margin:10px 0 2px;">FIELD & DOCUMENT OPS (${fieldOpsItems.length})</div>
-      ${list(fieldOpsItems)}
-      <div style="display:flex;gap:8px;margin-top:12px;">
-        <button onclick="tsmRouteToPermits()" style="flex:1;background:rgba(255,196,0,.1);border:1px solid rgba(255,196,0,.4);color:#ffc400;padding:8px;cursor:pointer;font-family:inherit;font-size:9px;letter-spacing:1px;">→ OPEN PERMITS & PROPOSALS</button>
-        <button onclick="tsmRouteToFieldOps()" style="flex:1;background:rgba(30,232,182,.1);border:1px solid rgba(30,232,182,.4);color:#1ee8b6;padding:8px;cursor:pointer;font-family:inherit;font-size:9px;letter-spacing:1px;">→ OPEN FIELD & DOCUMENT OPS</button>
-      </div>
-    </div>`;
-  panel._tsmMissionId = mission.id;
-  panel._tsmPermitsItems = permitsItems;
-  panel._tsmFieldOpsItems = fieldOpsItems;
-}
-
-function tsmRouteToPermits() {
-  const panel = document.getElementById('tsm-mission-panel');
-  const items = (panel && panel._tsmPermitsItems) || [];
-  const missionId = panel && panel._tsmMissionId;
-  localStorage.setItem('tsm_permits_remediation_task', JSON.stringify({ missionId, ts: Date.now(), items }));
-  goNav('permits-proposals.html');
-}
-
-// Confirmed against construction-suite-expansion.html's own reader block
-// ("WAR ROOM REMEDIATION TASK READER") — key name and {ts, missionId, items}
-// shape match exactly what that page expects for its yellow banner.
-function tsmRouteToFieldOps() {
-  const panel = document.getElementById('tsm-mission-panel');
-  const items = (panel && panel._tsmFieldOpsItems) || [];
-  const missionId = panel && panel._tsmMissionId;
-  localStorage.setItem('tsm_construction_fieldops_remediation_task', JSON.stringify({ missionId, ts: Date.now(), items }));
-  goNav('construction-suite-expansion.html');
-}
-
-async function tsmLaunchMission() {
-  const btn = document.getElementById('tsm-build-mission-btn');
-  const panel = document.getElementById('tsm-mission-panel');
-  if (!btn || !panel || !window.TSMMission) return;
-  btn.disabled = true;
-  btn.textContent = '⚡ CLASSIFYING DEFECTS...';
-  panel.style.display = 'block';
-  panel.innerHTML = '<div style="color:#1ee8b6;font-size:10px;letter-spacing:1px;padding:6px 0;">⬡ CLASSIFYING DEFECTS & ROUTING...</div>';
-
-  try {
-    const lines = tsmSplitAnomalyItems(btn.dataset.anomaly || '');
-    const mission = TSMMission.create({
-      sector: TSM_MISSION_VERTICAL,
-      priority: 'high',
-      source: 'anomaly-advisor',
-      meta: { itemCount: lines.length }
-    });
-
-    const permitsItems = [], fieldOpsItems = [], findings = [];
-    let aiClassifiedCount = 0;
-    for (const line of lines) {
-      const { target, viaAI } = await tsmClassifyDefectLine(line);
-      if (viaAI) aiClassifiedCount++;
-      (target === 'PERMITS' ? permitsItems : fieldOpsItems).push(line);
-      findings.push({ title: line.slice(0, 140), severity: 'high', detail: line });
-    }
-    // Confidence reflects how many lines the routing actually got from the
-    // AI classifier vs. the keyword fallback (used when the call fails) --
-    // real data completeness, not a flat guess every time.
-    const routingConfidence = lines.length
-      ? Math.round(55 + (aiClassifiedCount / lines.length) * 40)
-      : 55;
-
-    TSMMission.publishAnalysis(mission.id, {
-      findings,
-      actions: [
-        permitsItems.length ? `Route ${permitsItems.length} item(s) to Permits & Proposals` : null,
-        fieldOpsItems.length ? `Route ${fieldOpsItems.length} item(s) to Field & Document Ops` : null
-      ].filter(Boolean),
-      confidence: routingConfidence
-    });
-    TSMMission.addTimeline(mission.id, { event: 'mission_routed', data: { permits: permitsItems.length, fieldOps: fieldOpsItems.length } });
-    const completed = TSMMission.complete(mission.id, { outcome: 'routed', metrics: { permitsCount: permitsItems.length, fieldOpsCount: fieldOpsItems.length } });
-
-    tsmRenderMissionCard(panel, completed, permitsItems, fieldOpsItems);
-    btn.style.display = 'none';
-    sessionStorage.setItem('TSM_MISSION_COMPLETE_CONSTRUCTION', JSON.stringify({ missionId: mission.id, ts: Date.now() }));
-  } catch (e) {
-    console.error('[TSM] Mission build failed:', e);
-    panel.innerHTML = '<div style="color:#ef4444;font-size:10px;">Mission build failed: ' + esc(e.message || String(e)) + '</div>';
-    btn.disabled = false;
-    btn.textContent = '⚡ BUILD REMEDIATION MISSION';
-  }
-}
 </script>
   <script src="/html/core/tsm-runtime.js"></script>
 <script>

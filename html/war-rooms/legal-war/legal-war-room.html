@@ -1522,7 +1522,6 @@ setTimeout(() => {
     dt = docEl ? docEl.value : '';
     sessionStorage.setItem('TSM_LEGAL_WAR_RELAY', JSON.stringify({ docText: dt, selectedDocType: 'Legal', engineOutputs: outputs, timestamp: Date.now() }));
   } catch(e) {}
-  showAnomalyAdvisorPanel(outputs, dt);
 }, 1200);
 }
 
@@ -1543,62 +1542,6 @@ setInterval(() => {
     if (f) { const r=new FileReader(); r.onload=ev=>{docText=ev.target.result;setLoaded(f.name);}; r.readAsText(f); }
   });
 })();
-</script><script>
-function showAnomalyAdvisorPanel(outputs, docText) {
-  const existing = document.getElementById('anomaly-slide-panel');
-  if (existing) existing.remove();
- 
-  const panel = document.createElement('div');
-  panel.id = 'anomaly-slide-panel';
-  panel.style.cssText = `
-    position:fixed; bottom:0; right:0; width:420px; max-height:75vh;
-    background:#0a0f0a; border-top:2px solid #1ee8b6; border-left:2px solid #1ee8b6;
-    z-index:300; display:flex; flex-direction:column;
-    transform:translateY(100%); transition:transform 0.4s cubic-bezier(0.16,1,0.3,1);
-    font-family:'JetBrains Mono',monospace;
-  `;
- 
-  panel.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #1ee8b633;background:#0d1a0d;">
-      <span style="color:#1ee8b6;font-size:11px;font-weight:700;letter-spacing:2px;">⬡ ANOMALY ADVISOR — MATTER DEFECT SCAN</span>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button onclick="window.open('legal-anomaly-advisor.html','_blank')" style="background:#1ee8b620;border:1px solid #1ee8b6;color:#1ee8b6;font-size:9px;padding:3px 8px;cursor:pointer;font-family:inherit;letter-spacing:1px;">FULL REPORT ↗</button>
-        <button onclick="document.getElementById('anomaly-slide-panel').remove()" style="background:transparent;border:none;color:#666;font-size:16px;cursor:pointer;line-height:1;padding:0 2px;">✕</button>
-      </div>
-    </div>
-    <div id="anomaly-panel-body" style="flex:1;overflow-y:auto;padding:12px 14px;font-size:11px;line-height:1.8;color:#a0b8a0;">
-      <div id="anomaly-scan-msg" style="color:#1ee8b6;font-size:10px;letter-spacing:1px;">⬡ SCANNING MATTER DOCUMENTS FOR FIELD-LEVEL DEFECTS...</div>
-    </div>
-  `;
- 
-  document.body.appendChild(panel);
-  requestAnimationFrame(() => { panel.style.transform = 'translateY(0)'; });
- 
-  const body = document.getElementById('anomaly-panel-body');
-  const context = `ENGINE 1 (DOCUMENT INTEL):\n${(outputs[0]||'').slice(0,400)}\n\nENGINE 2 (LEGAL ISSUES):\n${(outputs[1]||'').slice(0,400)}\n\nENGINE 3 (EXPOSURE MAP):\n${(outputs[2]||'').slice(0,300)}\n\nENGINE 4 (RECOVERY PLAN):\n${(outputs[3]||'').slice(0,300)}\n\nDOC SAMPLE:\n${(docText||'').slice(0,500)}`;
-  const sys = `You are TSM Anomaly Advisor, a field-level defect detection engine for legal case documents. Analyze the engine outputs and identify specific actionable defects. Output ONLY a numbered list. Each item: ⚠ [FIELD/SECTION NAME] — what is wrong — exact fix instruction. Maximum 8 items. Start immediately with item 1.`;
- 
-  let anomalyFullText = '';
-  let firstChunk = true;
-  groqStreamModel('openai/gpt-oss-120b', sys, context,
-    (chunk) => {
-      if (firstChunk) { firstChunk=false; const s=document.getElementById('anomaly-scan-msg'); if(s) s.remove(); }
-      anomalyFullText += chunk;
-      const span = document.createElement('span');
-      span.innerHTML = chunk.replace(/⚠/g,'<span style="color:#f59e0b">⚠</span>').replace(/—/g,'<span style="color:#1ee8b660"> — </span>');
-      body.appendChild(span);
-      body.scrollTop = body.scrollHeight;
-    },
-    () => {
-      const footer = document.createElement('div');
-      footer.style.cssText='margin-top:14px;padding-top:10px;border-top:1px solid #1ee8b620;color:#1ee8b650;font-size:9px;letter-spacing:1px;';
-      footer.textContent='⬡ SCAN COMPLETE — SEE ENGINE 06 BELOW FOR ROUTING';
-      body.appendChild(footer);
-    },
-    (err) => { const e=document.createElement('div'); e.style.color='#ef4444'; e.textContent='[Advisor error: '+err+']'; body.appendChild(e); },
-    600
-  );
-}
 </script>
 <!-- HOW-TO GUIDE MODAL -->
 <div id="howtoOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:10001;overflow-y:auto;padding:2rem 1rem">
@@ -1723,7 +1666,6 @@ const TOUR_SLIDES = [
   {"id":"status","title":"STEP 5 · MONITOR ENGINE STATUS","type":"demo","target":"fireBtn","autoMs":6000,"narration":"Watch the <span class='hl'>engine status badges</span>. Each cycles: <span class='warn'>IDLE → RUNNING → COMPLETE</span>. Amber pulsing = calling AI. Green COMPLETE = output locked. If an engine errors, the system falls back to heuristic output so the chain never fully breaks.","actionHint":null},
   {"id":"kpis","title":"STEP 6 · READ THE KPI SNAPSHOT","type":"demo","target":"snapRisk","autoMs":7000,"narration":"After engines complete, the <span class='hl'>KPI snapshot</span> populates: <span class='cmd'>Risk Score</span> (1–100), <span class='cmd'>Damages Exposure</span>, <span class='cmd'>Critical Deadline</span>, <span class='cmd'>Case Type</span>, and <span class='cmd'>Litigation Stage</span>. Risk >70 = red. Use these to triage before reading full engine outputs.","actionHint":null},
   {"id":"engines","title":"STEP 7 · REVIEW ENGINE OUTPUT CARDS","type":"demo","target":"enginesGrid","autoMs":9000,"narration":"The engine output cards hold the full analysis. Each has a <span class='cmd'>COPY</span> button. <span class='cmd'>E01</span>: Extracts parties, obligations, termination clauses, penalty triggers. <span class='cmd'>E02</span>: Flags breaches, SOL risks, unfavorable indemnification. <span class='cmd'>E05</span>: Dollar-quantified risk mitigation plan with counsel assignments and deadlines.","actionHint":"Click COPY on any engine card to copy output to clipboard"},
-  {"id":"anomaly","title":"STEP 8 · ANOMALY ADVISOR PANEL","type":"demo","target":"anomaly-slide-panel","autoMs":7000,"narration":"After engines complete, the <span class='hl'>Anomaly Advisor</span> auto-launches as a slide-in panel. It scans all engine outputs for <span class='cmd'>field-level matter defects</span> — missing clauses, SOL risks, filing gaps — with exact fix instructions. Click <span class='cmd'>FULL REPORT ↗</span> to open the dedicated advisor page.","actionHint":"Review Anomaly Advisor defect list — click FULL REPORT ↗ for the complete scan"},
   {"id":"dispatch","title":"STEP 9 · APP DISPATCH / BNCA","type":"demo","target":"dispatch06","autoMs":7000,"narration":"Engine 06 generates the <span class='hl'>App Dispatch</span> panel — ranked routing cards for which TSM Legal module to open next. The <span class='cmd'>⭐ TOP MATCH</span> is highlighted. Each card has tailored how-to instructions specific to your matter's findings.","actionHint":"Click any LAUNCH [APP] → button to route directly to that TSM module"},
   {"id":"escalate","title":"STEP 10 · ESCALATE TO CHIEF STRATEGIST","type":"action","target":"alertBar","autoMs":8000,"narration":"Final step: <span class='hl'>escalate the full engine package</span> to the <span class='cmd'>Legal Chief Strategist</span> via sessionStorage relay. The Strategist synthesizes the package into an executive legal brief. Use <span class='cmd'>EXPORT</span> to download a plaintext report for counsel review.","actionHint":"Click ESCALATE → CHIEF STRATEGIST to transfer the full analysis package"},
   {"id":"done","title":"TOUR COMPLETE · WAR ROOM READY","type":"info","target":"alertBar","autoMs":0,"narration":"<span class='ok'>Tour complete.</span> Full LEGAL WAR ROOM workflow: <span class='cmd'>classify → load → connect → fire → review → anomaly scan → route → escalate</span>. Click <span class='hl'>HOW-TO GUIDE</span> anytime to reference this workflow. <span class='hl'>Load a real matter document and fire the engines</span> to begin your first live analysis.","actionHint":null}
