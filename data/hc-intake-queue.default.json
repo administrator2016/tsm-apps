@@ -1,5 +1,187 @@
 [
   {
+    "id": "intk_mth2qig2rh0l",
+    "description": "*** SAMPLE / SYNTHETIC DATA — REMITTANCE ADVICE — FOR TESTING & DEMO USE ONLY ***\nArizona Health Network\nElectronic Remittance Advice (ERA) — Summary\nPayer / Payee Information\nPayer: Arizona Health Network\nPayer ID: AHN-00447\nPayee (Provider): Desert Cardiac Partners\nPayee NPI: 1740882931\nCheck / EFT #: EFT-9931207\nPayment Date: 2026-08-19\nPayment Amount: $2,940.10\nClaim Detail\nClaim #: CLM-88340\nPatient: Denise K. Alvarado (PT-99201)\nStatement Dates: 08/05/2026 - 08/05/2026\nCPT Billed Allowed Deduct Coins (20%) Paid\n93000 — EKG $180.00 $96.40 $0.00 $19.28 $77.12\n78452 — Cardiac stress imaging $2,450.00 $1,610.75 $0.00 $322.15 $1,288.60\n99213 — Office visit $165.00 $121.05 $0.00 $24.21 $96.84\nClaim Total — Billed: $2,795.00 | Allowed: $1,828.20 | Patient Responsibility: $365.64 | Plan Paid: $1,462.56\nAdjustment Reason Codes (CARC)\nCO-45: Charge exceeds fee schedule/maximum allowable amount. PR-3: Co-payment amount is patient responsibility.\nCO-96: Non-covered charge(s) per plan benefit design.\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and payment\nfigures are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 1 of 2 --\n\n*** SAMPLE / SYNTHETIC DATA — EXPLANATION OF BENEFITS (EOB) — FOR TESTING & DEMO USE ONLY ***\nArizona Health Network\nExplanation of Benefits — This is Not a Bill\nMember Information\nMember Name: Denise K. Alvarado\nMember ID: AHN-88201-C\nGroup Number: GRP-40587\nClaim #: CLM-88340\nDate of Service: 08/05/2026\nProvider: Desert Cardiac Partners\nService Summary\nService Billed Allowed Deduct You Owe Plan Paid\n93000 — EKG $180.00 $96.40 $0.00 $19.28 $77.12\n78452 — Stress imaging $2,450.00 $1,610.75 $0.00 $322.15 $1,288.60\n99213 — Office visit $165.00 $121.05 $0.00 $24.21 $96.84\nTotal Billed: $2,795.00 | Total Allowed: $1,828.20 | Your Total Responsibility: $365.64 | Plan Paid: $1,462.56\nHow to Read This EOB\n\"Billed\" is the amount your provider charged. \"Allowed\" is the maximum amount Arizona Health Network covers for this\nservice based on your plan's negotiated rate. \"You Owe\" reflects your applicable coinsurance after any deductible. This\nis not a bill — your provider will send a separate invoice for any balance due.\nQuestions About This EOB?\nCall Member Services at (800) 555-0163, Monday-Friday, 8am-6pm MST, or visit\nmember.arizonahealthnetwork-sample.com to view claim details online.\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and payment\nfigures are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 2 of 2 --",
+    "sourceFileName": "File4_Remittance_EOB_2.pdf",
+    "suggestedNode": "billing",
+    "suggestedLabel": "Billing",
+    "confidence": "high",
+    "matched": [
+      "claim",
+      "cpt",
+      "remit",
+      "era",
+      "eob"
+    ],
+    "reason": "Matched: \"claim\", \"cpt\", \"remit\", \"era\", \"eob\"",
+    "alternates": [
+      {
+        "key": "operations",
+        "label": "Operations",
+        "matched": [
+          "schedul"
+        ]
+      },
+      {
+        "key": "insurance",
+        "label": "Insurance",
+        "matched": [
+          "payer"
+        ]
+      }
+    ],
+    "status": "routed",
+    "createdAt": "2026-08-31T10:06:59.042Z",
+    "routedAt": "2026-08-31T10:07:02.681Z"
+  },
+  {
+    "id": "intk_mth0gdgx2boi",
+    "description": "*** SAMPLE / SYNTHETIC DATA — PRIOR AUTHORIZATION REQUEST — FOR TESTING & DEMO USE ONLY ***\nTriCore Regional Health\nPrior Authorization Request Form — Outpatient Surgical Services\nRequesting Provider Information\nProvider Name: Dr. Felix Okonkwo, MD\nPractice: Sonoran Surgical Group\nNPI: 1558820047\nTax ID: 84-7729103\nContact Phone: (602) 555-0221\nFax: (602) 555-0222\nPatient Information\nPatient Name: Angela M. Brooks\nPatient ID: PT-410872\nDate of Birth: 01/30/1982\nMember ID: TC-50117-B\nGroup Number: GRP-33810\nRequested Service\nCPT Code: 47562 — Laparoscopic cholecystectomy\nICD-10 Code: K80.20 — Calculus of gallbladder without obstruction\nPlace of Service: Outpatient Surgical Center\nRequested Date: 2026-06-18\nUnits: 1\nEst. Charge Amount: $22,400.00\nClinical Justification\nPatient presents with recurrent right upper quadrant pain confirmed by ultrasound to be secondary to symptomatic\ncholelithiasis. Conservative dietary management has not resolved symptoms over the past 8 weeks. Surgical removal\nis recommended.\nSubmitted By: Sonoran Surgical Group — Authorizations Dept.\nSubmission Date: 2026-06-18\nReference #: PA-2026-711560\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 1 of 2 --\n\n*** SAMPLE / SYNTHETIC DATA — ADVERSE DETERMINATION / DENIAL LETTER — FOR TESTING & DEMO USE ONLY ***\nTriCore Regional Health\nUtilization Management Department\n900 N. Central Ave, Suite 220, Phoenix, AZ 85004\nDate: 2026-06-10\nAngela M. Brooks\nPT-410872\nMember ID: TC-50117-B\nRE: Notice of Adverse Benefit Determination\nReference #: PA-2026-711560\nClaim #: TC-CLM-50117\nAmount Billed: $24,150.00\nService: CPT 47562 — Laparoscopic Cholecystectomy\nRequested Date: 2026-06-18\nDetermination: DENIED\nDenial Reason Code: MN-11 — Medical necessity not established\nRendering Provider NPI: 1558820074\nExplanation\nDear Ms. Brooks,\nAfter review by our Medical Director, the requested procedure (CPT 47562) has been denied. The submitted\ndocumentation does not demonstrate a trial of conservative management consistent with TriCore Regional Health's\nGallbladder Surgery Guideline GB-009, which requires a minimum 12-week documented dietary modification period\nprior to surgical intervention for non-obstructive cholelithiasis.\nAppeal Rights\nYou or your provider have the right to request a formal appeal of this decision. Appeals must be received in writing at\nthe address above, Attn: Appeals & Grievances, within 15 days of this notice, and should include any additional\nsupporting clinical documentation.\nSincerely,\nDr. Wendell Marsh, MD\nMedical Director, TriCore Regional Health\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 2 of 2 --",
+    "sourceFileName": "File5_PriorAuth_Denial_ANOMALY.pdf",
+    "suggestedNode": "billing",
+    "suggestedLabel": "Billing",
+    "confidence": "high",
+    "matched": [
+      "denial",
+      "claim",
+      "cpt",
+      "era",
+      "appeal"
+    ],
+    "reason": "Matched: \"denial\", \"claim\", \"cpt\", \"era\", \"appeal\"",
+    "alternates": [
+      {
+        "key": "insurance",
+        "label": "Insurance",
+        "matched": [
+          "prior auth",
+          "authorization"
+        ]
+      },
+      {
+        "key": "medical",
+        "label": "Medical",
+        "matched": [
+          "clinical"
+        ]
+      }
+    ],
+    "status": "routed",
+    "createdAt": "2026-08-31T09:03:06.801Z",
+    "routedAt": "2026-08-31T09:03:13.359Z"
+  },
+  {
+    "id": "intk_mth06o77kkxs",
+    "description": "*** SAMPLE / SYNTHETIC DATA — PRIOR AUTHORIZATION REQUEST — FOR TESTING & DEMO USE ONLY ***\nArizona Health Network\nPrior Authorization Request Form — Cardiology Services\nRequesting Provider Information\nProvider Name: Dr. Samuel Herrera, MD\nPractice: Desert Cardiac Partners\nNPI: 1740882931\nTax ID: 86-2210047\nContact Phone: (480) 555-0192\nFax: (480) 555-0193\nPatient Information\nPatient Name: Denise K. Alvarado\nPatient ID: PT-99201\nDate of Birth: 09/22/1965\nMember ID: AHN-88201-C\nGroup Number: GRP-40587\nRequested Service\nCPT Code: 93458 — Left heart catheterization, coronary angiography\nICD-10 Code: I25.10 — Atherosclerotic heart disease, without angina pectoris\nPlace of Service: Hospital Outpatient — Cath Lab\nRequested Date: 2026-07-09\nUnits: 1\nEst. Charge Amount: $14,500.00\nClinical Justification\nPatient with known coronary artery disease and an abnormal stress test dated 06/20/2026 showing reversible ischemia\nin the anterior wall. Diagnostic left heart catheterization is requested to evaluate coronary anatomy prior to determining\nfurther treatment plan.\nSubmitted By: Desert Cardiac Partners — Scheduling Dept.\nSubmission Date: 2026-07-01\nReference #: PA-2026-702118\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 1 of 2 --\n\n*** SAMPLE / SYNTHETIC DATA — ADVERSE DETERMINATION / DENIAL LETTER — FOR TESTING & DEMO USE ONLY ***\nArizona Health Network\nClaims & Utilization Management Department\n2200 E. Camelback Rd, Suite 500, Phoenix, AZ 85016\nDate: 2026-08-01\nDenise K. Alvarado\nPT-99201\nMember ID: AHN-88201-C\nRE: Notice of Claim Denial\nClaim #: CLM-88201\nService: CPT 93458 — Left Heart Catheterization\nDate of Service: 2026-07-09\nAmount Billed: $14,500.00\nDetermination: DENIED\nDenial Reason Code: CO-197 — Precertification/Authorization Absent\nExplanation\nDear Ms. Alvarado,\nClaim CLM-88201 has been denied because our records show no prior authorization was obtained for CPT 93458 prior\nto the date of service. Arizona Health Network's plan requires precertification for all cardiac catheterization procedures\nperformed in an outpatient hospital setting. As no prior authorization token is on file for this claim, payment cannot be\nissued.\nAppeal Rights\nThe provider may submit a retrospective authorization request with clinical documentation demonstrating medical\nurgency, or file a formal appeal within 90 days of this notice. Appeals should be sent in writing to the address above,\nAttn: Appeals Department.\nSincerely,\nDr. Priya Nandakumar, MD\nMedical Director, Arizona Health Network\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 2 of 2 --",
+    "sourceFileName": "File3_PriorAuth_Denial_CO197.pdf",
+    "suggestedNode": "billing",
+    "suggestedLabel": "Billing",
+    "confidence": "high",
+    "matched": [
+      "denial",
+      "claim",
+      "cpt",
+      "era",
+      "appeal"
+    ],
+    "reason": "Matched: \"denial\", \"claim\", \"cpt\", \"era\", \"appeal\"",
+    "alternates": [
+      {
+        "key": "medical",
+        "label": "Medical",
+        "matched": [
+          "clinical",
+          "diagnos"
+        ]
+      },
+      {
+        "key": "insurance",
+        "label": "Insurance",
+        "matched": [
+          "prior auth",
+          "authorization"
+        ]
+      }
+    ],
+    "status": "routed",
+    "createdAt": "2026-08-31T08:55:34.147Z",
+    "routedAt": "2026-08-31T08:55:45.932Z"
+  },
+  {
+    "id": "intk_mtgzrcjc257r",
+    "description": "*** SAMPLE / SYNTHETIC DATA — PRIOR AUTHORIZATION REQUEST — FOR TESTING & DEMO USE ONLY ***\nArizona Health Network\nPrior Authorization Request Form — Cardiology Services\nRequesting Provider Information\nProvider Name: Dr. Samuel Herrera, MD\nPractice: Desert Cardiac Partners\nNPI: 1740882931\nTax ID: 86-2210047\nContact Phone: (480) 555-0192\nFax: (480) 555-0193\nPatient Information\nPatient Name: Denise K. Alvarado\nPatient ID: PT-99201\nDate of Birth: 09/22/1965\nMember ID: AHN-88201-C\nGroup Number: GRP-40587\nRequested Service\nCPT Code: 93458 — Left heart catheterization, coronary angiography\nICD-10 Code: I25.10 — Atherosclerotic heart disease, without angina pectoris\nPlace of Service: Hospital Outpatient — Cath Lab\nRequested Date: 2026-07-09\nUnits: 1\nEst. Charge Amount: $14,500.00\nClinical Justification\nPatient with known coronary artery disease and an abnormal stress test dated 06/20/2026 showing reversible ischemia\nin the anterior wall. Diagnostic left heart catheterization is requested to evaluate coronary anatomy prior to determining\nfurther treatment plan.\nSubmitted By: Desert Cardiac Partners — Scheduling Dept.\nSubmission Date: 2026-07-01\nReference #: PA-2026-702118\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 1 of 2 --\n\n*** SAMPLE / SYNTHETIC DATA — ADVERSE DETERMINATION / DENIAL LETTER — FOR TESTING & DEMO USE ONLY ***\nArizona Health Network\nClaims & Utilization Management Department\n2200 E. Camelback Rd, Suite 500, Phoenix, AZ 85016\nDate: 2026-08-01\nDenise K. Alvarado\nPT-99201\nMember ID: AHN-88201-C\nRE: Notice of Claim Denial\nClaim #: CLM-88201\nService: CPT 93458 — Left Heart Catheterization\nDate of Service: 2026-07-09\nAmount Billed: $14,500.00\nDetermination: DENIED\nDenial Reason Code: CO-197 — Precertification/Authorization Absent\nExplanation\nDear Ms. Alvarado,\nClaim CLM-88201 has been denied because our records show no prior authorization was obtained for CPT 93458 prior\nto the date of service. Arizona Health Network's plan requires precertification for all cardiac catheterization procedures\nperformed in an outpatient hospital setting. As no prior authorization token is on file for this claim, payment cannot be\nissued.\nAppeal Rights\nThe provider may submit a retrospective authorization request with clinical documentation demonstrating medical\nurgency, or file a formal appeal within 90 days of this notice. Appeals should be sent in writing to the address above,\nAttn: Appeals Department.\nSincerely,\nDr. Priya Nandakumar, MD\nMedical Director, Arizona Health Network\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 2 of 2 --",
+    "sourceFileName": "File3_PriorAuth_Denial_CO197.pdf",
+    "suggestedNode": "billing",
+    "suggestedLabel": "Billing",
+    "confidence": "high",
+    "matched": [
+      "denial",
+      "claim",
+      "cpt",
+      "era",
+      "appeal"
+    ],
+    "reason": "Matched: \"denial\", \"claim\", \"cpt\", \"era\", \"appeal\"",
+    "alternates": [
+      {
+        "key": "medical",
+        "label": "Medical",
+        "matched": [
+          "clinical",
+          "diagnos"
+        ]
+      },
+      {
+        "key": "insurance",
+        "label": "Insurance",
+        "matched": [
+          "prior auth",
+          "authorization"
+        ]
+      }
+    ],
+    "status": "dismissed",
+    "createdAt": "2026-08-31T08:43:39.192Z",
+    "routedAt": null
+  },
+  {
+    "id": "intk_mtgzr6ld92g2",
+    "description": "*** SAMPLE / SYNTHETIC DATA — PRIOR AUTHORIZATION REQUEST — FOR TESTING & DEMO USE ONLY ***\nArizona Health Network\nPrior Authorization Request Form — Cardiology Services\nRequesting Provider Information\nProvider Name: Dr. Samuel Herrera, MD\nPractice: Desert Cardiac Partners\nNPI: 1740882931\nTax ID: 86-2210047\nContact Phone: (480) 555-0192\nFax: (480) 555-0193\nPatient Information\nPatient Name: Denise K. Alvarado\nPatient ID: PT-99201\nDate of Birth: 09/22/1965\nMember ID: AHN-88201-C\nGroup Number: GRP-40587\nRequested Service\nCPT Code: 93458 — Left heart catheterization, coronary angiography\nICD-10 Code: I25.10 — Atherosclerotic heart disease, without angina pectoris\nPlace of Service: Hospital Outpatient — Cath Lab\nRequested Date: 2026-07-09\nUnits: 1\nEst. Charge Amount: $14,500.00\nClinical Justification\nPatient with known coronary artery disease and an abnormal stress test dated 06/20/2026 showing reversible ischemia\nin the anterior wall. Diagnostic left heart catheterization is requested to evaluate coronary anatomy prior to determining\nfurther treatment plan.\nSubmitted By: Desert Cardiac Partners — Scheduling Dept.\nSubmission Date: 2026-07-01\nReference #: PA-2026-702118\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 1 of 2 --\n\n*** SAMPLE / SYNTHETIC DATA — ADVERSE DETERMINATION / DENIAL LETTER — FOR TESTING & DEMO USE ONLY ***\nArizona Health Network\nClaims & Utilization Management Department\n2200 E. Camelback Rd, Suite 500, Phoenix, AZ 85016\nDate: 2026-08-01\nDenise K. Alvarado\nPT-99201\nMember ID: AHN-88201-C\nRE: Notice of Claim Denial\nClaim #: CLM-88201\nService: CPT 93458 — Left Heart Catheterization\nDate of Service: 2026-07-09\nAmount Billed: $14,500.00\nDetermination: DENIED\nDenial Reason Code: CO-197 — Precertification/Authorization Absent\nExplanation\nDear Ms. Alvarado,\nClaim CLM-88201 has been denied because our records show no prior authorization was obtained for CPT 93458 prior\nto the date of service. Arizona Health Network's plan requires precertification for all cardiac catheterization procedures\nperformed in an outpatient hospital setting. As no prior authorization token is on file for this claim, payment cannot be\nissued.\nAppeal Rights\nThe provider may submit a retrospective authorization request with clinical documentation demonstrating medical\nurgency, or file a formal appeal within 90 days of this notice. Appeals should be sent in writing to the address above,\nAttn: Appeals Department.\nSincerely,\nDr. Priya Nandakumar, MD\nMedical Director, Arizona Health Network\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and clinical\ndetails are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 2 of 2 --",
+    "sourceFileName": "File3_PriorAuth_Denial_CO197.pdf",
+    "suggestedNode": "billing",
+    "suggestedLabel": "Billing",
+    "confidence": "high",
+    "matched": [
+      "denial",
+      "claim",
+      "cpt",
+      "era",
+      "appeal"
+    ],
+    "reason": "Matched: \"denial\", \"claim\", \"cpt\", \"era\", \"appeal\"",
+    "alternates": [
+      {
+        "key": "medical",
+        "label": "Medical",
+        "matched": [
+          "clinical",
+          "diagnos"
+        ]
+      },
+      {
+        "key": "insurance",
+        "label": "Insurance",
+        "matched": [
+          "prior auth",
+          "authorization"
+        ]
+      }
+    ],
+    "status": "routed",
+    "createdAt": "2026-08-31T08:43:31.489Z",
+    "routedAt": "2026-08-31T08:43:42.483Z"
+  },
+  {
     "id": "intk_mtgzjslrqclk",
     "description": "*** SAMPLE / SYNTHETIC DATA — REMITTANCE ADVICE — FOR TESTING & DEMO USE ONLY ***\nArizona Health Network\nElectronic Remittance Advice (ERA) — Summary\nPayer / Payee Information\nPayer: Arizona Health Network\nPayer ID: AHN-00447\nPayee (Provider): Desert Cardiac Partners\nPayee NPI: 1740882931\nCheck / EFT #: EFT-9931207\nPayment Date: 2026-08-19\nPayment Amount: $2,940.10\nClaim Detail\nClaim #: CLM-88340\nPatient: Denise K. Alvarado (PT-99201)\nStatement Dates: 08/05/2026 - 08/05/2026\nCPT Billed Allowed Deduct Coins (20%) Paid\n93000 — EKG $180.00 $96.40 $0.00 $19.28 $77.12\n78452 — Cardiac stress imaging $2,450.00 $1,610.75 $0.00 $322.15 $1,288.60\n99213 — Office visit $165.00 $121.05 $0.00 $24.21 $96.84\nClaim Total — Billed: $2,795.00 | Allowed: $1,828.20 | Patient Responsibility: $365.64 | Plan Paid: $1,462.56\nAdjustment Reason Codes (CARC)\nCO-45: Charge exceeds fee schedule/maximum allowable amount. PR-3: Co-payment amount is patient responsibility.\nCO-96: Non-covered charge(s) per plan benefit design.\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and payment\nfigures are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 1 of 2 --\n\n*** SAMPLE / SYNTHETIC DATA — EXPLANATION OF BENEFITS (EOB) — FOR TESTING & DEMO USE ONLY ***\nArizona Health Network\nExplanation of Benefits — This is Not a Bill\nMember Information\nMember Name: Denise K. Alvarado\nMember ID: AHN-88201-C\nGroup Number: GRP-40587\nClaim #: CLM-88340\nDate of Service: 08/05/2026\nProvider: Desert Cardiac Partners\nService Summary\nService Billed Allowed Deduct You Owe Plan Paid\n93000 — EKG $180.00 $96.40 $0.00 $19.28 $77.12\n78452 — Stress imaging $2,450.00 $1,610.75 $0.00 $322.15 $1,288.60\n99213 — Office visit $165.00 $121.05 $0.00 $24.21 $96.84\nTotal Billed: $2,795.00 | Total Allowed: $1,828.20 | Your Total Responsibility: $365.64 | Plan Paid: $1,462.56\nHow to Read This EOB\n\"Billed\" is the amount your provider charged. \"Allowed\" is the maximum amount Arizona Health Network covers for this\nservice based on your plan's negotiated rate. \"You Owe\" reflects your applicable coinsurance after any deductible. This\nis not a bill — your provider will send a separate invoice for any balance due.\nQuestions About This EOB?\nCall Member Services at (800) 555-0163, Monday-Friday, 8am-6pm MST, or visit\nmember.arizonahealthnetwork-sample.com to view claim details online.\nThis is a synthetic sample document generated for software testing and demonstration purposes only. All names, identifiers, and payment\nfigures are fictional and do not correspond to any real patient, provider, or health plan.\n\n-- 2 of 2 --",
     "sourceFileName": "File4_Remittance_EOB_2.pdf",

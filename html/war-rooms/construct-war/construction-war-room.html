@@ -586,8 +586,14 @@ let docText='', selectedDocType='Change Order', engOut={}, enginesComplete=0;
       setTimeout(async () => {
         if (typeof fireEngines === 'function') await fireEngines();
         // Auto-escalate to Strategist disabled here too, for the same reason
+<<<<<<< Updated upstream
         // as the main fireEngines() completion handler: it was cutting off
         // interaction with post-analysis flows. Escalation is manual only now.
+=======
+        // as the main fireEngines() completion handler: it was cutting the
+        // user off before they could review engine output. Escalation is
+        // manual only now.
+>>>>>>> Stashed changes
       }, 900);
     }
     const ta = document.getElementById('docPaste');
@@ -1437,8 +1443,14 @@ async function fireEngines() {
   reportConstructionNodes(e);
   fireCapabilitySweep(e);
   // Auto-escalate to Strategist disabled by design: this was firing 2s after
+<<<<<<< Updated upstream
   // engines complete regardless of tsm_auto_mode. Escalation is now manual
   // only via the "⚡ ESCALATE TO STRATEGIST →" button.
+=======
+  // engines complete regardless of tsm_auto_mode, cutting the user off
+  // before they could review engine output. Escalation is now manual only
+  // via the "⚡ ESCALATE TO STRATEGIST →" button.
+>>>>>>> Stashed changes
 }
 
 // ═══════════════════════════════
