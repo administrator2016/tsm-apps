@@ -578,7 +578,7 @@ function medRunGuide(prompt,outId){
   .then(function(r){return r.json();})
   .then(function(d){out.textContent=d.content||d.reply||d.output||'No response.';})
   .catch(function(){
-    out.textContent='TOP ISSUE\nReview clinical auth and denial queue.\n\nBEST NEXT ACTIONS\n1. Assign peer-to-peer owner.\n2. Clear PA backlog by payer priority.\n3. Escalate CO-50 and N130 denials.\n\nCONFIDENCE\n91%';
+    out.textContent='Guide request failed. Check /api/hc/query.';
   });
 }
 

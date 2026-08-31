@@ -640,7 +640,7 @@ async function runGuide(prompt) {
       var ad = await ar.json();
       out.textContent = (ad.content || []).map(function(c){ return c.text||''; }).join('\n') || 'Analysis complete.';
     } catch(e2) {
-      out.textContent = 'TOP ISSUE\nCheck node status.\n\nBEST NEXT ACTIONS\n1. Assign owner lane.\n2. Clear SLA blockers.\n3. Escalate unresolved items.\n\nCONFIDENCE\n92%';
+      out.textContent = 'Guide request failed. Check /api/hc/query.';
     }
   }
 }
