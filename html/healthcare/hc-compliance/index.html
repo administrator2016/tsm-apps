@@ -472,7 +472,7 @@ tr:hover td{background:#0f1f0f}
 
 <script src="../js/guide-panel-engine.js"></script>
 <script>
-const TAB_CONFIG = {
+var TAB_CONFIG = {  // TSM FIX: must be var (not const) so it attaches to window.TAB_CONFIG for guide-panel-engine.js
   dash: {
     patient: 'Maria Santos', claim: '27447', payer: 'BlueCross BlueShield',
     steps: [
@@ -517,7 +517,7 @@ const TAB_CONFIG = {
   }
 };
 
-let currentTab = 'dash';
+var currentTab = 'dash';  // TSM FIX: must be var (not let) so it attaches to window.currentTab for guide-panel-engine.js
 const stepsCompleted = { 1: false, 2: false };
 let clientData = { patient:'Maria Santos', claim:'27447', payer:'BlueCross BlueShield', denial:'CMS-Audit', cpt:'99215', amount:'$42,000', issue:'Prior Authorization SLA breaches and CPT 99215 upcoding pattern creating audit risk.', deadline:'' };
 
