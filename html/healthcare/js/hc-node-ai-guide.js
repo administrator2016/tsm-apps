@@ -63,17 +63,7 @@
       const d=await r.json();
       out.textContent=d.reply||d.content||"No response";
     }catch(e){
-      out.textContent=`TOP ISSUE
-${nodeName()} · ${activeTab()} needs operating review.
-
-BEST NEXT ACTIONS
-1. Identify the highest-risk queue item.
-2. Assign owner lane.
-3. Clear blockers older than current SLA.
-4. Relay unresolved risk to HC Strategist.
-
-CONFIDENCE
-92%`;
+      out.textContent="Guide request failed. Check /api/hc/query.";
     }
   }
 

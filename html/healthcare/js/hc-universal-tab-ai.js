@@ -120,9 +120,7 @@
       writeMission(key, d, txt);
     })
     .catch(() => {
-      const fallback = d.ai + '\n\n[Strategist relay: resolve ' + d.queue[0] + ' within SLA window. Owner: ' + d.owner + '. CONFIDENCE: 94%]';
-      if(el) el.textContent = fallback;
-      writeMission(key, d, fallback);
+      if(el) el.textContent = "Narrative generation failed. Check /api/hc/query.";
     });
   };
 

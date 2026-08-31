@@ -98,20 +98,7 @@
     }).then(r=>r.json()).then(d=>{
       out.textContent=d.reply||d.content||"No response";
     }).catch(()=>{
-      out.textContent=`TOP ISSUE
-${action}
-
-WHY IT MATTERS
-This creates operational drag, delayed handoffs, revenue risk, or compliance exposure if unresolved.
-
-BEST NEXT ACTIONS
-1. Assign accountable owner.
-2. Clear blockers older than current operating window.
-3. Document handoff evidence.
-4. Relay unresolved risk to Healthcare Strategist.
-
-CONFIDENCE
-92%`;
+      out.textContent="Feature request failed. Check /api/hc/query.";
     });
   }
 
