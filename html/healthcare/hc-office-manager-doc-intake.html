@@ -272,9 +272,58 @@ async function routeIntake(id, nodeKey){
       body: JSON.stringify({ status: 'routed' })
     });
   } catch(e) { /* still navigate — office manager's intent is to open the node */ }
+
+  // Relay the classified case into the SAME localStorage bridge every HC
+  // node page already reads (tsm-doc-anomaly-bridge.js) — before this,
+  // routing here handed the destination node nothing at all, so it opened
+  // showing its own hardcoded demo data with zero connection to what was
+  // just classified. This reuses the existing, already-wired bridge rather
+  // than inventing a parallel one, so every node gets it for free.
+  const ev = (lastSuggestionEvent && lastSuggestionEvent.id === id)
+    ? lastSuggestionEvent
+    : await findQueueEvent(id);
+  if (ev) relayToAnomalyBridge(ev, nodeKey);
+
   await refreshQueue();
   const path = NODE_PATH[nodeKey];
   if (path) window.location.href = `/html/healthcare/${path}/index.html`;
+}
+
+// routeIntake() can be called either right after classifying (lastSuggestionEvent
+// is fresh) or from a row in the Intake Queue table below (an older event) —
+// this covers the second case by re-fetching the queue.
+async function findQueueEvent(id){
+  try {
+    const res = await fetch('/api/hc/intake');
+    const data = await res.json();
+    return (data.queue || []).find(e => e.id === id) || null;
+  } catch (e) { return null; }
+}
+
+function relayToAnomalyBridge(ev, nodeKey){
+  const findings = [`Confidence: ${(ev.confidence || '—').toUpperCase()}`, ev.reason].filter(Boolean);
+  if (ev.alternates && ev.alternates.length) {
+    findings.push(`Also considered: ${ev.alternates.map(a => a.label).join(', ')}`);
+  }
+  const payload = {
+    checkStatus: 'OFFICE_MANAGER_ROUTED',
+    bannerLabel: 'CASE ROUTED FROM OFFICE MANAGER',
+    sourceBadge: '📥 FROM OFFICE MANAGER',
+    narrative: ev.description,
+    findings,
+    steps: [
+      'Review the case above against this node\u2019s Mission Objectives panel',
+      'Update this node\u2019s own client/claim intake fields to match, if they don\u2019t already',
+      'Work Step 1 \u2192 Submit Step Response, then Step 2 \u2192 Submit Step Response',
+      'Relay to Strategist only if this reveals a cross-domain issue'
+    ],
+    fileName: ev.sourceFileName || undefined,
+    ref: ev.id,
+    targetNodeIds: [nodeKey],
+    ts: Date.now(),
+    source: 'office-manager-intake'
+  };
+  try { localStorage.setItem('tsm-doc-anomaly', JSON.stringify(payload)); } catch (e) {}
 }
 
 async function dismissIntake(id){

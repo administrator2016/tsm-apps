@@ -4,6 +4,21 @@
 // Reads 'tsm-doc-anomaly' from localStorage (written by multi.html or
 // healthcare/index.html Analysis Hub) and renders a lit-up remediation
 // banner if the payload targets this node.
+//
+// 2026-08-31: also fed by hc-office-manager-doc-intake.html's routeIntake()
+// (source: 'office-manager-intake') — previously routing a classified case
+// from that page handed the destination node nothing at all, so it opened
+// showing its own hardcoded demo scenario with zero connection to what was
+// just classified. Rather than build a second, parallel banner/contract,
+// office-manager routing now writes into this exact same key/shape, just
+// with checkStatus:'OFFICE_MANAGER_ROUTED' (falls through to the default
+// ACTIVE/cyan severity — a routing suggestion isn't a detected compliance
+// issue, so it doesn't borrow the CRITICAL/HIGH styling meant for real
+// anomaly findings) plus the two optional overrides below. Both are
+// additive: any payload that doesn't set them (every existing HC Academy
+// payload) renders byte-for-byte as before.
+//   bannerLabel  — overrides the literal "DOC ANOMALY DETECTED" header text
+//   sourceBadge  — overrides the "FROM HUB"/"FROM DOC SEARCH" badge text
 // ═══════════════════════════════════════════════════════════════════════════
 
 (function () {
@@ -227,11 +242,11 @@
         padding:3px 8px;border-radius:2px;
       ">⚠ ${sev.label}</span>
       <span style="color:${sev.color};font-size:.75rem;font-weight:700;letter-spacing:.1em">
-        DOC ANOMALY DETECTED — ${(payload.checkStatus||'ACTIVE').replace(/_/g,' ')}
+        ${payload.bannerLabel || 'DOC ANOMALY DETECTED'} — ${(payload.checkStatus||'ACTIVE').replace(/_/g,' ')}
       </span>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:.6rem;color:#475569">${payload.source === 'analysis-hub' ? '📊 FROM HUB' : '📄 FROM DOC SEARCH'}</span>
+      <span style="font-size:.6rem;color:#475569">${payload.sourceBadge || (payload.source === 'analysis-hub' ? '📊 FROM HUB' : '📄 FROM DOC SEARCH')}</span>
       <button onclick="TSM_ANB.dismiss()" style="
         background:transparent;border:1px solid #334155;color:#64748b;
         font-family:'Courier New',monospace;font-size:.6rem;letter-spacing:.06em;
