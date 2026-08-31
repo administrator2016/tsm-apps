@@ -28,6 +28,7 @@
   --realty: #fb923c;
   --tax: #a3e635;
   --hotel: #fbbf24;
+  --ops: #94a3b8;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -86,6 +87,7 @@ body::before {
 .ic-realty { background: rgba(251,146,60,0.12); color: var(--realty); }
 .ic-tax    { background: rgba(163,230,53,0.12); color: var(--tax); }
 .ic-hotel  { background: rgba(251,191,36,0.12); color: var(--hotel); }
+.ic-ops    { background: rgba(148,163,184,0.12); color: var(--ops); }
 
 .dot-health { background: var(--health); }
 .dot-ins    { background: var(--ins); }
@@ -98,6 +100,7 @@ body::before {
 .dot-realty { background: var(--realty); }
 .dot-tax    { background: var(--tax); }
 .dot-hotel  { background: var(--hotel); }
+.dot-ops    { background: var(--ops); }
 
 .footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--dim); }
 </style>
@@ -141,24 +144,6 @@ body::before {
         <a class="suite-link" href="/html/healthcare/hc-office-manager-doc-intake.html">Office Manager Doc Intake</a>
         <a class="suite-link" href="/html/healthcare/hc-strategist/index.html">Neural Intake Strategist</a>
       </div>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-icon ic-health">NI</div><div class="card-title">HC OM &rarr; Neural Intake</div></div>
-      <pre style="font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.5;color:var(--muted);white-space:pre;overflow-x:auto;margin:0;">HC OM page
-  &#9500;&#9472; TSM_HC_OM_NEURAL_INTAKE
-  &#9474;     &#9492;&#9472; lazy dependency lookup
-  &#9500;&#9472; TSM_HC_OM_INTAKE
-  &#9474;     &#9492;&#9472; canonical routing vocabulary
-  &#9492;&#9472; hcOmRouteDocument()
-        &#9492;&#9472; suggestedRoutes
-              &#9492;&#9472; candidateNodes
-                    &#9492;&#9472; HC Neural Intake
-                          &#9500;&#9472; Billing
-                          &#9500;&#9472; Compliance
-                          &#9500;&#9472; Insurance
-                          &#9500;&#9472; Medical
-                          &#9500;&#9472; Vendors
-                          &#9492;&#9472; other registered HC nodes...</pre>
     </div>
   </div>
 
@@ -278,6 +263,19 @@ body::before {
         <a class="suite-link" href="/html/concierge/concierge-war-room.html">War Room</a>
         <a class="suite-link" href="/html/concierge/concierge-strategist.html">Strategist</a>
         <a class="suite-link" href="/html/concierge/concierge-executive-portal.html">Executive Portal</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Operations -->
+  <div class="section-label"><span class="section-dot dot-ops"></span>Operations</div>
+  <div class="suite-grid">
+    <div class="card">
+      <div class="card-header"><div class="card-icon ic-ops">OP</div><div class="card-title">Operations</div></div>
+      <div class="link-list">
+        <a class="suite-link" href="/html/operations/tsm_vertical_value_ledger.html">Vertical Value Ledger</a>
+        <a class="suite-link" href="/html/operations/MASTER_VERTICAL_WALKTHROUGH.md">Master Vertical Walkthrough</a>
+        <a class="suite-link" href="/html/operations/TSM_Document_Processing_Revenue_Recovery_Manual_v2.0.docx">Document Processing Revenue Recovery Manual</a>
       </div>
     </div>
   </div>
