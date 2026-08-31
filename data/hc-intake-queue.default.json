@@ -1,0 +1,20 @@
+[
+  {
+    "id": "intk_mtgu35bw0lwc",
+    "description": "Denial received for CPT 99214, timely filing appeal needed",
+    "suggestedNode": "billing",
+    "suggestedLabel": "Billing",
+    "confidence": "high",
+    "matched": [
+      "denial",
+      "cpt",
+      "appeal",
+      "timely filing"
+    ],
+    "reason": "Matched: \"denial\", \"cpt\", \"appeal\", \"timely filing\"",
+    "alternates": [],
+    "status": "suggested",
+    "createdAt": "2026-08-31T06:04:52.028Z",
+    "routedAt": null
+  }
+]
