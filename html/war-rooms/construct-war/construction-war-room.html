@@ -488,14 +488,11 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   </div>
 
   <!-- APP DISPATCH — revealed after E6 -->
-  <div id="dispatchSection" style="display:none">
-    <div class="sec-header"><div class="sec-dot" style="background:var(--purple)"></div><div class="sec-title" style="color:var(--purple)">ENGINE 06 · BEST NEXT COURSE OF ACTION DISPATCH</div></div>
+  <div class="sec-title" style="color:var(--purple)">ENGINE 06 · BEST NEXT COURSE OF ACTION DISPATCH</div></div>
     <div class="dispatch-wrap">
       <div class="dispatch-hdr">
         <div class="dispatch-title">RECOMMENDED APPS · RANKED BY ISSUE RELEVANCE</div>
-        <div class="dispatch-count" id="dispatchCount">✓ — APPS RECOMMENDED</div>
-      </div>
-      <div class="dispatch-intro" id="dispatchIntro">Routing analysis to highest-impact construction apps...</div>
+        
       <div class="app-cards-list" id="appCardsList"></div>
     </div>
   </div>
@@ -586,14 +583,8 @@ let docText='', selectedDocType='Change Order', engOut={}, enginesComplete=0;
       setTimeout(async () => {
         if (typeof fireEngines === 'function') await fireEngines();
         // Auto-escalate to Strategist disabled here too, for the same reason
-<<<<<<< Updated upstream
         // as the main fireEngines() completion handler: it was cutting off
         // interaction with post-analysis flows. Escalation is manual only now.
-=======
-        // as the main fireEngines() completion handler: it was cutting the
-        // user off before they could review engine output. Escalation is
-        // manual only now.
->>>>>>> Stashed changes
       }, 900);
     }
     const ta = document.getElementById('docPaste');
@@ -1155,38 +1146,7 @@ const FALLBACKS=[
 (doc,e)=>`EXPOSURE RANGE: $50K – $500K estimated\nJOURNAL ENTRY REQUIRED: Yes — verify account coding\nGAAP TREATMENT: Review ASC 835-20 (capitalization) and ASC 810 (consolidation) as applicable\nDRAW / LOAN RECONCILIATION: Reconcile GL to lender draw statements\nCASH FLOW IMPACT: Weekly cash report update required\nRETAINAGE AT RISK: Verify contract retainage terms\nCOST OVERRUN: Investigate unapproved variance\nFINANCIAL RISK SCORE: 62\nRECOMMENDED RESERVE: 10% of contract value\nRESTATEMENT RISK: Unknown — accounting review required`,
 (doc,e)=>`PRIMARY LEGAL RISK: Dispute exposure — consult counsel\nLIEN EXPOSURE: Review filing deadlines immediately\nBOND CLAIM STATUS: Verify bond coverage\nCONTRACT BREACH RISK: Unknown — review contract provisions\nINTERCOMPANY RISK: Review related-party transaction documentation\nFILING DEADLINES:\n1. Verify lien window with attorney immediately\n2. Preserve all demand letters and notices\nRECOMMENDED LEGAL ACTION: Consult construction attorney within 48 hours\nLEGAL RISK LEVEL: Medium-High`,
 (doc,e)=>`OSHA EXPOSURE: Review OSHA 300 log and site safety protocols\nDAVIS-BACON / PREVAILING WAGE: Verify certified payroll — underpayment risk identified\n1099 / WORKER CLASSIFICATION: Review IRS 20-factor test for recurring subcontract labor\nPAYROLL COMPLIANCE: File missing certified payroll submissions immediately\nEPA / SWPPP: Review stormwater plan for site condition changes\nPERMIT STATUS: Confirm all permits current and cover modified scope\nHR / DOCUMENTATION: Verify I-9 files and certifications are complete\nABATEMENT REQUIRED: Yes — review and document within 15 days\nCOMPLIANCE RISK LEVEL: Medium\nIMMEDIATE COMPLIANCE ACTIONS:\n1. File missing certified payroll — Safety/HR Officer — 48 hours\n2. Audit worker classifications — HR/Payroll — 72 hours\n3. Confirm all permits cover modified scope — PM — 1 week`,
-(doc,e)=>`OVERALL RISK SCORE: 68\nEXECUTIVE SUMMARY: Document requires immediate accounting and legal review. Financial exposure identified across multiple risk areas. Executive attention and owner-lane assignment required within 48 hours.\n\nPRIORITY ACTIONS:\n1. Accounting review and GL correction — $TBD — Project Accountant — 48 hours\n2. Legal review and filing rights preservation — $TBD — Construction Attorney — 48 hours\n3. Payroll compliance and certified payroll filing — $TBD — HR/Payroll — 72 hours\n4. Owner notification and dispute documentation — $0 — PM — 24 hours\n\nAPP ROUTING (ranked by relevance):\nTOP APP: FinOps Accounting — Journal entry correction and GL reconciliation\n\nAPP: FinOps Accounting\nCATEGORY: Financial Operations\nRANK: #1\nIS_TOP: YES\nHOW_TO_USE: Open the GL Reconciliation tab → enter the unrecorded amounts → correct journal entries for CIP capitalization and intercompany loans. Use the GAAP Treatment advisor to confirm ASC 835-20 and ASC 810 requirements.\nTAGS: JOURNAL ENTRY, GAAP, GL, RECONCILIATION\n\nAPP: FinOps Operations\nCATEGORY: Financial Operations\nRANK: #2\nIS_TOP: NO\nHOW_TO_USE: Open the Draw Verification tab → input lender draw amounts vs GL-posted amounts → generate variance report and corrective AP entries. Use Cash Flow module for weekly position update.\nTAGS: DRAW, AP, CASH FLOW, VARIANCE\n\nAPP: Construction Legal\nCATEGORY: Construction Operations\nRANK: #3\nIS_TOP: NO\nHOW_TO_USE: Open the Lien Protection tab → enter the claimant, amount, and filing deadline → generate preliminary notice response and bond claim analysis.\nTAGS: LIEN, CONTRACT, DISPUTE, LEGAL\n\nAPP: AuditOps\nCATEGORY: Construction Operations\nRANK: #4\nIS_TOP: NO\nHOW_TO_USE: Navigate to the Certified Payroll tab → enter project and week → surface Davis-Bacon underpayment calculations and corrective payroll journal entries.\nTAGS: PAYROLL, DAVIS-BACON, AUDIT, COMPLIANCE\n\nAPP: Construction Compliance\nCATEGORY: Construction Operations\nRANK: #5\nIS_TOP: NO\nHOW_TO_USE: Use the OSHA Response tab → enter citation number and violation → generate abatement plan and contest timeline.\nTAGS: OSHA, COMPLIANCE, SAFETY, ABATEMENT\n\nDISPATCH_INTRO: 5 remediation pathways identified from 6-engine analysis. Route to the highest-ranked app first — each contains step-by-step guidance specific to the accounting and operational issues detected in this document.\n\nBNCA — BEST NEXT COURSE OF ACTION:\nEngage project accountant to correct GL misclassifications and prepare restatement documentation within 48 hours. Simultaneously engage construction attorney to preserve all lien rights before the filing window closes. Financial reserve should be established at 10% of contract value pending resolution.\n\nESCALATION TRIGGER: Any combination of GAAP restatement risk + active lien window + unresolved draw variance requires immediate executive and CFO involvement.`
-];
-
-// ═══════════════════════════════
-// APP DISPATCH BUILDER
-// ═══════════════════════════════
-// Route map includes finops apps
-const ROUTE_MAP={
-  'finops accounting':                          '/finops-suite/finops-accounting.html',
-  'finops operations':                          '/finops-suite/finops-operations.html',
-  'construction legal':                         'legal.html',
-  'legal analyst pro':                          'legal.html',
-  'auditops':                                   'auditops-tax.html',
-  'auditops sovereign core':                    'construction-pro.html',
-  'auditops pro tax intelligence':              'auditops-tax.html',
-  'construction compliance':                    'compliance-hub.html',
-  'compliance hub':                             'compliance-hub.html',
-  'tsm compliance command':                     'compliance-hub.html',
-  'construction financial':                     'financial.html',
-  'tsm financial command':                      'financial.html',
-  'construction strategist':                    'construction-strategist.html',
-  'tax prep':                                   'tax-prep.html',
-  'tsm construction suite field & document ops':'construction-suite-expansion.html',
-  'tsm zero-trust enterprise access command':   'zero-trust.html',
-  'permits & proposals':                        'permits-proposals.html',
-  'permits proposals':                          'permits-proposals.html',
-};
-const DOT_COLORS=['#00ff50','#ffd700','#00e5ff','#c084fc','#ff9500'];
-
-function buildDispatch(raw){
-  const introM=raw.match(/DISPATCH_INTRO:\s*([^\n]+(?:\n(?!APP:)[^\n]+)*)/);
-  document.getElementById('dispatchIntro').textContent=introM?introM[1].trim():'5 remediation pathways identified from 6-engine analysis. Route to the highest-ranked app first.';
+(doc,e)=>`OVERALL RISK SCORE: 68\nEXECUTIVE SUMMARY: Document requires immediate accounting and legal review. Financial exposure identified across multiple risk areas. Executive attention and owner-lane assignment required within 48 hours.\n\nPRIORITY ACTIONS:\n1. Accounting review and GL correction — $TBD — Project Accountant — 48 hours\n2. Legal review and filing rights preservation — $TBD — Construction Attorney — 48 hours\n3. Payroll compliance and certified payroll filing — $TBD — HR/Payroll — 72 hours\n4. Owner notification and dispute documentation — $0 — PM — 24 hours\n\nAPP ROUTING (ranked by relevance):\nTOP APP: FinOps Accounting — Journal entry correction and GL reconciliation\n\nAPP: FinOps Accounting\nCATEGORY: Financial Operations\nRANK: #1\nIS_TOP: YES\nHOW_TO_USE: Open the GL Reconciliation tab → enter the unrecorded amounts → correct journal entries for CIP capitalization and intercompany loans. Use the GAAP Treatment advisor to confirm ASC 835-20 and ASC 810 requirements.\nTAGS: JOURNAL ENTRY, GAAP, GL, RECONCILIATION\n\nAPP: FinOps Operations\nCATEGORY: Financial Operations\nRANK: #2\nIS_TOP: NO\nHOW_TO_USE: Open the Draw Verification tab → input lender draw amounts vs GL-posted amounts → generate variance report and corrective AP entries. Use Cash Flow module for weekly position update.\nTAGS: DRAW, AP, CASH FLOW, VARIANCE\n\nAPP: Construction Legal\nCATEGORY: Construction Operations\nRANK: #3\nIS_TOP: NO\nHOW_TO_USE: Open the Lien Protection tab → enter the claimant, amount, and filing deadline → generate preliminary notice response and bond claim analysis.\nTAGS: LIEN, CONTRACT, DISPUTE, LEGAL\n\nAPP: AuditOps\nCATEGORY: Construction Operations\nRANK: #4\nIS_TOP: NO\nHOW_TO_USE: Navigate to the Certified Payroll tab → enter project and week → surface Davis-Bacon underpayment calculations and corrective payroll journal entries.\nTAGS: PAYROLL, DAVIS-BACON, AUDIT, COMPLIANCE\n\nAPP: Construction Compliance\nCATEGORY: Construction Operations\nRANK: #5\nIS_TOP: NO\nHOW_TO_USE: Use the OSHA Response tab → enter citation number and violation → generate abatement plan and contest timeline.\nTAGS: OSHA, COMPLIANCE, SAFETY, ABATEMENT\n\nDISPATCH_INTRO: ';
 
   const blocks=raw.split(/\n(?=APP:)/);
   let apps=[];
@@ -1443,14 +1403,8 @@ async function fireEngines() {
   reportConstructionNodes(e);
   fireCapabilitySweep(e);
   // Auto-escalate to Strategist disabled by design: this was firing 2s after
-<<<<<<< Updated upstream
   // engines complete regardless of tsm_auto_mode. Escalation is now manual
   // only via the "⚡ ESCALATE TO STRATEGIST →" button.
-=======
-  // engines complete regardless of tsm_auto_mode, cutting the user off
-  // before they could review engine output. Escalation is now manual only
-  // via the "⚡ ESCALATE TO STRATEGIST →" button.
->>>>>>> Stashed changes
 }
 
 // ═══════════════════════════════
