@@ -764,6 +764,22 @@ body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-se
             <span class="conf-pct" id="bnca-conf-pct">0%</span>
           </div>
         </div>
+
+        <!-- TSM INTELLIGENT GUIDE -->
+        <div class="card" id="tsm-insurance-intelligent-guide" style="margin-top:14px;border-color:rgba(201,168,76,.28)">
+          <div class="card-header" style="border-color:rgba(201,168,76,.2)">
+            <div>
+              <div class="card-title" style="color:var(--gold)">◆ Intelligent Guide</div>
+              <div class="card-sub">BNCA-grounded next-step recommendation</div>
+            </div>
+          </div>
+          <div class="card-body" id="tsm-insurance-guide-output">
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">
+              Run the BNCA chain to generate a grounded next-step recommendation.
+            </div>
+          </div>
+        </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1254,6 +1270,70 @@ function selectCEModule(topic, el) {
 // ════════════════════════════════════════════════
 // MODULE 5 — BNCA CHAIN
 // ════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════
+// TSM INTELLIGENT GUIDE — BNCA ADAPTER
+// ════════════════════════════════════════════════
+function renderInsuranceIntelligentGuide(result) {
+  const el = document.getElementById('tsm-insurance-guide-output');
+  if (!el) return;
+
+  if (!result || !result.recommended || !result.recommendation) {
+    el.innerHTML = `
+      <div style="font-size:12px;color:var(--text3);line-height:1.6">
+        No registered remediation capability matched the current BNCA finding.
+      </div>`;
+    return;
+  }
+
+  const r = result.recommendation;
+
+  el.innerHTML = `
+    <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--gold);letter-spacing:.08em;margin-bottom:7px">
+      RECOMMENDED NEXT CAPABILITY
+    </div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:5px">
+      ${r.label}
+    </div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:10px">
+      ${r.description}
+    </div>
+    <div style="font-size:11px;color:var(--text3);line-height:1.6">
+      <strong style="color:var(--text2)">Why:</strong> ${result.explanation}
+    </div>
+    <div style="margin-top:10px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">
+      CAPABILITY: ${r.capabilityId} · ACTION: ${r.action}
+    </div>`;
+}
+
+function runInsuranceIntelligentGuide(opsResult, sector, priority) {
+  if (!window.TSMRemediationRecommender) {
+    console.warn('[TSM Intelligent Guide] Recommender unavailable.');
+    return;
+  }
+
+  const sectorTypeMap = {
+    'Insurance Operations': 'operations',
+    'Claims Department': 'claims',
+    'Agent Production': 'agent',
+    'Underwriting': 'underwriting',
+    'Compliance': 'compliance',
+    'Revenue & Growth': 'revenue'
+  };
+
+  const findingType = sectorTypeMap[sector] || 'operations';
+
+  const result = window.TSMRemediationRecommender.recommend({
+    vertical: 'insurance',
+    type: findingType,
+    severity: priority,
+    title: 'Insurance Command Operations Finding',
+    description: opsResult || ''
+  });
+
+  renderInsuranceIntelligentGuide(result);
+}
+
 async function runFullBNCAChain() {
   const sector = document.getElementById('bnca-sector').value;
   const context = document.getElementById('bnca-context').value;
@@ -1278,6 +1358,7 @@ Output: top issue, risk level, 3 immediate actions, owner lanes, confidence scor
       700
     );
     setBNCANode('claims', 'var(--claims)', opsResult);
+    runInsuranceIntelligentGuide(opsResult, sector, priority);
     toast('Operations analyzed ✓');
 
     // Step 2 — Strategist
@@ -1386,6 +1467,8 @@ document.getElementById('claim-dol').value = new Date().toISOString().split('T')
   <!-- stripped -->
   <script src="/js/core/tsm-kernel-upgrade.js"></script>
   <script src="../../js/tsm-guide-engine.js" defer></script>
+  <script src="/shared/tsm-app-capability-registry.js" defer></script>
+  <script src="/shared/tsm-remediation-recommender.js" defer></script>
 </body>
 <script>
 // ===== TSM_AUTONOMY_STANDARDIZED =====

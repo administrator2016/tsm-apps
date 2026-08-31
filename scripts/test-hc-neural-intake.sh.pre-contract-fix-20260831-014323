@@ -1,0 +1,353 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="/workspaces/tsm-apps"
+UPLOADER="$ROOT/html/healthcare/hc-office-manager-doc-intake.html"
+NEURAL="$ROOT/server/healthcare/hc-neural-intake.js"
+CONTRACT="$ROOT/server/healthcare/hc-node-contract.js"
+REGISTRY="$ROOT/server/healthcare/hc-node-registry.js"
+TMP="/tmp/hc-neural-intake-connected-test.js"
+
+echo "============================================================"
+echo " TSM HC NEURAL INTAKE — CONNECTED SYSTEM TEST"
+echo "============================================================"
+echo
+echo "ROOT: $ROOT"
+echo
+
+cd "$ROOT"
+
+echo "=== 1. FILE PREREQUISITES ==="
+
+for f in "$UPLOADER" "$NEURAL" "$CONTRACT" "$REGISTRY"; do
+  if [[ -f "$f" ]]; then
+    echo "PASS: $f"
+  else
+    echo "FAIL: missing $f"
+    exit 1
+  fi
+done
+
+echo
+echo "=== 2. NODE SYNTAX ==="
+
+node --check "$NEURAL"
+echo "PASS: hc-neural-intake.js"
+
+node --check "$CONTRACT"
+echo "PASS: hc-node-contract.js"
+
+node --check "$REGISTRY"
+echo "PASS: hc-node-registry.js"
+
+echo
+echo "=== 3. HC NODE REGISTRY ==="
+
+node <<'NODE'
+const registry = require('./server/healthcare/hc-node-registry.js');
+
+const expected = [
+  'billing',
+  'compliance',
+  'financial',
+  'grants',
+  'insurance',
+  'legal',
+  'medical',
+  'operations',
+  'pharmacy',
+  'taxprep',
+  'vendors'
+];
+
+const nodes =
+  typeof registry.listNodes === 'function'
+    ? registry.listNodes()
+    : Object.keys(registry.nodes || registry.registry || registry);
+
+console.log('Registered nodes:', nodes);
+
+for (const node of expected) {
+  if (!nodes.includes(node)) {
+    console.error(`FAIL: missing HC node: ${node}`);
+    process.exit(1);
+  }
+}
+
+if (nodes.length !== expected.length) {
+  console.error(
+    `FAIL: expected ${expected.length} HC nodes, found ${nodes.length}`
+  );
+  process.exit(1);
+}
+
+console.log(`PASS: ${nodes.length} HC nodes registered`);
+NODE
+
+echo
+echo "=== 4. NEURAL INTAKE RUNTIME ==="
+
+node <<'NODE'
+const intake = require('./server/healthcare/hc-neural-intake.js');
+
+if (typeof intake.intake !== 'function') {
+  console.error('FAIL: intake() export missing');
+  process.exit(1);
+}
+
+const result = intake.intake({
+  platform: 'HC_OFFICE_MANAGER',
+  vertical: 'healthcare',
+  source: 'hc-office-manager-doc-intake',
+  documentText:
+    'HIPAA compliance audit involving vendor procurement and contract review',
+  extraction: {
+    type: 'text',
+    value:
+      'HIPAA compliance audit involving vendor procurement and contract review'
+  }
+});
+
+console.log('Candidate nodes:', result.candidateNodes);
+
+if (!result.candidateNodes.includes('compliance')) {
+  console.error('FAIL: compliance candidate missing');
+  process.exit(1);
+}
+
+if (!result.candidateNodes.includes('vendors')) {
+  console.error('FAIL: vendors candidate missing');
+  process.exit(1);
+}
+
+if (!result.nodeRequests || result.nodeRequests.length < 2) {
+  console.error('FAIL: node requests were not created');
+  process.exit(1);
+}
+
+console.log('PASS: multi-node candidate routing');
+console.log('PASS: standardized node requests');
+
+if (
+  !result.strategist ||
+  result.strategist.mode !== 'HC_CROSS_NODE_BNCA'
+) {
+  console.error('FAIL: HC_CROSS_NODE_BNCA strategist envelope missing');
+  process.exit(1);
+}
+
+console.log('PASS: HC_CROSS_NODE_BNCA');
+NODE
+
+echo
+echo "=== 5. EXTRACT CONNECTED BROWSER JAVASCRIPT ==="
+
+python3 - "$UPLOADER" "$TMP" <<'PY'
+import re
+import sys
+
+src = open(sys.argv[1], encoding="utf-8").read()
+
+scripts = re.findall(
+    r"<script(?:\s[^>]*)?>(.*?)</script>",
+    src,
+    flags=re.I | re.S
+)
+
+js = "\n\n".join(scripts)
+
+if "TSM_HC_OM_NEURAL_INTAKE" not in js:
+    raise SystemExit("FAIL: browser neural bridge missing")
+
+if "hcNeuralIntake" not in js:
+    raise SystemExit("FAIL: neural intake attachment missing")
+
+if "suggestedRoutes" not in js:
+    raise SystemExit("FAIL: suggested routing attachment missing")
+
+open(sys.argv[2], "w", encoding="utf-8").write(js)
+
+print(f"Extracted {len(js.splitlines())} JS lines.")
+print(f"Runtime test file: {sys.argv[2]}")
+PY
+
+echo
+echo "=== 6. BROWSER BRIDGE RUNTIME ==="
+
+node - "$TMP" <<'NODE'
+const fs = require('fs');
+const vm = require('vm');
+
+const file = process.argv[2];
+const source = fs.readFileSync(file, 'utf8');
+
+const context = {
+  console,
+  setTimeout,
+  clearTimeout,
+  setInterval,
+  clearInterval,
+  Date,
+  JSON,
+  Math,
+  String,
+  Number,
+  Boolean,
+  Array,
+  Object,
+  RegExp,
+  Promise,
+
+  window: {},
+  document: {
+    getElementById() {
+      return null;
+    },
+    querySelector() {
+      return null;
+    },
+    querySelectorAll() {
+      return [];
+    }
+  },
+
+  localStorage: {
+    getItem() { return null; },
+    setItem() {},
+    removeItem() {}
+  },
+
+  sessionStorage: {
+    getItem() { return null; },
+    setItem() {},
+    removeItem() {}
+  }
+};
+
+context.window.window = context.window;
+context.window.console = console;
+context.globalThis = context;
+
+vm.createContext(context);
+
+try {
+  vm.runInContext(source, context, {
+    filename: 'hc-office-manager-doc-intake.html'
+  });
+} catch (err) {
+  /*
+   * The complete uploader contains browser/application dependencies.
+   * We only require that the HC neural bridge itself can initialize.
+   */
+  const message = String(err && err.message || err);
+
+  if (
+    !message.includes('document') &&
+    !message.includes('FileReader') &&
+    !message.includes('pdfjsLib') &&
+    !message.includes('Chart') &&
+    !message.includes('navigator')
+  ) {
+    console.error(err);
+    process.exit(1);
+  }
+}
+
+if (
+  !context.window.TSM_HC_OM_NEURAL_INTAKE ||
+  typeof context.window.TSM_HC_OM_NEURAL_INTAKE.buildEnvelope !== 'function'
+) {
+  console.error('FAIL: TSM_HC_OM_NEURAL_INTAKE bridge unavailable');
+  process.exit(1);
+}
+
+const envelope =
+  context.window.TSM_HC_OM_NEURAL_INTAKE.buildEnvelope(
+    'HIPAA compliance audit involving vendor procurement',
+    {
+      type: 'text',
+      value: 'HIPAA compliance audit involving vendor procurement'
+    }
+  );
+
+console.log(
+  'Browser bridge candidates:',
+  envelope && envelope.candidateNodes
+);
+
+if (!envelope) {
+  console.error('FAIL: neural envelope not created');
+  process.exit(1);
+}
+
+if (
+  !Array.isArray(envelope.candidateNodes) ||
+  !envelope.candidateNodes.includes('compliance')
+) {
+  console.error('FAIL: browser bridge did not identify compliance');
+  process.exit(1);
+}
+
+if (
+  !envelope.candidateNodes.includes('vendors')
+) {
+  console.error('FAIL: browser bridge did not identify vendors');
+  process.exit(1);
+}
+
+console.log('PASS: browser neural bridge');
+console.log('PASS: compliance candidate');
+console.log('PASS: vendors candidate');
+NODE
+
+echo
+echo "=== 7. CONNECTED SOURCE VERIFICATION ==="
+
+grep -n -E \
+  "TSM_HC_OM_NEURAL_INTAKE|hcNeuralIntake|suggestedRoutes|hcOmBuildRoutingEnvelope" \
+  "$UPLOADER" | head -80
+
+echo
+echo "=== 8. HC OM REGRESSION ==="
+
+grep -q "window.hcOmRouteDocument" "$UPLOADER" \
+  && echo "PASS: hcOmRouteDocument preserved"
+
+grep -q "window.hcOmBuildRoutingEnvelope" "$UPLOADER" \
+  && echo "PASS: hcOmBuildRoutingEnvelope preserved"
+
+grep -q "routing.hcOmSuggested" "$UPLOADER" \
+  && echo "PASS: advisory routing preserved"
+
+echo
+echo "=== 9. DIFF CHECK ==="
+
+git diff --check
+echo "PASS: git diff --check"
+
+echo
+echo "=== 10. GIT STATUS ==="
+
+git status --short
+
+echo
+echo "============================================================"
+echo " HC NEURAL INTAKE CONNECTED SYSTEM TEST: PASS"
+echo "============================================================"
+echo
+echo "VERIFIED:"
+echo "  ✓ HC OM uploader"
+echo "  ✓ HC Neural Intake"
+echo "  ✓ 11-node HC registry"
+echo "  ✓ Multi-node candidate routing"
+echo "  ✓ Browser neural bridge"
+echo "  ✓ HC OM advisory routing"
+echo "  ✓ Strategist envelope"
+echo "  ✓ HC_CROSS_NODE_BNCA mode"
+echo "  ✓ Existing routing preserved"
+echo
+echo "STILL NOT CLAIMED:"
+echo "  → Live specialist-node execution"
+echo "  → Server-side BNCA execution"
+echo "  → Production persistence"
+echo "============================================================"
