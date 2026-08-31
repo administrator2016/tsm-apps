@@ -1089,6 +1089,17 @@ window.tsmMission = window.tsmMission || {
 };
 
 </script>
+<script>
+// Cure Cheatsheet: explicit strategist-relay key (folder-based auto-detect
+// already resolves this correctly, but stated explicitly for clarity/safety
+// against future path changes). AI endpoint is left on folder-based
+// detection (/api/construction/query) — this page's own AI call goes to an
+// external https://tsm-core.fly.dev/ask endpoint with an unverified body
+// shape, a separate known mismatch flagged in an earlier session and
+// deliberately out of scope for this change.
+window.TSM_CURE_STRATEGIST_KEY = 'TSM_CONSTRUCTION_STRATEGIST_RELAY';
+</script>
+<script src="/shared/tsm-cure-cheatsheet.js"></script>
 </html>
 
 <script src="../../js/tsm-guide-engine.js" defer></script>

@@ -3542,6 +3542,14 @@ window.tsmMission = window.tsmMission || {
   } catch(e) {}
 })();
 </script>
+<script>
+// Cure Cheatsheet: folder path (/construction-suite/) already auto-detects
+// both the AI endpoint (/api/construction/query) and the strategist relay
+// key correctly, but the key is set explicitly here for clarity/safety
+// against future path changes.
+window.TSM_CURE_STRATEGIST_KEY = 'TSM_CONSTRUCTION_STRATEGIST_RELAY';
+</script>
+<script src="/shared/tsm-cure-cheatsheet.js"></script>
   <script src="../../js/tsm-guide-engine.js" defer></script>
 </body>
 </html>

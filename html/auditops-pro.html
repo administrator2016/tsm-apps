@@ -1023,6 +1023,16 @@ async function quickAsk(){
   document.getElementById('chat-q').value='';
 }
 </script>
+<script>
+// Cure Cheatsheet overrides: this page's own AI endpoint lives in a
+// variable (const AI='/api/financial/query') rather than a literal
+// fetch('/api/...') call, so the cheatsheet's auto-detector can't see it —
+// and the page's URL doesn't match any vertical folder pattern either.
+// Both are set explicitly here.
+window.TSM_CURE_ENDPOINT = '/api/financial/query';
+window.TSM_CURE_STRATEGIST_KEY = 'TSM_CONSTRUCTION_STRATEGIST_RELAY';
+</script>
+<script src="/shared/tsm-cure-cheatsheet.js"></script>
 <script src="../js/tsm-guide-engine.js" defer></script>
 <script src="/shared/tsm-cure-cheatsheet.js"></script>
 </html>
