@@ -354,6 +354,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     <div style="font-size:8px;letter-spacing:1.5px;color:var(--dim);margin-bottom:4px">AI ENGINE</div>
     <div style="color:var(--green);font-size:9px;letter-spacing:1px">● SERVER CONNECTED · PROXY ACTIVE</div>
   </div>
+  </div>
 
   <div class="sb-section">
     <div class="btn-row">
@@ -488,14 +489,15 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   </div>
 
   <!-- APP DISPATCH — revealed after E6 -->
-  <div class="sec-title" style="color:var(--purple)">ENGINE 06 · BEST NEXT COURSE OF ACTION DISPATCH</div></div>
-    <div class="dispatch-wrap">
+  <div class="sec-header"><div class="sec-dot"></div><div class="sec-title" style="color:var(--purple)">ENGINE 06 · BEST NEXT COURSE OF ACTION DISPATCH</div></div>
+    <div class="dispatch-wrap" id="dispatchSection" style="display:none">
       <div class="dispatch-hdr">
         <div class="dispatch-title">RECOMMENDED APPS · RANKED BY ISSUE RELEVANCE</div>
-        
+        <div class="dispatch-count" id="appCount">— APPS RECOMMENDED</div>
+      </div>
+      <div class="dispatch-intro" id="dispatchIntro"></div>
       <div class="app-cards-list" id="appCardsList"></div>
     </div>
-  </div>
 
   <div class="log-wrap">
     <div class="log-title">WAR ROOM ACTIVITY LOG</div>
@@ -1146,7 +1148,19 @@ const FALLBACKS=[
 (doc,e)=>`EXPOSURE RANGE: $50K – $500K estimated\nJOURNAL ENTRY REQUIRED: Yes — verify account coding\nGAAP TREATMENT: Review ASC 835-20 (capitalization) and ASC 810 (consolidation) as applicable\nDRAW / LOAN RECONCILIATION: Reconcile GL to lender draw statements\nCASH FLOW IMPACT: Weekly cash report update required\nRETAINAGE AT RISK: Verify contract retainage terms\nCOST OVERRUN: Investigate unapproved variance\nFINANCIAL RISK SCORE: 62\nRECOMMENDED RESERVE: 10% of contract value\nRESTATEMENT RISK: Unknown — accounting review required`,
 (doc,e)=>`PRIMARY LEGAL RISK: Dispute exposure — consult counsel\nLIEN EXPOSURE: Review filing deadlines immediately\nBOND CLAIM STATUS: Verify bond coverage\nCONTRACT BREACH RISK: Unknown — review contract provisions\nINTERCOMPANY RISK: Review related-party transaction documentation\nFILING DEADLINES:\n1. Verify lien window with attorney immediately\n2. Preserve all demand letters and notices\nRECOMMENDED LEGAL ACTION: Consult construction attorney within 48 hours\nLEGAL RISK LEVEL: Medium-High`,
 (doc,e)=>`OSHA EXPOSURE: Review OSHA 300 log and site safety protocols\nDAVIS-BACON / PREVAILING WAGE: Verify certified payroll — underpayment risk identified\n1099 / WORKER CLASSIFICATION: Review IRS 20-factor test for recurring subcontract labor\nPAYROLL COMPLIANCE: File missing certified payroll submissions immediately\nEPA / SWPPP: Review stormwater plan for site condition changes\nPERMIT STATUS: Confirm all permits current and cover modified scope\nHR / DOCUMENTATION: Verify I-9 files and certifications are complete\nABATEMENT REQUIRED: Yes — review and document within 15 days\nCOMPLIANCE RISK LEVEL: Medium\nIMMEDIATE COMPLIANCE ACTIONS:\n1. File missing certified payroll — Safety/HR Officer — 48 hours\n2. Audit worker classifications — HR/Payroll — 72 hours\n3. Confirm all permits cover modified scope — PM — 1 week`,
-(doc,e)=>`OVERALL RISK SCORE: 68\nEXECUTIVE SUMMARY: Document requires immediate accounting and legal review. Financial exposure identified across multiple risk areas. Executive attention and owner-lane assignment required within 48 hours.\n\nPRIORITY ACTIONS:\n1. Accounting review and GL correction — $TBD — Project Accountant — 48 hours\n2. Legal review and filing rights preservation — $TBD — Construction Attorney — 48 hours\n3. Payroll compliance and certified payroll filing — $TBD — HR/Payroll — 72 hours\n4. Owner notification and dispute documentation — $0 — PM — 24 hours\n\nAPP ROUTING (ranked by relevance):\nTOP APP: FinOps Accounting — Journal entry correction and GL reconciliation\n\nAPP: FinOps Accounting\nCATEGORY: Financial Operations\nRANK: #1\nIS_TOP: YES\nHOW_TO_USE: Open the GL Reconciliation tab → enter the unrecorded amounts → correct journal entries for CIP capitalization and intercompany loans. Use the GAAP Treatment advisor to confirm ASC 835-20 and ASC 810 requirements.\nTAGS: JOURNAL ENTRY, GAAP, GL, RECONCILIATION\n\nAPP: FinOps Operations\nCATEGORY: Financial Operations\nRANK: #2\nIS_TOP: NO\nHOW_TO_USE: Open the Draw Verification tab → input lender draw amounts vs GL-posted amounts → generate variance report and corrective AP entries. Use Cash Flow module for weekly position update.\nTAGS: DRAW, AP, CASH FLOW, VARIANCE\n\nAPP: Construction Legal\nCATEGORY: Construction Operations\nRANK: #3\nIS_TOP: NO\nHOW_TO_USE: Open the Lien Protection tab → enter the claimant, amount, and filing deadline → generate preliminary notice response and bond claim analysis.\nTAGS: LIEN, CONTRACT, DISPUTE, LEGAL\n\nAPP: AuditOps\nCATEGORY: Construction Operations\nRANK: #4\nIS_TOP: NO\nHOW_TO_USE: Navigate to the Certified Payroll tab → enter project and week → surface Davis-Bacon underpayment calculations and corrective payroll journal entries.\nTAGS: PAYROLL, DAVIS-BACON, AUDIT, COMPLIANCE\n\nAPP: Construction Compliance\nCATEGORY: Construction Operations\nRANK: #5\nIS_TOP: NO\nHOW_TO_USE: Use the OSHA Response tab → enter citation number and violation → generate abatement plan and contest timeline.\nTAGS: OSHA, COMPLIANCE, SAFETY, ABATEMENT\n\nDISPATCH_INTRO: ';
+(doc,e)=>`OVERALL RISK SCORE: 68\nEXECUTIVE SUMMARY: Document requires immediate accounting and legal review. Financial exposure identified across multiple risk areas. Executive attention and owner-lane assignment required within 48 hours.\n\nPRIORITY ACTIONS:\n1. Accounting review and GL correction — $TBD — Project Accountant — 48 hours\n2. Legal review and filing rights preservation — $TBD — Construction Attorney — 48 hours\n3. Payroll compliance and certified payroll filing — $TBD — HR/Payroll — 72 hours\n4. Owner notification and dispute documentation — $0 — PM — 24 hours\n\nAPP ROUTING (ranked by relevance):\nTOP APP: FinOps Accounting — Journal entry correction and GL reconciliation\n\nAPP: FinOps Accounting\nCATEGORY: Financial Operations\nRANK: #1\nIS_TOP: YES\nHOW_TO_USE: Open the GL Reconciliation tab → enter the unrecorded amounts → correct journal entries for CIP capitalization and intercompany loans. Use the GAAP Treatment advisor to confirm ASC 835-20 and ASC 810 requirements.\nTAGS: JOURNAL ENTRY, GAAP, GL, RECONCILIATION\n\nAPP: FinOps Operations\nCATEGORY: Financial Operations\nRANK: #2\nIS_TOP: NO\nHOW_TO_USE: Open the Draw Verification tab → input lender draw amounts vs GL-posted amounts → generate variance report and corrective AP entries. Use Cash Flow module for weekly position update.\nTAGS: DRAW, AP, CASH FLOW, VARIANCE\n\nAPP: Construction Legal\nCATEGORY: Construction Operations\nRANK: #3\nIS_TOP: NO\nHOW_TO_USE: Open the Lien Protection tab → enter the claimant, amount, and filing deadline → generate preliminary notice response and bond claim analysis.\nTAGS: LIEN, CONTRACT, DISPUTE, LEGAL\n\nAPP: AuditOps\nCATEGORY: Construction Operations\nRANK: #4\nIS_TOP: NO\nHOW_TO_USE: Navigate to the Certified Payroll tab → enter project and week → surface Davis-Bacon underpayment calculations and corrective payroll journal entries.\nTAGS: PAYROLL, DAVIS-BACON, AUDIT, COMPLIANCE\n\nAPP: Construction Compliance\nCATEGORY: Construction Operations\nRANK: #5\nIS_TOP: NO\nHOW_TO_USE: Use the OSHA Response tab → enter citation number and violation → generate abatement plan and contest timeline.\nTAGS: OSHA, COMPLIANCE, SAFETY, ABATEMENT\n\nDISPATCH_INTRO: `,
+];
+
+// ═══════════════════════════════
+// ENGINE 06 — APP DISPATCH RENDERING
+// ═══════════════════════════════
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function buildDispatch(raw, defectManifest){
+  const introMatch = raw.match(/DISPATCH_INTRO:\s*([^\n]+(?:\n(?!APP:)[^\n]+)*)/);
+  const intro = introMatch ? introMatch[1].trim() : 'Ranked TSM apps for the risks detected in this document. Route to the highest-ranked app first — each contains step-by-step guidance specific to the findings above.';
+  const introEl = document.getElementById('dispatchIntro');
+  if (introEl) introEl.textContent = intro;
 
   const blocks=raw.split(/\n(?=APP:)/);
   let apps=[];
@@ -1170,9 +1184,81 @@ const FALLBACKS=[
     {name:'TSM Construction Suite Field & Document Ops',how:'Field crew dispatch, equipment tracking, subcontractor coordination.',tagsRaw:'FIELDOPS, CREW, SCHEDULE'},
     {name:'TSM Zero-Trust Enterprise Access Command',how:'Lock down unauthorized access roles, flag credential anomalies.',tagsRaw:'ACCESS, SECURITY, BREACH'},
   ];
-  DEFAULTS.forEach((d,di)=>{
+  DEFAULTS.forEach((d)=>{
     if(!apps.find(a=>a.name.toLowerCase().includes(d.name.toLowerCase().split(' ')[0]))){
       apps.push({...d,rank:'#'+(apps.length+1),isTop:false});
+    }
+  });
+
+  // Route map — only real, confirmed pages in this repo get a live link.
+  // Everything else renders honestly as "NOT BUILT YET" instead of a dead link.
+  const routeMap = {
+    'finops accounting': '/html/finops-suite/finops-accounting.html',
+    'finops operations': '/html/finops-suite/finops-operations.html',
+    'legal analyst pro': '/html/war-rooms/legal-war/legal-war-room.html',
+    'construction legal': '/html/war-rooms/legal-war/legal-war-room.html',
+    'auditops sovereign core': '/html/auditops-pro.html',
+    'auditops pro tax intelligence': '/html/construction-suite/auditops-tax.html',
+    'auditops': '/html/auditops-pro.html',
+    'tsm compliance command': '/html/construction-suite/auditops-tax.html',
+    'construction compliance': '/html/construction-suite/auditops-tax.html',
+    'tsm construction suite field & document ops': '/construction-suite/construction-pro.html',
+    'tsm financial command': null,
+    'tsm zero-trust enterprise access command': null,
+  };
+
+  const dotColors = ['#00ff88','#d4af37','#00e5ff','#a855f7','#ff5555'];
+  const container = document.getElementById('appCardsList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  apps.forEach((app, i) => {
+    const key = app.name.toLowerCase();
+    const href = routeMap[key];
+    const notBuilt = !href;
+    const tags = (app.tagsRaw||'').split(',').map(t=>t.trim()).filter(Boolean);
+    const tagHTML = tags.map(t=>`<span class="app-tag">${esc(t)}</span>`).join('');
+
+    const row = document.createElement('div');
+    row.className = 'app-row' + (app.isTop?' top-match':'');
+    row.innerHTML = `
+      <div class="app-row-hdr">
+        <div class="app-name-block">
+          <div class="app-dot" style="background:${dotColors[i]||'#5a6f90'}"></div>
+          <div>
+            <div class="app-name">${esc(app.name)}</div>
+            <div class="app-cat">Construction Operations</div>
+          </div>
+        </div>
+        ${app.isTop
+          ? '<span class="top-badge">★ TOP MATCH</span>'
+          : `<span class="app-rank-badge">${esc(app.rank||'#'+(i+1))}</span>`}
+      </div>
+      <div class="app-how-lbl">HOW TO USE THIS APP FOR YOUR ISSUE</div>
+      <div class="app-how-txt">${esc(app.how||'Navigate to this app and use the intake form to begin analysis.')}${defectManifest?`\n\nKEY DEFECTS TO RESOLVE:\n${esc(defectManifest)}`:''}</div>
+      <div class="app-tags-row">${tagHTML}</div>
+      ${notBuilt
+        ? `<button class="app-launch-btn" type="button" disabled style="opacity:.4;cursor:not-allowed">NOT BUILT YET</button>`
+        : `<button class="app-launch-btn" type="button">LAUNCH ${esc(app.name.toUpperCase())} →</button>`}
+    `;
+    if (!notBuilt) {
+      row.querySelector('.app-launch-btn').addEventListener('click', () => {
+        storeSession();
+        window.location.href = href;
+      });
+    }
+    container.appendChild(row);
+  });
+
+  const countEl = document.getElementById('appCount');
+  if (countEl) countEl.textContent = `✓ ${apps.length} APPS RECOMMENDED`;
+  const section = document.getElementById('dispatchSection');
+  if (section) {
+    section.style.display = 'block';
+    section.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+}
+
 // ═══════════════════════════════
 // FIRE ALL 6 ENGINES
 // ═══════════════════════════════
@@ -1298,7 +1384,7 @@ async function fireEngines() {
     await new Promise(r=>setTimeout(r,250));
   }
 
-  buildDispatch(e[6]||'');
+  buildDispatch(e[6]||'', buildDefectManifest(e));
 
   const combined=(e[1]||'')+(e[3]||'')+(e[6]||'');
   const riskM=combined.match(/(?:OVERALL RISK SCORE|RISK SCORE)[:\s*]+(\d+)/i);
