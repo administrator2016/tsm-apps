@@ -1244,7 +1244,7 @@ function buildDispatch(raw, defectManifest){
     if (!notBuilt) {
       row.querySelector('.app-launch-btn').addEventListener('click', () => {
         storeSession();
-        window.location.href = href;
+        launchApp(href, { name: app.name, how: app.how || '', tags: tags });
       });
     }
     container.appendChild(row);
@@ -1491,6 +1491,24 @@ function storeSession(e){
       try { window.TSM.relay.write('CONSTRUCTION', JSON.parse(JSON.stringify(payload))); } catch (e) { /* noop */ }
     }
   }catch(err){console.warn('Store error:',err);}
+}
+
+// Writes the relay that /shared/tsm-cure-cheatsheet.js reads on the destination
+// page (same mechanism FinOps's war room already uses), then opens the
+// destination in a new tab so this war room isn't lost.
+function launchApp(href, appMeta){
+  try {
+    localStorage.setItem('TSM_CURE_RELAY', JSON.stringify({
+      docText: docText || document.getElementById('docPaste')?.value || '',
+      vertical: 'Construction',
+      appName: appMeta?.name || '',
+      appHowTo: appMeta?.how || '',
+      anomalies: (appMeta?.tags || []),
+      docType: selectedDocType || '',
+      timestamp: Date.now()
+    }));
+  } catch(e) {}
+  window.open(href, '_blank');
 }
 
 function fireCapabilitySweep(e) {
