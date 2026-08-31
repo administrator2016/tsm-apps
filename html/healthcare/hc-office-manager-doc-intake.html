@@ -59,6 +59,15 @@ tr:hover td{background:#0f1f0f}
 </style>
 </head>
 <body data-vertical="healthcare" data-page-role="office-manager-intake">
+<style>
+.tsm-hc-crossnav{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 14px;background:#0a0f0a;border-bottom:1px solid #1e3a1e;font-family:'Courier New',monospace;font-size:10px;letter-spacing:.5px;position:sticky;top:0;z-index:200}
+.tsm-hc-crossnav-lbl{color:#556655;margin-right:4px;text-transform:uppercase}
+.tsm-hc-crossnav a{color:#00ff88;text-decoration:none;padding:3px 9px;border:1px solid #1e3a1e;border-radius:10px;white-space:nowrap}
+.tsm-hc-crossnav a:hover{border-color:#00ff88;background:#003322}
+.tsm-hc-crossnav span.tsm-hc-crossnav-active{color:#0a0f0a;background:#00ff88;padding:3px 9px;border-radius:10px;font-weight:700;white-space:nowrap}
+</style>
+<div class="tsm-hc-crossnav"><span class="tsm-hc-crossnav-lbl">HC suite:</span><a href="/html/healthcare/hc-denial-war-room.html">Denial War Room</a><a href="/html/healthcare/hc-main-strategist.html">Strategist</a><span class="tsm-hc-crossnav-active">Doc Intake</span><a href="/html/healthcare/executive-portal.html">Executive Portal</a><a href="/html/healthcare/hc-om-portal.html">OM Portal</a><a href="/html/healthcare/hc-strategist/index.html">Neural Intake Strategist</a></div>
+
 
 <div class="hdr">
   <div class="hdr-left">
@@ -90,6 +99,30 @@ tr:hover td{background:#0f1f0f}
   <div class="suggestion" id="suggestion">
     <div id="sugg-body"></div>
     <div class="row" id="sugg-actions"></div>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="sec-hdr">CLASSIFY FROM FILE</div>
+  <div class="sec-note">
+    Pick one of the 6 healthcare sample documents, or upload your own (PDF, DOCX, XLSX, XLS, CSV, TXT, or MD — 8MB max).
+    Text is extracted server-side, then run through the same keyword classifier as above.
+  </div>
+  <div class="row">
+    <select id="sample-select" class="ai-inp" style="max-width:380px;min-height:auto;padding:8px 10px;">
+      <option value="">— choose a sample —</option>
+      <option value="File1_PriorAuth_Denial.pdf">File1 — Prior Auth + Denial (Meridian)</option>
+      <option value="File2_Remittance_EOB.pdf">File2 — Remittance + EOB (Meridian)</option>
+      <option value="File3_PriorAuth_Denial_CO197.pdf">File3 — Prior Auth + Denial (Arizona Health Network)</option>
+      <option value="File4_Remittance_EOB_2.pdf">File4 — Remittance + EOB (Arizona Health Network)</option>
+      <option value="File5_PriorAuth_Denial_ANOMALY.pdf">File5 — Prior Auth + Denial, seeded anomaly (TriCore)</option>
+      <option value="File6_Remittance_EOB_ANOMALY.pdf">File6 — Remittance + EOB, seeded anomaly (TriCore)</option>
+    </select>
+    <button class="btn" id="sample-btn" onclick="classifySample()">⬡ LOAD &amp; CLASSIFY SAMPLE</button>
+  </div>
+  <div class="row">
+    <input type="file" id="file-upload" accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.md" style="color:var(--text);font-size:11px;flex:1;min-width:200px;">
+    <button class="btn" id="upload-btn" onclick="classifyUpload()">⬡ CLASSIFY UPLOADED FILE</button>
   </div>
 </div>
 
@@ -148,6 +181,59 @@ async function submitIntake(){
     alert('Request failed: ' + e.message);
   } finally {
     btn.disabled = false; btn.textContent = '⬡ CLASSIFY';
+  }
+}
+
+async function classifySample(){
+  const select = document.getElementById('sample-select');
+  const filename = select.value;
+  const btn = document.getElementById('sample-btn');
+  if (!filename) { alert('Choose a sample document first.'); return; }
+  btn.disabled = true; btn.textContent = '⏳ EXTRACTING...';
+  try {
+    const res = await fetch('/api/hc/intake-sample', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename })
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      alert('Could not classify: ' + (data.errors || [data.error]).join('; '));
+      return;
+    }
+    lastSuggestionEvent = data.event;
+    renderSuggestion(data.event);
+    await refreshQueue();
+  } catch (e) {
+    alert('Request failed: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '⬡ LOAD & CLASSIFY SAMPLE';
+  }
+}
+
+async function classifyUpload(){
+  const input = document.getElementById('file-upload');
+  const file = input.files && input.files[0];
+  const btn = document.getElementById('upload-btn');
+  if (!file) { alert('Choose a file to upload first.'); return; }
+  btn.disabled = true; btn.textContent = '⏳ EXTRACTING...';
+  try {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch('/api/hc/intake-file', { method: 'POST', body: form });
+    const data = await res.json();
+    if (!data.ok) {
+      alert('Could not classify: ' + (data.errors || [data.error]).join('; '));
+      return;
+    }
+    lastSuggestionEvent = data.event;
+    renderSuggestion(data.event);
+    await refreshQueue();
+    input.value = '';
+  } catch (e) {
+    alert('Request failed: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '⬡ CLASSIFY UPLOADED FILE';
   }
 }
 
@@ -226,9 +312,12 @@ async function refreshQueue(){
       const actionsCell = r.status === 'suggested' && r.suggestedNode
         ? `<button class="btn smallbtn" onclick="routeIntake('${r.id}','${r.suggestedNode}')">ROUTE</button><button class="btn secondary smallbtn" onclick="dismissIntake('${r.id}')">DISMISS</button>`
         : '';
+      const descCell = r.sourceFileName
+        ? `📄 ${escapeHtml(r.sourceFileName)}<br><span style="opacity:.6">${escapeHtml(excerpt(r.description, 60))}</span>`
+        : escapeHtml(excerpt(r.description, 70));
       return `<tr>
         <td>${when}</td>
-        <td>${escapeHtml(excerpt(r.description, 70))}</td>
+        <td>${descCell}</td>
         <td>${r.suggestedLabel ? escapeHtml(r.suggestedLabel) : '—'}</td>
         <td>${r.confidence || '—'}</td>
         <td><span class="badge ${badgeClass}">${r.status.toUpperCase()}</span></td>

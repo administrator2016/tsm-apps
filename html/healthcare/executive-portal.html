@@ -886,6 +886,15 @@ border-radius: 2px; flex-shrink: 0; white-space: nowrap;
   <link rel="stylesheet" href="/shared/tsm-guided-how-to.css">
 </head>
 <body data-vertical="healthcare" data-page-role="exec">
+<style>
+.tsm-hc-crossnav{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 14px;background:#0a0f0a;border-bottom:1px solid #1e3a1e;font-family:'Courier New',monospace;font-size:10px;letter-spacing:.5px;position:sticky;top:0;z-index:200}
+.tsm-hc-crossnav-lbl{color:#556655;margin-right:4px;text-transform:uppercase}
+.tsm-hc-crossnav a{color:#00ff88;text-decoration:none;padding:3px 9px;border:1px solid #1e3a1e;border-radius:10px;white-space:nowrap}
+.tsm-hc-crossnav a:hover{border-color:#00ff88;background:#003322}
+.tsm-hc-crossnav span.tsm-hc-crossnav-active{color:#0a0f0a;background:#00ff88;padding:3px 9px;border-radius:10px;font-weight:700;white-space:nowrap}
+</style>
+<div class="tsm-hc-crossnav"><span class="tsm-hc-crossnav-lbl">HC suite:</span><a href="/html/healthcare/hc-denial-war-room.html">Denial War Room</a><a href="/html/healthcare/hc-main-strategist.html">Strategist</a><a href="/html/healthcare/hc-office-manager-doc-intake.html">Doc Intake</a><span class="tsm-hc-crossnav-active">Executive Portal</span><a href="/html/healthcare/hc-om-portal.html">OM Portal</a><a href="/html/healthcare/hc-strategist/index.html">Neural Intake Strategist</a></div>
+
 <section
   id="tsm-guided-how-to-root"
   data-tsm-guided-how-to="true"
