@@ -30,7 +30,7 @@
 
 const { test, expect } = require('@playwright/test');
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:4173';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 test.describe('Healthcare relay chain (Phase 1)', () => {
 
@@ -150,13 +150,15 @@ test.describe('Healthcare relay chain (Phase 1)', () => {
     // not the raw number.
     await expect(hcRow.locator('.exposure')).toContainText('$48K');
 
-    // Sentinel's own EXEC_PORTAL_PATHS.healthcare points at
-    // /html/war-rooms/healthcare/executive-portal.html, which does not exist
-    // in this repo (real file is /html/healthcare/executive-portal.html).
-    // This assertion documents the current broken link rather than skipping it.
+    // Healthcare's canonical Executive Portal lives at
+    // /html/healthcare/executive-portal.html.
+    // Keep the Sentinel contract anchored to the real served path.
     const execLink = hcRow.locator('.exec-link');
     if (await execLink.count()) {
-      await expect(execLink).toHaveAttribute('href', /\/html\/war-rooms\/healthcare\/executive-portal\.html/);
+      await expect(execLink).toHaveAttribute(
+        'href',
+        /\/html\/healthcare\/executive-portal\.html(?:\?|$)/
+      );
     }
   });
 
@@ -182,6 +184,13 @@ test.describe('Healthcare relay chain (Phase 1)', () => {
 test.describe('Guide Engine continuity + Decision Center (Phase 1 fix verification)', () => {
 
   test('hc-denial-war-room escalate: same-tab navigation, not a new tab', async ({ page, context }) => {
+    // The guided tour is optional first-run UX. Mark it complete so this
+    // workflow test exercises the real escalation control without the
+    // tour overlay intercepting pointer events.
+    await page.addInitScript(() => {
+      localStorage.setItem('hc_denial_tour_done', '1');
+    });
+
     await page.goto(`${BASE_URL}/html/healthcare/hc-denial-war-room.html`);
 
     // #escalate-strategist-btn doesn't exist in the static page -- it's

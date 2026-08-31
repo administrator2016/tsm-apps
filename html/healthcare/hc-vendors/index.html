@@ -675,6 +675,125 @@ document.addEventListener('click', function(e){
 <script src="/healthcare/tsm-launcher.js"></script>
 <script src="/js/guided-mission-workflow.js"></script>
 <script src="../js/tsm-doc-anomaly-bridge.js"></script><script src="../js/tsm-node-relay-bridge.js"></script><script src="../js/tsm-hc-delegation.js"></script><script src="../js/tsm-hc-handoff.js"></script><script>
+
+// ── CANONICAL VENDORS NODE SUBMISSION ─────────────────────────────────────
+// Persists the Vendors workflow into the authenticated client's HC node state.
+// This is the source consumed by /api/hc/nodes/filter and HC Strategist.
+async function submitVendorStep(step) {
+  const value = (id) => {
+    const el = document.getElementById(id);
+    return el ? String(el.value || '').trim() : '';
+  };
+
+  const vendorName = value('vendor-name');
+  const contractRef = value('vendor-contract');
+  const serviceLine = value('vendor-service');
+  const fulfillment = value('vendor-fulfillment');
+  const activeAlerts = value('vendor-alerts');
+  const revenueRisk = value('vendor-risk');
+  const issue = value('vendor-issue');
+
+  if (!vendorName && !issue) {
+    const out = document.getElementById('guide-output');
+    if (out) {
+      out.textContent = '> ENTER VENDOR DATA BEFORE SUBMITTING.';
+    }
+    return;
+  }
+
+  const findings =
+    issue ||
+    `${vendorName || 'Vendor'} requires operational review.`;
+
+  const payload = {
+    nodeKey: 'vendors',
+    system: 'HonorHealth',
+    location: 'Scottsdale - Shea',
+
+    status: step === 1 ? 'WATCH' : 'CRITICAL',
+
+    vendorName,
+    contractRef,
+    serviceLine,
+    fulfillmentRate: fulfillment,
+    activeAlerts,
+    revenueAtRisk: revenueRisk,
+
+    findings,
+    vendorStep: step,
+    source: 'hc-vendors',
+    sourceLabel: 'HC VENDORS COMMAND',
+
+    // Preserve a machine-readable event trail for downstream consumers.
+    relayTrigger: 'vendor-step-completed',
+
+    updatedBy: 'HC VENDORS COMMAND',
+    submittedAt: new Date().toISOString()
+  };
+
+  const out = document.getElementById('guide-output');
+
+  try {
+    if (out) {
+      out.textContent =
+        `> PERSISTING VENDOR STEP ${step}...\n\n` +
+        'Writing canonical HC node state...';
+    }
+
+    const response = await fetch('/api/hc/nodes/vendors', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    if (out) {
+      out.textContent =
+        `> VENDOR STEP ${step} COMPLETE\n\n` +
+        `Vendor: ${vendorName || '—'}\n` +
+        `Service: ${serviceLine || '—'}\n` +
+        `Fulfillment: ${fulfillment || '—'}\n` +
+        `Alerts: ${activeAlerts || '—'}\n` +
+        `Revenue at risk: ${revenueRisk || '—'}\n\n` +
+        '> CANONICAL NODE STATE PERSISTED\n' +
+        '> READY FOR STRATEGIST.';
+    }
+
+    // Existing browser relay remains available as a presentation/handoff
+    // artifact, but canonical persistence above is now the authoritative path.
+    if (typeof relayToStrategist === 'function') {
+      relayToStrategist('HC VENDORS');
+    }
+
+    // Step 2 completion unlocks the existing next-action panel.
+    if (step >= 2) {
+      const next = document.getElementById('guide-next-actions');
+      if (next) next.style.display = 'block';
+    }
+
+    return data;
+
+  } catch (err) {
+    console.error('[HC VENDORS] submitVendorStep failed:', err);
+
+    if (out) {
+      out.textContent =
+        '> VENDOR SUBMISSION FAILED\n\n' +
+        err.message +
+        '\n\nCheck authentication and /api/hc/nodes/vendors.';
+    }
+
+    return null;
+  }
+}
+
 // ── TSM RELAY-TO-STRATEGIST (generic across HC nodes) ──
 
 function relayToStrategist(nodeLabel) {

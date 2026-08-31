@@ -33,7 +33,7 @@ const { test } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 
-const BASE_URL = process.env.TSM_BASE_URL || 'http://localhost:8080';
+const BASE_URL = process.env.TSM_BASE_URL || process.env.BASE_URL || 'http://localhost:3000';
 const VIEWPORT = { width: 1920, height: 1080 };
 
 test('L1 Ticket Copilot platform demo', async ({ page, context }) => {
