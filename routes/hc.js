@@ -586,7 +586,21 @@ router.post('/api/hc/query', async (req,res)=>{
     // check always failed and threw "AI returned an empty response. Try
     // again." even on a healthy server. Route it to a real Groq call instead.
     if (message) {
-      const systemPrompt = system ? SP.strategist + '\n\n' + system : SP.strategist;
+      // TSM FIX: every caller that reaches this branch (billing/insurance/
+      // financial/compliance/legal via guide-panel-engine.js's callAPI, plus
+      // hc-strategist/hc-main-strategist's own buildHCContext()-based calls)
+      // already sends a complete, purpose-built persona in `system` — up to
+      // and including strict output-format instructions ("Return ONLY a
+      // JSON object matching this EXACT shape..."). Unconditionally
+      // prepending SP.strategist's generic "cross-office... Base every
+      // statement strictly on the metrics provided" persona in front of
+      // that caused two competing personas to layer: the model would prime
+      // on "metrics" language and then invoke its own "say so instead of
+      // guessing" instruction even when the specific claim fields (patient,
+      // CPT, payer, amount) were plainly present in `message`. SP.strategist
+      // is now only a fallback for callers that don't supply their own
+      // system prompt at all.
+      const systemPrompt = system || SP.strategist;
       const answer = await callGroq(systemPrompt, message, maxTokens || 1024);
       return res.json({ ok: true, output: answer, content: answer, answer, reply: answer });
     }
