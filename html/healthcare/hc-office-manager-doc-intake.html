@@ -282,7 +282,7 @@ async function routeIntake(id, nodeKey){
   const ev = (lastSuggestionEvent && lastSuggestionEvent.id === id)
     ? lastSuggestionEvent
     : await findQueueEvent(id);
-  if (ev) relayToAnomalyBridge(ev, nodeKey);
+  if (ev) await relayToAnomalyBridge(ev, nodeKey);
 
   await refreshQueue();
   const path = NODE_PATH[nodeKey];
@@ -351,7 +351,68 @@ function extractClientData(text){
   return Object.keys(data).length ? data : null;
 }
 
-function relayToAnomalyBridge(ev, nodeKey){
+// Same fixed 4-line template as before parseAdvisorSteps() existed — used
+// whenever the claim-specific AI call below fails, times out, or comes back
+// empty. Never leave the operator with zero steps.
+function genericSteps(clientData){
+  return clientData ? [
+    'Review the case above against this node\u2019s Mission Objectives panel',
+    'Client/claim data was auto-filled from the routed document \u2014 verify the amount and set the appeal deadline (not auto-filled)',
+    'Work Step 1 \u2192 Submit Step Response, then Step 2 \u2192 Submit Step Response',
+    'Relay to Strategist only if this reveals a cross-domain issue'
+  ] : [
+    'Review the case above against this node\u2019s Mission Objectives panel',
+    'Update this node\u2019s own client/claim intake fields to match, if they don\u2019t already',
+    'Work Step 1 \u2192 Submit Step Response, then Step 2 \u2192 Submit Step Response',
+    'Relay to Strategist only if this reveals a cross-domain issue'
+  ];
+}
+
+// Parses the same "⚠ [FIELD] — what's wrong — fix" numbered-list format the
+// Anomaly Advisor (hc-denial-war-room.html) prompts for — kept identical so
+// tsm-doc-anomaly-bridge.js's parseStep() renders both sources the same way.
+function parseAdvisorSteps(text){
+  if (!text) return [];
+  return text
+    .split(/\n(?=\s*\d+\.\s)/)
+    .map(s => s.replace(/^\s*\d+\.\s*/, '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
+// Best-effort claim-specific checklist via the same Groq-backed endpoint the
+// Anomaly Advisor uses (/api/hc/query with `message` set → callGroq()), so
+// office-manager-routed cases get field-specific steps instead of the fixed
+// 4-line template. Bounded to 8s so a slow/unreachable model never blocks
+// the routing click — falls back to genericSteps() on any failure, timeout,
+// or empty/unparseable response, exactly matching prior behavior.
+async function fetchClaimSpecificSteps(ev, clientData){
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const sys = `You are TSM Anomaly Advisor, a field-level defect detection engine for healthcare RCM documents. Analyze the routed document and identify specific actionable document defects. Output ONLY a numbered list. Each item must follow this exact format:
+⚠ [FIELD NAME] — what is wrong — exact fix instruction (which tab, which field, what to enter or change).
+Maximum 6 items. No preamble. No headers. No summary. Start immediately with item 1.`;
+    const contextParts = [`CLASSIFICATION: ${ev.suggestedLabel || ev.suggestedNode || ''}`, ev.reason ? `REASON: ${ev.reason}` : '', 'DOCUMENT:', String(ev.description || '').slice(0, 1800)];
+    if (clientData) contextParts.push('EXTRACTED FIELDS:', JSON.stringify(clientData));
+    const res = await fetch('/api/hc/query', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ system: sys, message: contextParts.filter(Boolean).join('\n'), maxTokens: 500 }),
+      signal: controller.signal
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const parsed = parseAdvisorSteps(data && data.output);
+    return parsed.length ? parsed : null;
+  } catch (e) {
+    return null; // network error, abort/timeout, or bad JSON — caller falls back
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function relayToAnomalyBridge(ev, nodeKey){
   const findings = [`Confidence: ${(ev.confidence || '—').toUpperCase()}`, ev.reason].filter(Boolean);
   if (ev.alternates && ev.alternates.length) {
     findings.push(`Also considered: ${ev.alternates.map(a => a.label).join(', ')}`);
@@ -360,23 +421,14 @@ function relayToAnomalyBridge(ev, nodeKey){
   if (clientData) {
     findings.push(`Client data auto-filled: ${Object.keys(clientData).filter(k => k !== 'issue').join(', ')}`);
   }
+  const aiSteps = await fetchClaimSpecificSteps(ev, clientData);
   const payload = {
     checkStatus: 'OFFICE_MANAGER_ROUTED',
     bannerLabel: 'CASE ROUTED FROM OFFICE MANAGER',
     sourceBadge: '📥 FROM OFFICE MANAGER',
     narrative: ev.description,
     findings,
-    steps: clientData ? [
-      'Review the case above against this node\u2019s Mission Objectives panel',
-      'Client/claim data was auto-filled from the routed document \u2014 verify the amount and set the appeal deadline (not auto-filled)',
-      'Work Step 1 \u2192 Submit Step Response, then Step 2 \u2192 Submit Step Response',
-      'Relay to Strategist only if this reveals a cross-domain issue'
-    ] : [
-      'Review the case above against this node\u2019s Mission Objectives panel',
-      'Update this node\u2019s own client/claim intake fields to match, if they don\u2019t already',
-      'Work Step 1 \u2192 Submit Step Response, then Step 2 \u2192 Submit Step Response',
-      'Relay to Strategist only if this reveals a cross-domain issue'
-    ],
+    steps: aiSteps || genericSteps(clientData),
     clientData: clientData || undefined,
     fileName: ev.sourceFileName || undefined,
     ref: ev.id,
