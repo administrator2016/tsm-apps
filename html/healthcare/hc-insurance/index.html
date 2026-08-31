@@ -528,7 +528,7 @@ tr:hover td{background:#0f1f0f}
 <script src="../js/guide-panel-engine.js"></script>
 <script>
   // ── TAB CONFIG ──────────────────────────────────────────────────────────
-  const TAB_CONFIG = {
+  var TAB_CONFIG = {  // TSM FIX: must be var (not const) so it attaches to window.TAB_CONFIG for guide-panel-engine.js
     dash:   { patient:'Maria Santos', claim:'27447', payer:'BlueCross BlueShield', steps:['Review the Medicare CO-4 denial spike — 89 claims, $184K impact. Identify modifier pattern and resolution.','Aetna prior auth backlog: 14 requests over 72hr. Build escalation plan for 3 approaching medical necessity deadline.'] },
     claims: { patient:'Maria Santos', claim:'27447', payer:'BlueCross BlueShield', steps:['Review department performance data. Identify the lowest-compliance department and root cause.','Build a 30-day throughput improvement plan for the Emergency Department at 78% compliance.'] },
     coding: { patient:'Maria Santos', claim:'27447', payer:'Medicare', steps:['Isolate modifier path breakdowns causing Medicare CO-4 denial spikes across 89 claims.','Audit CPT 99215 documentation criteria across 23 flagged claims — identify documentation gaps and remediation steps.'] },
@@ -537,7 +537,7 @@ tr:hover td{background:#0f1f0f}
     presets:{ patient:'Portfolio',    claim:'ALL',   payer:'All Payers', steps:['Select a preset analysis to load into the AI engine. Each preset targets a specific insurance risk or compliance scenario.','After running a preset, review output and escalate high-priority findings to the Strategist node for cross-domain analysis.'] }
   };
 
-  let currentTab = 'dash';
+  var currentTab = 'dash';  // TSM FIX: must be var (not let) so it attaches to window.currentTab for guide-panel-engine.js
   let clientData = { patient:'Maria Santos', claim:'CLM-0334', payer:'BlueCross BlueShield', denial:'CO-4', cpt:'99213', risk:'$1,240', issue:'Modifier conflict on same-day E&M and procedure.', deadline:'' };
 
   // Lets tsm-doc-anomaly-bridge.js auto-fill + auto-apply this node's own

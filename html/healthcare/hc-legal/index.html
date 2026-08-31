@@ -477,7 +477,7 @@ tr:hover td{background:#0f1f0f}
 
 <script src="../js/guide-panel-engine.js"></script>
 <script>
-const TAB_CONFIG = {
+var TAB_CONFIG = {  // TSM FIX: must be var (not const) so it attaches to window.TAB_CONFIG for guide-panel-engine.js
   dash: {
     client:'Acme Corp', matter:'MTR-2204', opposing:'Delta Inc',
     steps:[
@@ -522,7 +522,7 @@ const TAB_CONFIG = {
   }
 };
 
-let currentTab = 'dash';
+var currentTab = 'dash';  // TSM FIX: must be var (not let) so it attaches to window.currentTab for guide-panel-engine.js
 const stepsCompleted = { 1:false, 2:false };
 let clientData = { client:'Acme Corp', matter:'MTR-2204', opposing:'Delta Inc', claimtype:'Breach of Contract', statute:'UCC 2-207', exposure:'$2,400,000', issue:'Indemnification clause ambiguity — injunction response deadline 72 hours.', deadline:'' };
 

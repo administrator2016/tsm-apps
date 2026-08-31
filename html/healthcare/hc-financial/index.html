@@ -1169,7 +1169,7 @@
   <script src="../js/guide-panel-engine.js"></script>
   <script>
     // ── TAB CONFIG ──────────────────────────────────────────────────────────
-    const TAB_CONFIG = {
+    var TAB_CONFIG = {  // TSM FIX: must be var (not const) so it attaches to window.TAB_CONFIG for guide-panel-engine.js
       dash: {
         unit: 'Practice AR',
         payer: 'All Payers',
@@ -1226,7 +1226,7 @@
       }
     };
 
-    let currentTab = 'dash';
+    var currentTab = 'dash';  // TSM FIX: must be var (not let) so it attaches to window.currentTab for guide-panel-engine.js
 
     // ── CLIENT DATA ─────────────────────────────────────────────────────────
     let clientData = {
