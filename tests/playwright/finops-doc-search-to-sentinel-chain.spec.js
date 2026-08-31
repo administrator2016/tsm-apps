@@ -48,7 +48,7 @@
 
 const { test, expect } = require('@playwright/test');
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:4173';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 test.describe('FinOps full chain: doc-search -> war-room -> exec-portal -> Sentinel', () => {
 

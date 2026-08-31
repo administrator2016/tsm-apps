@@ -31,7 +31,7 @@ const CONF_PATH = path.join(REPO_ROOT, 'scripts', 'demo', 'demo-pages.conf');
 const REPORTS_DIR = path.join(REPO_ROOT, 'reports');
 const LOG_DIR = path.join(REPORTS_DIR, 'logs');
 const SHOT_DIR = path.join(REPORTS_DIR, 'screenshots');
-const BASE_URL = process.env.BASE_URL || 'http://localhost:4173';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 fs.mkdirSync(LOG_DIR, { recursive: true });
 fs.mkdirSync(SHOT_DIR, { recursive: true });

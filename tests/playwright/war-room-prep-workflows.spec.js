@@ -35,7 +35,7 @@
 
 const { test, expect } = require('@playwright/test');
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:4173';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const DOC_SEARCH = '/html/tsm-doc-search-multi.html';
 
 // --- Chain 1: SECTOR_IDS (war-room-prep.html), including BPO demo chain ---

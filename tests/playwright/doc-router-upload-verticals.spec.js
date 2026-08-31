@@ -27,7 +27,7 @@
 const path = require('path');
 const { test, expect } = require('@playwright/test');
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:4173';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const FIXTURES = path.join(__dirname, '..', 'fixtures', 'doc-router');
 
 // One fixture per DOC_ROUTER_NODES vertical (server.js) / VERTICALS entry
