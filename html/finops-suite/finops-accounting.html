@@ -587,10 +587,15 @@ let groqKey = localStorage.getItem('finops_groq_key') || '';
 let groqModel = localStorage.getItem('finops_groq_model') || 'openai/gpt-oss-120b';
 let currentDoc = 'invoice';
 let outputs = {1:'',2:'',3:'',4:''};
+let relayedDocText = null; // set by checkRelayIn() when a War Room doc is waiting; consumed once by fireAll()
 
 // ── INIT ──
 if (groqKey) setKeyStatus(true);
-checkRelayIn();
+// TSM_KERNEL (from /core/tsm-kernel.js) isn't loaded until further down the
+// page, after this script block — calling checkRelayIn() synchronously here
+// would hit "TSM_KERNEL is undefined". Defer it to window 'load', by which
+// point every script tag (including the kernel) has run.
+window.addEventListener('load', checkRelayIn);
 
 // ── KEY MODAL ──
 function openModal() {
@@ -624,15 +629,44 @@ function toast(msg) {
 }
 
 // ── RELAY CHECK ──
+// The War Room hands off documents through TSM_KERNEL.setRelay('finops-suite', ...)
+// (localStorage key tsm_war_relay_finops-suite), not through tsm_remediation_relay.
+// That other key is this page's own OUTGOING relay — fireAll() below writes
+// it after processing, for the Strategist to read. Reading it here meant this
+// page was picking up its own prior run and displaying itself as the sender
+// ("Doc received from FinOps Accounting"), while never actually loading any
+// data — hence the banner claiming a doc arrived while every engine still
+// showed "AWAITING DOCUMENT" and the fire button still asked to fill fields.
+const WAR_ROOM_DOC_TYPE_MAP = {
+  'AP Aging': 'invoice', 'Vendor Report': 'invoice',
+  'AR Aging': 'ar',
+  'Bank Recon': 'bankrec',
+  'Budget Variance': 'pl'
+  // GL Extract, Tax / 1099, and ERA Batch have no matching form here —
+  // left unmapped so the currently-selected doc type is left as-is.
+};
 function checkRelayIn() {
+  if (typeof TSM_KERNEL === 'undefined') return; // kernel script failed to load — skip gracefully
   try {
-    const r = JSON.parse(localStorage.getItem('tsm_remediation_relay') || 'null');
-    if (!r || !r.doc) return;
-    const age = (Date.now() - r.timestamp) / 1000 / 60;
+    const relay = TSM_KERNEL.getRelay('finops-suite');
+    if (!relay || !relay.p) return;
+    const p = JSON.parse(relay.p);
+    if (!p.docText) return;
+    const age = (Date.now() - (relay.ts || p.timestamp || 0)) / 1000 / 60;
     if (age > 60) return;
+
+    relayedDocText = p.docText;
+    const mappedType = WAR_ROOM_DOC_TYPE_MAP[p.selectedDocType];
+    if (mappedType && FORMS[mappedType] && mappedType !== currentDoc) {
+      const btn = Array.from(document.querySelectorAll('.doc-btn'))
+        .find(b => b.getAttribute('onclick') === `setDoc('${mappedType}',this)`);
+      setDoc(mappedType, btn);
+    }
+
     document.getElementById('relay-banner').classList.add('show');
     document.getElementById('relay-banner-txt').textContent =
-      `Doc received from ${r.appName || 'War Room'} · ${r.docType?.toUpperCase() || 'DOCUMENT'} · ${Math.round(age)}m ago`;
+      `Doc received from War Room · ${p.selectedDocType || 'DOCUMENT'} · ${Math.round(age)}m ago`;
+    document.getElementById('fire-status').textContent = 'RELAYED DOC READY — FIRE WHEN READY';
   } catch(e) {}
 }
 
@@ -1135,7 +1169,14 @@ async function callGroqDirect(system, userMsg, maxTokens){
 // prompt is folded into the outgoing message itself. Falls back to a direct
 // Groq call using the key saved in Settings only if the proxy is unreachable
 // or returns a degraded response.
-async function callGroq(system, userMsg, maxTokens){
+// Renamed from callGroq to avoid a global name collision: tsm-shared.js
+// (included below) also defines window.callGroq with an incompatible
+// signature ((messages: array, onStream) vs this page's (system, userMsg,
+// maxTokens) using strings). Since tsm-shared.js loads after this inline
+// script, it was silently overwriting this function, so fireAll() below
+// ended up calling the shared version with a plain string as `messages`,
+// producing "messages.filter is not a function" for all 4 engines.
+async function callGroqFinopsAccounting(system, userMsg, maxTokens){
   try {
     const resp = await fetch('/api/chat', {
       method: 'POST',
@@ -1153,7 +1194,11 @@ async function callGroq(system, userMsg, maxTokens){
 
 // ── FIRE ALL ──
 async function fireAll(){
-  const docText=serializeDoc();
+  // A War Room relay takes priority on the run that consumes it (it's the
+  // real analyzed document text); after that, revert to whatever's in the
+  // on-screen form so subsequent manual edits are respected.
+  const docText = relayedDocText || serializeDoc();
+  relayedDocText = null;
   outputs={1:'',2:'',3:'',4:''};
 
   document.getElementById('fire-status').textContent='RUNNING — 4 ENGINES ACTIVE';
@@ -1180,7 +1225,7 @@ async function fireAll(){
   for(const n of [1,2,3,4]){
     setPipe(n+2,'active');
     try{
-      const text = await callGroq(SYSTEMS[n-1], `Analyze this financial document:\n\n${docText}`, MAXT[n-1]);
+      const text = await callGroqFinopsAccounting(SYSTEMS[n-1], `Analyze this financial document:\n\n${docText}`, MAXT[n-1]);
       outputs[n]=text;
       setEngine(n,'done',text);
       document.getElementById('tc'+n).textContent=Math.ceil(text.length/4)+' tokens';
