@@ -31,6 +31,9 @@ function hcReportsFile(clientId) {
 function hcProfilesFile(clientId) {
   return path.join(DATA_DIR, `hc-profiles.${clientId || 'default'}.json`);
 }
+function hcIntakeQueueFile(clientId) {
+  return path.join(DATA_DIR, `hc-intake-queue.${clientId || 'default'}.json`);
+}
 
 const HC_NODE_STATE_FILE = hcNodeStateFile('default');
 const HC_REPORTS_FILE    = hcReportsFile('default');
@@ -529,6 +532,7 @@ module.exports = {
   hcNodeStateFile,
   hcReportsFile,
   hcProfilesFile,
+  hcIntakeQueueFile,
   resolveHcClientId,
   sanitizeClientId,
   groqChat,

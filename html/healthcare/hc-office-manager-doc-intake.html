@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HC OFFICE MANAGER · Document Intake</title>
+<style>
+html, body { height:100%; overflow-y:auto; }
+main { padding-bottom:80px !important; min-height:calc(100vh - 60px); }
+:root{
+  --bg:#0a0f0a;--g:#00ff88;--a:#ffaa00;--r:#ff4444;--b:#00aaff;--p:#b695ff;
+  --dim:#0d150d;--dim2:#0b120b;--border:#1e3a1e;--text:#e0ffe0;--muted:#556655;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;font-size:13px;padding-bottom:70px}
+a{text-decoration:none}
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--dim2);position:sticky;top:0;z-index:30}
+.hdr-left{display:flex;align-items:center;gap:12px}
+.hdr-title{font-size:16px;font-weight:700;letter-spacing:2px;color:var(--g)}
+.hdr-sub{font-size:10px;color:var(--muted);letter-spacing:1px}
+.node-pill{padding:4px 12px;border-radius:12px;font-size:10px;font-weight:700;border:1px solid var(--g);color:var(--g)}
+.sec{margin:16px 20px;background:var(--dim);border:1px solid var(--border);border-radius:6px;padding:16px}
+.sec-hdr{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--g);margin-bottom:12px}
+.sec-hdr::before{content:'◆ ';font-size:8px}
+.sec-note{font-size:10px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+textarea.ai-inp{width:100%;min-height:90px;resize:vertical;background:var(--dim2);border:1px solid var(--border);color:var(--g);font-family:inherit;font-size:12px;padding:10px 12px;border-radius:4px;outline:none}
+textarea.ai-inp:focus{border-color:var(--g)}
+.row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.btn{padding:8px 16px;font-family:inherit;font-size:11px;font-weight:700;border-radius:4px;cursor:pointer;letter-spacing:1px;border:1px solid var(--g);background:#003322;color:var(--g)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.secondary{border-color:var(--muted);background:none;color:var(--muted)}
+.btn.danger{border-color:var(--r);background:#330000;color:var(--r)}
+.charcount{font-size:10px;color:var(--muted);margin-left:auto}
+.suggestion{margin-top:14px;padding:14px;background:var(--dim2);border:1px solid var(--border);border-radius:6px;display:none}
+.suggestion.show{display:block}
+.sugg-node{font-size:18px;font-weight:700;color:var(--g);margin-bottom:4px}
+.sugg-conf{display:inline-block;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700;margin-left:8px;vertical-align:middle}
+.conf-high{background:#003322;color:var(--g);border:1px solid var(--g)}
+.conf-low{background:#332200;color:var(--a);border:1px solid var(--a)}
+.conf-none{background:#330000;color:var(--r);border:1px solid var(--r)}
+.sugg-reason{font-size:11px;color:#99cc99;margin:6px 0}
+.sugg-alts{font-size:10px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:6px 10px;font-size:10px;letter-spacing:1px;color:#558855;border-bottom:1px solid var(--border)}
+td{padding:8px 10px;border-bottom:1px solid #0f1f0f;vertical-align:top}
+tr:hover td{background:#0f1f0f}
+.badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.b-suggested{background:#332200;color:var(--a);border:1px solid var(--a)}
+.b-routed{background:#003322;color:var(--g);border:1px solid var(--g)}
+.b-dismissed{background:#221111;color:var(--muted);border:1px solid var(--border)}
+.qtabs{display:flex;gap:6px;margin-bottom:10px}
+.qtab{padding:5px 12px;font-family:inherit;font-size:10px;font-weight:700;border:1px solid var(--border);background:none;color:var(--muted);border-radius:4px;cursor:pointer}
+.qtab.active{color:var(--g);border-color:var(--g)}
+.empty{color:#558855;font-size:11px;padding:10px 0}
+.smallbtn{padding:4px 10px;font-family:inherit;font-size:9px;font-weight:700;border-radius:4px;cursor:pointer;letter-spacing:.5px;margin-right:4px}
+.footer{position:fixed;bottom:0;left:0;right:0;background:var(--dim2);border-top:1px solid var(--border);padding:8px 20px;display:flex;justify-content:space-between;align-items:center;z-index:100}
+.fn{font-size:10px;color:#558855;letter-spacing:1px}
+@media(max-width:760px){ .row{flex-direction:column;align-items:stretch} .charcount{margin-left:0} }
+</style>
+</head>
+<body data-vertical="healthcare" data-page-role="office-manager-intake">
+
+<div class="hdr">
+  <div class="hdr-left">
+    <span style="font-size:22px">📥</span>
+    <div>
+      <div class="hdr-title">HC OFFICE MANAGER · DOCUMENT INTAKE</div>
+      <div class="hdr-sub">Routing suggestions only — nothing here is auto-processed by a node</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <a class="node-pill" href="/html/healthcare/hc-strategist/index.html" style="color:var(--g)">HC STRATEGIST →</a>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="sec-hdr">CLASSIFY A CASE</div>
+  <div class="sec-note">
+    Paste or describe the document/case. This runs a deterministic keyword match against the 11 HC nodes —
+    it names exactly which words it matched, and if nothing matches clearly it says so instead of guessing.
+    Nothing is sent to a node until you click "Route to Node" below.
+  </div>
+  <textarea id="intake-desc" class="ai-inp" placeholder="e.g. Denial received for CPT 99214, timely filing appeal needed, payer cited CO-29..." maxlength="4000"></textarea>
+  <div class="row">
+    <button class="btn" id="classify-btn" onclick="submitIntake()">⬡ CLASSIFY</button>
+    <button class="btn secondary" onclick="document.getElementById('intake-desc').value='';document.getElementById('suggestion').classList.remove('show')">CLEAR</button>
+    <span class="charcount" id="charcount">0 / 4000</span>
+  </div>
+
+  <div class="suggestion" id="suggestion">
+    <div id="sugg-body"></div>
+    <div class="row" id="sugg-actions"></div>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="sec-hdr">INTAKE QUEUE</div>
+  <div class="qtabs">
+    <button class="qtab active" data-status="all" onclick="setQueueFilter('all',this)">ALL</button>
+    <button class="qtab" data-status="suggested" onclick="setQueueFilter('suggested',this)">SUGGESTED</button>
+    <button class="qtab" data-status="routed" onclick="setQueueFilter('routed',this)">ROUTED</button>
+    <button class="qtab" data-status="dismissed" onclick="setQueueFilter('dismissed',this)">DISMISSED</button>
+  </div>
+  <table>
+    <thead><tr><th>WHEN</th><th>DESCRIPTION</th><th>SUGGESTED NODE</th><th>CONFIDENCE</th><th>STATUS</th><th></th></tr></thead>
+    <tbody id="queue-body"><tr><td colspan="6" class="empty">Loading intake queue…</td></tr></tbody>
+  </table>
+</div>
+
+<div class="footer">
+  <div class="fn">◈ HC OFFICE MANAGER · Neural Intake · real routing suggestions, not automatic node processing</div>
+</div>
+
+<script>
+const NODE_PATH = {
+  operations:'hc-operations', medical:'hc-medical', pharmacy:'hc-pharmacy', insurance:'hc-insurance',
+  billing:'hc-billing', financial:'hc-financial', compliance:'hc-compliance', legal:'hc-legal',
+  grants:'hc-grants', taxprep:'hc-taxprep', vendors:'hc-vendors'
+};
+
+let lastSuggestionEvent = null;
+let queueFilter = 'all';
+
+document.getElementById('intake-desc').addEventListener('input', (e) => {
+  document.getElementById('charcount').textContent = `${e.target.value.length} / 4000`;
+});
+
+async function submitIntake(){
+  const desc = document.getElementById('intake-desc').value.trim();
+  const btn = document.getElementById('classify-btn');
+  if (!desc) { alert('Enter a description first.'); return; }
+  btn.disabled = true; btn.textContent = '⏳ CLASSIFYING...';
+  try {
+    const res = await fetch('/api/hc/intake', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description: desc })
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      alert('Could not classify: ' + (data.errors || [data.error]).join('; '));
+      return;
+    }
+    lastSuggestionEvent = data.event;
+    renderSuggestion(data.event);
+    await refreshQueue();
+  } catch (e) {
+    alert('Request failed: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '⬡ CLASSIFY';
+  }
+}
+
+function renderSuggestion(ev){
+  const box = document.getElementById('suggestion');
+  const body = document.getElementById('sugg-body');
+  const actions = document.getElementById('sugg-actions');
+  box.classList.add('show');
+
+  const confClass = ev.confidence === 'high' ? 'conf-high' : (ev.confidence === 'low' ? 'conf-low' : 'conf-none');
+
+  if (!ev.suggestedNode) {
+    body.innerHTML = `<div class="sugg-node" style="color:var(--r)">No confident match</div>
+      <div class="sugg-reason">${escapeHtml(ev.reason)}</div>`;
+    actions.innerHTML = `<span style="font-size:10px;color:var(--muted)">Route this manually from HC Strategist → Node Status.</span>`;
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="sugg-node">→ ${escapeHtml(ev.suggestedLabel)} <span class="sugg-conf ${confClass}">${ev.confidence.toUpperCase()} CONFIDENCE</span></div>
+    <div class="sugg-reason">${escapeHtml(ev.reason)}</div>
+    ${ev.alternates && ev.alternates.length ? `<div class="sugg-alts">Also considered: ${ev.alternates.map(a=>escapeHtml(a.label)).join(', ')}</div>` : ''}
+  `;
+  actions.innerHTML = `
+    <button class="btn" onclick="routeIntake('${ev.id}','${ev.suggestedNode}')">✓ ROUTE TO ${escapeHtml(ev.suggestedLabel).toUpperCase()}</button>
+    <button class="btn secondary" onclick="dismissIntake('${ev.id}')">✕ DISMISS SUGGESTION</button>
+  `;
+}
+
+async function routeIntake(id, nodeKey){
+  try {
+    await fetch(`/api/hc/intake/${id}/status`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status: 'routed' })
+    });
+  } catch(e) { /* still navigate — office manager's intent is to open the node */ }
+  await refreshQueue();
+  const path = NODE_PATH[nodeKey];
+  if (path) window.location.href = `/html/healthcare/${path}/index.html`;
+}
+
+async function dismissIntake(id){
+  try {
+    await fetch(`/api/hc/intake/${id}/status`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status: 'dismissed' })
+    });
+  } catch(e) {}
+  document.getElementById('suggestion').classList.remove('show');
+  document.getElementById('intake-desc').value = '';
+  document.getElementById('charcount').textContent = '0 / 4000';
+  await refreshQueue();
+}
+
+function setQueueFilter(status, el){
+  queueFilter = status;
+  document.querySelectorAll('.qtab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  refreshQueue();
+}
+
+async function refreshQueue(){
+  const body = document.getElementById('queue-body');
+  try {
+    const res = await fetch('/api/hc/intake');
+    const data = await res.json();
+    let rows = data.queue || [];
+    if (queueFilter !== 'all') rows = rows.filter(r => r.status === queueFilter);
+    if (!rows.length) {
+      body.innerHTML = `<tr><td colspan="6" class="empty">No ${queueFilter === 'all' ? '' : queueFilter + ' '}intake events yet.</td></tr>`;
+      return;
+    }
+    body.innerHTML = rows.map(r => {
+      const when = new Date(r.createdAt).toLocaleString('en-US', { hour12:false });
+      const badgeClass = r.status === 'routed' ? 'b-routed' : (r.status === 'dismissed' ? 'b-dismissed' : 'b-suggested');
+      const actionsCell = r.status === 'suggested' && r.suggestedNode
+        ? `<button class="btn smallbtn" onclick="routeIntake('${r.id}','${r.suggestedNode}')">ROUTE</button><button class="btn secondary smallbtn" onclick="dismissIntake('${r.id}')">DISMISS</button>`
+        : '';
+      return `<tr>
+        <td>${when}</td>
+        <td>${escapeHtml(excerpt(r.description, 70))}</td>
+        <td>${r.suggestedLabel ? escapeHtml(r.suggestedLabel) : '—'}</td>
+        <td>${r.confidence || '—'}</td>
+        <td><span class="badge ${badgeClass}">${r.status.toUpperCase()}</span></td>
+        <td>${actionsCell}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    body.innerHTML = `<tr><td colspan="6" class="empty" style="color:var(--r)">Failed to load queue: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function excerpt(text, maxLen){
+  const clean = String(text || '').replace(/\s+/g,' ').trim();
+  return clean.length <= maxLen ? clean : clean.slice(0, maxLen).replace(/\s+\S*$/, '') + '…';
+}
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+document.addEventListener('DOMContentLoaded', refreshQueue);
+</script>
+</body>
+</html>

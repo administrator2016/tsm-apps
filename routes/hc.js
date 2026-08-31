@@ -4,7 +4,7 @@ const router  = express.Router();
 const fs = require('fs');
 const {
   readJson, writeJson,
-  hcNodeStateFile, hcReportsFile, hcProfilesFile, resolveHcClientId,
+  hcNodeStateFile, hcReportsFile, hcProfilesFile, hcIntakeQueueFile, resolveHcClientId,
   aggregateLayer2, buildSystemRollup,
   groqChat, callGroq, SP
 } = require('./_shared');
@@ -150,6 +150,69 @@ CONFIDENCE
   state[req.params.nodeKey] = merged;
   writeJson(hcNodeStateFile(resolveHcClientId(req)), state);
   res.json({ ok: true, node: state[req.params.nodeKey] });
+});
+
+// ── HC OFFICE MANAGER NEURAL INTAKE ─────────────────────────────────────────
+// Replaces the advisory-routing layer removed in c234599d, which was pure
+// browser-bridge + standalone module with zero server wiring (confirmed via
+// grep at the time, hence the clean removal). This version is wired into the
+// same requireAnyAuth-gated router and the same hcIntakeQueueFile per-client
+// storage pattern as node state/reports/profiles above — no standalone file.
+//
+// An intake event is a ROUTING SUGGESTION only. It never writes into a
+// node's findings/bnca (that stays each node page's own relayToStrategist()
+// job) and its status never implies the target node accepted or processed
+// anything — 'suggested' -> 'routed' just means an office manager opened
+// that node from here, 'dismissed' means they rejected the suggestion.
+const { classifyIntake } = require('../server/healthcare/hc-neural-intake');
+const { validateIntakeEvent } = require('../server/healthcare/hc-node-contract');
+
+router.get('/api/hc/intake', (req, res) => {
+  const queue = readJson(hcIntakeQueueFile(resolveHcClientId(req)), []);
+  res.json({ ok: true, count: queue.length, queue });
+});
+
+router.post('/api/hc/intake', (req, res) => {
+  const { ok, errors, description } = validateIntakeEvent(req.body);
+  if (!ok) return res.status(400).json({ ok: false, errors });
+
+  const classification = classifyIntake(description);
+  const event = {
+    id: `intk_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    description,
+    ...classification,
+    status: 'suggested',
+    createdAt: new Date().toISOString(),
+    routedAt: null,
+  };
+
+  const queue = readJson(hcIntakeQueueFile(resolveHcClientId(req)), []);
+  queue.unshift(event);
+  writeJson(hcIntakeQueueFile(resolveHcClientId(req)), queue.slice(0, 500));
+
+  res.json({ ok: true, event });
+});
+
+// Office manager confirms routing (opens the suggested node) or dismisses
+// the suggestion. This is the only mutation allowed post-creation — the
+// classification itself is never edited after the fact, so the record of
+// what was actually suggested stays intact even if the office manager
+// disagreed with it.
+router.post('/api/hc/intake/:id/status', (req, res) => {
+  const { status } = req.body || {};
+  if (!['routed', 'dismissed'].includes(status)) {
+    return res.status(400).json({ ok: false, error: "status must be 'routed' or 'dismissed'" });
+  }
+  const clientId = resolveHcClientId(req);
+  const queue = readJson(hcIntakeQueueFile(clientId), []);
+  const event = queue.find(e => e.id === req.params.id);
+  if (!event) return res.status(404).json({ ok: false, error: 'intake event not found' });
+
+  event.status = status;
+  if (status === 'routed') event.routedAt = new Date().toISOString();
+  writeJson(hcIntakeQueueFile(clientId), queue);
+
+  res.json({ ok: true, event });
 });
 
 // Real open-vs-resolved anomaly counts across all 11 nodes, sourced from
