@@ -57,6 +57,7 @@ tr:hover td{background:#0f1f0f}
 .fn{font-size:10px;color:#558855;letter-spacing:1px}
 @media(max-width:760px){ .row{flex-direction:column;align-items:stretch} .charcount{margin-left:0} }
 </style>
+<link rel="stylesheet" href="/shared/tsm-guided-how-to.css">
 </head>
 <body data-vertical="healthcare" data-page-role="office-manager-intake">
 <style>
@@ -78,6 +79,7 @@ tr:hover td{background:#0f1f0f}
     </div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <button type="button" class="btn secondary" onclick="TSMGuidedHowTo.inject('healthcare-intake')" style="font-size:10px">❓ HOW TO</button>
     <a class="node-pill" href="/html/healthcare/hc-strategist/index.html" style="color:var(--g)">HC STRATEGIST →</a>
   </div>
 </div>
@@ -339,5 +341,6 @@ function escapeHtml(s){
 
 document.addEventListener('DOMContentLoaded', refreshQueue);
 </script>
+<script src="/shared/tsm-guided-how-to.js" defer></script>
 </body>
 </html>

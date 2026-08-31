@@ -184,6 +184,27 @@ const bpoLimiter = rateLimit({
 });
 app.use('/api/bpo', bpoLimiter);
 
+// HC limiter — same rationale as twinsLimiter/bpoLimiter above. The HC
+// Office Manager Doc Intake page (hc-office-manager-doc-intake.html) is
+// meant to be exercised repeatedly during a single session (classify typed
+// text, load each of the 6 samples, upload a file, refresh the queue after
+// every action) and every HC node/strategist/exec-portal page also polls
+// /api/hc/*. That's ordinary interactive use, not abuse, but it shares the
+// same tab/session as everything else being tested, so it burns through the
+// general apiLimiter's ~1 req/sec shared budget fast and starts 429ing
+// classify/sample requests that have nothing to do with any real overload.
+// Confirmed via live console output on the Doc Intake page: repeated 429s on
+// /api/hc/intake and /api/hc/intake-sample after a handful of ordinary
+// clicks. Mounted ahead of apiLimiter so it takes precedence for this prefix.
+const hcLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 240, // ~4 req/sec sustained — same ceiling as twinsLimiter, comfortably above real usage
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: 'Too many requests — please slow down.' },
+});
+app.use('/api/hc', hcLimiter);
+
 // NoSQL operator injection guard — these four route groups build Mongo
 // filters directly from req.query/req.body/req.params (see
 // server/security/mongo-sanitize.js for the exact mechanism). Mounted here,
@@ -204,7 +225,7 @@ app.use(['/api/bpo', '/api/pm', '/api/concierge', '/api/hotelops'], mongoSanitiz
 // lower shared budget underneath. req.path here is relative to the
 // '/api/' mount point (e.g. '/bpo/work-items/123/documents'), matching
 // the same style as the pre-existing '/health' check.
-const API_LIMITER_EXCLUDED_PREFIXES = ['/health', '/bpo', '/twins', '/enterprise-lab'];
+const API_LIMITER_EXCLUDED_PREFIXES = ['/health', '/bpo', '/twins', '/enterprise-lab', '/hc'];
 app.use('/api/', (req, res, next) => (
   API_LIMITER_EXCLUDED_PREFIXES.some(prefix => req.path.startsWith(prefix))
     ? next()

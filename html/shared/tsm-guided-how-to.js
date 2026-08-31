@@ -17,6 +17,60 @@
         ['MEASURE', 'Track whether the problem is improving.'],
         ['REPEAT', 'Run the workflow again as new work arrives.']
       ]
+    },
+    // HC OFFICE MANAGER · DOCUMENT INTAKE — mirrors the real page's own order
+    // top-to-bottom (Classify a Case → Classify From File → Intake Queue).
+    // Each step's 3rd array slot is a {selector} pointing at the exact real
+    // element on hc-office-manager-doc-intake.html, so "Go To Control" always
+    // lands on the actual control, not a best-guess text match — several of
+    // these steps target a textarea/dropdown/tab strip rather than a single
+    // button, which the schools workflow's label-search approach can't do.
+    'healthcare-intake': {
+      title: 'How To Run Document Intake',
+      subtitle:
+        'This page only produces routing suggestions — nothing is sent to a node until you click Route.',
+      steps: [
+        [
+          'DESCRIBE',
+          'Paste or type what the document/case is about in the Classify a Case box.',
+          { selector: '#intake-desc' }
+        ],
+        [
+          'CLASSIFY TEXT',
+          'Click CLASSIFY to run it against the 11 HC nodes\u2019 keyword rules.',
+          { selector: '#classify-btn' }
+        ],
+        [
+          'OR: PICK A SAMPLE',
+          'No text to paste? Choose one of the 6 healthcare sample documents from the dropdown.',
+          { selector: '#sample-select' }
+        ],
+        [
+          'CLASSIFY SAMPLE',
+          'Click LOAD & CLASSIFY SAMPLE \u2014 the file\u2019s text is extracted and classified the same way.',
+          { selector: '#sample-btn' }
+        ],
+        [
+          'OR: UPLOAD YOUR OWN',
+          'Choose your own PDF/DOCX/XLSX/XLS/CSV/TXT/MD (8MB max), then click CLASSIFY UPLOADED FILE.',
+          { selector: '#upload-btn' }
+        ],
+        [
+          'REVIEW THE SUGGESTION',
+          'Read the suggested node, its confidence level, and the exact reasoning given.',
+          { selector: '#suggestion' }
+        ],
+        [
+          'ROUTE OR DISMISS',
+          'Click ROUTE TO \u2026 to open that node (marks the suggestion routed), or DISMISS SUGGESTION to reject it.',
+          ['route to', 'dismiss suggestion']
+        ],
+        [
+          'TRACK IN THE QUEUE',
+          'Use the ALL / SUGGESTED / ROUTED / DISMISSED tabs to see what\u2019s been decided so far.',
+          { selector: '.qtabs' }
+        ]
+      ]
     }
   };
 
@@ -113,7 +167,16 @@
           REPEAT: ['refresh', 'next mission', 'new mission', 'run again']
         };
 
-        const target = findControl(controls[step[0]] || []);
+        // step[2] is optional: either an exact {selector} (used when the
+        // real control isn't a plain button/link — a textarea, a <select>,
+        // a tab strip) or a fresh label list overriding the legacy
+        // hardcoded `controls` map below. Falls back to that map so the
+        // pre-existing schools workflow (no step[2] at all) still works
+        // unchanged.
+        const stepConfig = step[2];
+        const target = stepConfig && stepConfig.selector
+          ? document.querySelector(stepConfig.selector)
+          : findControl(Array.isArray(stepConfig) ? stepConfig : (controls[step[0]] || []));
 
         const help = document.getElementById('tsm-gh-help');
 
