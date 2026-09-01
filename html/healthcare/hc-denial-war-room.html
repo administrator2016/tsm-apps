@@ -2155,6 +2155,26 @@ function stripMd(text) {
     .replace(/^\s*[-*+]\s+/gm, '');    // - / * / + bullet markers
 }
 
+// TSM FIX: when an engine call runs without enough claim/denial detail on
+// the page (e.g. war room opened directly, doc parsing found nothing),
+// the LLM correctly responds with a clarification request instead of an
+// analysis ("I'm afraid I can't generate a denial-root-cause analysis
+// without the specific claim and denial details..."). Nothing downstream
+// checked for that — regex extraction just fell through to "first line of
+// e2 over 10 chars", which grabbed that refusal sentence verbatim and it
+// was then treated as a real LLM_INFERENCE finding: relayed to the
+// strategist, the exec portal, and the exported client package, and
+// occasionally marked "RESOLVED" in the exception queue despite nothing
+// having been resolved. Detect the refusal pattern and treat it exactly
+// like NOT_FOUND (null + tagged provenance) instead of accepting it as a
+// finding, so it's visible in provenance/debugging without ever reaching
+// a client-facing surface as if it were analysis output.
+function isRefusalText(text) {
+  if (!text) return false;
+  return /^\s*(i'?m\s+(afraid|sorry|unable)|i\s+can'?t|i\s+cannot|i'?m\s+not\s+able)\b/i.test(text)
+    || /\b(please\s+(provide|paste|share|include)|without\s+(the|specific|more)|not\s+enough\s+(information|detail|context)|need\s+(more|additional)\s+(information|detail|context))\b/i.test(text);
+}
+
 function buildHCStructuredCase(outputs, docText, claimDollar) {
   const e1 = stripMd(outputs[0] || ''), e2 = stripMd(outputs[1] || ''), e3 = stripMd(outputs[2] || ''), e4 = stripMd(outputs[3] || '');
   const provenance = [];
@@ -2177,9 +2197,15 @@ function buildHCStructuredCase(outputs, docText, claimDollar) {
   provenance.push({ field: 'appealDeadline', source: dlPhrase ? 'DOCUMENT_EXTRACTED' : 'NOT_FOUND', engine: 'Engine 01' });
 
   const causeMatch = e2.match(/(?:denial reason|payer policy violated|root cause)[:\s]+(.+)/i);
-  const rootCauseHypothesis = causeMatch ? causeMatch[1].trim().slice(0, 300)
+  let rootCauseHypothesis = causeMatch ? causeMatch[1].trim().slice(0, 300)
     : (e2.split('\n').find(l => l.trim().length > 10) || null);
-  provenance.push({ field: 'rootCauseHypothesis', source: rootCauseHypothesis ? 'LLM_INFERENCE' : 'NOT_FOUND', engine: 'Engine 02' });
+  const rootCauseIsRefusal = isRefusalText(rootCauseHypothesis) || isRefusalText(e2);
+  if (rootCauseIsRefusal) rootCauseHypothesis = null;
+  provenance.push({
+    field: 'rootCauseHypothesis',
+    source: rootCauseIsRefusal ? 'LLM_REFUSED_INSUFFICIENT_DATA' : (rootCauseHypothesis ? 'LLM_INFERENCE' : 'NOT_FOUND'),
+    engine: 'Engine 02'
+  });
 
   const CATEGORY_KEYWORDS = [
     ['medical_necessity', /medical necessity/i],
