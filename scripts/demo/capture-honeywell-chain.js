@@ -30,7 +30,7 @@ const fs = require('fs');
 const BASE_URL = process.env.CAPTURE_BASE_URL || 'http://localhost:3000';
 const OUT_DIR = path.join(__dirname, '..', '..', 'stills', 'honeywell-client-specific-chain');
 const VIEWPORT = { width: 1600, height: 1000 };
-const ENGINE_TIMEOUT_MS = 120_000; // 6 engines, sequential, can be slow on retries
+const ENGINE_TIMEOUT_MS = 180_000; // 6 engines, sequential, can be slow on retries
 
 async function waitForNoEmptyState(page, emptyStateText, timeout = 15_000) {
   await page.waitForFunction(
@@ -46,6 +46,7 @@ async function waitForEnginesComplete(page) {
       const badge = document.getElementById('incBadge');
       return badge && (badge.textContent.includes('COMPLETE') || badge.textContent.includes('ERRORS'));
     },
+    null,
     { timeout: ENGINE_TIMEOUT_MS }
   );
   const badgeText = await page.locator('#incBadge').textContent();
@@ -87,7 +88,7 @@ async function main() {
 
   console.log('→ Loading sample incident doc…');
   await page.click('#sampleBtn');
-  await page.waitForFunction(() => document.getElementById('docInput').value.trim().length > 0);
+  await page.waitForFunction(() => document.getElementById('docInput').value.trim().length > 0, null, { timeout: 10_000 });
 
   console.log('→ Firing all 6 engines (real Groq calls, this takes a bit)…');
   await page.click('#fireBtn');
