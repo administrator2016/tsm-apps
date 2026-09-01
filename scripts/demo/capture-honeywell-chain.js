@@ -110,6 +110,19 @@ async function main() {
   await page.screenshot({ path: strategistPath, fullPage: true });
   console.log(`✓ Saved ${strategistPath}`);
 
+  // Strategist -> Executive is a SEPARATE escalation step on this page
+  // (writes TSM_HONEYWELL_EXEC_RELAY, distinct from the war-room's
+  // TSM_HONEYWELL_*_RELAY keys read on load) -- navigating to the
+  // Executive Portal without clicking this leaves it in the empty state.
+  console.log('→ Escalating Strategist analysis to Executive…');
+  await page.click('button:has-text("ESCALATE TO EXECUTIVE")');
+  await page.waitForFunction(
+    () => !!(localStorage.getItem('TSM_HONEYWELL_EXEC_RELAY') || sessionStorage.getItem('TSM_HONEYWELL_EXEC_RELAY')),
+    null,
+    { timeout: 10_000 }
+  );
+  console.log('✓ Escalated to Executive.');
+
   console.log('→ Navigating to Executive Portal…');
   await page.goto(`${BASE_URL}/html/war-rooms/honeywell-executive-portal.html`, { waitUntil: 'load' });
   await page.waitForTimeout(1000);
