@@ -150,7 +150,50 @@
     return kept;
   }
 
-  var _records = _purgeGenericPlaceholderRecords(_purgeStaleRefusalRecords(loadAll()));
+  // TSM FIX: before hc-denial-war-room.html / hc-main-strategist.html's
+  // stripMd() stripped markdown table pipes, an LLM answer formatted as a
+  // table row ("| CO-50 ("Unable to determine the medical necessity...")
+  // |") rode straight through rootCauseHypothesis extraction and into a
+  // record's `detail` field verbatim — visible in the exception queue and
+  // in exported tsm-client-package-*.json files' rationale text. That's
+  // fixed for any *new* record now, but same as the two migrations above,
+  // this store is persisted to localStorage, so records saved while the
+  // bug was live are stuck with the raw "| ... |" wrapper permanently
+  // unless something rewrites them. Unlike the refusal/placeholder cases
+  // above, this data is real and worth keeping — clean it in place on
+  // load instead of discarding the record. Reuses the same table-pipe
+  // regexes as the fixed stripMd() so a record ends up looking exactly
+  // like it would if it had been generated after the fix.
+  function _stripTablePipesLocal(text) {
+    if (!text) return text;
+    return text
+      .replace(/^\s*\|?[\s:-]*\|[\s:|-]*\|?\s*$/gm, '') // table separator rows (---|---)
+      .replace(/^\s*\|\s*(.*?)\s*\|\s*$/gm, function (_, inner) {
+        return inner.split('|').map(function (c) { return c.trim(); }).filter(Boolean).join(' — ');
+      });
+  }
+  function _looksLikeTableArtifact(text) {
+    if (!text) return false;
+    return /^\s*\|/m.test(text) || /\|\s*$/m.test(text);
+  }
+  function _cleanTableArtifactRecords(records) {
+    var changed = false;
+    records.forEach(function (r) {
+      if (!r) return;
+      if (_looksLikeTableArtifact(r.detail)) {
+        r.detail = _stripTablePipesLocal(r.detail);
+        changed = true;
+      }
+      if (_looksLikeTableArtifact(r.title)) {
+        r.title = _stripTablePipesLocal(r.title);
+        changed = true;
+      }
+    });
+    if (changed) persist(records);
+    return records;
+  }
+
+  var _records = _cleanTableArtifactRecords(_purgeGenericPlaceholderRecords(_purgeStaleRefusalRecords(loadAll())));
 
   function makeId() {
     return 'exc_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
