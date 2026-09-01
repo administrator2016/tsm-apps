@@ -84,7 +84,7 @@ async function main() {
   console.log('✓ Logged in.');
 
   console.log('→ Loading cyber-incident war room…');
-  await page.goto(`${BASE_URL}/html/cyber-incident.html`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE_URL}/html/cyber-incident.html`, { waitUntil: 'load' });
 
   console.log('→ Loading sample incident doc…');
   await page.click('#sampleBtn');
@@ -98,7 +98,7 @@ async function main() {
   console.log('→ Escalating to Strategist…');
   await page.click('#escalateBtn');
   await page.waitForURL(/honeywell-strategist\.html/, { timeout: 15_000 });
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('load');
 
   // Give the strategist page's render() a moment to paint the relay data
   // (it reads localStorage/sessionStorage on load, no network wait needed,
@@ -111,7 +111,7 @@ async function main() {
   console.log(`✓ Saved ${strategistPath}`);
 
   console.log('→ Navigating to Executive Portal…');
-  await page.goto(`${BASE_URL}/html/war-rooms/honeywell-executive-portal.html`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE_URL}/html/war-rooms/honeywell-executive-portal.html`, { waitUntil: 'load' });
   await page.waitForTimeout(1000);
   await waitForNoEmptyState(page, 'NO ESCALATION RECEIVED');
 
