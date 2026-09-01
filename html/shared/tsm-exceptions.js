@@ -107,7 +107,50 @@
     return kept;
   }
 
-  var _records = _purgeStaleRefusalRecords(loadAll());
+  // TSM FIX: before hc-denial-war-room.html / tsm-hc-analyzer.js stripped
+  // markdown from raw LLM engine output prior to field extraction, a bold
+  // heading like "**Claim ID:** HC-DEN-..." broke the "label[:\s]+value"
+  // regex the extractors use, so claimId extraction fell back to
+  // capturing nothing useful and the record was saved with the raw label
+  // text standing in for the real value -- title "Claim ID" (the label,
+  // not an actual ID) paired with detail "**Denial Reason**" (the raw
+  // unstripped heading, not the explanation that followed it). That
+  // extraction bug is fixed now, but the same way as the refusal-leak
+  // records above, any browser that hit an affected page while the bug
+  // was live has these garbage records stuck in localStorage permanently
+  // -- no code push reaches into an existing store to clean them up.
+  // Self-heal the same way: purge on load. Deliberately narrow/exact-match
+  // (not a fuzzy heuristic) so this can never catch a real claim whose
+  // title or rationale legitimately mentions "Claim ID" or "Denial
+  // Reason" as part of real content.
+  var _GENERIC_LABEL_PLACEHOLDERS = ['claim id', 'denial reason', 'claim', 'id'];
+  function _stripMdLocal(text) {
+    if (!text) return text;
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/__(.*?)__/g, '$1')
+      .replace(/_(.*?)_/g, '$1')
+      .replace(/`(.*?)`/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '');
+  }
+  function _isGenericPlaceholderRecord(title, detail) {
+    var t = title ? _stripMdLocal(title).trim().toLowerCase() : '';
+    if (_GENERIC_LABEL_PLACEHOLDERS.indexOf(t) === -1) return false;
+    var d = detail ? _stripMdLocal(detail).trim().toLowerCase() : '';
+    var firstLine = d.split('\n')[0].trim();
+    return firstLine === '' || _GENERIC_LABEL_PLACEHOLDERS.indexOf(firstLine) !== -1;
+  }
+
+  function _purgeGenericPlaceholderRecords(records) {
+    var kept = records.filter(function (r) {
+      return !_isGenericPlaceholderRecord(r && r.title, r && r.detail);
+    });
+    if (kept.length !== records.length) persist(kept);
+    return kept;
+  }
+
+  var _records = _purgeGenericPlaceholderRecords(_purgeStaleRefusalRecords(loadAll()));
 
   function makeId() {
     return 'exc_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
