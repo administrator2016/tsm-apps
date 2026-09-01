@@ -235,16 +235,38 @@
     })[0] || null;
   }
 
+  /**
+   * findBySourceKey(sourceKey, sector) — same lookup as
+   * findOpenBySourceKey() but matches a record regardless of status.
+   * add()'s dedup needs this: a sourceKey that was already resolved
+   * (either by a user clicking Resolve, or by TSMCaseManager.markExecuted
+   * resolving the linked case's exceptions) still represents "this finding
+   * has already been recorded" — the underlying claim didn't get less
+   * duplicated just because it was closed out. findOpenBySourceKey alone
+   * only protected against duplicating a *still-open* record, so once a
+   * sourceKey's exception resolved, the next reload's re-feed (the exact
+   * scenario findOpenBySourceKey was written to survive) found no open
+   * match and pushed a brand-new exception + case for the same claim —
+   * repeating on every subsequent reload.
+   */
+  function findBySourceKey(sourceKey, sector) {
+    if (!sourceKey) return null;
+    return _records.filter(function (r) {
+      return r.sourceKey === sourceKey && (!sector || r.sector === sector);
+    })[0] || null;
+  }
+
   function add(exception) {
     exception = exception || {};
-    // Reload-safe dedup: if the caller passes a sourceKey and an open
+    // Reload-safe dedup: if the caller passes a sourceKey and an
     // exception with that same sourceKey (in the same sector) already
-    // exists, return it unchanged instead of pushing a duplicate. This is
-    // opt-in — callers that don't pass sourceKey keep today's behavior
-    // exactly (always creates a new record), so nothing already relying
-    // on add() always returning a fresh record is affected.
+    // exists — open OR resolved — return it unchanged instead of pushing
+    // a duplicate. This is opt-in — callers that don't pass sourceKey
+    // keep today's behavior exactly (always creates a new record), so
+    // nothing already relying on add() always returning a fresh record
+    // is affected.
     if (exception.sourceKey) {
-      var existing = findOpenBySourceKey(exception.sourceKey, exception.sector);
+      var existing = findBySourceKey(exception.sourceKey, exception.sector);
       if (existing) return existing;
     }
     var priority = exception.priority || priorityFor(exception.severity, exception.confidence);
@@ -350,7 +372,8 @@
     clear: clear,
     summarize: summarize,
     priorityFor: priorityFor,
-    findOpenBySourceKey: findOpenBySourceKey
+    findOpenBySourceKey: findOpenBySourceKey,
+    findBySourceKey: findBySourceKey
   };
 
   global.TSMExceptions = TSMExceptions;
