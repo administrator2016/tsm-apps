@@ -57,6 +57,32 @@ class EvidenceLedger {
     const correctsRecordId = opts.correctsRecordId || null;
     const actor = opts.actor || 'BNCA';
 
+    // TSM FIX: callers (Healthcare/Construction exec portals, and any
+    // future vertical wired to this ledger) re-run their render/record
+    // pass on every page load, storage-event re-render, etc. Without a
+    // reload-safe guard, the exact same decision got a brand-new evidence
+    // entry every single time it was shown again -- flooding the audit
+    // trail with duplicates instead of the "why did we decide this, once"
+    // record it's meant to be. Mirrors TSMExceptions.add()'s sourceKey
+    // dedup: if the caller didn't explicitly mark this as a correction
+    // (correctsRecordId), and the most recent record for this exact
+    // domain+decisionId has identical content, treat this as a no-op
+    // re-display and hand back the existing record instead of appending a
+    // duplicate. Genuinely changed content (different summary/ruleIds/
+    // dataRefs/confidence) still creates a new record, same as before.
+    if (!correctsRecordId && domain && decisionId) {
+      for (let i = this._mem.length - 1; i >= 0; i--) {
+        const r = this._mem[i];
+        if (r.domain !== domain || r.decisionId !== decisionId) continue;
+        const unchanged = r.summary === summary &&
+          JSON.stringify(r.ruleIds) === JSON.stringify(ruleIds) &&
+          JSON.stringify(r.dataRefs) === JSON.stringify(dataRefs) &&
+          r.confidence === confidence;
+        if (unchanged) return r;
+        break; // most recent record for this decisionId differs -- record a fresh one below
+      }
+    }
+
     const record = {
       id: 'ev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
       ts: new Date().toISOString(),
