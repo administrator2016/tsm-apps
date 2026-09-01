@@ -283,6 +283,62 @@ Only include fields with a concrete value from the document. Return ONLY a valid
     return true;
   }
 
+  // ── Avoid colliding with the universal guide widget ─────────────────────────
+  // tsm-guide-engine.js renders #tsm-universal-guide in the same bottom-right
+  // corner (bottom:20px; right:20px; z-index:999999) as this panel
+  // (bottom:24px; right:24px; z-index:99999). Its higher z-index means it
+  // sits on top of and blocks clicks on the cheat sheet underneath. Rather
+  // than hard-coding an offset (the guide widget's height changes when its
+  // body/footer are toggled open), measure the guide widget's actual
+  // position at runtime and stack the cheat sheet above it.
+  const GUIDE_WIDGET_ID = 'tsm-universal-guide';
+  const EDGE_OFFSET = 24; // matches the panel's default CSS bottom/right
+  const STACK_GAP   = 12; // gap between the two panels when stacked
+
+  function avoidGuideCollision(panel) {
+    if (panel.dataset.userPositioned === 'true') return; // user dragged it — respect that
+    const guide = document.getElementById(GUIDE_WIDGET_ID);
+    if (guide && guide.offsetParent !== null) {
+      const guideRect = guide.getBoundingClientRect();
+      const guideBottomOffset = Math.max(0, window.innerHeight - guideRect.top);
+      panel.style.bottom = (guideBottomOffset + STACK_GAP) + 'px';
+    } else {
+      panel.style.bottom = EDGE_OFFSET + 'px';
+    }
+    panel.style.right = EDGE_OFFSET + 'px';
+  }
+
+  // Keeps the cheat sheet correctly stacked even as the guide widget
+  // appears/disappears or expands/collapses after this panel is built.
+  function watchGuideWidget(panel) {
+    avoidGuideCollision(panel);
+
+    const reposition = () => avoidGuideCollision(panel);
+
+    if (window.ResizeObserver) {
+      let observedGuide = null;
+      const ro = new ResizeObserver(reposition);
+      const trySync = () => {
+        const guide = document.getElementById(GUIDE_WIDGET_ID);
+        if (guide && guide !== observedGuide) {
+          if (observedGuide) ro.unobserve(observedGuide);
+          ro.observe(guide);
+          observedGuide = guide;
+        }
+        reposition();
+      };
+      trySync();
+      if (window.MutationObserver) {
+        new MutationObserver(trySync).observe(document.body, { childList: true, subtree: false });
+      }
+    } else {
+      // Fallback for browsers without ResizeObserver: light polling.
+      setInterval(reposition, 400);
+    }
+
+    window.addEventListener('resize', reposition);
+  }
+
   // ── Build the panel ──────────────────────────────────────────────────────────
   function buildPanel(relay) {
     const panel = document.createElement('div');
@@ -323,6 +379,7 @@ Only include fields with a concrete value from the document. Return ONLY a valid
     };
 
     makeDraggable(panel, panel.querySelector('#tsm-cure-header'));
+    watchGuideWidget(panel);
     return panel;
   }
 
@@ -403,6 +460,9 @@ Only include fields with a concrete value from the document. Return ONLY a valid
       offsetY = e.clientY - rect.top;
       panel.style.right = 'auto';
       panel.style.bottom = 'auto';
+      // Once the user has manually placed the panel, stop auto-repositioning
+      // it around the guide widget — the user's placement wins.
+      panel.dataset.userPositioned = 'true';
       e.preventDefault();
     });
     document.addEventListener('mousemove', (e) => {
