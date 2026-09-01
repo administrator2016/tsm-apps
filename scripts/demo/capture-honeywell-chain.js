@@ -95,6 +95,28 @@ async function main() {
   await waitForEnginesComplete(page);
   console.log('✓ 6-engine analysis complete.');
 
+  // DIAGNOSTIC: dump the raw Engine 04 (Financial Exposure) response and
+  // what the extractor actually parsed out of it, since the $150 bug has
+  // survived two token-budget fixes and we need to see the real text,
+  // not guess from a screenshot that might just be CSS-clipping a card.
+  const diag = await page.evaluate(() => ({
+    engine4RawText: (typeof sessionData !== 'undefined' && sessionData.outputs?.[3]?.text) || '(missing)',
+    engine4Kpi: (typeof sessionData !== 'undefined' && sessionData.kpis?.exposure) || '(missing)',
+    engine6RawText: (typeof sessionData !== 'undefined' && sessionData.outputs?.[5]?.text) || '(missing)',
+    engine6Kpi: (typeof sessionData !== 'undefined' && sessionData.kpis?.risk) || '(missing)',
+  }));
+  console.log('\n=== DIAGNOSTIC: Engine 04 (Financial Exposure) ===');
+  console.log('--- raw text (last 400 chars) ---');
+  console.log(diag.engine4RawText.slice(-400));
+  console.log('--- extracted kpis.exposure ---');
+  console.log(JSON.stringify(diag.engine4Kpi));
+  console.log('\n=== DIAGNOSTIC: Engine 06 (Exec Dispatch) ===');
+  console.log('--- raw text (last 400 chars) ---');
+  console.log(diag.engine6RawText.slice(-400));
+  console.log('--- extracted kpis.risk ---');
+  console.log(JSON.stringify(diag.engine6Kpi));
+  console.log('=== END DIAGNOSTIC ===\n');
+
   console.log('→ Escalating to Strategist…');
   await page.click('#escalateBtn');
   await page.waitForURL(/honeywell-strategist\.html/, { timeout: 15_000 });
