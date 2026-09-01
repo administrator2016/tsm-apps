@@ -44,7 +44,15 @@
     var qs = qualityScore || {};
     return {
       domain: opts.domain || 'Unknown',
-      documentsProcessed: qs.recordCount != null ? qs.recordCount : null,
+      // TSM FIX: was named "documentsProcessed" but is actually
+      // qualityScore.recordCount — the number of structured-data records
+      // the quality engine scored, not source documents ingested. That's a
+      // different, real counter (processedDocuments.count in
+      // tsm-delivery-package.js, sourced from opts.documentCount) which
+      // this file has no access to. The old name collided with it in the
+      // exported JSON, letting a reader assume the two agreed when they
+      // measure different things. Renamed to match what the value is.
+      recordsProcessed: qs.recordCount != null ? qs.recordCount : null,
       accuracy: qs.overall != null ? qs.overall + '%' : null,
       band: qs.band || null,
       openFindings: qs.openFindings != null ? qs.openFindings : 0
