@@ -29,6 +29,8 @@
   --tax: #a3e635;
   --hotel: #fbbf24;
   --ops: #94a3b8;
+  --core: #a78bfa;
+  --career: #64748b;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -88,6 +90,8 @@ body::before {
 .ic-tax    { background: rgba(163,230,53,0.12); color: var(--tax); }
 .ic-hotel  { background: rgba(251,191,36,0.12); color: var(--hotel); }
 .ic-ops    { background: rgba(148,163,184,0.12); color: var(--ops); }
+.ic-core   { background: rgba(167,139,250,0.12); color: var(--core); }
+.ic-career { background: rgba(100,116,139,0.12); color: var(--career); }
 
 .dot-health { background: var(--health); }
 .dot-ins    { background: var(--ins); }
@@ -101,6 +105,8 @@ body::before {
 .dot-tax    { background: var(--tax); }
 .dot-hotel  { background: var(--hotel); }
 .dot-ops    { background: var(--ops); }
+.dot-core   { background: var(--core); }
+.dot-career { background: var(--career); }
 
 .footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--dim); }
 </style>
@@ -265,6 +271,38 @@ body::before {
         <a class="suite-link" href="/html/concierge/concierge-war-room.html">War Room</a>
         <a class="suite-link" href="/html/concierge/concierge-strategist.html">Strategist</a>
         <a class="suite-link" href="/html/concierge/concierge-executive-portal.html">Executive Portal</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- PM Copilot -->
+  <div class="section-label"><span class="section-dot dot-core"></span>PM Copilot</div>
+  <div class="suite-grid">
+    <div class="card">
+      <div class="card-header"><div class="card-icon ic-core">PM</div><div class="card-title">PM Copilot</div></div>
+      <div class="link-list">
+        <a class="suite-link" href="/html/war-rooms/pm-copilot/pm-command.html">War Room</a>
+        <a class="suite-link" href="/html/war-rooms/pm-copilot/pm-strategist.html">Strategist</a>
+        <a class="suite-link" href="/html/war-rooms/pm-copilot/pm-exec-portal.html">Executive Portal</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Career -->
+  <div class="section-label"><span class="section-dot dot-career"></span>Career</div>
+  <div class="suite-grid">
+    <div class="card">
+      <div class="card-header"><div class="card-icon ic-career">CR</div><div class="card-title">Career OS</div></div>
+      <div class="link-list">
+        <a class="suite-link" href="/html/tsm-job-prep1.html">Healthcare Ops Simulator</a>
+        <a class="suite-link" href="/html/tsm-career-training-platform.html">Decision Intelligence Academy</a>
+        <a class="suite-link" href="/html/tsm-career-os-guide.html">User Guide</a>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-icon ic-career">PA</div><div class="card-title">Property Accountant</div></div>
+      <div class="link-list">
+        <a class="suite-link" href="/html/property-accountant/property-accountant-command.html">Candidate Command</a>
       </div>
     </div>
   </div>
