@@ -2094,6 +2094,13 @@ PATTERN MATCH: [does this match active HonorHealth denial patterns CO-4/CO-11/CO
   // placeholders — which is what was showing up as "No claim ID / No CPT
   // codes..." downstream. Strip markdown emphasis/heading/bullet chars once,
   // here, before any field regex runs, instead of patching each pattern.
+  //
+  // TSM FIX: kept in sync with the identical fix in
+  // hc-denial-war-room.html's buildHCStructuredCase — the LLM sometimes
+  // answers with a markdown table row ("| CO-50 (...) |") instead of a
+  // plain sentence, and none of the replacements above touch pipe
+  // characters, so it rode through verbatim. Strip separator rows and
+  // unwrap "| cell | cell |" rows the same way here for consistency.
   function stripMd(text) {
     if (!text) return text;
     return text
@@ -2103,7 +2110,11 @@ PATTERN MATCH: [does this match active HonorHealth denial patterns CO-4/CO-11/CO
       .replace(/_(.*?)_/g, '$1')         // _italic_
       .replace(/`(.*?)`/g, '$1')         // `code`
       .replace(/^#{1,6}\s+/gm, '')       // # headings
-      .replace(/^\s*[-*+]\s+/gm, '');    // - / * / + bullet markers
+      .replace(/^\s*[-*+]\s+/gm, '')     // - / * / + bullet markers
+      .replace(/^\s*\|?[\s:-]*\|[\s:|-]*\|?\s*$/gm, '') // table separator rows (---|---)
+      .replace(/^\s*\|\s*(.*?)\s*\|\s*$/gm, function (_, inner) {
+        return inner.split('|').map(function (c) { return c.trim(); }).filter(Boolean).join(' — ');
+      });
   }
 
   function wrExtractField(text, patterns) {

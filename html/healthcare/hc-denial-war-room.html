@@ -2143,6 +2143,17 @@ function syncStructuredCaseToEngine(sc) {
 // already fixed once in this codebase (hc-main-strategist.html's
 // wrGeneratePhysicianEMTemplate) but never propagated here. Strip markdown
 // once, before any field regex runs, instead of patching each pattern.
+//
+// TSM FIX: the LLM also sometimes wraps its answer in a markdown table row
+// ("| CO-50 ("Unable to determine the medical necessity...") |") instead of
+// a plain sentence, even for a single-value field. None of the replacements
+// above touch pipe characters, so rootCauseHypothesis's line-based fallback
+// picked up the leading/trailing "|" verbatim and it rode all the way to the
+// client-facing exception rationale. Strip full separator rows (the
+// "|---|---|" line under a table header) entirely, and for any remaining
+// "| cell | cell |" row, drop the outer pipes and join cells with an em
+// dash so multi-cell rows stay readable instead of collapsing into one
+// run-on sentence.
 function stripMd(text) {
   if (!text) return text;
   return text
@@ -2152,7 +2163,11 @@ function stripMd(text) {
     .replace(/_(.*?)_/g, '$1')         // _italic_
     .replace(/`(.*?)`/g, '$1')         // `code`
     .replace(/^#{1,6}\s+/gm, '')       // # headings
-    .replace(/^\s*[-*+]\s+/gm, '');    // - / * / + bullet markers
+    .replace(/^\s*[-*+]\s+/gm, '')     // - / * / + bullet markers
+    .replace(/^\s*\|?[\s:-]*\|[\s:|-]*\|?\s*$/gm, '') // table separator rows (---|---)
+    .replace(/^\s*\|\s*(.*?)\s*\|\s*$/gm, function (_, inner) {
+      return inner.split('|').map(function (c) { return c.trim(); }).filter(Boolean).join(' — ');
+    });
 }
 
 // TSM FIX: when an engine call runs without enough claim/denial detail on
