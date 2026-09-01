@@ -61,6 +61,14 @@
   // heading instead of the real explanation. This third copy of the
   // extraction logic never got the fix that landed on the other two.
   // Strip markdown once, before any field regex runs.
+  // TSM FIX: kept in sync with the identical fix in hc-denial-war-room.html
+  // (buildHCStructuredCase) and hc-main-strategist.html
+  // (wrGeneratePhysicianEMTemplate) — the LLM sometimes answers a field
+  // with a markdown table row ("| CO-50 (...) |") instead of a plain
+  // sentence, and none of the replacements above touch pipe characters,
+  // so it rode through verbatim into extracted fields. Strip separator
+  // rows and unwrap "| cell | cell |" rows the same way here for
+  // consistency across all three copies of this helper.
   function stripMd(text) {
     if (!text) return text;
     return text
@@ -70,7 +78,11 @@
       .replace(/_(.*?)_/g, '$1')         // _italic_
       .replace(/`(.*?)`/g, '$1')         // `code`
       .replace(/^#{1,6}\s+/gm, '')       // # headings
-      .replace(/^\s*[-*+]\s+/gm, '');    // - / * / + bullet markers
+      .replace(/^\s*[-*+]\s+/gm, '')     // - / * / + bullet markers
+      .replace(/^\s*\|?[\s:-]*\|[\s:|-]*\|?\s*$/gm, '') // table separator rows (---|---)
+      .replace(/^\s*\|\s*(.*?)\s*\|\s*$/gm, function (_, inner) {
+        return inner.split('|').map(function (c) { return c.trim(); }).filter(Boolean).join(' — ');
+      });
   }
 
   // ── Engine parsers ────────────────────────────────────────────────────────
