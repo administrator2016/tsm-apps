@@ -610,7 +610,13 @@ function parseDecisionActions(text) {
 }
 
 function parseKpiJson(text) {
-  const m = text.match(/KPI_JSON:\s*(\{.*\})\s*$/);
+  // TSM FIX 2026-09-01: was anchored to end-of-string (`\s*$`), so any
+  // trailing text after the KPI_JSON tag (a sign-off line, stray
+  // whitespace, etc.) silently broke the match -- containment/risk KPIs
+  // fell back to raw-text regexes that found nothing and rendered "—"
+  // even when the model *did* emit a valid tag. Search anywhere in the
+  // response instead of requiring it be the literal last content.
+  const m = text.match(/KPI_JSON:\s*(\{[^{}]*\})/);
   if (!m) return null;
   try { return JSON.parse(m[1]); } catch (e) { return null; }
 }
@@ -684,7 +690,15 @@ function buildActionPanel(text) {
 }
 
 async function callAPI(prompt) {
-  return callWarRoomAPI(prompt, 'You are an OT/ICS cybersecurity intelligence engine for TSM Command. Expert in industrial control system security, attack analysis, operational/safety impact, and executive decision support. Be specific with dollar amounts and timelines.', { maxTokens: 700 });
+  // TSM FIX 2026-09-01: 700 was shared across all 6 engines. Engine 04
+  // (Financial Exposure -- full cost table + 5 bullet sections + trailing
+  // KPI_JSON) and Engine 06 (Exec Dispatch -- full decision package +
+  // trailing KPI_JSON) were getting cut off before reaching the required
+  // KPI_JSON line, so parseKpiJson found nothing and the UI fell back to
+  // a naive regex that grabbed the wrong dollar figure (e.g. an hourly
+  // rate instead of the total). Bumped so the structured tag has room to
+  // land regardless of how verbose a given incident's content is.
+  return callWarRoomAPI(prompt, 'You are an OT/ICS cybersecurity intelligence engine for TSM Command. Expert in industrial control system security, attack analysis, operational/safety impact, and executive decision support. Be specific with dollar amounts and timelines.', { maxTokens: 1100 });
 }
 
 function goToStrategist() {
