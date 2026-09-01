@@ -322,15 +322,15 @@ function getPrompts(doc, brief) {
   return [
     base + `ENGINE 01 — INCIDENT INTELLIGENCE\nExtract and structure:\n▸ INCIDENT TYPE — intrusion, malware, unauthorized access, anomalous traffic, etc.\n▸ AFFECTED SYSTEMS — specific OT/ICS assets, network segments, IT/OT boundary points impacted\n▸ DETECTION TIME — when was it caught, how (SIEM, IDS, manual)\n▸ CURRENT STATUS — isolated, contained, active, unknown scope\n▸ KEY PARTIES — SOC, OT engineering, IT security, plant operations involved\nBe specific. Extract all facts from the document.`,
 
-    base + `ENGINE 02 — OPERATIONAL & SAFETY IMPACT ANALYSIS\nCalculate and structure:\n▸ SAFETY RISK — any risk to physical safety systems, interlocks, or personnel\n▸ PRODUCTION IMPACT — systems taken offline, capacity loss, manual fallback in use\n▸ SCOPE OF COMPROMISE — confirmed vs. suspected affected systems\n▸ CONTAINMENT STATUS — segments isolated, systems quarantined\n▸ BUSINESS CONTINUITY RISK — how close to full operational disruption\n▸ OPERATIONAL IMPACT SCORE — 1-10 severity\nQuantify everything with specific numbers where possible.\n\nIMPORTANT: On its own final line, output: KPI_JSON: {"containmentEta": "<short string>"}`,
+    base + `ENGINE 02 — OPERATIONAL & SAFETY IMPACT ANALYSIS\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"containmentEta": "<short string>"}\nThen, in under 130 words using bullet points only (no markdown tables), briefly cover:\n▸ SAFETY RISK — any risk to physical safety systems, interlocks, or personnel\n▸ PRODUCTION IMPACT — systems taken offline, capacity loss, manual fallback in use\n▸ CONTAINMENT STATUS — segments isolated, systems quarantined\n▸ BUSINESS CONTINUITY RISK — how close to full operational disruption\n▸ OPERATIONAL IMPACT SCORE — 1-10 severity, must be consistent with the tone of your analysis\nQuantify with specific numbers where possible. Be concise -- this is a summary, not a full report.`,
 
     base + `ENGINE 03 — ATTACK VECTOR & ROOT CAUSE ANALYSIS\nAnalyze and structure:\n▸ PROBABLE ENTRY POINT — phishing, remote access, supply chain, physical access, IT/OT boundary gap\n▸ LATERAL MOVEMENT PATH — how the threat moved between systems\n▸ EXPLOITED VULNERABILITY — unpatched system, weak segmentation, credential compromise, etc.\n▸ DETECTION GAPS — why was this not caught earlier\n▸ ATTRIBUTION CONFIDENCE — opportunistic vs. targeted, any indicators of actor sophistication\n▸ SIMILAR ASSETS AT RISK — other systems that may share the same vulnerability\nBe direct about probable causes even with limited data.`,
 
-    base + `ENGINE 04 — FINANCIAL EXPOSURE CALCULATION\nCalculate and structure:\n▸ INCIDENT RESPONSE COST — forensics, remediation, external IR firm engagement\n▸ DOWNTIME COST — $/hour or $/day of lost production from isolation/containment\n▸ REGULATORY EXPOSURE — breach notification obligations, potential fines\n▸ CUSTOMER/CONTRACT IMPACT — SLA penalties, reputational cost, contract risk\n▸ CYBER INSURANCE APPLICABILITY — what losses may be recoverable\n▸ TOTAL FINANCIAL RISK — combined exposure range\nProvide dollar amounts. Estimate if exact figures not available.\n\nIMPORTANT: On its own final line, output: KPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}`,
+    base + `ENGINE 04 — FINANCIAL EXPOSURE CALCULATION\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\nThen, in under 150 words using bullet points only (no markdown tables), briefly cover:\n▸ INCIDENT RESPONSE COST — forensics, remediation, external IR firm engagement\n▸ DOWNTIME COST — $/hour or $/day of lost production from isolation/containment\n▸ REGULATORY EXPOSURE — breach notification obligations, potential fines\n▸ CUSTOMER/CONTRACT IMPACT — SLA penalties, reputational cost, contract risk\n▸ TOTAL FINANCIAL RISK — combined exposure range, must match the KPI_JSON line above\nEstimate if exact figures not available. Be concise -- this is a summary, not a full report.`,
 
     base + `ENGINE 05 — RANKED CONTAINMENT & ACTION PLAN\nGenerate ranked response with owners and deadlines:\n1. IMMEDIATE (0-2 hours) — isolation, containment, evidence preservation\n2. SHORT-TERM (2-24 hours) — forensic investigation, credential rotation, patch/mitigate\n3. MEDIUM-TERM (1-7 days) — full remediation, system restoration, validation\n4. PREVENTIVE — segmentation improvements, monitoring gaps to close\n\nFor each action include: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME\nRank by urgency and impact.`,
 
-    base + `ENGINE 06 — EXECUTIVE DISPATCH\nGenerate executive decision package:\n▸ INCIDENT SUMMARY — 2 sentences for C-suite\n▸ FINANCIAL IMPACT — total exposure in dollars\n▸ DECISIONS REQUIRED — ranked list with AUTHORIZE/ESCALATE/REVIEW labels\n  1. [Decision] · Owner: [role] · Deadline: [timeframe] · Cost: $[amount]\n  2. [Decision] · Owner: [role] · Deadline: [timeframe]\n  3. [Decision] · Owner: [role] · Deadline: [timeframe]\n▸ BNCA — Best Next Course of Action in one clear sentence\n▸ ESCALATION TRIGGER — what would require CEO/Board/regulator notification\nThis goes directly to the executive team. Be decisive.\n\nIMPORTANT: On its own final line, output: KPI_JSON: {"riskScore": <0-100 integer>}`
+    base + `ENGINE 06 — EXECUTIVE DISPATCH\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"riskScore": <0-100 integer>}\nThen, in under 180 words, generate a concise executive decision package:\n▸ INCIDENT SUMMARY — 2 sentences for C-suite\n▸ FINANCIAL IMPACT — total exposure in dollars\n▸ DECISIONS REQUIRED — up to 3, ranked, each formatted exactly as:\n  1. AUTHORIZE/ESCALATE/REVIEW: [decision] · Owner: [role] · Deadline: [timeframe] · Cost: $[amount]\n▸ BNCA — Best Next Course of Action in one sentence\n▸ ESCALATION TRIGGER — one sentence on what requires CEO/Board/regulator notification\nThis goes directly to the executive team. Be decisive and brief.`
   ];
 }
 
@@ -362,7 +362,13 @@ async function fireAllEngines() {
     if (i > 0) await new Promise(r => setTimeout(r, 600));
     setEngineStatus(i, 'running');
     try {
-      const text = await callAPI(prompts[i], (i === 3) ? 2200 : (i === 5 ? 1600 : 900));
+      // TSM FIX 2026-09-01: account is capped at 8000 TPM and Groq reserves
+      // the full max_tokens against that budget upfront, so the old sum
+      // (900+900+900+2200+900+1600 = 7400) was tripping the rate limiter
+      // before requests even went out. Prompts 02/04/06 are now trimmed +
+      // JSON-first, so they no longer need a big buffer to avoid truncation.
+      // New sum: 500+550+500+600+500+700 = 3350, well under the cap.
+      const text = await callAPI(prompts[i], (i === 3) ? 600 : (i === 5 ? 700 : (i === 1 ? 550 : 500)));
       document.getElementById(`eo${i}`).innerHTML = renderEngineOutput(text);
       document.getElementById(`eo${i}`).classList.add('active');
       setEngineStatus(i, 'done');
@@ -538,7 +544,11 @@ function escapeHtml(s) {
 }
 
 function renderEngineOutput(text) {
-  const clean = text.replace(/\n?KPI_JSON:\s*\{[^}]*\}\s*$/i, '').trim();
+  // TSM FIX 2026-09-01: engines now emit KPI_JSON as the FIRST line (for
+  // truncation-robustness under a tight TPM budget), not the last, so an
+  // end-anchored strip left the raw tag visible at the top of the card.
+  // Strip it wherever it lands.
+  const clean = text.replace(/^\s*KPI_JSON:\s*\{[^}]*\}\s*\n?/i, '').replace(/\n?KPI_JSON:\s*\{[^}]*\}\s*$/i, '').trim();
 
   const lines = clean.split('\n');
   const isTableSep = l => /^\s*\|?[\s:|-]+\|?\s*$/.test(l) && l.includes('-');
