@@ -2130,8 +2130,33 @@ function syncStructuredCaseToEngine(sc) {
  *                                         figure in Engine 03's output)
  *   evidenceProvenance                 — array tagging every field above
  */
+// TSM FIX: engine outputs are raw LLM text (llama-3.1/3.3 via groq), frequently
+// formatted as "**Claim ID:** HC-DEN-2026-0417" or a bold section heading on
+// its own line ("**Denial Reason**") with the real content on the next line,
+// even when the system prompt asks for plain "Label: value" bullets. Every
+// regex below expects "label[:\s]+value" immediately after the label with no
+// markdown in between, so a bold marker breaks the match — claimId ended up
+// capturing just the trailing "ID" (rendered downstream as "Claim ID", a
+// duplicated label with no real ID), and rootCauseHypothesis's line-based
+// fallback picked the bold heading line itself ("**Denial Reason**  ")
+// instead of the real explanation on the following line. Same class of bug
+// already fixed once in this codebase (hc-main-strategist.html's
+// wrGeneratePhysicianEMTemplate) but never propagated here. Strip markdown
+// once, before any field regex runs, instead of patching each pattern.
+function stripMd(text) {
+  if (!text) return text;
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')   // **bold**
+    .replace(/\*(.*?)\*/g, '$1')       // *italic*
+    .replace(/__(.*?)__/g, '$1')       // __bold__
+    .replace(/_(.*?)_/g, '$1')         // _italic_
+    .replace(/`(.*?)`/g, '$1')         // `code`
+    .replace(/^#{1,6}\s+/gm, '')       // # headings
+    .replace(/^\s*[-*+]\s+/gm, '');    // - / * / + bullet markers
+}
+
 function buildHCStructuredCase(outputs, docText, claimDollar) {
-  const e1 = outputs[0] || '', e2 = outputs[1] || '', e3 = outputs[2] || '', e4 = outputs[3] || '';
+  const e1 = stripMd(outputs[0] || ''), e2 = stripMd(outputs[1] || ''), e3 = stripMd(outputs[2] || ''), e4 = stripMd(outputs[3] || '');
   const provenance = [];
 
   function extractField(text, pattern, label, engineLabel) {
