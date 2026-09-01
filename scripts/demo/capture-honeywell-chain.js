@@ -1,0 +1,128 @@
+/**
+ * capture-honeywell-chain.js
+ *
+ * Runs the Honeywell CYBER scenario through the REAL 6-engine Groq analysis,
+ * escalates it, and captures populated Strategist + Executive Portal
+ * screenshots — the "truth" shots the pitch deck's slide 12 needs.
+ *
+ * Requires (this machine, not the sandbox):
+ *   - GROQ_API_KEY set in .env (server reads it in server.js /api/war-room/stream)
+ *   - Network access to api.groq.com
+ *   - TSM_ADMIN_PASSWORD and TSM_SESSION_SECRET set in .env — the war-room
+ *     engine endpoint is gated behind requireAnyAuth, so this script logs in
+ *     first via /api/auth/login before touching the incident page.
+ *
+ * Usage:
+ *   node server.js &                # start the app (port 3000 by default)
+ *   TSM_LOGIN_PASSWORD=<your TSM_ADMIN_PASSWORD value> \
+ *     node scripts/demo/capture-honeywell-chain.js
+ *
+ * Output:
+ *   stills/honeywell-client-specific-chain/honeywell-strategist-full.png
+ *   stills/honeywell-client-specific-chain/honeywell-executive-portal-full.png
+ *   (overwrites the existing empty-state PNGs)
+ */
+
+const { chromium } = require('playwright');
+const path = require('path');
+const fs = require('fs');
+
+const BASE_URL = process.env.CAPTURE_BASE_URL || 'http://localhost:3000';
+const OUT_DIR = path.join(__dirname, '..', '..', 'stills', 'honeywell-client-specific-chain');
+const VIEWPORT = { width: 1600, height: 1000 };
+const ENGINE_TIMEOUT_MS = 120_000; // 6 engines, sequential, can be slow on retries
+
+async function waitForNoEmptyState(page, emptyStateText, timeout = 15_000) {
+  await page.waitForFunction(
+    (needle) => !(document.body.innerText || '').includes(needle),
+    emptyStateText,
+    { timeout }
+  );
+}
+
+async function waitForEnginesComplete(page) {
+  await page.waitForFunction(
+    () => {
+      const badge = document.getElementById('incBadge');
+      return badge && (badge.textContent.includes('COMPLETE') || badge.textContent.includes('ERRORS'));
+    },
+    { timeout: ENGINE_TIMEOUT_MS }
+  );
+  const badgeText = await page.locator('#incBadge').textContent();
+  if (badgeText.includes('ERRORS')) {
+    throw new Error(
+      `Engines finished with errors (badge: "${badgeText.trim()}"). ` +
+      `Check GROQ_API_KEY / server logs before using these screenshots.`
+    );
+  }
+}
+
+async function main() {
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+
+  const loginPassword = process.env.TSM_LOGIN_PASSWORD;
+  if (!loginPassword) {
+    throw new Error(
+      'TSM_LOGIN_PASSWORD env var not set. Pass the value of your TSM_ADMIN_PASSWORD ' +
+      '(or a valid staff/client access code) so this script can authenticate: ' +
+      'the engine endpoint is gated behind requireAnyAuth.'
+    );
+  }
+
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: VIEWPORT });
+
+  console.log('→ Logging in…');
+  const loginRes = await page.request.post(`${BASE_URL}/api/auth/login`, {
+    data: { password: loginPassword },
+  });
+  if (!loginRes.ok()) {
+    const body = await loginRes.text();
+    throw new Error(`Login failed (${loginRes.status()}): ${body}`);
+  }
+  console.log('✓ Logged in.');
+
+  console.log('→ Loading cyber-incident war room…');
+  await page.goto(`${BASE_URL}/html/cyber-incident.html`, { waitUntil: 'networkidle' });
+
+  console.log('→ Loading sample incident doc…');
+  await page.click('#sampleBtn');
+  await page.waitForFunction(() => document.getElementById('docInput').value.trim().length > 0);
+
+  console.log('→ Firing all 6 engines (real Groq calls, this takes a bit)…');
+  await page.click('#fireBtn');
+  await waitForEnginesComplete(page);
+  console.log('✓ 6-engine analysis complete.');
+
+  console.log('→ Escalating to Strategist…');
+  await page.click('#escalateBtn');
+  await page.waitForURL(/honeywell-strategist\.html/, { timeout: 15_000 });
+  await page.waitForLoadState('networkidle');
+
+  // Give the strategist page's render() a moment to paint the relay data
+  // (it reads localStorage/sessionStorage on load, no network wait needed,
+  // but keep a short buffer for any animation/transition).
+  await page.waitForTimeout(1000);
+  await waitForNoEmptyState(page, 'NO ANALYSIS RECEIVED');
+
+  const strategistPath = path.join(OUT_DIR, 'honeywell-strategist-full.png');
+  await page.screenshot({ path: strategistPath, fullPage: true });
+  console.log(`✓ Saved ${strategistPath}`);
+
+  console.log('→ Navigating to Executive Portal…');
+  await page.goto(`${BASE_URL}/html/war-rooms/honeywell-executive-portal.html`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1000);
+  await waitForNoEmptyState(page, 'NO ESCALATION RECEIVED');
+
+  const execPath = path.join(OUT_DIR, 'honeywell-executive-portal-full.png');
+  await page.screenshot({ path: execPath, fullPage: true });
+  console.log(`✓ Saved ${execPath}`);
+
+  await browser.close();
+  console.log('\nDone. Send both PNGs back for slide 12.');
+}
+
+main().catch((err) => {
+  console.error('\n✗ Capture failed:', err.message);
+  process.exit(1);
+});
