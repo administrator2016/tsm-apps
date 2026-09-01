@@ -51,20 +51,64 @@
 (function (global) {
   'use strict';
 
+  // TSM FIX: this shared extractor never stripped markdown from the raw
+  // LLM text before running its field regexes — the exact bug class
+  // already found and fixed in Healthcare's own (separately duplicated)
+  // extraction code: "**3. Deadline:**" or a deadline/evidence header
+  // wrapped in bold breaks a "label[:\s]+value" regex, and an LLM answer
+  // formatted as a markdown table row ("| ... |") rides straight through
+  // untouched. Because this file is the *shared* extractor for Legal,
+  // Insurance, and FinOps (see header comment), the bug was live in three
+  // verticals at once here, not one. Deliberately does NOT strip bullet
+  // markers (-, *, +) the way Healthcare's stripMd() does — extractEvidenceList
+  // below identifies evidence items by matching that exact bullet-marker
+  // prefix, so stripping it first would make every evidence list come back
+  // empty. Bold/italic/heading/table-pipe noise around a bullet's *content*
+  // still gets cleaned; only the marker itself survives, and only until stripped
+  // per-line inside extractEvidenceList once it isn't needed anymore.
+  function _stripInlineMd(text) {
+    if (!text) return text;
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '$1')   // **bold**
+      .replace(/\*(.*?)\*/g, '$1')       // *italic*
+      .replace(/__(.*?)__/g, '$1')       // __bold__
+      .replace(/_(.*?)_/g, '$1')         // _italic_
+      .replace(/`(.*?)`/g, '$1')         // `code`
+      .replace(/^#{1,6}\s+/gm, '')       // # headings
+      .replace(/^\s*\|?[\s:-]*\|[\s:|-]*\|?\s*$/gm, '') // table separator rows (---|---)
+      .replace(/^\s*\|\s*(.*?)\s*\|\s*$/gm, function (_, inner) {
+        return inner.split('|').map(function (c) { return c.trim(); }).filter(Boolean).join(' — ');
+      });
+  }
+
+  // TSM FIX: the table-row stripping above only catches a *full line*
+  // formatted as "| ... |" (Healthcare's original bug: an LLM's whole
+  // answer was one table row). It doesn't catch a value that's pipe-wrapped
+  // mid-line as part of a longer templated line -- e.g. FinOps' "1. Action
+  // — $5,000 — Owner — | Jun 30, 2026 |", where only the trailing captured
+  // field picked up stray pipes, not the entire line. Trim any leading/
+  // trailing "|" (and adjacent whitespace) off a value after it's been
+  // captured, as a second, position-independent safety net.
+  function _stripWrappingPipes(val) {
+    if (!val) return val;
+    return val.replace(/^\s*\|\s*/, '').replace(/\s*\|\s*$/, '').trim();
+  }
+
   function extractDeadline(text, regex) {
     if (!text || !regex) return null;
-    var m = text.match(regex);
+    var m = _stripInlineMd(text).match(regex);
     if (!m || !m[1]) return null;
-    var val = m[1].trim();
+    var val = _stripWrappingPipes(m[1].trim());
     if (!val || /NOT STATED/i.test(val)) return null;
     return val;
   }
 
   function extractEvidenceList(text, headerRegex) {
     if (!text || !headerRegex) return [];
-    var idx = text.search(headerRegex);
+    var clean = _stripInlineMd(text);
+    var idx = clean.search(headerRegex);
     if (idx === -1) return [];
-    var afterHeader = text.slice(idx).replace(headerRegex, '');
+    var afterHeader = clean.slice(idx).replace(headerRegex, '');
     // Stop at the next numbered section header (e.g. "\n2. Appeal Letter
     // Points:") so a following section's bullets never get swept in.
     var nextSection = afterHeader.match(/\n\s*\d+\.\s/);
@@ -72,7 +116,7 @@
     var items = [];
     scoped.split('\n').forEach(function (line) {
       var m = line.match(/^\s*[*\-\u2022]\s*(.+)/);
-      if (m && m[1].trim()) items.push(m[1].trim());
+      if (m && m[1].trim()) items.push(_stripWrappingPipes(m[1].trim()));
     });
     return items;
   }
