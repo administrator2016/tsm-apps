@@ -362,7 +362,7 @@ async function fireAllEngines() {
     if (i > 0) await new Promise(r => setTimeout(r, 600));
     setEngineStatus(i, 'running');
     try {
-      const text = await callAPI(prompts[i]);
+      const text = await callAPI(prompts[i], (i === 3) ? 2200 : (i === 5 ? 1600 : 900));
       document.getElementById(`eo${i}`).innerHTML = renderEngineOutput(text);
       document.getElementById(`eo${i}`).classList.add('active');
       setEngineStatus(i, 'done');
@@ -689,16 +689,16 @@ function buildActionPanel(text) {
   `).join('');
 }
 
-async function callAPI(prompt) {
-  // TSM FIX 2026-09-01: 700 was shared across all 6 engines. Engine 04
-  // (Financial Exposure -- full cost table + 5 bullet sections + trailing
-  // KPI_JSON) and Engine 06 (Exec Dispatch -- full decision package +
-  // trailing KPI_JSON) were getting cut off before reaching the required
-  // KPI_JSON line, so parseKpiJson found nothing and the UI fell back to
-  // a naive regex that grabbed the wrong dollar figure (e.g. an hourly
-  // rate instead of the total). Bumped so the structured tag has room to
-  // land regardless of how verbose a given incident's content is.
-  return callWarRoomAPI(prompt, 'You are an OT/ICS cybersecurity intelligence engine for TSM Command. Expert in industrial control system security, attack analysis, operational/safety impact, and executive decision support. Be specific with dollar amounts and timelines.', { maxTokens: 1100 });
+async function callAPI(prompt, maxTokens) {
+  // TSM FIX 2026-09-01: 700 (then 1100) was shared across all 6 engines.
+  // Engine 04 (full cost table + 5 bullet sections + trailing KPI_JSON)
+  // is by far the most verbose and kept getting cut off before reaching
+  // its required tag even at 1100 -- confirmed by re-inspecting the raw
+  // output, which stopped mid-table with no trailing sections at all.
+  // Accepts a per-call override so the two token-hungry engines (04
+  // Financial Exposure, 06 Exec Dispatch) can get more room without
+  // inflating cost/latency on the other four.
+  return callWarRoomAPI(prompt, 'You are an OT/ICS cybersecurity intelligence engine for TSM Command. Expert in industrial control system security, attack analysis, operational/safety impact, and executive decision support. Be specific with dollar amounts and timelines.', { maxTokens: maxTokens || 900 });
 }
 
 function goToStrategist() {
