@@ -73,7 +73,41 @@
     }
   }
 
-  var _records = loadAll();
+  // TSM FIX: before the LLM-refusal-leak fix (buildHCStructuredCase /
+  // TSMExecKitProducer.buildExplain), a strategist page whose engine ran
+  // without enough source detail could feed an LLM clarification response
+  // ("I'm afraid I can't generate... without the specific claim and denial
+  // details...") into this store as if it were a real exception, via
+  // add()/fromExplainItems(). That fix stops any *new* record like that
+  // from being added — but this store is persisted to localStorage, so it
+  // does nothing for records already saved before the fix shipped. Every
+  // browser that hit an affected page even once has those bad records
+  // stuck permanently; no code push can reach into a user's localStorage
+  // to clean them up. Self-heal on load instead: purge any persisted
+  // record whose title/detail looks like a refusal, once, the first time
+  // this file loads after the fix. Reuses TSMExecKitProducer's detector
+  // when that engine is loaded on the page (kept in sync with the actual
+  // fix rather than duplicating the pattern a second place), falling back
+  // to an inline copy of the same check otherwise so this self-heal still
+  // works on pages that don't load tsm-exec-kit-producer.js.
+  function _isRefusalText(text) {
+    if (!text) return false;
+    if (global.TSMExecKitProducer && typeof global.TSMExecKitProducer.isRefusalText === 'function') {
+      return global.TSMExecKitProducer.isRefusalText(text);
+    }
+    return /^\s*(i'?m\s+(afraid|sorry|unable)|i\s+can'?t|i\s+cannot|i'?m\s+not\s+able)\b/i.test(text)
+      || /\b(please\s+(provide|paste|share|include)|without\s+(the|specific|more)|not\s+enough\s+(information|detail|context)|need\s+(more|additional)\s+(information|detail|context))\b/i.test(text);
+  }
+
+  function _purgeStaleRefusalRecords(records) {
+    var kept = records.filter(function (r) {
+      return !(_isRefusalText(r && r.title) || _isRefusalText(r && r.detail));
+    });
+    if (kept.length !== records.length) persist(kept);
+    return kept;
+  }
+
+  var _records = _purgeStaleRefusalRecords(loadAll());
 
   function makeId() {
     return 'exc_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);

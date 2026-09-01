@@ -1176,6 +1176,11 @@ setInterval(loadRelay, 15000);
       fedAny = true;
 
       var exceptionRecord = TSMExceptions.add({
+        // sourceKey lets TSMExceptions dedup across reloads -- _fedIds
+        // above only guards this pageload's render loop, so without this
+        // a refresh created a brand-new exception (and downstream case)
+        // from the same underlying item every time.
+        sourceKey: itemId,
         title: it.claim,
         detail: it.rationale || null,
         recommendedAction: 'See FinOps Executive Portal resolution brief.',

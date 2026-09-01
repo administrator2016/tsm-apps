@@ -3937,7 +3937,14 @@ function tsmWriteScopedExec(vertical, missionId){
         severity: it.severity || 'med',
         confidence: it.confidence != null ? it.confidence : null,
         sector: 'healthcare',
-        agentLabel: 'HC Strategist'
+        agentLabel: 'HC Strategist',
+        // TSM FIX: _fedIds only dedupes within a single pageload (resets on
+        // reload/storage-event re-render), so every fresh mount re-added a
+        // duplicate exception for the same underlying claim. sourceKey makes
+        // the dedup reload-safe by checking the persisted store itself (see
+        // TSMExceptions.findOpenBySourceKey) instead of relying on in-memory
+        // state alone.
+        sourceKey: itemId
       });
 
       // Every HC exception also becomes a real Case (Roadmap #10) with its

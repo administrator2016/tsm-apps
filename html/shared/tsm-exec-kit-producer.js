@@ -40,6 +40,23 @@
     return stageDefs.filter(function (s) { return s && s.id && s.label; });
   }
 
+  // TSM FIX: strategist pages across verticals build `rationale` from raw
+  // engine/LLM output text with no check that the engine actually produced
+  // an analysis rather than a clarification request. When an engine runs
+  // without enough source detail, the LLM correctly asks for more info
+  // ("I'm afraid I can't generate ... without the specific claim and
+  // denial details...") — that refusal text was passed straight through
+  // as `rationale` and shipped to the exec portal / exported client
+  // package as if it were a real finding (seen live in Healthcare via
+  // hc-denial-war-room's rootCauseHypothesis extraction, but this
+  // function is the shared funnel every vertical's strategist calls, so
+  // guarding here catches the same failure mode everywhere at once).
+  function isRefusalText(text) {
+    if (!text) return false;
+    return /^\s*(i'?m\s+(afraid|sorry|unable)|i\s+can'?t|i\s+cannot|i'?m\s+not\s+able)\b/i.test(text)
+      || /\b(please\s+(provide|paste|share|include)|without\s+(the|specific|more)|not\s+enough\s+(information|detail|context)|need\s+(more|additional)\s+(information|detail|context))\b/i.test(text);
+  }
+
   /**
    * buildExplain(items)
    * items: array of { claim, confidence?, severity?, impact?, rationale, sources?, dataPoints? }
@@ -47,11 +64,15 @@
    * pass through whatever reasoning text your strategist already generated
    * (e.g. the BNCA narrative, the engine summary, the regex-extracted
    * exposure explanation) instead of just the headline number.
+   *
+   * Items whose rationale is an LLM clarification/refusal response (not an
+   * actual finding) are dropped rather than shipped downstream as if they
+   * were analysis output — see isRefusalText above.
    */
   function buildExplain(items) {
     if (!Array.isArray(items)) return [];
     return items
-      .filter(function (it) { return it && it.claim && it.rationale; })
+      .filter(function (it) { return it && it.claim && it.rationale && !isRefusalText(it.rationale); })
       .map(function (it) {
         return {
           id:         it.id || ('rec-' + Math.random().toString(36).slice(2, 8)),
@@ -97,7 +118,8 @@
   global.TSMExecKitProducer = {
     buildWip: buildWip,
     buildExplain: buildExplain,
-    extractRationaleFromSummary: extractRationaleFromSummary
+    extractRationaleFromSummary: extractRationaleFromSummary,
+    isRefusalText: isRefusalText
   };
 
 })(window);

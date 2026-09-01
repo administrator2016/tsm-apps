@@ -36,7 +36,16 @@
   VENDOR:       "TSM_VENDOR_WAR_RELAY",
   HOTELOPS:     "TSM_HOTELOPS_STRATEGIST_RELAY",
   PM:           "TSM_PM_RELAY",
-  CONCIERGE:    "TSM_CONCIERGE_RELAY"
+  CONCIERGE:    "TSM_CONCIERGE_RELAY",
+  // TSM FIX: evidence-ledger.js (html/shared/runtime/trust-evidence/) calls
+  // TSM.relay.write('TRUST_EVIDENCE', ...) on every record() so other tabs
+  // can pick up new decision-evidence entries via the same storage-event
+  // pattern used elsewhere -- but this domain was never registered, so
+  // every single call threw "Unknown relay domain: TRUST_EVIDENCE" and got
+  // swallowed by the caller's try/catch. The record itself always
+  // persisted fine (it has its own dedicated localStorage store); this was
+  // only breaking the cross-tab broadcast.
+  TRUST_EVIDENCE: "TSM_TRUST_EVIDENCE_RELAY"
 };
   const EVENT_LOG_KEY = "TSM_EVENT_LOG";
   const EVENT_LOG_MAX = 500;
