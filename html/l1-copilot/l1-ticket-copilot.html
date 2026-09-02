@@ -67,6 +67,15 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 .sb-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5}
 .sb-item.active .sb-dot{opacity:1;box-shadow:0 0 6px var(--cyan)}
 
+.sb-group-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;font-size:10px;letter-spacing:1.5px;color:var(--text-dim);cursor:pointer;border-left:2px solid transparent}
+.sb-group-head:hover{color:var(--text);background:rgba(0,229,255,.03)}
+.sb-group-head .sb-caret{font-size:9px;transition:transform .2s ease;opacity:.6}
+.sb-group.open .sb-group-head .sb-caret{transform:rotate(90deg)}
+.sb-group-body{max-height:0;overflow:hidden;transition:max-height .2s ease}
+.sb-group.open .sb-group-body{max-height:200px}
+.sb-sublink{display:block;padding:8px 18px 8px 34px;font-size:10px;letter-spacing:1.2px;color:var(--text-dim);text-decoration:none;border-left:2px solid transparent}
+.sb-sublink:hover{color:var(--cyan);background:rgba(0,229,255,.03);border-left-color:var(--cyan)}
+
 .main{overflow-y:auto;background:var(--bg);padding:18px 22px}
 .section{display:none}
 .section.active{display:block}
@@ -698,6 +707,15 @@ window.loadInphusionAnomaly = function() {
     <div class="sb-item" data-section="history"><span class="sb-dot"></span>History</div>
     <div class="sb-item" data-section="howto"><span class="sb-dot"></span>How To</div>
     <div class="sb-item" data-section="certprep"><span class="sb-dot"></span>Cert Prep</div>
+
+    <div class="sb-group" id="sbTrainingGroup">
+      <div class="sb-group-head" id="sbTrainingHead"><span><span class="sb-dot"></span>ServiceNow Training</span><span class="sb-caret">▸</span></div>
+      <div class="sb-group-body">
+        <a class="sb-sublink" href="/html/l1-copilot/servicenow-fundamentals.html">Fundamentals</a>
+        <a class="sb-sublink" href="/html/l1-copilot/servicenow-scenarios.html">Scenario Engine</a>
+        <a class="sb-sublink" href="/html/l1-copilot/servicenow-exam-sim.html">Timed Exam Sim</a>
+      </div>
+    </div>
   </div>
 
   <div class="main">
@@ -2077,6 +2095,11 @@ TICKET DESCRIPTION</div>
   function goToSection(name){
     document.querySelector(`.sb-item[data-section="${name}"]`).click();
   }
+
+  // ── Sidebar accordion — ServiceNow Training group ──────────────────────
+  document.getElementById('sbTrainingHead').addEventListener('click', () => {
+    document.getElementById('sbTrainingGroup').classList.toggle('open');
+  });
 
   // ── Cert Prep — practice question reveal ───────────────────────────────
   function initCertQuiz(){
