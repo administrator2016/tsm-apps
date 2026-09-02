@@ -2600,12 +2600,71 @@ TICKET DESCRIPTION</div>
     });
   }
 
+  // ── Onboarding Preflight ────────────────────────────────────────────────
+  // Reads state already on the page (security-context KPIs from
+  // checkSecurityContext(), the onboarding checklist, the asset field) --
+  // no new network calls. Returns { ready, blockers: [string, ...] }.
+  // Kept deliberately separate from the imaging/provisioning fetches below
+  // so it can gate BOTH actions with one shared source of truth.
+  function computeOnboardingReadiness(kind){
+    const blockers = [];
+    const assetTag = (document.getElementById('obAsset').value || '').trim();
+    const name = (document.getElementById('obName').value || '').trim();
+    const email = (document.getElementById('obEmail').value || '').trim();
+
+    const acctEl = document.getElementById('kpiAccountStatus');
+    const mfaEl = document.getElementById('kpiMfaStatus');
+    const devEl = document.getElementById('kpiDeviceCompliance');
+    const riskEl = document.getElementById('kpiRiskLevel');
+    const securityChecked = acctEl && acctEl.textContent && acctEl.textContent !== '--' && acctEl.textContent !== '...';
+
+    if (kind === 'imaging' || kind === 'both') {
+      if (!assetTag) blockers.push('Asset tag has not been entered/assigned.');
+      if (!securityChecked) blockers.push('Device has not been checked via Security Context (run CHECK USER & DEVICE STATUS first).');
+      if (securityChecked && devEl && devEl.textContent === 'Non-Compliant') blockers.push('Device is reporting Non-Compliant in endpoint management — resolve before imaging.');
+    }
+    if (kind === 'provision' || kind === 'both') {
+      if (!name || !email) blockers.push('New hire name and work email are required.');
+      if (!securityChecked) blockers.push('Identity has not been checked via Security Context (run CHECK USER & DEVICE STATUS first).');
+      if (securityChecked && acctEl && acctEl.textContent === 'Suspended') blockers.push('Requester/manager account is Suspended in the identity provider — resolve before provisioning a new account under it.');
+      if (securityChecked && riskEl && (riskEl.textContent === 'High' || riskEl.textContent === 'Critical')) blockers.push(`Identity risk level is ${riskEl.textContent} — send for review before provisioning.`);
+    }
+    return { ready: blockers.length === 0, blockers };
+  }
+
+  // Logs a blocked attempt to the same HITL gate l1-human-decision-wiring.js
+  // uses, so a technician bypassing (or being stopped by) preflight shows up
+  // in the L1 decision audit trail instead of only ever existing client-side.
+  function logBlockedOnboardingAttempt(kind, blockers){
+    if (typeof recordHumanDecision !== 'function') return;
+    const incident = (document.getElementById('tkIncident') || {}).value || ('onboarding-' + Date.now());
+    recordHumanDecision('keep', {
+      incident,
+      ticketPriority: kind,
+      aiSeverity: 'preflight-blocked',
+      recommendedPriority: blockers.join('; ')
+    }).catch(() => { /* best-effort; onboarding flow shouldn't hang on this */ });
+  }
+
+  function renderPreflightBlock(outEl, blockers){
+    outEl.innerHTML = `<div class="err"><b>BLOCKED</b><ul style="margin:4px 0 0 18px;padding:0">` +
+      blockers.map(b => `<li>${b}</li>`).join('') + `</ul></div>`;
+  }
+
   async function startImaging(){
     const badge = document.getElementById('obImagingStatusBadge');
     const out = document.getElementById('obImagingOutput');
     const fill = document.getElementById('obImagingFill');
     const assetTag = document.getElementById('obAsset').value.trim();
     if (!assetTag) { alert('Enter/assign an asset tag first.'); return; }
+
+    const readiness = computeOnboardingReadiness('imaging');
+    if (!readiness.ready) {
+      renderPreflightBlock(out, readiness.blockers);
+      logBlockedOnboardingAttempt('imaging', readiness.blockers);
+      return;
+    }
+
     obImagingStatus = 'Running';
     badge.textContent = 'RUNNING'; badge.className = 'kpi-value warn';
     fill.style.width = '10%';
@@ -2615,7 +2674,10 @@ TICKET DESCRIPTION</div>
         body: JSON.stringify({ assetTag, profileId: document.getElementById('obImagingProfile').value })
       });
       const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'imaging request failed');
+      if (!data.ok) {
+        if (data.blocked && Array.isArray(data.blockers)) { renderPreflightBlock(out, data.blockers); obImagingStatus = 'Not Started'; badge.textContent = 'NOT STARTED'; badge.className = 'kpi-value'; fill.style.width = '0%'; return; }
+        throw new Error(data.error || 'imaging request failed');
+      }
       obImagingStatus = data.status || 'Running';
       fill.style.width = (data.percent || 10) + '%';
       out.innerHTML = `Imaging job <b>${data.jobId || ''}</b> started against the imaging platform.`;
@@ -2634,17 +2696,29 @@ TICKET DESCRIPTION</div>
     const name = document.getElementById('obName').value.trim();
     const email = document.getElementById('obEmail').value.trim();
     if (!name || !email) { alert('Enter the new hire\'s name and work email first.'); return; }
+
+    const readiness = computeOnboardingReadiness('provision');
+    if (!readiness.ready) {
+      renderPreflightBlock(out, readiness.blockers);
+      logBlockedOnboardingAttempt('provision', readiness.blockers);
+      return;
+    }
+
     try {
       const res = await fetch('/api/l1-copilot/onboarding/provision', {
         method: 'POST', headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({
           name, email,
           department: document.getElementById('obDept').value,
-          role: document.getElementById('obRole').value
+          role: document.getElementById('obRole').value,
+          requester: (document.getElementById('tkRequester') || {}).value || null
         })
       });
       const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'provisioning failed');
+      if (!data.ok) {
+        if (data.blocked && Array.isArray(data.blockers)) { renderPreflightBlock(out, data.blockers); return; }
+        throw new Error(data.error || 'provisioning failed');
+      }
       obAccountStatus = 'Provisioned';
       badge.textContent = 'PROVISIONED'; badge.className = 'kpi-value good';
       out.innerHTML = `Account <b>${data.userId || ''}</b> created.` + (data.mfaEnrollmentLink ? ` MFA enrollment link sent.` : '');

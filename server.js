@@ -4752,10 +4752,13 @@ app.get('/api/l1-copilot/gcp/instance/:identifier', async (req, res) => {
 // explicitly-configured adapter — see backend spec §3/§5.
 const ONBOARDING_IMAGING_CONFIGURED = () => !!process.env.L1_COPILOT_IMAGING_WEBHOOK_URL;
 const ONBOARDING_IDENTITY_CONFIGURED = () => !!process.env.L1_COPILOT_PROVISIONING_WEBHOOK_URL;
+const onboardingPreflight = require('./server/l1-copilot/onboarding-preflight');
 
 app.post('/api/l1-copilot/onboarding/image', async (req, res) => {
   const { assetTag, profileId } = req.body || {};
   if (!assetTag) return res.status(400).json({ ok: false, error: 'assetTag required' });
+  const imgBlockers = await onboardingPreflight.imagingPreflightBlockers(assetTag, { getDeviceSecurityStatus });
+  if (imgBlockers.length) return res.status(409).json({ ok: false, blocked: true, blockers: imgBlockers, error: imgBlockers.join(' ') });
   if (!ONBOARDING_IMAGING_CONFIGURED()) {
     if (demoData.isDemoModeEnabled()) {
       return res.json({ ok: true, ...demoData.demoImagingJob(assetTag, profileId), demoMode: true });
@@ -4777,8 +4780,14 @@ app.post('/api/l1-copilot/onboarding/image', async (req, res) => {
 });
 
 app.post('/api/l1-copilot/onboarding/provision', async (req, res) => {
-  const { name, email, department, role } = req.body || {};
+  const { name, email, department, role, requester } = req.body || {};
   if (!name || !email) return res.status(400).json({ ok: false, error: 'name and email required' });
+  // requester is optional (the client sends the ticket's requester field
+  // when present) -- when omitted, no requester-identity blocker is
+  // possible server-side; this only tightens the check, never loosens the
+  // 503-when-unconfigured behavior below.
+  const provBlockers = await onboardingPreflight.provisioningPreflightBlockers(requester, { getUserSecurityStatus });
+  if (provBlockers.length) return res.status(409).json({ ok: false, blocked: true, blockers: provBlockers, error: provBlockers.join(' ') });
   if (!ONBOARDING_IDENTITY_CONFIGURED()) {
     if (demoData.isDemoModeEnabled()) {
       return res.json({ ok: true, ...demoData.demoProvisionedAccount(name, email), demoMode: true });
@@ -4813,12 +4822,39 @@ function mapComplianceState(state) {
   return 'Unknown';
 }
 
+// Shared helpers so the onboarding preflight checks below (image/provision)
+// reason over the SAME live-or-demo data the /security/* panel already
+// shows the tech, instead of the routes drifting out of sync or the
+// preflight check trusting client-supplied status fields it can't verify.
+async function getUserSecurityStatus(query) {
+  if (!query) return null;
+  if (demoData.isDemoModeEnabled()) {
+    return { ...demoData.demoUserSecurityStatus(query), demoMode: !graphAdapter.isConfigured() };
+  }
+  return null; // no live identity-risk adapter yet -- caller decides how to handle "unknown"
+}
+
+async function getDeviceSecurityStatus(asset) {
+  if (!asset) return null;
+  if (graphAdapter.isConfigured()) {
+    try {
+      const device = await graphAdapter.getDevice(asset);
+      if (!device) return null;
+      return { asset, complianceStatus: mapComplianceState(device.complianceState) };
+    } catch (e) {
+      if (demoData.isDemoModeEnabled()) return { ...demoData.demoDeviceSecurityStatus(asset), demoMode: true };
+      throw e;
+    }
+  }
+  if (demoData.isDemoModeEnabled()) return { ...demoData.demoDeviceSecurityStatus(asset), demoMode: true };
+  return null;
+}
+
 app.get('/api/l1-copilot/security/user-status', async (req, res) => {
   const query = (req.query.query || '').trim();
   if (!query) return res.status(400).json({ ok: false, error: 'query required' });
-  if (demoData.isDemoModeEnabled()) {
-    return res.json({ ok: true, ...demoData.demoUserSecurityStatus(query), demoMode: !graphAdapter.isConfigured() });
-  }
+  const status = await getUserSecurityStatus(query);
+  if (status) return res.json({ ok: true, ...status });
   return res.status(503).json({ ok: false, error: 'No identity-risk adapter is configured for live user-status lookups yet.' });
 });
 
@@ -4827,13 +4863,10 @@ app.get('/api/l1-copilot/security/device-status', async (req, res) => {
   if (!asset) return res.status(400).json({ ok: false, error: 'asset required' });
   if (graphAdapter.isConfigured()) {
     try {
-      const device = await graphAdapter.getDevice(asset);
-      if (!device) return res.status(404).json({ ok: false, error: `No managed device found for "${asset}".` });
-      return res.json({ ok: true, asset, complianceStatus: mapComplianceState(device.complianceState) });
+      const status = await getDeviceSecurityStatus(asset);
+      if (!status) return res.status(404).json({ ok: false, error: `No managed device found for "${asset}".` });
+      return res.json({ ok: true, ...status });
     } catch (e) {
-      if (demoData.isDemoModeEnabled()) {
-        return res.json({ ok: true, ...demoData.demoDeviceSecurityStatus(asset), demoMode: true });
-      }
       return res.status(502).json({ ok: false, error: e.message });
     }
   }
