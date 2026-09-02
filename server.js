@@ -569,64 +569,120 @@ function resolveGroqModel(requested) {
   return 'openai/gpt-oss-120b';
 }
 
+// TSM FIX 2026-09-02: on 429/500/502/503 this used to sleep a flat 3s
+// ONCE and then fall through to the next useJsonMode/model combo — it
+// never actually retried the same request. Under a sustained burst (10
+// pilot scenarios back-to-back) that burns through both models' one
+// real attempt each almost immediately and every request after the
+// first one or two fails with "All Groq models returned empty or
+// rate-limited responses." Now each (model, jsonMode) combo gets its
+// own bounded retry loop that backs off using Groq's actual stated
+// wait time (same parser tsmAIJSON already used below) before giving up
+// on that combo and moving on.
+const GROQ_CHAT_MAX_RETRIES_PER_COMBO = 2; // up to 3 attempts per (model, jsonMode)
+
 async function groqChat(system, message, maxTokens, clientKey, jsonMode) {
   const groqKey = process.env.GROQ_API_KEY || process.env.GROQ_KEY || clientKey;
   if (!groqKey) throw new Error('No Groq API key configured (server env missing and no client key provided)');
   for (const model of GROQ_MODELS) {
     for (const useJsonMode of (jsonMode ? [true, false] : [false])) {
-      try {
-        const body = {
-          model,
-          max_tokens: maxTokens,
-          messages: [{ role: 'system', content: system }, { role: 'user', content: message }]
-        };
-        if (useJsonMode) body.response_format = { type: 'json_object' };
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 20000); // fail fast on a hung/slow upstream response rather than blocking indefinitely
-        let r;
+      let attempt = 0;
+      while (attempt <= GROQ_CHAT_MAX_RETRIES_PER_COMBO) {
         try {
-          r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + groqKey, 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-            signal: controller.signal
-          });
-        } finally {
-          clearTimeout(timeoutId);
-        }
-        if (!r.ok) {
-          const err = await r.text();
-          if (r.status === 429 || r.status === 503 || r.status === 500 || r.status === 502) {
-            await new Promise(res => setTimeout(res, 3000));
-            continue;
+          const body = {
+            model,
+            max_tokens: maxTokens,
+            messages: [{ role: 'system', content: system }, { role: 'user', content: message }]
+          };
+          if (useJsonMode) body.response_format = { type: 'json_object' };
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 20000); // fail fast on a hung/slow upstream response rather than blocking indefinitely
+          let r;
+          try {
+            r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + groqKey, 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+              signal: controller.signal
+            });
+          } finally {
+            clearTimeout(timeoutId);
           }
-          // 400 with jsonMode on often means this model doesn't support response_format —
-          // fall through to the non-json-mode retry for the same model before giving up on it
-          if (r.status === 400 && useJsonMode) continue;
-          throw new Error('Groq API error ' + r.status + ': ' + err);
+          if (!r.ok) {
+            const err = await r.text();
+            if (r.status === 429 || r.status === 503 || r.status === 500 || r.status === 502) {
+              if (attempt < GROQ_CHAT_MAX_RETRIES_PER_COMBO) {
+                const delay = tsmAIParseRetryDelayMs(err);
+                console.warn('[groqChat]', r.status, 'from', model, '- retrying in', delay, 'ms (attempt', attempt + 1, 'of', GROQ_CHAT_MAX_RETRIES_PER_COMBO, ')');
+                await new Promise(res => setTimeout(res, delay));
+                attempt++;
+                continue;
+              }
+              break; // exhausted retries for this combo, move to next jsonMode/model
+            }
+            // 400 with jsonMode on often means this model doesn't support response_format —
+            // fall through to the non-json-mode retry for the same model before giving up on it
+            if (r.status === 400 && useJsonMode) break;
+            throw new Error('Groq API error ' + r.status + ': ' + err);
+          }
+          const data = await r.json();
+          const content = data?.choices?.[0]?.message?.content || '';
+          if (!content.trim()) {
+            // 200 OK but empty content (e.g. filtered/refused/stopped immediately) —
+            // treat as a failure and try the next model rather than silently
+            // returning "" to the caller.
+            console.warn('[groqChat] empty completion from', model, '- finish_reason:', data?.choices?.[0]?.finish_reason);
+            break;
+          }
+          return content;
+        } catch (e) {
+          if (e.name === 'AbortError' || e.message.includes('aborted')) {
+            console.warn('[groqChat] timed out after 20s on', model, '- trying next model');
+            break;
+          }
+          if (e.message.includes('429') || e.message.includes('rate_limit')) {
+            if (attempt < GROQ_CHAT_MAX_RETRIES_PER_COMBO) {
+              await new Promise(res => setTimeout(res, tsmAIParseRetryDelayMs(e.message)));
+              attempt++;
+              continue;
+            }
+            break;
+          }
+          if (useJsonMode) break; // try the same model again without json mode before moving on
+          throw e;
         }
-        const data = await r.json();
-        const content = data?.choices?.[0]?.message?.content || '';
-        if (!content.trim()) {
-          // 200 OK but empty content (e.g. filtered/refused/stopped immediately) —
-          // treat as a failure and try the next model rather than silently
-          // returning "" to the caller.
-          console.warn('[groqChat] empty completion from', model, '- finish_reason:', data?.choices?.[0]?.finish_reason);
-          continue;
-        }
-        return content;
-      } catch (e) {
-        if (e.name === 'AbortError' || e.message.includes('aborted')) {
-          console.warn('[groqChat] timed out after 20s on', model, '- trying next model');
-          continue;
-        }
-        if (e.message.includes('429') || e.message.includes('rate_limit')) continue;
-        if (useJsonMode) continue; // try the same model again without json mode before moving on
-        throw e;
       }
     }
   }
   throw new Error('All Groq models returned empty or rate-limited responses. Try again later.');
+}
+
+// TSM FIX 2026-09-02: L1 Copilot pilot route was calling groqChat() then
+// JSON.parse()-ing the raw string with no error handling. Two things were
+// producing HTTP 500s during the pilot run:
+//   1. maxTokens was too tight (1000/800/900) for a schema with several
+//      arrays (evidence, likely_causes, missing_information) — the model
+//      would get cut off mid-string, producing "Unterminated string in
+//      JSON" on parse.
+//   2. Even when the model DID return malformed JSON (not just truncation
+//      — e.g. a stray trailing comma), there was no retry: the whole
+//      request just threw and the outer catch turned it into a 500.
+// This wraps groqChat + parse together, retries with a fresh completion
+// on parse failure (truncation is often non-deterministic per draw), and
+// gives a clear error if it still can't get valid JSON after retrying.
+async function groqChatJSON(system, prompt, maxTokens, retries = 2) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const raw = await groqChat(system, prompt, maxTokens, undefined, true);
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    try {
+      return JSON.parse(cleaned);
+    } catch (e) {
+      lastErr = e;
+      console.warn('[groqChatJSON] parse failed on attempt', attempt + 1, '-', e.message);
+    }
+  }
+  throw new Error('Model did not return valid JSON after ' + (retries + 1) + ' attempts: ' + lastErr.message);
 }
 
 // JSON-returning variant for structured routes
@@ -4204,14 +4260,10 @@ The "missing_information" array should identify important information that would
 
 Do not claim an action has already been performed unless the context explicitly says so.`;
 
-    const rawDecision = await groqChat(
+    const decision = await groqChatJSON(
       SP.l1support,
       prompt,
-      maxTokens || 1000
-    );
-
-    const decision = JSON.parse(
-      rawDecision.replace(/\`\`\`json|\`\`\`/g, '').trim()
+      maxTokens || 1800
     );
 
     // ---------------------------------------------------------------
@@ -4240,14 +4292,10 @@ Return ONLY valid JSON:
 
 Do not claim that any action was already performed.`;
 
-      const rawResolution = await groqChat(
+      resolution = await groqChatJSON(
         SP.l1support,
         resolutionPrompt,
-        maxTokens || 800
-      );
-
-      resolution = JSON.parse(
-        rawResolution.replace(/\`\`\`json|\`\`\`/g, '').trim()
+        maxTokens || 1200
       );
     } else {
       const escalationPrompt = `Prepare a concise L2/vendor escalation package.
@@ -4272,14 +4320,10 @@ Return ONLY valid JSON:
 
 Do not invent completed troubleshooting.`;
 
-      const rawEscalation = await groqChat(
+      escalation = await groqChatJSON(
         SP.l1support,
         escalationPrompt,
-        maxTokens || 900
-      );
-
-      escalation = JSON.parse(
-        rawEscalation.replace(/\`\`\`json|\`\`\`/g, '').trim()
+        maxTokens || 1200
       );
     }
 
