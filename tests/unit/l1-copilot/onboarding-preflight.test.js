@@ -7,7 +7,8 @@
 
 const {
   imagingPreflightBlockers,
-  provisioningPreflightBlockers
+  provisioningPreflightBlockers,
+  resolveProvisioningRequester
 } = require('../../../server/l1-copilot/onboarding-preflight');
 
 let pass = 0, fail = 0;
@@ -78,6 +79,38 @@ async function main() {
   const noUserFound = { getUserSecurityStatus: async () => null };
   const clean8 = await provisioningPreflightBlockers('jane.doe', noUserFound);
   check('provisioning: no blockers when user lookup returns null', clean8.length === 0);
+
+  // ── resolveProvisioningRequester ──────────────────────────────────────
+
+  const ticketWithRequester = { getTicket: async () => ({ requester: 'Jane Doe (from ticket)' }) };
+  const r1 = await resolveProvisioningRequester('INC0012345', 'client-typed-name', ticketWithRequester);
+  check('resolve: prefers the ITSM ticket requester over the client-supplied one', r1 === 'Jane Doe (from ticket)');
+
+  const ticketWithoutRequesterField = { getTicket: async () => ({ requester: null }) };
+  const r2 = await resolveProvisioningRequester('INC0012345', 'client-typed-name', ticketWithoutRequesterField);
+  check('resolve: falls back to client requester when the ticket has no requester field', r2 === 'client-typed-name');
+
+  const ticketNotFound = { getTicket: async () => null };
+  const r3 = await resolveProvisioningRequester('INC-NOPE', 'client-typed-name', ticketNotFound);
+  check('resolve: falls back to client requester when the ticket lookup finds nothing', r3 === 'client-typed-name');
+
+  const ticketLookupThrows = { getTicket: async () => { throw new Error('ServiceNow unreachable'); } };
+  let threwPastResolve = false;
+  const r4 = await resolveProvisioningRequester('INC0012345', 'client-typed-name', ticketLookupThrows).catch(() => { threwPastResolve = true; return null; });
+  check('resolve: a ticket-lookup failure does not throw out of resolution', !threwPastResolve);
+  check('resolve: falls back to client requester when the ticket lookup errors', r4 === 'client-typed-name');
+
+  let ticketLookupCalled = false;
+  const shouldNotBeCalledForTicket = { getTicket: async () => { ticketLookupCalled = true; return { requester: 'x' }; } };
+  const r5 = await resolveProvisioningRequester(null, 'client-typed-name', shouldNotBeCalledForTicket);
+  check('resolve: no incident means no ticket lookup is attempted', !ticketLookupCalled);
+  check('resolve: no incident falls back straight to the client requester', r5 === 'client-typed-name');
+
+  const r6 = await resolveProvisioningRequester(null, null, shouldNotBeCalledForTicket);
+  check('resolve: no incident and no client requester resolves to null (not "checked and clean")', r6 === null);
+
+  const r7 = await resolveProvisioningRequester('INC0012345', null, ticketWithRequester);
+  check('resolve: ITSM ticket requester used even with no client fallback available', r7 === 'Jane Doe (from ticket)');
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

@@ -4754,6 +4754,21 @@ const ONBOARDING_IMAGING_CONFIGURED = () => !!process.env.L1_COPILOT_IMAGING_WEB
 const ONBOARDING_IDENTITY_CONFIGURED = () => !!process.env.L1_COPILOT_PROVISIONING_WEBHOOK_URL;
 const onboardingPreflight = require('./server/l1-copilot/onboarding-preflight');
 
+// Ticket lookup used by resolveProvisioningRequester below -- reuses the
+// same real-instance-first, demo-fallback pattern as the
+// /api/l1-copilot/servicenow/ticket/:incident route rather than a second
+// hand-rolled version of it.
+async function resolveTicketForRequester(incident) {
+  try {
+    return await snAdapter.getTicket(incident);
+  } catch (e) {
+    if (e.code === 'SERVICENOW_NOT_CONFIGURED' && demoData.isDemoModeEnabled()) {
+      return demoData.demoTicket(incident);
+    }
+    throw e;
+  }
+}
+
 app.post('/api/l1-copilot/onboarding/image', async (req, res) => {
   const { assetTag, profileId } = req.body || {};
   if (!assetTag) return res.status(400).json({ ok: false, error: 'assetTag required' });
@@ -4780,13 +4795,18 @@ app.post('/api/l1-copilot/onboarding/image', async (req, res) => {
 });
 
 app.post('/api/l1-copilot/onboarding/provision', async (req, res) => {
-  const { name, email, department, role, requester } = req.body || {};
+  const { name, email, department, role, requester, incident } = req.body || {};
   if (!name || !email) return res.status(400).json({ ok: false, error: 'name and email required' });
-  // requester is optional (the client sends the ticket's requester field
-  // when present) -- when omitted, no requester-identity blocker is
-  // possible server-side; this only tightens the check, never loosens the
-  // 503-when-unconfigured behavior below.
-  const provBlockers = await onboardingPreflight.provisioningPreflightBlockers(requester, { getUserSecurityStatus });
+  // requester resolution: prefer the ITSM ticket's own requester field
+  // (pulled server-side via resolveTicketForRequester, not trusted from the
+  // client) when an incident number is given; fall back to the client-
+  // supplied requester string only when there's no incident to look up, or
+  // the lookup itself can't produce one. Either way, this only tightens the
+  // check -- never loosens the 503-when-unconfigured behavior below.
+  const resolvedRequester = await onboardingPreflight.resolveProvisioningRequester(
+    incident, requester, { getTicket: resolveTicketForRequester }
+  );
+  const provBlockers = await onboardingPreflight.provisioningPreflightBlockers(resolvedRequester, { getUserSecurityStatus });
   if (provBlockers.length) return res.status(409).json({ ok: false, blocked: true, blockers: provBlockers, error: provBlockers.join(' ') });
   if (!ONBOARDING_IDENTITY_CONFIGURED()) {
     if (demoData.isDemoModeEnabled()) {

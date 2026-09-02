@@ -2711,7 +2711,8 @@ TICKET DESCRIPTION</div>
           name, email,
           department: document.getElementById('obDept').value,
           role: document.getElementById('obRole').value,
-          requester: (document.getElementById('tkRequester') || {}).value || null
+          requester: (document.getElementById('tkRequester') || {}).value || null,
+          incident: (document.getElementById('tkIncident') || {}).value || null
         })
       });
       const data = await res.json();

@@ -36,10 +36,7 @@ async function imagingPreflightBlockers(assetTag, deps) {
 }
 
 /**
- * @param {string|null|undefined} requester -- optional; the ticket's
- *   requester field, when the client has one to send. No requester means
- *   no requester-identity blocker is possible (there's nothing to check),
- *   not that the check passed.
+ * @param {string} requester
  * @param {{ getUserSecurityStatus: (query: string) => Promise<{accountStatus?: string, riskLevel?: string}|null> }} deps
  * @returns {Promise<string[]>} blockers -- empty array means ready
  */
@@ -56,4 +53,37 @@ async function provisioningPreflightBlockers(requester, deps) {
   return blockers;
 }
 
-module.exports = { imagingPreflightBlockers, provisioningPreflightBlockers };
+/**
+ * Resolves who to run the provisioning identity check against.
+ *
+ * When an incident number is given, this pulls the requester from the
+ * ITSM ticket itself via getTicket() -- a value the client can't spoof by
+ * just typing a different name into the requester field, since it comes
+ * from the CMDB/ITSM record, not the request body. A client-supplied
+ * `fallbackRequester` is used only when no incident is given, or the
+ * incident lookup can't produce one (not configured, ticket not found,
+ * adapter error) -- best-effort in that case, same trust level as before
+ * this function existed.
+ *
+ * @param {string|null|undefined} incident
+ * @param {string|null|undefined} fallbackRequester
+ * @param {{ getTicket: (incidentId: string) => Promise<{requester?: string}|null> }} deps
+ * @returns {Promise<string|null>}
+ */
+async function resolveProvisioningRequester(incident, fallbackRequester, deps) {
+  const { getTicket } = deps;
+  if (incident) {
+    try {
+      const ticket = await getTicket(incident);
+      if (ticket && ticket.requester) return ticket.requester;
+    } catch (e) {
+      // Ticket lookup failing isn't fatal to provisioning -- fall through
+      // to the client-supplied requester, same "don't let an unrelated
+      // adapter outage block the whole flow" stance as imagingPreflightBlockers'
+      // catch above.
+    }
+  }
+  return fallbackRequester || null;
+}
+
+module.exports = { imagingPreflightBlockers, provisioningPreflightBlockers, resolveProvisioningRequester };
