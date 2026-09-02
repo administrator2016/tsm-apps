@@ -4508,6 +4508,65 @@ window.selectQ15Scenario = function(id) {
   console.debug("[Q15] Selected scenario:", scenario.id, scenario.name);
 };
 
+// --- Apply a Q15 scenario's playbook onto the active ticket ---
+  // BUG FIX: this was called from two places (manual "APPLY TO TICKET
+  // WORKFLOW" button + auto-match "Attach Playbook" button) but never
+  // defined anywhere -- every click threw ReferenceError and silently
+  // did nothing. Mirrors the existing applyNocRouting/applyIncomingEscalation
+  // convention: populate ticket fields from the payload, then save + jump
+  // to the Ticket tab.
+  // NOTE: refreshSlaDisplay/saveCurrentTicket/goToSection all live inside a
+  // *different* IIFE (~line 2048) that never exposes them on window -- same
+  // cross-scope trap this file already hit once (see getAssistantTicketContext's
+  // comment above). Fix is the same: don't reach into that closure. The other
+  // IIFE already has document-level delegated 'input'/'change' listeners on
+  // every TICKET_FIELD_IDS element that call saveCurrentTicket(), plus a
+  // dedicated 'change' listener on tkPriority that calls refreshSlaDisplay().
+  // Setting .value directly and dispatching the matching native event gets
+  // both side effects for free with zero cross-IIFE coupling. Section
+  // switching is just the existing sidebar click-to-activate mechanism.
+  const SCENARIO_SEVERITY_TO_PRIORITY = { High: 'P2', Medium: 'P3', Low: 'P4' };
+  window.applyScenarioToTicket = function applyScenarioToTicket(scenario) {
+    const s = scenario || activeSelectedScenario;
+    if (!s) {
+      console.warn('[Q15] No scenario selected to apply.');
+      return;
+    }
+
+    const setField = (id, val, eventType) => {
+      const el = document.getElementById(id);
+      if (!el || !val) return;
+      el.value = val;
+      el.dispatchEvent(new Event(eventType, { bubbles: true }));
+    };
+
+    setField('tkAsset', s.system, 'change');
+    setField('tkGroup', s.team, 'change');
+
+    const priority = SCENARIO_SEVERITY_TO_PRIORITY[s.severity];
+    if (priority) {
+      const prioritySel = document.getElementById('tkPriority');
+      const match = Array.from(prioritySel.options).find(o => o.value === priority);
+      if (match) setField('tkPriority', priority, 'change');
+    }
+
+    const descEl = document.getElementById('tkDescription');
+    const kbTag = `[Playbook: ${s.name}${s.kb ? ' — ' + s.kb : ''}]`;
+    if (!descEl.value.includes(kbTag)) {
+      const lines = [kbTag];
+      if (Array.isArray(s.steps) && s.steps.length) {
+        lines.push('First response checklist:');
+        s.steps.forEach((st, i) => lines.push(`${i + 1}. ${st}`));
+      }
+      const block = lines.join('\n');
+      descEl.value = descEl.value.trim() ? descEl.value.trim() + '\n\n' + block : block;
+      descEl.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    const ticketTab = document.querySelector('.sb-item[data-section="ticket"]');
+    if (ticketTab) ticketTab.click();
+  };
+
 // --- Quick 15 UI Infrastructure ---
   function ensureQ15DOMStructure() {
     // Look for a specific container inside the Ticket tab if embedding, or fallback safely
