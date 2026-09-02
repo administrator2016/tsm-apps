@@ -8048,13 +8048,8 @@ app.use(
 );
 
 // ── START ─────────────────────────────────────────────────────────────────────
-const server = const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`TSM Platform Core Engine listening on port ${PORT}`);
-}); => {
-  console.log(`TSM Platform Core Engine listening on port ${PORT}`);
-});
-
-server.on('error', (err) => {
-  console.error('💥 SERVER ERROR:', err.message, err.stack);
 });
