@@ -4,7 +4,9 @@ on:
   pull_request:
     paths:
       - 'server.js'
-      - 'html/music-command/**'
+      - 'routes/music.js'
+      - 'server/tsm-music-instrumentals-service.js'
+      - 'html/war-rooms/music-war/**'
       - 'test-music-endpoints.js'
   workflow_dispatch: {}
 
