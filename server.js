@@ -306,7 +306,7 @@ function validateQueryBody(req, res, next) {
 // TSM_GATE_SECRET is set as a Worker secret — intentional, so this can't
 // accidentally lock out local/Codespace dev or a deploy that hasn't wired
 // the Worker side up yet. Set both, then this becomes live.
-//   fly secrets set CF_GATE_SECRET=<value> -a tsm-consultz
+//   fly secrets set CF_GATE_SECRET=<value> -a tsm-shell
 //   cd cloudflare/entitlement-gate && wrangler secret put TSM_GATE_SECRET
 app.use((req, res, next) => {
   if (!process.env.CF_GATE_SECRET) return next(); // not configured — no-op
