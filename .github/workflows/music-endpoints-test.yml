@@ -19,4 +19,7 @@ jobs:
         with:
           node-version: '20'
       - name: Run music endpoint tests
-        run: node test-music-endpoints.js
+        # app.tsmatter.com sits behind Cloudflare, which blocks non-browser
+        # clients (including GitHub Actions runners) before requests reach
+        # the origin. Test the Fly app directly to avoid that entirely.
+        run: node test-music-endpoints.js https://tsm-shell.fly.dev
