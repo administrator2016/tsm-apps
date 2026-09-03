@@ -182,7 +182,14 @@ async function musicGroqCall(systemPrompt, userPrompt, maxTokens){
         { role: "user", content: userPrompt }
       ],
       temperature: 0.85,
-      max_tokens: maxTokens || 500
+      max_tokens: maxTokens || 500,
+      // gpt-oss-120b is a reasoning model — its hidden "thinking" tokens are
+      // deducted from max_tokens same as visible output. "low" keeps more of
+      // the budget available for the actual answer; without this, requests
+      // that need a lot of structured output (e.g. a full song JSON) can
+      // exhaust max_tokens on reasoning alone and return empty content with
+      // finish_reason "length" while still reporting a 200/ok response.
+      reasoning_effort: "low"
     })
   });
 
@@ -192,7 +199,17 @@ async function musicGroqCall(systemPrompt, userPrompt, maxTokens){
   }
 
   const data = await r.json();
-  return ((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "").trim();
+  const choice = (data.choices && data.choices[0]) || {};
+  const content = ((choice.message && choice.message.content) || "").trim();
+
+  if(!content && choice.finish_reason === "length"){
+    throw new Error(
+      "Groq returned no visible content: hit max_tokens (" + (maxTokens || 500) +
+      ") before finishing its reasoning. Increase maxTokens or shorten the request."
+    );
+  }
+
+  return content;
 }
 
 const MUSIC_AGENT_PROMPTS = {
@@ -1154,7 +1171,7 @@ router.post('/api/music/sweet/ai', async (req, res) => {
     const body = req.body || {};
     const system = body.system || 'You are a helpful AI music production assistant. Respond ONLY with valid JSON when asked for JSON — no markdown fences, no preamble.';
     const prompt = body.prompt || '';
-    const maxTokens = Math.min(Number(body.maxTokens) || 1000, 1500);
+    const maxTokens = Math.min(Number(body.maxTokens) || 1000, 3000);
     if (!prompt) return res.status(400).json({ ok: false, error: 'Missing prompt' });
     const text = await musicGroqCall(system, prompt, maxTokens);
     return res.json({ ok: true, text });

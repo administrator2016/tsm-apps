@@ -347,7 +347,7 @@ Return ONLY valid JSON with this exact structure:
     const res = await fetch('/api/music/sweet/ai',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({system:'You are a professional songwriter AI. Respond ONLY with valid JSON, no markdown.',prompt})
+      body:JSON.stringify({system:'You are a professional songwriter AI. Respond ONLY with valid JSON, no markdown.',prompt,maxTokens:3000})
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Backend error');
