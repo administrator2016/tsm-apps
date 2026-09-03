@@ -133,147 +133,260 @@
 </header>
 
 <div class="main">
-  <h1>Beat Intelligence Engine</h1>
-  <p class="sub">Upload or link a beat. TSM Neural Core analyzes BPM, key, genre, mood, energy, and generates producer recommendations tailored to your instrumental.</p>
-
-  <!-- Source tabs -->
-  <div class="source-tabs">
-    <div class="src-tab active" onclick="setSource('file')">📁 Upload File</div>
-    <div class="src-tab" onclick="setSource('beatstars')">BeatStars</div>
-    <div class="src-tab" onclick="setSource('youtube')">YouTube</div>
-    <div class="src-tab" onclick="setSource('soundcloud')">SoundCloud</div>
-    <div class="src-tab" onclick="setSource('airbit')">Airbit</div>
-  </div>
+  <h1>Beat Workbench</h1>
+  <p class="sub">Upload a beat and it's stored and played back for real — TSM doesn't have ears, so BPM/key/genre/mood are things you tell it, not things it guesses from a filename. Tag your beat once and every producer coach downstream uses your real tags.</p>
 
   <!-- File upload zone -->
-  <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragover="ev.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')">
+  <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
     <div class="upload-icon">🎵</div>
     <div class="upload-label">Drop your beat here or click to browse</div>
-    <div class="upload-formats">MP3 · WAV · FLAC · AAC supported</div>
+    <div class="upload-formats">MP3 · WAV · FLAC · AAC · M4A · OGG — up to 100MB</div>
     <button class="btn" onclick="event.stopPropagation();document.getElementById('fileInput').click()">Choose File</button>
-    <input type="file" id="fileInput" accept=".mp3,.wav,.flac,.aac" onchange="handleFile(this)">
+    <input type="file" id="fileInput" accept=".mp3,.wav,.flac,.aac,.m4a,.ogg" onchange="handleFile(this)">
   </div>
 
-  <!-- URL input -->
-  <div class="url-row" id="urlRow" style="display:none">
-    <input class="url-input" id="urlInput" placeholder="Paste BeatStars / SoundCloud / YouTube link...">
-    <button class="btn" onclick="analyzeBeatURL()">Analyze Beat</button>
-  </div>
-
-  <!-- Loading -->
+  <!-- Upload status -->
   <div class="loading" id="loading">
     <div class="spinner"></div>
-    <div class="loading-text">TSM Neural Core analyzing beat...</div>
+    <div class="loading-text" id="loadingText">Uploading and storing your beat...</div>
   </div>
+  <div id="uploadError" style="display:none;background:rgba(255,59,107,0.08);border:1px solid var(--red);border-radius:8px;padding:16px;margin-bottom:24px;font-size:0.72rem;color:var(--red);"></div>
 
-  <!-- Intel Panel -->
+  <!-- Tag / Intel Panel for the beat just uploaded -->
   <div class="intel-panel" id="intelPanel">
-    <div class="intel-header">// BEAT INTELLIGENCE REPORT</div>
+    <div class="intel-header">// YOUR BEAT</div>
 
-    <div class="intel-grid">
-      <div class="intel-card"><div class="label">Genre</div><div class="val" id="iGenre">—</div></div>
-      <div class="intel-card"><div class="label">Est. BPM</div><div class="val green" id="iBpm">—</div></div>
-      <div class="intel-card"><div class="label">Est. Key</div><div class="val cyan" id="iKey">—</div></div>
-      <div class="intel-card"><div class="label">Mood</div><div class="val" id="iMood">—</div></div>
-      <div class="intel-card"><div class="label">Energy</div><div class="val purple" id="iEnergy">—</div></div>
-      <div class="intel-card"><div class="label">Structure</div><div class="val" id="iLen">—</div></div>
+    <audio id="beatPlayer" controls style="width:100%;margin-bottom:24px;"></audio>
+
+    <div class="recs-card" style="margin-bottom:24px;">
+      <h3>// TAG THIS BEAT (you know it — TSM doesn't)</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px;">
+        <input class="url-input" id="tagGenre" placeholder="Genre (e.g. Trap)">
+        <input class="url-input" id="tagBpm" placeholder="BPM (e.g. 148)">
+        <input class="url-input" id="tagKey" placeholder="Key (e.g. F Minor)">
+        <input class="url-input" id="tagMood" placeholder="Mood (e.g. Dark)">
+        <input class="url-input" id="tagEnergy" placeholder="Energy 1-10">
+      </div>
+      <button class="btn" onclick="saveTags()">Save Tags</button>
+      <span id="tagSaveStatus" style="font-size:0.65rem;color:var(--green);margin-left:12px;"></span>
     </div>
 
-    <div class="recs-grid">
-      <div class="recs-card">
-        <h3>// SUGGESTED VOCAL STYLES</h3>
-        <div id="vocalStyles"></div>
-      </div>
-      <div class="recs-card">
-        <h3>// RECOMMENDED STRUCTURE</h3>
-        <div id="songStructure"></div>
-      </div>
-    </div>
-
-    <div class="producer-notes">
-      <h3>// PRODUCER NOTES — TSM NEURAL CORE</h3>
-      <p id="producerNotes"></p>
+    <div class="recs-card" id="notesCard" style="display:none;">
+      <h3>// PRODUCER SUGGESTIONS — based on the tags above</h3>
+      <p id="producerNotes" style="font-size:0.72rem;line-height:1.8;white-space:pre-line;"></p>
     </div>
 
     <div class="action-row">
-      <button class="btn" onclick="goToSongBuilder()">→ Open in Song Builder</button>
+      <button class="btn" id="getSuggestionsBtn" onclick="getSuggestions()">Get Producer Suggestions</button>
+      <button class="btn-outline" onclick="goToSongBuilder()">→ Open in Song Builder</button>
       <button class="btn-outline" onclick="goToCadence()">→ Open in Cadence Studio</button>
-      <button class="btn-outline" onclick="reset()">Analyze New Beat</button>
+      <button class="btn-outline" onclick="reset()">Upload Another Beat</button>
     </div>
+  </div>
+
+  <!-- Previously uploaded beats -->
+  <div class="recs-card" style="margin-top:32px;">
+    <h3>// YOUR UPLOADED BEATS</h3>
+    <div id="beatList" style="font-size:0.72rem;color:var(--muted);">Loading...</div>
   </div>
 </div>
 
 <script src="../js/sweet-music-engine.js"></script>
 <script>
-let currentSource = 'file';
+let currentFileId = null;
 
-function setSource(s) {
-  currentSource = s;
-  document.querySelectorAll('.src-tab').forEach((t,i) => t.classList.remove('active'));
-  event.target.classList.add('active');
-  document.getElementById('uploadZone').style.display = s === 'file' ? 'block' : 'none';
-  document.getElementById('urlRow').style.display = s !== 'file' ? 'flex' : 'none';
-  const labels = {beatstars:'Paste BeatStars link...',youtube:'Paste YouTube link...',soundcloud:'Paste SoundCloud link...',airbit:'Paste Airbit link...'};
-  document.getElementById('urlInput').placeholder = labels[s] || 'Paste link...';
+function handleDrop(ev) {
+  ev.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag');
+  const file = ev.dataTransfer.files[0];
+  if (file) uploadFile(file);
 }
 
 function handleFile(input) {
   if (!input.files[0]) return;
-  const name = input.files[0].name;
-  analyzeWithAI(`The user uploaded a beat file named: "${name}". Analyze it as if you can hear it — pick a realistic genre, BPM, musical key, mood, energy level (1-10), and song length. Return ONLY a JSON object with keys: genre, bpm, key, mood, energy, length, vocalStyles (array of 3), songStructure (array of 6 sections), producerNotes (2-3 sentences of practical advice).`);
+  uploadFile(input.files[0]);
 }
 
-function analyzeBeatURL() {
-  const url = document.getElementById('urlInput').value.trim();
-  if (!url) return alert('Paste a link first.');
-  analyzeWithAI(`The user linked a beat from ${currentSource}: "${url}". Analyze it as a music producer — pick a realistic genre, BPM, musical key, mood, energy level (1-10), and song length. Return ONLY a JSON object with keys: genre, bpm, key, mood, energy, length, vocalStyles (array of 3), songStructure (array of 6 sections), producerNotes (2-3 sentences of practical advice).`);
-}
-
-async function analyzeWithAI(prompt) {
-  document.getElementById('loading').classList.add('show');
+async function uploadFile(file) {
+  document.getElementById('uploadError').style.display = 'none';
   document.getElementById('intelPanel').classList.remove('show');
+  document.getElementById('loadingText').textContent = `Uploading "${file.name}"...`;
+  document.getElementById('loading').classList.add('show');
 
   try {
-    const d = await SMOS.askJSON(prompt, 'You are a professional music producer AI.');
-    renderIntel(d);
-  } catch(e) {
-    console.error('[beat-workbench] AI error:', e.message);
-    // Fallback demo data
-    renderIntel({
-      genre:'Trap',bpm:'148',key:'F Minor',mood:'Dark',energy:'9.2',length:'3:14',
-      vocalStyles:['Melodic Trap','Pain Rap','Aggressive Drill'],
-      songStructure:['Intro (4 bars)','Hook (8 bars)','Verse 1 (16 bars)','Hook (8 bars)','Bridge (4 bars)','Outro (4 bars)'],
-      producerNotes:'This beat runs at 148 BPM in F Minor — keep bars tight at 9–11 syllables. Do not overcrowd the hook; leave space for adlibs. Record at least 3 takes and double the hook for commercial polish.'
-    });
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch('/api/music/instrumentals/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || `upload_failed_${res.status}`);
+    }
+    currentFileId = data.file._id;
+    showUploadedBeat(data.file);
+    loadBeatList();
+  } catch (e) {
+    console.error('[beat-workbench] upload error:', e.message);
+    showUploadError(e.message);
   }
   document.getElementById('loading').classList.remove('show');
 }
 
-function renderIntel(d) {
-  document.getElementById('iGenre').textContent = d.genre;
-  document.getElementById('iBpm').textContent = d.bpm;
-  document.getElementById('iKey').textContent = d.key;
-  document.getElementById('iMood').textContent = d.mood;
-  document.getElementById('iEnergy').textContent = d.energy;
-  document.getElementById('iLen').textContent = d.length;
+function showUploadError(message) {
+  const friendly = {
+    unsupported_file_type: 'That file type isn\'t supported. Use MP3, WAV, FLAC, AAC, M4A, or OGG.',
+    file_too_large: 'That file is over the 100MB upload limit.',
+    empty_file: 'That file appears to be empty.',
+  }[message] || `Upload failed: ${message}. Nothing was analyzed or fabricated — try again or use a different file.`;
+  const el = document.getElementById('uploadError');
+  el.textContent = friendly;
+  el.style.display = 'block';
+}
 
-  document.getElementById('vocalStyles').innerHTML = (d.vocalStyles||[]).map(s=>`<span class="style-tag">${s}</span>`).join('');
-  document.getElementById('songStructure').innerHTML = (d.songStructure||[]).map(s=>`<div class="struct-item"><div class="struct-dot"></div>${s}</div>`).join('');
-  document.getElementById('producerNotes').textContent = d.producerNotes;
+function showUploadedBeat(fileDoc) {
+  const player = document.getElementById('beatPlayer');
+  player.src = `/api/music/instrumentals/${fileDoc._id}/stream`;
 
-  // Store for song builder handoff
-  localStorage.setItem('smos_beat_intel', JSON.stringify(d));
+  document.getElementById('tagGenre').value = fileDoc.tags.genre || '';
+  document.getElementById('tagBpm').value = fileDoc.tags.bpm || '';
+  document.getElementById('tagKey').value = fileDoc.tags.key || '';
+  document.getElementById('tagMood').value = fileDoc.tags.mood || '';
+  document.getElementById('tagEnergy').value = fileDoc.tags.energy || '';
+  document.getElementById('notesCard').style.display = 'none';
+  document.getElementById('producerNotes').textContent = '';
+  document.getElementById('tagSaveStatus').textContent = '';
 
   document.getElementById('intelPanel').classList.add('show');
+}
+
+async function saveTags() {
+  if (!currentFileId) return;
+  const tags = {
+    genre: document.getElementById('tagGenre').value.trim() || null,
+    bpm: document.getElementById('tagBpm').value.trim() || null,
+    key: document.getElementById('tagKey').value.trim() || null,
+    mood: document.getElementById('tagMood').value.trim() || null,
+    energy: document.getElementById('tagEnergy').value.trim() || null,
+  };
+  const status = document.getElementById('tagSaveStatus');
+  try {
+    const res = await fetch(`/api/music/instrumentals/${currentFileId}/tag`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tags),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'tag_save_failed');
+    status.style.color = 'var(--green)';
+    status.textContent = 'Saved.';
+    localStorage.setItem('smos_beat_intel', JSON.stringify({ fileId: currentFileId, ...tags }));
+    loadBeatList();
+  } catch (e) {
+    status.style.color = 'var(--red)';
+    status.textContent = `Failed to save: ${e.message}`;
+  }
+}
+
+// Producer suggestions are advice based on the tags the user actually
+// entered — never a claim about having heard or analyzed the audio.
+async function getSuggestions() {
+  const genre = document.getElementById('tagGenre').value.trim();
+  const bpm = document.getElementById('tagBpm').value.trim();
+  const key = document.getElementById('tagKey').value.trim();
+  const mood = document.getElementById('tagMood').value.trim();
+  const energy = document.getElementById('tagEnergy').value.trim();
+
+  if (!genre && !bpm && !mood) {
+    alert('Tag the beat first (at least genre, BPM, or mood) so suggestions have something real to work from.');
+    return;
+  }
+
+  const notesCard = document.getElementById('notesCard');
+  const notesEl = document.getElementById('producerNotes');
+  const btn = document.getElementById('getSuggestionsBtn');
+  btn.disabled = true;
+  notesCard.style.display = 'block';
+  notesEl.textContent = 'Thinking...';
+
+  const prompt = `A producer is working on a ${genre || 'unspecified genre'} beat` +
+    `${bpm ? ` at ${bpm} BPM` : ''}${key ? ` in ${key}` : ''}${mood ? `, mood: ${mood}` : ''}` +
+    `${energy ? `, energy ${energy}/10` : ''}. Give 2-3 sentences of practical songwriting/arrangement ` +
+    `advice for this beat (syllable pocket, hook spacing, structure). Do not claim to have heard the ` +
+    `audio — base advice only on the tags given.`;
+
+  try {
+    const d = await SMOS.ask(prompt, 'You are a professional music producer AI giving advice based only on the tags a user provides, never claiming to have heard the audio.');
+    notesEl.textContent = d;
+  } catch (e) {
+    console.error('[beat-workbench] suggestions error:', e.message);
+    notesEl.textContent = `Couldn't reach the suggestions engine (${e.message}). Try again in a moment — no fabricated advice shown in its place.`;
+  }
+  btn.disabled = false;
+}
+
+async function loadBeatList() {
+  const listEl = document.getElementById('beatList');
+  try {
+    const res = await fetch('/api/music/instrumentals/list');
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'list_failed');
+    if (!data.files.length) {
+      listEl.textContent = 'No beats uploaded yet.';
+      return;
+    }
+    listEl.innerHTML = data.files.map(f => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+        <div>
+          <span style="color:var(--text);">${f.filename}</span>
+          <span style="color:var(--muted);"> — ${f.tags.genre || 'untagged'}${f.tags.bpm ? ' · ' + f.tags.bpm + ' BPM' : ''}${f.tags.key ? ' · ' + f.tags.key : ''}</span>
+        </div>
+        <div>
+          <button class="btn-outline" style="padding:4px 10px;font-size:0.55rem;" onclick="playBeat('${f._id}')">▶ Play</button>
+          <button class="btn-outline" style="padding:4px 10px;font-size:0.55rem;" onclick="deleteBeat('${f._id}')">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    listEl.textContent = `Couldn't load your beats (${e.message}).`;
+  }
+}
+
+async function playBeat(fileId) {
+  try {
+    const res = await fetch('/api/music/instrumentals/list');
+    const data = await res.json();
+    const fileDoc = (data.files || []).find(f => f._id === fileId);
+    if (!fileDoc) return;
+    currentFileId = fileId;
+    showUploadedBeat(fileDoc);
+    document.getElementById('beatPlayer').play().catch(() => {});
+  } catch (e) {
+    console.error('[beat-workbench] play error:', e.message);
+  }
+}
+
+async function deleteBeat(fileId) {
+  if (!confirm('Delete this beat? This cannot be undone.')) return;
+  try {
+    const res = await fetch(`/api/music/instrumentals/${fileId}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'delete_failed');
+    loadBeatList();
+    if (currentFileId === fileId) reset();
+  } catch (e) {
+    alert(`Couldn't delete: ${e.message}`);
+  }
 }
 
 function goToSongBuilder() { window.location.href = '../creation/song-builder.html'; }
 function goToCadence() { window.location.href = '../cadence-builder.html'; }
 function reset() {
+  currentFileId = null;
   document.getElementById('intelPanel').classList.remove('show');
   document.getElementById('fileInput').value = '';
-  setSource('file');
+  document.getElementById('uploadError').style.display = 'none';
 }
+
+loadBeatList();
 </script>
 <script src="../js/producer-ai-widget.js"></script>
   <script src="/shared/tsm-guided-how-to.js" defer></script>
