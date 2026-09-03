@@ -2830,15 +2830,13 @@ app.post('/api/music/structure', async (req, res) => {
   } catch (e) { return res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/music/hooks/generate10', async (req, res) => {
-  try {
-    var body = req.body || {};
-    var sys = 'You are ZAY, a world-class songwriter. Generate exactly 10 distinct, catchy, numbered hook options. Make them memorable and genre-appropriate.';
-    var msg = body.query || `Generate 10 hook options. Genre: ${body.genre || 'Hip-Hop'}, Mood: ${body.mood || 'Motivational'}, Theme: ${body.theme || 'hustle'}, Artist style: ${body.artist || 'versatile'}`;
-    var a = await groqChat(sys, msg, 1024);
-    return res.json({ ok: true, output: a, hooks: a });
-  } catch (e) { return res.status(500).json({ ok: false, error: e.message }); }
-});
+// NOTE: a legacy /api/music/hooks/generate10 used to live here. It was
+// removed because it was registered before app.use(require('./routes/music'))
+// below, which silently shadowed routes/music.js's version (structured
+// 10-item array) with this one (a single AI-generated string) -- nothing
+// in the live UI called either, but any script/tool hitting this path
+// expecting the router's shape would get the wrong response with no error.
+// See routes/music.js's '/api/music/hooks/generate10' for the real handler.
 
 app.post('/api/music/hooks', async (req, res) => {
   try {
@@ -2860,15 +2858,13 @@ app.post('/api/music/song', async (req, res) => {
   } catch (e) { return res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/music/revision/run', async (req, res) => {
-  try {
-    var body = req.body || {};
-    var sys = 'You are ZAY, a world-class songwriter. Revise the provided lyrics based on the notes given. Return only the revised lyrics.';
-    var msg = `Original lyrics:\n${body.lyrics || ''}\n\nRevision notes: ${body.notes || ''}\n\nHook to preserve: ${body.hook || ''}\nGenre: ${body.genre || 'Hip-Hop'}`;
-    var a = await groqChat(sys, msg, 2048);
-    return res.json({ ok: true, output: a, content: a });
-  } catch (e) { return res.status(500).json({ ok: false, error: e.message }); }
-});
+// NOTE: a legacy /api/music/revision/run used to live here, shadowing
+// routes/music.js's version the same way as hooks/generate10 above.
+// html/war-rooms/music-war/presentation-live.html calls a revision/run
+// endpoint, but on a different (stale) Fly hostname (tsm-consultz.fly.dev,
+// pre-dating the rename to tsm-shell) -- worth fixing separately, since
+// that call is currently hitting neither of these handlers at all.
+// See routes/music.js's '/api/music/revision/run' for the real handler.
 
 app.post('/api/music/strategy', async (req, res) => {
   try {
@@ -2929,33 +2925,14 @@ app.post('/api/music/chain', async (req, res) => {
   } catch (e) { return res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/music/revision/generate', async (req, res) => {
-  try {
-    var body = req.body || {};
-    var draft = body.draft || '';
-    var request = body.request || 'Give me 3 revision options';
-    var results = await Promise.all([
-      groqChat(SP.music, 'Flow-first revision.\nRequest: ' + request + '\nDraft: ' + draft + '\nOption A:', 700),
-      groqChat(SP.music, 'Emotion-first revision.\nRequest: ' + request + '\nDraft: ' + draft + '\nOption B:', 700),
-      groqChat(SP.music, 'Hook-first revision.\nRequest: ' + request + '\nDraft: ' + draft + '\nOption C:', 700)
-    ]);
-    var scoreA = musicHeuristicScore(results[0]);
-    var scoreB = musicHeuristicScore(results[1]);
-    var scoreC = musicHeuristicScore(results[2]);
-    var options = [
-      { id: 'A', title: 'Option A - Flow First', strategy: 'Cadence and bounce', output: results[0], score: scoreA },
-      { id: 'B', title: 'Option B - Emotion First', strategy: 'Imagery and vulnerability', output: results[1], score: scoreB },
-      { id: 'C', title: 'Option C - Hook First', strategy: 'Structure and repeatability', output: results[2], score: scoreC }
-    ];
-    var bestOverall = Math.max(scoreA.overall, scoreB.overall, scoreC.overall);
-    var recommended = options.find(o => o.score.overall === bestOverall).id;
-    var session = { id: Date.now(), request, input: draft, options, recommended, createdAt: new Date().toISOString() };
-    if (!global.MUSIC_REVISIONS) global.MUSIC_REVISIONS = { sessions: [], selected: null };
-    global.MUSIC_REVISIONS.sessions.unshift(session);
-    global.MUSIC_REVISIONS.sessions = global.MUSIC_REVISIONS.sessions.slice(0, 20);
-    return res.json({ ok: true, session });
-  } catch (e) { return res.status(500).json({ ok: false, error: e.message }); }
-});
+// NOTE: a legacy /api/music/revision/generate used to live here. Besides
+// shadowing routes/music.js's version, it wrote sessions into the old
+// shared global.MUSIC_REVISIONS (one object for every visitor) instead of
+// the per-session req.musicState.revisions store that routes/music.js's
+// '/api/music/revision/pick-rerun' and '/select' actually read from -- so
+// even if this handler had "won", any session it created would 404 as
+// "not found" the moment something tried to pick/rerun it.
+// See routes/music.js's '/api/music/revision/generate' for the real handler.
 
 app.post('/api/music/dna/save', async (req, res) => {
   var body = req.body || {};
