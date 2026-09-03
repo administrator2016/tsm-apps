@@ -102,6 +102,8 @@
 
   <div class="loading" id="loading"><span class="spinner"></span>Listening through the mix...</div>
 
+  <div id="mixError" style="display:none;background:rgba(255,59,107,0.08);border:1px solid var(--red,#ff3b6b);border-radius:8px;padding:16px;margin-bottom:24px;font-size:0.72rem;color:var(--red,#ff3b6b);"></div>
+
   <div class="mix-panel" id="mixPanel">
     <h2>🎛️ MIX DIAGNOSIS</h2>
     <div class="mix-grid">
@@ -119,6 +121,7 @@
 </div>
 
 <script src="../js/sweet-music-engine.js"></script>
+<script src="/music/shared/tsm-music-guidance.js"></script>
 <script>
 function useExample(el) {
   document.getElementById('mixInput').value = el.textContent;
@@ -144,16 +147,22 @@ Respond ONLY with a JSON object:
   "notes": "2-3 sentences of specific, practical advice for this exact problem"
 }`;
 
+  document.getElementById('mixError').style.display = 'none';
+
   try {
     const d = await SMOS.askJSON(prompt, 'You are a professional mixing engineer AI.');
     renderMix(d);
   } catch(e) {
+    // Previously silently rendered fixed fake advice ("Cut 250Hz by 2-3dB",
+    // etc.) on ANY network/API error, indistinguishable from a real
+    // diagnosis of the user's actual problem. Show an honest failure
+    // instead — no fabricated advice presented as if it addressed their
+    // specific issue.
     console.error('[mixing-coach] error:', e.message);
-    renderMix({
-      eq:'Cut 250Hz by 2-3dB', compression:'3:1 ratio, medium attack',
-      reverb:'Light plate, 10-15% wet', delay:'None needed',
-      notes:'Start by cutting low-mid mud before reaching for anything else — most "muddy" complaints resolve with EQ alone. Add compression only after the EQ move, not before.'
-    });
+    document.getElementById('mixPanel').classList.remove('show');
+    const errEl = document.getElementById('mixError');
+    errEl.textContent = `Couldn't reach the mixing engine (${e.message}). Nothing was diagnosed — try again, or describe the problem differently.`;
+    errEl.style.display = 'block';
   }
   document.getElementById('loading').classList.remove('show');
 }

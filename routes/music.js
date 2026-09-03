@@ -1164,4 +1164,98 @@ router.post('/api/music/sweet/ai', async (req, res) => {
   }
 });
 
+// ===== BEAT WORKBENCH — real instrumental file storage =====
+// Replaces the old behavior (asking the AI to "analyze" a beat file it
+// never received, i.e. hallucinate BPM/key from the filename string).
+// Files are actually stored (chunked, see server/tsm-music-instrumentals-
+// service.js) and streamed back for real playback. BPM/key/genre/mood
+// are producer-supplied tags via /tag, never AI-guessed.
+const multer = require('multer');
+const instrumentalsService = require('../server/tsm-music-instrumentals-service');
+
+const instrumentalsUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: instrumentalsService.MAX_FILE_SIZE },
+});
+
+router.post('/api/music/instrumentals/upload', instrumentalsUpload.single('file'), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ ok: false, error: 'No file uploaded' });
+
+    const uploadedBy = (req.cookies && req.cookies.demo_token) || req.ip || null;
+    const fileDoc = await instrumentalsService.storeFile({
+      buffer: file.buffer,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      uploadedBy,
+    });
+    return res.json({ ok: true, file: fileDoc });
+  } catch (e) {
+    const status = e.message === 'unsupported_file_type' ? 415
+      : e.message === 'file_too_large' ? 413
+      : e.message === 'empty_file' ? 400
+      : 500;
+    console.error('[music/instrumentals upload] failed:', e.message);
+    return res.status(status).json({ ok: false, error: e.message || 'upload_failed' });
+  }
+});
+
+router.get('/api/music/instrumentals/list', async (req, res) => {
+  try {
+    const uploadedBy = (req.cookies && req.cookies.demo_token) || req.ip || null;
+    const files = await instrumentalsService.listFiles({ uploadedBy });
+    return res.json({ ok: true, files });
+  } catch (e) {
+    console.error('[music/instrumentals list] failed:', e.message);
+    return res.status(500).json({ ok: false, error: e.message || 'list_failed' });
+  }
+});
+
+router.post('/api/music/instrumentals/:fileId/tag', async (req, res) => {
+  try {
+    const updated = await instrumentalsService.tagFile(req.params.fileId, req.body || {});
+    if (!updated) return res.status(404).json({ ok: false, error: 'file_not_found' });
+    return res.json({ ok: true, file: updated });
+  } catch (e) {
+    const status = e.message === 'no_valid_tag_fields' ? 400 : 500;
+    console.error('[music/instrumentals tag] failed:', e.message);
+    return res.status(status).json({ ok: false, error: e.message || 'tag_failed' });
+  }
+});
+
+router.get('/api/music/instrumentals/:fileId/stream', async (req, res) => {
+  try {
+    const meta = await instrumentalsService.getFileMeta(req.params.fileId);
+    if (!meta) return res.status(404).json({ ok: false, error: 'file_not_found' });
+
+    res.setHeader('Content-Type', meta.mimetype || 'application/octet-stream');
+    res.setHeader('Content-Length', meta.sizeBytes);
+    res.setHeader('Content-Disposition', `inline; filename="${meta.filename}"`);
+
+    for await (const chunk of instrumentalsService.readFileChunks(req.params.fileId)) {
+      res.write(chunk);
+    }
+    res.end();
+  } catch (e) {
+    console.error('[music/instrumentals stream] failed:', e.message);
+    if (!res.headersSent) {
+      res.status(500).json({ ok: false, error: e.message || 'stream_failed' });
+    } else {
+      res.end();
+    }
+  }
+});
+
+router.delete('/api/music/instrumentals/:fileId', async (req, res) => {
+  try {
+    const deleted = await instrumentalsService.deleteFile(req.params.fileId);
+    if (!deleted) return res.status(404).json({ ok: false, error: 'file_not_found' });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('[music/instrumentals delete] failed:', e.message);
+    return res.status(500).json({ ok: false, error: e.message || 'delete_failed' });
+  }
+});
+
 module.exports = router;
