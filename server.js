@@ -2147,6 +2147,14 @@ app.use('/bpo', express.static(path.join(__dirname, 'html/bpo')));
 app.use('/shared', express.static(path.join(__dirname, 'html/shared')));
 app.use('/insurance', express.static(path.join(__dirname, 'html/tsm-insurance')));
 app.use('/construction-suite', express.static(path.join(__dirname, 'html/construction-suite')));
+// TSM FIX 2026-09-03: 'suites' config below declares route:'/music' but its
+// forEach loop only ever registered exact-match app.get('/music')/('/music/')
+// handlers for the index page — every other page under the music vertical
+// (song-builder.html, cadence-builder.html, producer/*, release/*, etc.,
+// all linked live via tsm-music-guidance.js's progress-bar nav on 10 pages)
+// had no route at all and 404'd. Mounted the same way construction-suite/
+// insurance are, so the whole subtree is actually served.
+app.use('/music', express.static(path.join(__dirname, 'html/war-rooms/music-war')));
 // NOTE: /runtime and /architecture mounts now live earlier in this file
 // (right after the '/html/runtime' mount, before the '/' catch-all) so they
 // can't be shadowed by stale files inside html/. See fix note there.
