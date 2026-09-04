@@ -86,8 +86,24 @@
   // signal the user actually did the work on that page — never just
   // "the page loaded" or "they clicked something". Each checker
   // returns true/false; polled while Guided Flow is on and the step
-  // isn't already marked done. Add one entry per FLOW step as pages
-  // get audited (only 'cadence' is covered so far).
+  // isn't already marked done.
+  //
+  // Coverage as of this commit: cadence, song-builder, beat-workbench,
+  // producer-ai, mixing-coach, mastering-coach.
+  //
+  // Deliberately NOT covered:
+  //  - recording-coach, release-center: their core content is a
+  //    self-report checklist (mic placement, ISRC assigned, etc.) with
+  //    no DOM state that can verify any of it actually happened —
+  //    same problem the manual "Mark done" button always had, just in
+  //    a different shape. Left manual rather than faking verification.
+  //  - marketing: the linked page (release/marketing.html) is a
+  //    product landing/pricing page, not an artist marketing task —
+  //    no per-song work exists there to detect. Flagged for a
+  //    decision on whether the FLOW url itself is wrong.
+  //  - analytics: final step in FLOW: the flow bar never renders a
+  //    "Mark done" control for the last step, so there's nothing to
+  //    make honest.
   const AUTO_COMPLETE_CHECKS = {
     // Cadence Studio: don't credit "done" just for typing bars — that's
     // the same minimum (2+ bars) the page's own analyzeFlow() requires,
