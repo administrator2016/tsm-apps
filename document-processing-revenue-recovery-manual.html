@@ -502,7 +502,29 @@
         <h4>How this vertical is actioned today</h4>
         <p>FinOps documents use the shared "Open Node" action. Reviewers open the flagged item in the War Room, confirm the GL code / invoice number against the exclusion code shown on the card, and either clear it or push it to the Strategist for reconciliation sign-off.</p>
 
-        <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
+                <h4>Micro-Steps for Full Data Capture (every stage)</h4>
+        <p style="margin-top:0">These are the actual clicks/fields inside each stage. Skipping any of them still lets the record move forward — but it moves forward with a thinner data trail, which is exactly what costs recoverable dollars later. Walk every one of these on every case.</p>
+
+        <table>
+          <tr><th>Stage</th><th>Micro-Step</th><th>Why it matters for recovery</th></tr>
+          <tr><td rowspan="6">War Room</td><td>Set the correct document type chip (AP Aging / GL Extract / Bank Recon / Invoice Audit / Budget Variance / ERA Batch / Cash Flow / Vendor Report / Tax-1099 / Other) before pasting or uploading</td><td>Drives which of the 6 analysis engines' prompts run — a wrong doc type produces analysis tuned to the wrong document</td></tr>
+          <tr><td>Paste or upload the actual source document (not a summary of it) into the doc field</td><td>The engines' honesty guard only cites dates/facts explicitly in the source text — a thin paste means more fields legitimately come back "NOT STATED IN SOURCE DOCUMENT" instead of a real answer</td></tr>
+          <tr><td>Click "⚡ FIRE ALL 6 ENGINES" and let all six complete (Document Intelligence, Risk & Anomaly, Financial Impact, Compliance, Recovery Plan, App Dispatch)</td><td>Engine 5 (Recovery Plan) is the one that produces dollar-quantified priority actions — this is the core revenue-recovery output for the case</td></tr>
+          <tr><td>Review each engine's output panel individually rather than skimming only the Recovery Plan</td><td>Anomalies flagged in any engine feed the BNCA anomaly tracker (<code>TSM_FINOPS_BNCA</code>) — an anomaly buried in Engine 2 that nobody reads doesn't get escalated</td></tr>
+          <tr><td>Open any App Dispatch cards (GL Node / Vendors Node / Reconciliation Node) that are relevant and confirm the suggested next action makes sense before moving on</td><td>These are system-suggested next steps tied to the specific exceptions found — skipping them means a known next action doesn't get logged anywhere</td></tr>
+          <tr><td>Click "⚡ ESCALATE TO STRATEGIST" (not just "EXPORT ANALYSIS")</td><td>Only Escalate actually writes the relay payload (doc text, doc type, all 6 engine outputs, KPI snapshot) that the Strategist stage reads — Export just downloads a local .txt copy for your own records</td></tr>
+          <tr><td rowspan="6">Strategist</td><td>Confirm the correct relay chip is active — War Room / Exec Portal / Manual — before generating the report</td><td>Pulls a completely different data source depending which is selected; the wrong chip silently generates a report from stale or unrelated data</td></tr>
+          <tr><td>Click "▶ Generate Strategist Report"</td><td>This is the synthesis step — turns the 6 raw engine outputs into one coherent strategist narrative</td></tr>
+          <tr><td>If this case also has its own supporting document (separate from what War Room analyzed), use the "⚡ 4-Engine Doc Analysis" tab: pick Sample or Upload, set the sector chip, select the specific doc, then "⚡ FIRE ALL 4 ENGINES"</td><td>This is a second, independent 4-engine analysis (Document Intelligence / Risk / Action Plan / CFO Report) — it's easy to assume the War Room's 6 engines already cover this, but it's a separate pipeline with its own output</td></tr>
+          <tr><td>Click "→ PUSH TO STRATEGIST" after the 4-engine doc analysis completes (not just Save or Mgr Export)</td><td>Save and Mgr Export are local-only actions — Push is what actually merges this analysis into the strategist record</td></tr>
+          <tr><td>Open "✓ Approvals", log every required approval, then "Log Approvals → Relay to Executive"</td><td>This is what actually pushes the case to the Executive Portal — a strategist report that's been generated but never had approvals logged never reaches Executive</td></tr>
+          <tr><td>Click "→ Relay to Executive Portal" as the final step</td><td>Confirms the handoff explicitly rather than assuming approval logging alone was enough</td></tr>
+          <tr><td rowspan="3">Executive Portal</td><td>Confirm the Risk Matrix, Deadlines, and Decisions panels all populated from the relay (not blank/default) before treating the case as ready for executive review</td><td>These read directly from what the Strategist relayed — a blank panel means something upstream (usually a skipped Escalate or Push step) didn't complete</td></tr>
+          <tr><td>Review the BNCA panel specifically for any anomalies carried through from the War Room stage</td><td>This is the same anomaly list seeded back at Engine 2 — confirming it made it all the way here closes the loop on whether flagged issues are actually visible to decision-makers</td></tr>
+          <tr><td>Use "⬇ EXPORT CLIENT PACKAGE" once the case is genuinely complete</td><td>This is the client/vendor-facing deliverable — exporting early (before all relay data populated) produces an incomplete package</td></tr>
+        </table>
+
+<h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
         <table>
           <tr><th>Stage</th><th>File Path</th></tr>
           <tr><td>War Room</td><td><code>html/finops-suite/finops-war/finops-war-room.html</code></td></tr>
@@ -535,7 +557,20 @@
         <h4>How this vertical is actioned today</h4>
         <p>Insurance documents use the shared "Open Node" action. Reviewers verify the policyholder/claim number and coverage-exclusion code, then route to the Strategist for adjuster or underwriting follow-up.</p>
 
-        <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
+                <h4>Micro-Steps for Full Data Capture (every stage)</h4>
+        <table>
+          <tr><th>Stage</th><th>Micro-Step</th><th>Why it matters for recovery</th></tr>
+          <tr><td rowspan="3">War Room</td><td>Set the correct document type (Claims Report / Denial Letter / Policy Review / DME Claim / AP Aging / ERA Batch / Underwriting / Compliance / CE Renewal / Other) before analysis</td><td>Same as FinOps — mistyped doc type produces analysis tuned to the wrong document</td></tr>
+          <tr><td>Fire all 6 engines and review each individually, especially Engine 5 (Recovery & Appeal Plan)</td><td>Engine 5's Priority Actions are the dollar-quantified appeal steps — this is the core recovery output for claims/denials</td></tr>
+          <tr><td>Escalate to Strategist (not just export)</td><td>Same relay-vs-local-export distinction as FinOps — only Escalate writes the payload the Strategist stage reads</td></tr>
+          <tr><td rowspan="3">Strategist</td><td>Click "⚜ RUN STRATEGIST CHAIN"</td><td>Synthesizes the relayed engine outputs into the strategist report</td></tr>
+          <tr><td>If the case needs case-management action, open the Issue Pack panel, assign to Billing Coord / Office Mgr / RCM Manager, and run it (re-run after any edits)</td><td>This is a separate assignment/ownership record — a strategist report with no assigned owner has no one accountable for the appeal deadline</td></tr>
+          <tr><td>"→ SEND TO EXECUTIVE PORTAL" (not just Export Package)</td><td>Same distinction — Export Package is local-only</td></tr>
+          <tr><td rowspan="2">Executive Portal</td><td>Confirm case data populated from relay before treating as ready</td><td>Same as FinOps — blank panels mean an upstream step was skipped</td></tr>
+          <tr><td>"⬇ EXPORT CLIENT PACKAGE" only once complete</td><td>Client/vendor-facing deliverable — same as FinOps</td></tr>
+        </table>
+
+<h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
         <table>
           <tr><th>Stage</th><th>File Path</th></tr>
           <tr><td>War Room</td><td><code>html/war-rooms/insure-war/insurance-war-room.html</code></td></tr>
@@ -572,6 +607,19 @@
         <table>
           <tr><th>Stage</th><th>File Path</th></tr>
           <tr><td>War Room</td><td><code>html/war-rooms/construct-war/construction-war-room.html</code></td></tr>
+        <h4>Micro-Steps for Full Data Capture (every stage)</h4>
+        <table>
+          <tr><th>Stage</th><th>Micro-Step</th><th>Why it matters for recovery</th></tr>
+          <tr><td rowspan="2">War Room</td><td>Set doc type (Change Order / OSHA Citation / Lien Notice / Subcontract / RFI / Draw Request / Permit / Retainage / Journal Entry / Job Cost / Payroll-1099 / Compliance) and Fire All 6 Engines</td><td>Same doc-type-drives-prompt pattern as FinOps/Insurance</td></tr>
+          <tr><td>Use "◈ INJECT INTO STRATEGIST" to carry War Room context forward, rather than assuming it happens automatically</td><td>Without this explicit action, the Strategist stage may generate its synthesis without the War Room's document-specific findings</td></tr>
+          <tr><td rowspan="3">Strategist</td><td>Click "⚡ Synthesize All → Push to BNCA" — this is the actual data-merge action here, not a separate "Escalate" button</td><td>Construction's relay model routes through BNCA synthesis rather than a direct hand-off — skipping this step means the case never reaches BNCA's anomaly tracking at all</td></tr>
+          <tr><td>If the case needs assignment, open the Issue Pack panel and assign to Project Mgr / Site Supervisor / Exec, then re-run after edits</td><td>Same ownership-accountability reasoning as Insurance's Issue Pack</td></tr>
+          <tr><td>"→ ESCALATE TO EXECUTIVE" as the final step</td><td>Confirms hand-off explicitly, same as other verticals</td></tr>
+          <tr><td rowspan="2">Executive Portal</td><td>Click "AUTHORIZE" on the relevant item — this is Construction's specific exec sign-off action</td><td>Unlike other verticals' generic "confirm populated," Construction's exec stage requires an explicit authorization click before the case is considered actioned</td></tr>
+          <tr><td>"⬇ EXPORT CLIENT PACKAGE" only after authorization</td><td>Exporting before authorization produces a package that looks final but was never actually signed off</td></tr>
+        </table>
+
+
           <tr><td>Strategist</td><td><code>html/war-rooms/construct-war/construction-strategist.html</code></td></tr>
           <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/war-rooms/construct-war/construction-executive-portal.html</code></td></tr>
           <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_CONSTRUCTION_STRATEGIST_RELAY</code></td></tr>
@@ -605,6 +653,20 @@
         <table>
           <tr><th>Stage</th><th>File Path</th></tr>
           <tr><td>War Room</td><td><code>html/war-rooms/bpo-war/bpo-war-room.html</code></td></tr>
+        <h4>Micro-Steps for Full Data Capture (every stage)</h4>
+        <p style="margin-top:0">BPO follows the 01·INTAKE → 02·UNDERSTAND → 03·DECIDE → 04·EXECUTE methodology tabs rather than the doc-type-chip pattern used elsewhere.</p>
+        <table>
+          <tr><th>Stage</th><th>Micro-Step</th><th>Why it matters for recovery</th></tr>
+          <tr><td rowspan="2">War Room (Intake/Understand)</td><td>Click "⚡ FIRE EXTRACTION ENGINE" and review all three tabs — AI Extractions, Immediate Risks, and Raw Engine Output — not just the first</td><td>Immediate Risks is where time-sensitive dollar exposure surfaces; skipping straight to Raw Output misses the flagged risk summary</td></tr>
+          <tr><td>"ROUTE TO STRATEGIST →" (not just Export Brief)</td><td>Same relay-vs-local pattern as other verticals</td></tr>
+          <tr><td rowspan="2">Strategist (Decide)</td><td>Click "⚡ GENERATE STRATEGY BRIEF," then separately pull SLA Report, Client Brief, and Escalations from their own tabs</td><td>These are independent pulls, not auto-included in the Strategy Brief — a case actioned without the SLA Report specifically misses contractual timing exposure</td></tr>
+          <tr><td>"ESCALATE TO EXECUTIVE →" (either the top-level or the one on the Client Impact tab — same action) — and separately "⬇ EXPORT CLIENT PACKAGE" if a client-facing document is needed at this stage</td><td>BPO's Client Package can be exported directly from Strategist, not only from Executive — useful when a client needs something before executive sign-off, but easy to forget it also needs the executive escalation done separately</td></tr>
+          <tr><td rowspan="3">Executive Portal (Execute)</td><td>Click "◈ GENERATE LIVE EXECUTIVE BRIEF — AI SYNTHESIS" rather than relying on the Decide-stage brief alone</td><td>This is a fresh AI synthesis at the executive level — treating the Strategist's brief as final skips this additional pass</td></tr>
+          <tr><td>Use "✓ ACKNOWLEDGE" / "↑ ESCALATE" on each action item, and "APPROVE & EXECUTE" on queue items, individually</td><td>These are per-item actions — bulk-skipping them leaves individual action items with no recorded disposition</td></tr>
+          <tr><td>"✓ MARK EXECUTED" as the final close-out step</td><td>This is what actually closes the case in the BPO pipeline, distinct from acknowledging or approving</td></tr>
+        </table>
+
+
           <tr><td>Strategist</td><td><code>html/war-rooms/bpo-war/bpo-strategist.html</code></td></tr>
           <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/war-rooms/bpo-war/bpo-executive-portal.html</code></td></tr>
           <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_BPO_STRATEGIST_RELAY</code></td></tr>
@@ -638,6 +700,19 @@
         <table>
           <tr><th>Stage</th><th>File Path</th></tr>
           <tr><td>War Room</td><td><code>html/war-rooms/re-war/re-war-room.html</code></td></tr>
+        <h4>Micro-Steps for Full Data Capture (every stage)</h4>
+        <p style="margin-top:0">Real Estate is organized around 7 specialty nodes (REA general, REAF finance, REAT title, REAM mortgage, REAC compliance, REAI investment/REO) rather than a single doc-type chip.</p>
+        <table>
+          <tr><th>Stage</th><th>Micro-Step</th><th>Why it matters for recovery</th></tr>
+          <tr><td rowspan="2">War Room</td><td>Activate the specific node relevant to the deal (finance/title/mortgage/compliance/investment) before firing analysis, rather than leaving the default REA node active</td><td>Each node's analysis is scoped to that specialty — a title issue analyzed under the default general node may miss title-specific findings</td></tr>
+          <tr><td>"↗ ESCALATE → STRATEGIST" (not a local-only export)</td><td>Same relay pattern as other verticals</td></tr>
+          <tr><td rowspan="2">Strategist</td><td>Run "⚡ FULL STRATEGIC BRIEF" for pipeline-wide view, and separately "⚙ RESCUE PLAN" for any deal at risk of falling through</td><td>These are two distinct outputs — Rescue Plan won't generate unless explicitly run, even if a deal is clearly at risk</td></tr>
+          <tr><td>Run the specific Strat Modules relevant to the deal (compliance exposure, transaction action plan, etc.) individually, then "↗ ESCALATE → EXEC PORTAL"</td><td>Modules are independent — running only the Full Brief can miss module-specific findings like TRID/HMDA/FinCEN exposure</td></tr>
+          <tr><td rowspan="2">Executive Portal</td><td>Review the panel relevant to the case type specifically — Deal Snapshot, Compliance Flags, Deal Rescue Pack, REO 60-Day Plan, or Mortgage Position — not just the default Executive Brief</td><td>These are separate views with separate data; the default Executive Brief panel doesn't surface REO or mortgage-specific detail</td></tr>
+          <tr><td>"⚡ AI-GENERATE ACTION ITEMS" and "⚡ REFRESH PIPELINE ANALYSIS" before considering the case current</td><td>These are on-demand generation steps, not automatically populated — a stale pipeline view understates current exposure</td></tr>
+        </table>
+
+
           <tr><td>Strategist</td><td><code>html/war-rooms/re-war/re-strategist.html</code></td></tr>
           <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/war-rooms/re-war/re-exec-portal.html</code></td></tr>
           <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_REALESTATE_STRATEGIST_RELAY</code></td></tr>
@@ -671,6 +746,18 @@
         <table>
           <tr><th>Stage</th><th>File Path</th></tr>
           <tr><td>War Room</td><td><code>html/war-rooms/legal-war/legal-war-room.html</code></td></tr>
+        <h4>Micro-Steps for Full Data Capture (every stage)</h4>
+        <table>
+          <tr><th>Stage</th><th>Micro-Step</th><th>Why it matters for recovery</th></tr>
+          <tr><td rowspan="2">War Room</td><td>Set doc type (Complaint / Contract / Motion / Discovery / Correspondence / Med Records / Police Report / Employment) and Fire All 6 Engines</td><td>Same doc-type-drives-prompt pattern as other verticals</td></tr>
+          <tr><td>Copy each engine's output individually if it needs to leave the system (e.g. for outside counsel), rather than relying on the escalation alone</td><td>Escalation carries the data forward internally, but doesn't produce a copyable artifact for external correspondence</td></tr>
+          <tr><td rowspan="2">Strategist</td><td>Click "RUN SYNTHESIS" (button is disabled until the relay data is present — if it stays greyed out, the War Room escalation didn't complete)</td><td>The disabled state is itself a diagnostic signal worth knowing — don't assume a stuck button is a bug before checking whether War Room actually escalated</td></tr>
+          <tr><td>Click the "Escalate → Executive Portal" link specifically (its <code>onclick</code> is what actually writes the exec relay — <code>writeExecRelay()</code> — not just navigation)</td><td>This link looks like plain navigation but is the actual data-write step — clicking any other link to reach the Executive Portal skips writing the relay entirely</td></tr>
+          <tr><td rowspan="2">Executive Portal</td><td>Use the specific action for the case type — "AUTHORIZE," "SIGN," or "APPROVE" — then "⚡ CONFIRM AUTHORIZATION" in the modal that follows</td><td>Clicking the initial action button alone doesn't finalize it — the confirmation modal is a required second step</td></tr>
+          <tr><td>"⬇ EXPORT CLIENT PACKAGE" only after confirmed authorization</td><td>Same reasoning as Construction — pre-authorization export looks final but isn't</td></tr>
+        </table>
+
+
           <tr><td>Strategist</td><td><code>html/war-rooms/legal-war/legal-main-strategist.html</code></td></tr>
           <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/war-rooms/legal-war/legal-executive-portal.html</code></td></tr>
           <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_LEGAL_STRATEGIST_RELAY</code></td></tr>
@@ -699,6 +786,21 @@
 
         <h4>How this vertical is actioned today</h4>
         <p>Healthcare documents use the shared "Open Node" action. See Section 7 for a real, code-documented ordering rule: any exclusion code starting <code>PA-</code> is checked for an authorization block before document type is checked for DENIAL — get the exclusion code right or an appeal can misroute to prior-auth verification.</p>
+        <h4>Micro-Steps for Full Data Capture (War Room — shared strategist/exec relay, see Section 7)</h4>
+        <table>
+          <tr><th>Micro-Step</th><th>Why it matters for recovery</th></tr>
+          <tr><td>Set the mode — "⚡ Denial Recovery" or "🔒 Prior Auth Rescue" — before loading a document, not after</td><td>This is the same PA- routing distinction documented in Section 7 at the UI level: the wrong mode analyzes a prior-auth document as a denial or vice versa</td></tr>
+          <tr><td>"⚡ FIRE ALL 5 ENGINES" (Healthcare runs 5, not 6, unlike FinOps/Insurance/Legal/Construction)</td><td>Don't expect a 6th engine output — this vertical's pipeline is genuinely one engine shorter</td></tr>
+          <tr><td>After each engine completes, click its specific "→ Feed to [Next Engine]" button (Feed to Root Cause, Feed to Financial, then the Financial-to-Recovery relay) rather than assuming outputs chain automatically</td><td>These are manual per-engine relay clicks — skipping one means the next engine runs without that prior engine's findings as context, producing a shallower recovery plan</td></tr>
+          <tr><td>"⬇ Export All" / "Copy Appeal" / "Copy Navigator Report" as needed for the specific correspondence being sent</td><td>Different outputs suit different audiences — Navigator Report vs. the Appeal letter text are not interchangeable</td></tr>
+          <tr><td>"→ Escalate to Strategist" as the final step</td><td>Writes into the shared strategist relay this vertical uses instead of a dedicated Strategist page</td></tr>
+        </table>
+        <div class="callout risk">
+          <span class="callout-label">Test tool, not a client action</span>
+          Like PM Copilot, this War Room also has an "INJECT ANOMALY INTO WAR ROOM" button for demos/QA — never use it on a real client case.
+        </div>
+
+
 
         <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
         <table>
@@ -754,6 +856,20 @@
         <table>
           <tr><th>Stage</th><th>File Path</th></tr>
           <tr><td>War Room</td><td><code>html/war-rooms/pm-copilot/pm-command.html</code></td></tr>
+        <h4>Micro-Steps for Full Data Capture (every stage)</h4>
+        <p style="margin-top:0">PM Copilot is a thinner build than the other verticals — fewer distinct micro-steps exist because fewer are wired up.</p>
+        <table>
+          <tr><th>Stage</th><th>Micro-Step</th><th>Why it matters for recovery</th></tr>
+          <tr><td>War Room</td><td>Use the relevant Quick Fire category (Finance / Compliance / Market) for the question actually being asked, rather than defaulting to the first one; use "DISPATCH VENDOR" separately when a physical vendor action is needed</td><td>Quick Fire categories scope the AI prompt — the wrong category returns analysis for the wrong concern entirely</td></tr>
+          <tr><td>Strategist</td><td>Use "↓ Export" to capture the strategist output — there is no dedicated Escalate-to-Executive action on this page the way other verticals have one</td><td>PM Copilot's relay to Executive is thinner than other verticals; don't assume an escalation happened just because you moved to the next tab</td></tr>
+          <tr><td>Executive Portal</td><td>Use "✓ ACKNOWLEDGE" or "↑ ESCALATE" per action item, then "⬇ EXPORT CLIENT PACKAGE"</td><td>Same per-item disposition reasoning as BPO's Executive Portal</td></tr>
+        </table>
+        <div class="callout risk">
+          <span class="callout-label">Test tool, not a client action</span>
+          The Strategist page also has an "INJECT ANOMALY INTO WAR ROOM" button. This seeds synthetic test data for demos/QA — never click it while working a real client case, as it will inject fictional data into that case's War Room.
+        </div>
+
+
           <tr><td>Strategist</td><td><code>html/war-rooms/pm-copilot/pm-strategist.html</code></td></tr>
           <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/war-rooms/pm-copilot/pm-exec-portal.html</code></td></tr>
           <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_PM_STRATEGIST_RELAY</code></td></tr>
@@ -785,6 +901,21 @@
         <table>
           <tr><th>Stage</th><th>File Path</th></tr>
           <tr><td>War Room</td><td><code>html/l1-copilot/noc/noc-war-room.html</code></td></tr>
+        <h4>Micro-Steps for Full Data Capture (every stage)</h4>
+        <table>
+          <tr><th>Stage</th><th>Micro-Step</th><th>Why it matters for recovery</th></tr>
+          <tr><td rowspan="4">War Room</td><td>If importing data rather than using a sample, click "PARSE PREVIEW" first and review the parsed result before "IMPORT TO WAR ROOM" (the import button stays disabled until preview runs)</td><td>This is a genuine two-step gate — Import is disabled specifically to force a review of the parse before it's committed</td></tr>
+          <tr><td>Otherwise, "LOAD SAMPLE DATA" for test/demo scenarios ("RESET SAVED DATA" clears it back out)</td><td>Distinguishes real imported incident data from sample data — don't escalate a case built on sample data</td></tr>
+          <tr><td>"RUN AI ANALYSIS" after data is loaded</td><td>Analysis doesn't run automatically on import — this is a separate explicit step</td></tr>
+          <tr><td>"RELAY TO STRATEGIST →"</td><td>Same relay pattern as other verticals — completes the hand-off</td></tr>
+          <tr><td>Executive Portal</td><td>"✓ ACKNOWLEDGE" / "↑ ESCALATE" per incident item, then "⬇ EXPORT CLIENT PACKAGE"</td><td>Same per-item disposition reasoning as BPO/PM Copilot</td></tr>
+        </table>
+        <div class="callout scope">
+          <span class="callout-label">No dedicated Strategist micro-steps</span>
+          NOC's Strategist page (<code>noc-strategist.html</code>) has no case-specific action buttons beyond Export — it's a read/print view of what War Room relayed. There's nothing to click there beyond confirming the relayed data looks right before moving to Executive.
+        </div>
+
+
           <tr><td>Strategist</td><td><code>html/l1-copilot/noc/noc-strategist.html</code></td></tr>
           <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/l1-copilot/noc/noc-executive-portal.html</code></td></tr>
         </table>
@@ -878,6 +1009,8 @@
       </ul>
     </section>
 
+
+
     <section class="doc-section" id="appC">
       <h2>Appendix C: Sweet Music OS — Creation Flow (Outside This Pipeline)</h2>
 
@@ -956,7 +1089,7 @@
       </div>
     </section>
 
-    <footer>
+        <footer>
       TSM Consultz LLC · Internal Use · Document Processing &amp; Revenue Recovery Manual v2.0
     </footer>
   </main>
