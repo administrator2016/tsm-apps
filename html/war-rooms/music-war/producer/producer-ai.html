@@ -90,6 +90,8 @@
 
   <div class="loading" id="loading"><span class="spinner"></span>ZAY is thinking through tempo, key, and emotion...</div>
 
+  <div id="recError" style="display:none;background:rgba(255,59,107,0.08);border:1px solid var(--red,#ff3b6b);border-radius:8px;padding:16px;margin-bottom:24px;font-size:0.72rem;color:var(--red,#ff3b6b);"></div>
+
   <div class="rec-panel" id="recPanel">
     <h2>🎚️ PRODUCER AI RECOMMENDS</h2>
     <div class="rec-grid">
@@ -132,6 +134,7 @@ async function getRecommendation() {
 
   document.getElementById('loading').classList.add('show');
   document.getElementById('recPanel').classList.remove('show');
+  document.getElementById('recError').style.display = 'none';
 
   const prompt = `A music artist wants to make a song that sounds like this: "${vision}"
 
@@ -149,13 +152,17 @@ Act as an experienced music producer. Recommend ONLY a JSON object with these ke
     const d = await SMOS.askJSON(prompt, 'You are ZAY, an experienced music producer AI.');
     renderRec(d);
   } catch(e) {
+    // Previously silently rendered a fixed fake recommendation (140 BPM,
+    // C Minor, "Melodic Trap"...) on ANY network/API error, indistinguishable
+    // from a real recommendation built from the artist's actual vision.
+    // Show an honest failure instead — no fabricated advice presented as
+    // if it were tailored to what they described. Same fix already applied
+    // to beat-workbench.html and mixing-coach.html.
     console.error('[producer-ai] error:', e.message);
-    renderRec({
-      bpm:'140', key:'C Minor', emotion:'Resilience / Drive',
-      beatStyle:'Melodic Trap with live percussion accents',
-      daws:['FL Studio','BandLab'],
-      notes:'Keep the hook simple and repeatable. Record at least 3 takes of the lead vocal before comping the best one. Leave space in the verses for the beat to breathe.'
-    });
+    document.getElementById('recPanel').classList.remove('show');
+    const errEl = document.getElementById('recError');
+    errEl.textContent = `Couldn't reach the producer AI (${e.message}). Nothing was recommended — try again, or describe the sound differently.`;
+    errEl.style.display = 'block';
   }
   document.getElementById('loading').classList.remove('show');
 }

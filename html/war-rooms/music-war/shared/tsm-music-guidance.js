@@ -126,6 +126,16 @@
       const player = document.getElementById('beatPlayer');
       return !!(panel && panel.classList.contains('show') && player && player.getAttribute('src'));
     },
+
+    // Producer AI: getRecommendation()'s catch block used to fabricate a
+    // fixed fake recommendation, so #recPanel.show wasn't a trustworthy
+    // signal — it fired on every attempt regardless of success. Fixed
+    // separately (see producer-ai.html) to show an honest error instead,
+    // which is what makes checking .show here valid now.
+    'producer-ai'() {
+      const panel = document.getElementById('recPanel');
+      return !!(panel && panel.classList.contains('show'));
+    },
   };
 
   const PROGRESS_KEY = 'smos_guided_flow_progress';
