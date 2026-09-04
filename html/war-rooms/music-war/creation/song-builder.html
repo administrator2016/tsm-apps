@@ -180,6 +180,11 @@
       <div class="inspire-chip" onclick="multiSelect(this,'inspire')"><div class="name">Morgan Wallen</div><div class="genre">Country</div></div>
       <div class="inspire-chip" onclick="multiSelect(this,'inspire')"><div class="name">Burna Boy</div><div class="genre">Afrobeats</div></div>
     </div>
+    <div class="custom-artist-row" style="margin-top:14px;display:flex;gap:8px;">
+      <input type="text" id="customArtistInput" placeholder="Not listed? Type an artist name..." style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomArtist();}">
+      <button class="btn-outline" onclick="addCustomArtist()">+ Add</button>
+    </div>
+    <div class="hint" style="margin-top:6px;">Pick up to 3 total — preset chips and typed artists count together.</div>
   </div>
 
   <!-- Step 4: Message -->
@@ -273,6 +278,30 @@ function multiSelect(el, key) {
   }
 }
 
+function addCustomArtist() {
+  const input = document.getElementById('customArtistInput');
+  const name = input.value.trim();
+  if (!name) return;
+  if (!selections.inspire) selections.inspire = [];
+  if (selections.inspire.includes(name)) { input.value = ''; return; }
+  if (selections.inspire.length >= 3) {
+    alert('You can pick up to 3 artists total.');
+    return;
+  }
+  selections.inspire.push(name);
+  input.value = '';
+
+  const grid = document.querySelector('#step2 .inspire-grid');
+  const chip = document.createElement('div');
+  chip.className = 'inspire-chip selected custom';
+  chip.innerHTML = `<div class="name">${name}</div><div class="genre">Custom</div>`;
+  chip.onclick = function () {
+    selections.inspire = selections.inspire.filter(v => v !== name);
+    chip.remove();
+  };
+  grid.appendChild(chip);
+}
+
 function updateProgress() {
   document.getElementById('stepNum').textContent = currentStep + 1;
   for(let i=0;i<totalSteps;i++){
@@ -347,7 +376,7 @@ Return ONLY valid JSON with this exact structure:
     const res = await fetch('/api/music/sweet/ai',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({system:'You are a professional songwriter AI. Respond ONLY with valid JSON, no markdown.',prompt,maxTokens:3000})
+      body:JSON.stringify({system:'You are a professional songwriter AI. Respond ONLY with valid JSON, no markdown.',prompt})
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Backend error');
@@ -403,7 +432,6 @@ function copySong() {
 updateProgress();
 </script>
 <script src="../js/sweet-music-engine.js"></script>
-<script src="/music/shared/tsm-music-guidance.js"></script>
 <script src="../js/producer-ai-widget.js"></script>
   <script src="/js/tsm-guide-engine.js" defer></script>
   <script src="/shared/tsm-guided-how-to.js" defer></script>

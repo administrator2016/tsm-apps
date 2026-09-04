@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document Processing &amp; Revenue Recovery Manual — TSM Consultz</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #10151c;
+    --bg-panel: #171e27;
+    --bg-panel-2: #1c2531;
+    --text: #e8e6df;
+    --text-muted: #8b93a1;
+    --text-faint: #5c6572;
+    --rule: #2a3441;
+    --rule-soft: #202a35;
+    --gold: #c9a227;
+    --gold-soft: rgba(201,162,39,0.12);
+    --teal: #4fb3a9;
+    --teal-soft: rgba(79,179,169,0.12);
+    --rust: #c1554a;
+    --rust-soft: rgba(193,85,74,0.12);
+    --blue: #5b7fa6;
+    --blue-soft: rgba(91,127,166,0.12);
+    --green: #5f9e6e;
+    --green-soft: rgba(95,158,110,0.12);
+  }
+
+  *{ box-sizing: border-box; }
+
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Serif', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a{ color: var(--gold); text-decoration: none; }
+  a:hover{ text-decoration: underline; }
+  a:focus-visible, button:focus-visible, summary:focus-visible{
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+
+  code, .path, .mono{
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.86em;
+    color: #d7c98a;
+    background: rgba(201,162,39,0.08);
+    padding: 0.05em 0.35em;
+    border-radius: 3px;
+    word-break: break-word;
+  }
+
+  h1, h2, h3, h4, .label{
+    font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+  }
+
+  .layout{
+    display: grid;
+    grid-template-columns: 260px minmax(0,760px);
+    justify-content: center;
+    gap: 56px;
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 56px 24px 120px;
+  }
+
+  /* ---------- Sidebar / TOC ---------- */
+  nav.toc{
+    position: sticky;
+    top: 40px;
+    align-self: start;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+  nav.toc .masthead{
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+  nav.toc .submark{
+    font-size: 12.5px;
+    color: var(--text-faint);
+    margin-bottom: 22px;
+    line-height: 1.5;
+  }
+  nav.toc ol{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: toc;
+  }
+  nav.toc li{ margin-bottom: 2px; }
+  nav.toc a{
+    display: block;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13.5px;
+    color: var(--text-muted);
+    padding: 5px 0 5px 4px;
+    border-left: 2px solid transparent;
+  }
+  nav.toc a:hover{
+    color: var(--text);
+    text-decoration: none;
+    border-left-color: var(--rule);
+  }
+  nav.toc .sub-list{
+    list-style: none;
+    margin: 0 0 4px 0;
+    padding: 0 0 0 14px;
+  }
+  nav.toc .sub-list a{ font-size: 12.5px; color: var(--text-faint); padding: 3px 0; }
+
+  /* ---------- Main content ---------- */
+  main{ min-width: 0; }
+
+  .cover{
+    padding-bottom: 40px;
+    margin-bottom: 48px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .cover .kicker{
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.02em;
+    margin-bottom: 14px;
+  }
+  .cover h1{
+    font-size: 34px;
+    line-height: 1.22;
+    font-weight: 600;
+    margin: 0 0 10px;
+    color: var(--text);
+    max-width: 15ch;
+  }
+  .cover .subtitle{
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 16px;
+    margin-bottom: 18px;
+  }
+  .cover .dek{
+    color: var(--text-muted);
+    font-size: 17px;
+    max-width: 56ch;
+    margin-bottom: 24px;
+  }
+  .cover .meta{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--text-faint);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+  }
+
+  .edition-note{
+    background: var(--bg-panel);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 18px 20px;
+    margin: 28px 0 0;
+    font-size: 15px;
+    color: var(--text-muted);
+    line-height: 1.65;
+  }
+  .edition-note .tag{
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-faint);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  section.doc-section{
+    margin-bottom: 56px;
+    scroll-margin-top: 32px;
+  }
+  section.doc-section > h2{
+    font-size: 23px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  section.doc-section > h2 .num{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  p{ margin: 0 0 16px; max-width: 68ch; }
+  .doc-section > p:last-child{ margin-bottom: 0; }
+
+  /* vertical sub-cards inside Section 5 */
+  .vertical{
+    background: var(--bg-panel);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 26px 28px;
+    margin-bottom: 22px;
+    scroll-margin-top: 32px;
+  }
+  .vertical h3{
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 4px;
+  }
+  .vertical .covers{
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14.5px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    max-width: 66ch;
+  }
+  .vertical .node-line{
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text-faint);
+    margin-bottom: 18px;
+  }
+  .vertical h4{
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--text-faint);
+    margin: 22px 0 10px;
+  }
+  .vertical h4:first-of-type{ margin-top: 0; }
+
+  table{
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13.5px;
+    margin-bottom: 4px;
+  }
+  th, td{
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+  }
+  th{
+    color: var(--text-faint);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.01em;
+    border-bottom: 1px solid var(--rule);
+  }
+  td{ color: var(--text-muted); }
+  td:first-child, th:first-child{ white-space: nowrap; color: var(--text); }
+  tr:last-child td{ border-bottom: none; }
+
+  /* callout boxes */
+  .callout{
+    border-left: 3px solid var(--blue);
+    background: var(--blue-soft);
+    border-radius: 0 6px 6px 0;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 15px;
+    color: var(--text-muted);
+  }
+  .callout .callout-label{
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .callout.reviewer{ border-color: var(--blue); background: var(--blue-soft); }
+  .callout.reviewer .callout-label{ color: var(--blue); }
+  .callout.recovery{ border-color: var(--gold); background: var(--gold-soft); }
+  .callout.recovery .callout-label{ color: var(--gold); }
+  .callout.risk{ border-color: var(--rust); background: var(--rust-soft); }
+  .callout.risk .callout-label{ color: var(--rust); }
+  .callout.scope{ border-color: var(--teal); background: var(--teal-soft); }
+  .callout.scope .callout-label{ color: var(--teal); }
+  .callout.verified{ border-color: var(--green); background: var(--green-soft); }
+  .callout.verified .callout-label{ color: var(--green); }
+
+  ul.checklist{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  ul.checklist li{
+    position: relative;
+    padding-left: 26px;
+    margin-bottom: 12px;
+    color: var(--text-muted);
+  }
+  ul.checklist li::before{
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 7px;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--gold);
+  }
+
+  ul.plain{ margin: 0; padding-left: 20px; color: var(--text-muted); }
+  ul.plain li{ margin-bottom: 8px; }
+
+  .toc-jump{
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .toc-jump a{
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    background: var(--bg-panel-2);
+    border: 1px solid var(--rule);
+    padding: 5px 11px;
+    border-radius: 20px;
+  }
+  .toc-jump a:hover{ color: var(--gold); border-color: var(--gold); text-decoration: none; }
+
+  footer{
+    margin-top: 64px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.5px;
+    color: var(--text-faint);
+  }
+
+  @media (max-width: 880px){
+    .layout{ grid-template-columns: minmax(0,1fr); padding: 32px 18px 80px; }
+    nav.toc{ position: static; max-height: none; margin-bottom: 8px; }
+    nav.toc ol{ display: none; }
+    nav.toc[open] ol{ display: block; }
+    .cover h1{ font-size: 27px; max-width: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <nav class="toc" aria-label="Table of contents">
+    <div class="masthead">TSM CONSULTZ</div>
+    <div class="submark">Document Processing &amp;<br>Revenue Recovery Manual · v2.0</div>
+    <ol>
+      <li><a href="#s1">1. Purpose &amp; the Big Picture</a></li>
+      <li><a href="#s2">2. The Universal Intake Pipeline</a></li>
+      <li><a href="#s3">3. What Gets Captured</a></li>
+      <li><a href="#s4">4. Mission Preview Checkpoint</a></li>
+      <li><a href="#s5">5. Vertical-by-Vertical Guide</a>
+        <ul class="sub-list">
+          <li><a href="#v-finops">FinOps</a></li>
+          <li><a href="#v-insurance">Insurance</a></li>
+          <li><a href="#v-construction">Construction</a></li>
+          <li><a href="#v-bpo">BPO Internal</a></li>
+          <li><a href="#v-re">Real Estate</a></li>
+          <li><a href="#v-legal">Legal</a></li>
+          <li><a href="#v-hc">Healthcare</a></li>
+          <li><a href="#v-pm">PM Copilot</a></li>
+          <li><a href="#v-noc">Network Operations Center</a></li>
+        </ul>
+      </li>
+      <li><a href="#s6">6. Document Card Controls</a></li>
+      <li><a href="#s7">7. Exclusion-Code Collisions</a></li>
+      <li><a href="#s8">8. Quick-Reference Checklist</a></li>
+      <li><a href="#s9">9. Glossary</a></li>
+      <li><a href="#appA">Appendix A: Not Classifier-Routed</a></li>
+      <li><a href="#appB">Appendix B: Outside This Pipeline</a></li>
+      <li><a href="#appC">Appendix C: Sweet Music OS</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="cover">
+      <div class="kicker">Employee Operating Guide — Multi-Vertical Intake Pipeline</div>
+      <h1>Document Processing &amp; Revenue Recovery Manual</h1>
+      <div class="subtitle">Internal Use — TSM Consultz LLC</div>
+      <p class="dek">How to move every incoming document from upload to a routed, actionable, dollars-and-cents next step — without losing the data that makes recovery possible.</p>
+      <div class="meta">
+        <span>Version 2.0</span>
+        <span>·</span>
+        <span>August 30, 2026</span>
+      </div>
+
+      <div class="edition-note">
+        <span class="tag">NOTE ON THIS EDITION</span>
+        This is a from-scratch regeneration of the v1.1 manual. The prior build's scratch working files
+        (<code>build_v2_head.js</code>, <code>build_v2_body.js</code>, <code>build_v2_sections1-4.js</code>,
+        <code>build_v2_sections6-9.js</code>, <code>data.js</code>) were lost to a container reset before they
+        were committed anywhere, and the original source manual this document was meant to mirror was not
+        recoverable either. Rather than guess at lost prose, every fact in this edition — document types,
+        file paths, relay chains, the exclusion-code collision risk in Section 7 — was re-verified directly
+        against a fresh clone of <code>administrator2016/tsm-apps</code> (HEAD <code>6d585e9c</code>). RCM-OS
+        and the Appendix TOC entries — the two gaps flagged against v1.1 — are included from the start this time.
+      </div>
+    </div>
+
+    <section class="doc-section" id="s1">
+      <h2><span class="num">1</span> Purpose &amp; the Big Picture</h2>
+      <p>This manual explains how a document — an invoice, a claim, a permit, a title report, anything — moves through TSM's shared intake pipeline from the moment it's uploaded to the moment it becomes a routed, actionable, dollars-and-cents next step.</p>
+      <p>The pipeline is a single shared entry point (<code>html/tsm-doc-search-multi.html</code>) that every one of the nine verticals in Section 5 feeds through. A document doesn't get a different upload experience per client vertical — it gets classified once, against a shared AI router, and then handed to the vertical's own War Room → Strategist → Executive Portal relay chain.</p>
+      <p>Two other groups of verticals exist outside that chain, and this manual is explicit about the difference rather than blurring it: Appendix A covers verticals that are indexed in the shared search UI but not yet wired into the AI classifier, and Appendix B covers verticals with their own real relay chains that don't touch this shared pipeline at all.</p>
+      <p>A parallel, read-only view sits above all of this: <code>html/sentinel-center.html</code> polls the same <code>TSM_&lt;VERTICAL&gt;_STRATEGIST_RELAY</code> keys each vertical's Strategist stage writes and rolls them into a single cross-vertical risk board. It doesn't change how a document is processed — it's downstream of the relay chain, not part of it — but Section 5's per-vertical relay tables note which Sentinel key each Strategist stage feeds, since that's the same write a Strategist reviewer is already producing.</p>
+    </section>
+
+    <section class="doc-section" id="s2">
+      <h2><span class="num">2</span> The Universal Intake Pipeline</h2>
+      <p>Every document follows the same four-stage path, regardless of vertical:</p>
+      <table>
+        <tr><th>Stage</th><th>File Path</th></tr>
+        <tr><td>1. Upload / Intake</td><td><code>html/tsm-doc-search-multi.html</code></td></tr>
+        <tr><td>2. AI Classification</td><td><code>server.js</code> — POST route using <code>DOC_ROUTER_PROMPT</code> / <code>DOC_ROUTER_NODES</code></td></tr>
+        <tr><td>3. Vertical War Room</td><td>one page per vertical, e.g. <code>html/war-rooms/re-war/re-war-room.html</code></td></tr>
+        <tr><td>4. Strategist → Executive Portal</td><td>the vertical's own relay chain (see Section 5)</td></tr>
+      </table>
+      <p style="margin-top:14px;">The classifier's job is narrow and specific: given a filename and document content, return which vertical(s) a document belongs to, a document type, and a small set of structured fields (see Section 3). It does not decide what to do with the document — that's the War Room reviewer's job, informed by the fields the classifier extracted.</p>
+    </section>
+
+    <section class="doc-section" id="s3">
+      <h2><span class="num">3</span> What Gets Captured From Every Document</h2>
+      <p>Regardless of vertical, every intake record carries the same core field set. Knowing these fields matters because they're what a War Room reviewer sees on the document card, and what downstream routing logic (see Section 7) keys off of.</p>
+      <table>
+        <tr><th>Field</th><th>What It Is</th></tr>
+        <tr><td><code>fileName</code></td><td>the uploaded file's name</td></tr>
+        <tr><td><code>documentType</code></td><td>e.g. INVOICE, CLAIM, PERMIT, DENIAL, ESCALATION</td></tr>
+        <tr><td><code>vendor</code></td><td>counterparty name, when applicable</td></tr>
+        <tr><td><code>invoiceNo</code></td><td>the document's own reference/claim/invoice number</td></tr>
+        <tr><td><code>exclusionCode</code></td><td>a short code the classifier assigns — drives routing logic</td></tr>
+        <tr><td><code>amount</code></td><td>dollar exposure, 0 if not applicable</td></tr>
+        <tr><td><code>sourceNode / routing</code></td><td>which War Room node it lands on, and its relay path</td></tr>
+      </table>
+      <p style="margin-top:14px;">A document can be tagged to more than one vertical at once (e.g. a 1003 loan application tags both Real Estate and FinOps) — in that case it's indexed once but routed into each relevant vertical's own chain independently.</p>
+    </section>
+
+    <section class="doc-section" id="s4">
+      <h2><span class="num">4</span> The Mission Preview Checkpoint</h2>
+      <p>Not every classification is trusted automatically. The system defines a confidence threshold (<code>MISSION_PREVIEW_CONFIDENCE_THRESHOLD = 0.6</code> in the current codebase) — below that, or on any schema-validation failure, the document pauses in a Mission Preview modal for a human to confirm or correct the classification before it auto-routes.</p>
+      <p>This is a deliberate speed/safety trade-off: a confident, schema-valid classification skips the modal entirely so the common case stays fast, while a low-confidence or invalid one stops and asks rather than silently guessing.</p>
+      <div class="callout reviewer">
+        <span class="callout-label">Reviewer Note</span>
+        If you see a Mission Preview modal, that's the system telling you it isn't sure — don't rubber-stamp it. Check the extracted fields (<code>documentType</code>, <code>exclusionCode</code>, <code>amount</code>) against the actual document before confirming.
+      </div>
+    </section>
+
+    <section class="doc-section" id="s5">
+      <h2><span class="num">5</span> Vertical-by-Vertical Processing Guide</h2>
+      <p>Each vertical below lists the document types you'll see (real example filenames from the system's own seed/reference data), the routing destination, and the recovery angle specific to that vertical's work. Every vertical currently uses the same shared "Open Node" card action — this manual gives operator guidance alongside it rather than inventing bespoke system text that couldn't be verified against the current codebase.</p>
+
+      <div class="toc-jump">
+        <a href="#v-finops">FinOps</a><a href="#v-insurance">Insurance</a><a href="#v-construction">Construction</a>
+        <a href="#v-bpo">BPO Internal</a><a href="#v-re">Real Estate</a><a href="#v-legal">Legal</a>
+        <a href="#v-hc">Healthcare</a><a href="#v-pm">PM Copilot</a><a href="#v-noc">NOC</a>
+      </div>
+
+      <!-- FinOps -->
+      <div class="vertical" id="v-finops">
+        <h3>FinOps</h3>
+        <div class="covers">General ledger reconciliation, AR aging, vendor invoices, budget variance, and BNCA escalations for financial operations clients.</div>
+        <div class="node-line">Primary node: <code>fo-war-room</code> — <code>html/finops-suite/finops-war/finops-war-room.html</code></div>
+
+        <h4>Document types you'll see</h4>
+        <table>
+          <tr><th>Type</th><th>Example Filename</th><th>What It Typically Is</th></tr>
+          <tr><td>LEDGER</td><td><code>GL_Reconciliation_Q2.record</code></td><td>A GL reconciliation entry carrying a variance exclusion code</td></tr>
+          <tr><td>LEDGER</td><td><code>AR_Aging_90day.record</code></td><td>A 90-day AR aging report, often auto-escalated to BNCA</td></tr>
+          <tr><td>VENDOR INVOICE</td><td><code>Vendor_Invoice_SaaSco.record</code></td><td>A standard AP vendor invoice awaiting reconciliation</td></tr>
+          <tr><td>ESCALATION</td><td><code>BNCA_AR_fo-financial.report</code></td><td>A system-generated escalation once an AR item clears the BNCA threshold</td></tr>
+        </table>
+
+        <h4>How this vertical is actioned today</h4>
+        <p>FinOps documents use the shared "Open Node" action. Reviewers open the flagged item in the War Room, confirm the GL code / invoice number against the exclusion code shown on the card, and either clear it or push it to the Strategist for reconciliation sign-off.</p>
+
+        <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
+        <table>
+          <tr><th>Stage</th><th>File Path</th></tr>
+          <tr><td>War Room</td><td><code>html/finops-suite/finops-war/finops-war-room.html</code></td></tr>
+          <tr><td>Strategist</td><td><code>html/finops-suite/finops-war/finops-main-strategist.html</code></td></tr>
+          <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/finops-suite/finops-war/finops-executive-portal.html</code></td></tr>
+          <tr><td>Sentinel Center Feed</td><td><code>html/sentinel-center.html</code> reads via localStorage key <code>TSM_FINOPS_STRATEGIST_RELAY</code></td></tr>
+        </table>
+
+        <div class="callout recovery">
+          <span class="callout-label">Recovery Note</span>
+          AR aging and GL variance items are where recoverable dollars sit longest — the 90-day AR aging record alone carries an $87,400 exposure in the seeded sample data. Catching the BNCA escalation early keeps aged receivables from becoming write-offs.
+        </div>
+      </div>
+
+      <!-- Insurance -->
+      <div class="vertical" id="v-insurance">
+        <h3>Insurance</h3>
+        <div class="covers">Claims, policies, renewals, and remittances for insurance-servicing clients.</div>
+        <div class="node-line">Primary node: <code>ins-war-room</code> — <code>html/war-rooms/insure-war/insurance-war-room.html</code></div>
+
+        <h4>Document types you'll see</h4>
+        <table>
+          <tr><th>Type</th><th>Example Filename</th><th>What It Typically Is</th></tr>
+          <tr><td>CLAIM</td><td><code>CLM-INS-4412_Ramirez.record</code></td><td>An open claim carrying a coverage-exclusion code</td></tr>
+          <tr><td>POLICY</td><td><code>POLICY_Commercial_Glendale.record</code></td><td>A commercial policy document, often high-dollar (six figures)</td></tr>
+          <tr><td>REMITTANCE</td><td><code>Remittance_Nationwide_Jul.record</code></td><td>A carrier remittance batch</td></tr>
+          <tr><td>ESCALATION</td><td><code>BNCA_CLM-INS-4412.report</code></td><td>A claim escalated once it clears the BNCA threshold</td></tr>
+        </table>
+
+        <h4>How this vertical is actioned today</h4>
+        <p>Insurance documents use the shared "Open Node" action. Reviewers verify the policyholder/claim number and coverage-exclusion code, then route to the Strategist for adjuster or underwriting follow-up.</p>
+
+        <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
+        <table>
+          <tr><th>Stage</th><th>File Path</th></tr>
+          <tr><td>War Room</td><td><code>html/war-rooms/insure-war/insurance-war-room.html</code></td></tr>
+          <tr><td>Strategist</td><td><code>html/war-rooms/insure-war/insurance-strategist.html</code></td></tr>
+          <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/war-rooms/insure-war/insurance-executive-portal.html</code></td></tr>
+          <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_INSURANCE_STRATEGIST_RELAY</code></td></tr>
+        </table>
+
+        <div class="callout recovery">
+          <span class="callout-label">Recovery Note</span>
+          Coverage-exclusion codes (E&amp;O, CO-series) are the recovery signal here — a claim or policy that carries one and stalls in the War Room is money sitting on the table until someone actions it.
+        </div>
+      </div>
+
+      <!-- Construction -->
+      <div class="vertical" id="v-construction">
+        <h3>Construction</h3>
+        <div class="covers">Permits, subcontractor invoices, change orders, and cost-variance escalations.</div>
+        <div class="node-line">Primary node: <code>con-war-room</code> — <code>html/war-rooms/construct-war/construction-war-room.html</code></div>
+
+        <h4>Document types you'll see</h4>
+        <table>
+          <tr><th>Type</th><th>Example Filename</th><th>What It Typically Is</th></tr>
+          <tr><td>PERMIT</td><td><code>PERMIT_Mesa_88B.record</code></td><td>A municipal permit, e.g. City of Mesa</td></tr>
+          <tr><td>VENDOR INVOICE</td><td><code>Subcontractor_Invoice_Drywall.record</code></td><td>A subcontractor invoice pending AP reconciliation</td></tr>
+          <tr><td>DOCUMENT REPORT</td><td><code>Change_Order_07_Scottsdale.record</code></td><td>A change order carrying its own exclusion code</td></tr>
+          <tr><td>ESCALATION</td><td><code>BNCA_PERMIT_Mesa_88B.report</code></td><td>A permit item escalated to BNCA</td></tr>
+        </table>
+
+        <h4>How this vertical is actioned today</h4>
+        <p>Construction documents use the shared "Open Node" action. Reviewers cross-check the permit or change-order number against project records before clearing or escalating.</p>
+
+        <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
+        <table>
+          <tr><th>Stage</th><th>File Path</th></tr>
+          <tr><td>War Room</td><td><code>html/war-rooms/construct-war/construction-war-room.html</code></td></tr>
+          <tr><td>Strategist</td><td><code>html/war-rooms/construct-war/construction-strategist.html</code></td></tr>
+          <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/war-rooms/construct-war/construction-executive-portal.html</code></td></tr>
+          <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_CONSTRUCTION_STRATEGIST_RELAY</code></td></tr>
+        </table>
+
+        <div class="callout recovery">
+          <span class="callout-label">Recovery Note</span>
+          See Section 7 for a real, code-documented routing risk specific to Construction: a change-order exclusion code that reuses a "CO-" prefix can silently misroute to the wrong recovery path.
+        </div>
+      </div>
+
+      <!-- BPO -->
+      <div class="vertical" id="v-bpo">
+        <h3>BPO Internal</h3>
+        <div class="covers">SLA reports, client onboarding, internal SOPs, and service-line invoices.</div>
+        <div class="node-line">Primary node: <code>bpo-war-room</code> — <code>html/war-rooms/bpo-war/bpo-war-room.html</code></div>
+
+        <h4>Document types you'll see</h4>
+        <table>
+          <tr><th>Type</th><th>Example Filename</th><th>What It Typically Is</th></tr>
+          <tr><td>DOCUMENT REPORT</td><td><code>SLA_Report_Acme_June.record</code></td><td>An SLA report carrying an SLA-breach exclusion code</td></tr>
+          <tr><td>DOCUMENT REPORT</td><td><code>Onboarding_Checklist_TechFirm.record</code></td><td>A new-client onboarding checklist</td></tr>
+          <tr><td>VENDOR INVOICE</td><td><code>Invoice_ClientServices_Jul.record</code></td><td>A service-line invoice</td></tr>
+          <tr><td>POLICY</td><td><code>SOP_Document_CallHandling_v3.record</code></td><td>An internal SOP document</td></tr>
+        </table>
+
+        <h4>How this vertical is actioned today</h4>
+        <p>BPO documents use the shared "Open Node" action. From the War Room, reviewers fire the extraction engine and route to the Strategist (<code>bpo-strategist.html</code>), which reviews five tabs — Strategy Brief, SLA Report, Client Impact, Escalations, and Mission Timeline — and generates a strategy brief before escalating to the Executive Portal for approval and execution. See <code>BPO_Client_Chain_Manual.docx</code> for the full five-stage operating procedure, including the client-facing portal this chain feeds.</p>
+
+        <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
+        <table>
+          <tr><th>Stage</th><th>File Path</th></tr>
+          <tr><td>War Room</td><td><code>html/war-rooms/bpo-war/bpo-war-room.html</code></td></tr>
+          <tr><td>Strategist</td><td><code>html/war-rooms/bpo-war/bpo-strategist.html</code></td></tr>
+          <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/war-rooms/bpo-war/bpo-executive-portal.html</code></td></tr>
+          <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_BPO_STRATEGIST_RELAY</code></td></tr>
+        </table>
+
+        <div class="callout recovery">
+          <span class="callout-label">Recovery Note</span>
+          SLA-breach codes are the clearest recovery signal in this vertical — an unresolved SLA breach is a contractual credit or penalty exposure until it's cleared.
+        </div>
+      </div>
+
+      <!-- Real Estate -->
+      <div class="vertical" id="v-re">
+        <h3>Real Estate</h3>
+        <div class="covers">Listing agreements, title reports, closing disclosures, and inspection reports.</div>
+        <div class="node-line">Primary node: <code>re-war-room</code> — <code>html/war-rooms/re-war/re-war-room.html</code></div>
+
+        <h4>Document types you'll see</h4>
+        <table>
+          <tr><th>Type</th><th>Example Filename</th><th>What It Typically Is</th></tr>
+          <tr><td>CONTRACT</td><td><code>Listing_Agreement_123Maple.record</code></td><td>A listing agreement</td></tr>
+          <tr><td>TITLE DOCUMENT</td><td><code>Title_Report_OakRidge.record</code></td><td>A title report; can carry a LIEN exclusion code and a Title Defect flag</td></tr>
+          <tr><td>DOCUMENT REPORT</td><td><code>Closing_Disclosure_Unit12B.record</code></td><td>A closing disclosure, often six-figure exposure</td></tr>
+          <tr><td>DOCUMENT REPORT</td><td><code>Inspection_Report_456Cedar.record</code></td><td>An inspection report; can carry an Inspection Issues flag</td></tr>
+        </table>
+
+        <h4>How this vertical is actioned today</h4>
+        <p>Real Estate documents use the shared "Open Node" action. Title and inspection items carry a <code>defectFlags</code> field — reviewers should treat any populated flag (Title Defect, Inspection Issues) as a hold on closing until cleared.</p>
+
+        <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
+        <table>
+          <tr><th>Stage</th><th>File Path</th></tr>
+          <tr><td>War Room</td><td><code>html/war-rooms/re-war/re-war-room.html</code></td></tr>
+          <tr><td>Strategist</td><td><code>html/war-rooms/re-war/re-strategist.html</code></td></tr>
+          <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/war-rooms/re-war/re-exec-portal.html</code></td></tr>
+          <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_REALESTATE_STRATEGIST_RELAY</code></td></tr>
+        </table>
+
+        <div class="callout recovery">
+          <span class="callout-label">Recovery Note</span>
+          Title defects (liens) are the highest-stakes item in this vertical — an unresolved lien blocks the entire closing, not just one line item.
+        </div>
+      </div>
+
+      <!-- Legal -->
+      <div class="vertical" id="v-legal">
+        <h3>Legal</h3>
+        <div class="covers">Court filings, discovery production, engagement agreements, and outside-counsel invoices.</div>
+        <div class="node-line">Primary node: <code>leg-war-room</code> — <code>html/war-rooms/legal-war/legal-war-room.html</code></div>
+
+        <h4>Document types you'll see</h4>
+        <table>
+          <tr><th>Type</th><th>Example Filename</th><th>What It Typically Is</th></tr>
+          <tr><td>FILING</td><td><code>Complaint_Doe_v_Acme.record</code></td><td>A court filing</td></tr>
+          <tr><td>DOCUMENT REPORT</td><td><code>Discovery_Production_Set1.record</code></td><td>A discovery production set; can carry a privilege exclusion code</td></tr>
+          <tr><td>CONTRACT</td><td><code>Engagement_Agreement_Reyes.record</code></td><td>A client engagement agreement</td></tr>
+          <tr><td>VENDOR INVOICE</td><td><code>Invoice_OutsideCounsel_Jul.record</code></td><td>An outside-counsel invoice</td></tr>
+        </table>
+
+        <h4>How this vertical is actioned today</h4>
+        <p>Legal documents use the shared "Open Node" action. Discovery items carrying a <code>PRIV-</code> exclusion code should be treated as privilege-review holds before they move past the Strategist stage.</p>
+
+        <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
+        <table>
+          <tr><th>Stage</th><th>File Path</th></tr>
+          <tr><td>War Room</td><td><code>html/war-rooms/legal-war/legal-war-room.html</code></td></tr>
+          <tr><td>Strategist</td><td><code>html/war-rooms/legal-war/legal-main-strategist.html</code></td></tr>
+          <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/war-rooms/legal-war/legal-executive-portal.html</code></td></tr>
+          <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_LEGAL_STRATEGIST_RELAY</code></td></tr>
+        </table>
+
+        <div class="callout recovery">
+          <span class="callout-label">Recovery Note</span>
+          Discovery and outside-counsel invoices are where uncontrolled spend hides — timely routing keeps privilege review and billing audit from backing up into a single bottleneck.
+        </div>
+      </div>
+
+      <!-- Healthcare -->
+      <div class="vertical" id="v-hc">
+        <h3>Healthcare</h3>
+        <div class="covers">Claim denials, appeals, remittances (EOBs), and prior-authorization requests.</div>
+        <div class="node-line">Primary node: <code>hc-denial</code> — Healthcare's multi-node intake, see <code>html/healthcare/hc-denial-war-room.html</code> for the live war room</div>
+
+        <h4>Document types you'll see</h4>
+        <table>
+          <tr><th>Type</th><th>Example Filename</th><th>What It Typically Is</th></tr>
+          <tr><td>DENIAL</td><td><code>Denial_CLM-HC-7731.record</code></td><td>A payer claim denial carrying a CARC-style denial code (e.g. CO-50)</td></tr>
+          <tr><td>CLAIM APPEAL</td><td><code>Appeal_Letter_CLM-HC-7731.record</code></td><td>An appeal letter tied to a prior denial</td></tr>
+          <tr><td>REMITTANCE</td><td><code>EOB_BCBS_July.record</code></td><td>An explanation-of-benefits / remittance batch</td></tr>
+          <tr><td>DOCUMENT REPORT</td><td><code>Prior_Auth_Request_MRI.record</code></td><td>A pending prior-authorization request (<code>PA-</code> exclusion code)</td></tr>
+        </table>
+
+        <h4>How this vertical is actioned today</h4>
+        <p>Healthcare documents use the shared "Open Node" action. See Section 7 for a real, code-documented ordering rule: any exclusion code starting <code>PA-</code> is checked for an authorization block before document type is checked for DENIAL — get the exclusion code right or an appeal can misroute to prior-auth verification.</p>
+
+        <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
+        <table>
+          <tr><th>Stage</th><th>File Path</th></tr>
+          <tr><td>War Room</td><td><code>html/healthcare/hc-denial-war-room.html</code></td></tr>
+          <tr><td>Strategist</td><td>shared strategist relay (see Section 7 for a routing nuance specific to <code>PA-</code> codes)</td></tr>
+          <tr><td>Exec Portal (BNCA Escalated)</td><td>reached via the shared BNCA escalation path once a denial/appeal clears threshold</td></tr>
+          <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_HEALTHCARE_STRATEGIST_RELAY</code></td></tr>
+        </table>
+
+        <div class="callout recovery">
+          <span class="callout-label">Recovery Note</span>
+          Denials and appeals are the core revenue-recovery loop for Healthcare — every day a denial sits unappealed is a day closer to the payer's appeal-window deadline.
+        </div>
+
+        <h4>Sample / test document set</h4>
+        <p>Six synthetic sample PDFs live at <code>html/healthcare/</code> — two-page pairs covering all four Healthcare document types (prior auth request, denial, remittance, EOB) across three fictional payers. They exist for testing the intake pipeline and for demos, and are safe to use freely: every name, ID, and dollar figure is fictional and each page is watermarked SAMPLE / SYNTHETIC DATA.</p>
+        <table>
+          <tr><th>File</th><th>Contents</th><th>Notes</th></tr>
+          <tr><td><code>File1_PriorAuth_Denial.pdf</code></td><td>Prior Auth Request + Denial Letter (Meridian Health Plan)</td><td>Clean baseline, but reuses the same claim # as File2 for a different service.</td></tr>
+          <tr><td><code>File2_Remittance_EOB.pdf</code></td><td>Remittance Advice + EOB (Meridian Health Plan)</td><td>Carries an accidental $0.05 rounding mismatch between line-item detail and the stated total; left in intentionally as a lower-stakes test case.</td></tr>
+          <tr><td><code>File3_PriorAuth_Denial_CO197.pdf</code></td><td>Prior Auth Request + Denial Letter (Arizona Health Network, CO-197 precert absent)</td><td>Clean baseline.</td></tr>
+          <tr><td><code>File4_Remittance_EOB_2.pdf</code></td><td>Remittance Advice + EOB (Arizona Health Network)</td><td>Clean baseline.</td></tr>
+          <tr><td><code>File5_PriorAuth_Denial_ANOMALY.pdf</code></td><td>Prior Auth Request + Denial Letter (TriCore Regional Health)</td><td>Deliberately seeded: denial dated before the request, a billed-amount mismatch, a transposed provider NPI, and a 15-day appeal window that breaks the 180-day pattern used elsewhere.</td></tr>
+          <tr><td><code>File6_Remittance_EOB_ANOMALY.pdf</code></td><td>Remittance Advice + EOB (TriCore Regional Health)</td><td>Deliberately seeded: a mismatched claim # between the ERA and EOB, an allowed amount that exceeds billed, a payment date before the date of service, and a ~$1,413.64 underpayment vs. the payer's own EOB figure.</td></tr>
+        </table>
+        <p style="margin-top:14px;"><code>html/healthcare/ANOMALY_ANSWER_KEY.md</code> documents every seeded anomaly above in full, for scoring a detection workflow's output against ground truth.</p>
+
+        <div class="callout verified">
+          <span class="callout-label">Verified — End-to-End Test</span>
+          Two randomly-selected files from this set (<code>File2_Remittance_EOB.pdf</code> and <code>File4_Remittance_EOB_2.pdf</code>) were run through the real pipeline — <code>routes/doc-router.js</code>'s pdf-parse extraction followed by <code>server/healthcare/hc-neural-intake.js</code>'s <code>classifyIntake()</code> — and both extracted cleanly and classified correctly to the billing node at high confidence, matched on "claim," "cpt," "remit," "era," and "eob."
+        </div>
+      </div>
+
+      <!-- PM Copilot -->
+      <div class="vertical" id="v-pm">
+        <h3>PM Copilot</h3>
+        <div class="covers">Work orders, vendor insurance certificates, and lease renewals for property management clients.</div>
+        <div class="node-line">Primary node: <code>pm-war-room</code> — <code>html/war-rooms/pm-copilot/pm-command.html</code></div>
+
+        <h4>Document types you'll see</h4>
+        <table>
+          <tr><th>Type</th><th>Example Filename</th><th>What It Typically Is</th></tr>
+          <tr><td>DOCUMENT REPORT</td><td><code>WorkOrder_HVAC_Unit204.record</code></td><td>A maintenance work order carrying an SLA-breach code</td></tr>
+          <tr><td>POLICY</td><td><code>Vendor_Insurance_Cert_CoolAir.record</code></td><td>A vendor's insurance certificate; can carry an INS-EXP (expired) code</td></tr>
+          <tr><td>CONTRACT</td><td><code>Lease_Renewal_Unit112.record</code></td><td>A lease renewal</td></tr>
+        </table>
+
+        <h4>How this vertical is actioned today</h4>
+        <p>PM Copilot documents use the shared "Open Node" action. A vendor insurance certificate carrying <code>INS-EXP</code> should be treated as a compliance hold — that vendor should not be dispatched again until a current certificate is on file.</p>
+
+        <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
+        <table>
+          <tr><th>Stage</th><th>File Path</th></tr>
+          <tr><td>War Room</td><td><code>html/war-rooms/pm-copilot/pm-command.html</code></td></tr>
+          <tr><td>Strategist</td><td><code>html/war-rooms/pm-copilot/pm-strategist.html</code></td></tr>
+          <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/war-rooms/pm-copilot/pm-exec-portal.html</code></td></tr>
+          <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_PM_STRATEGIST_RELAY</code></td></tr>
+        </table>
+
+        <div class="callout recovery">
+          <span class="callout-label">Recovery Note</span>
+          Expired vendor insurance is a liability exposure, not just a paperwork gap — catching INS-EXP here prevents an uninsured vendor incident from becoming the property owner's problem.
+        </div>
+      </div>
+
+      <!-- NOC -->
+      <div class="vertical" id="v-noc">
+        <h3>Network Operations Center</h3>
+        <div class="covers">Infrastructure incidents and SLA/uptime reporting.</div>
+        <div class="node-line">Primary node: <code>noc-war-room</code> — <code>html/l1-copilot/noc/noc-war-room.html</code></div>
+
+        <h4>Document types you'll see</h4>
+        <table>
+          <tr><th>Type</th><th>Example Filename</th><th>What It Typically Is</th></tr>
+          <tr><td>INCIDENT</td><td><code>Incident_Outage_CoreSwitch04.record</code></td><td>A core-infrastructure outage incident (severity-coded)</td></tr>
+          <tr><td>DOCUMENT REPORT</td><td><code>SLA_Breach_UptimeReport_Q2.record</code></td><td>An uptime SLA breach report, escalated to BNCA</td></tr>
+        </table>
+
+        <h4>How this vertical is actioned today</h4>
+        <p>NOC documents use the shared "Open Node" action. Severity-coded incidents (SEV-2 and above) should be triaged before uptime reports, since an open incident is the live event an SLA report only reports on afterward.</p>
+
+        <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
+        <table>
+          <tr><th>Stage</th><th>File Path</th></tr>
+          <tr><td>War Room</td><td><code>html/l1-copilot/noc/noc-war-room.html</code></td></tr>
+          <tr><td>Strategist</td><td><code>html/l1-copilot/noc/noc-strategist.html</code></td></tr>
+          <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/l1-copilot/noc/noc-executive-portal.html</code></td></tr>
+        </table>
+
+        <div class="callout scope">
+          <span class="callout-label">Sentinel Scope Note</span>
+          NOC is not one of the 12 verticals <code>html/sentinel-center.html</code> tracks (schools, healthcare, finops, insurance, construction, legal, realestate, bpo, mortgage, hotelops, pm, concierge) — its Strategist stage does not write a <code>TSM_*_STRATEGIST_RELAY</code> key, so NOC items never surface on the Sentinel Center board. This is a real gap in the wiring, not an omission in this manual.
+        </div>
+
+        <div class="callout recovery">
+          <span class="callout-label">Recovery Note</span>
+          Uptime SLA breaches carry contractual credit exposure back to the client — the sooner a breach report is actioned, the smaller the credit typically owed.
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="s6">
+      <h2><span class="num">6</span> Document Card Controls (Every Vertical)</h2>
+      <p>Every document card in the War Room carries the same baseline controls: an "Open Node" action that routes the reviewer into the vertical's War Room page pre-loaded with that document's context, and the core field set from Section 3 displayed on the card face (exclusion code, amount, routing path).</p>
+      <p>A populated exclusion code or a non-empty <code>defectFlags</code> array (used in Real Estate and Healthcare, see Section 5) should be read as a hold, not a suggestion — those fields exist specifically so a reviewer doesn't have to open the full document to know something needs attention.</p>
+    </section>
+
+    <section class="doc-section" id="s7">
+      <h2><span class="num">7</span> Known Risk: Exclusion-Code Collisions</h2>
+      <p>This is a real, code-documented routing risk — not a hypothetical. TSM's routing logic checks certain exclusion-code prefixes in a fixed order, and a code that happens to match the wrong prefix can misroute a document to the wrong recovery path.</p>
+
+      <h4 style="margin-top:24px;">Healthcare example (PA- prefix)</h4>
+      <p>The router checks any <code>exclusionCode</code> starting <code>PA-</code> for an authorization block before it checks <code>documentType</code> for DENIAL. A real proof-pack demo document labels its denial code "PA-17" — if the live classifier reused that code verbatim, the appeal packet would misroute to prior-auth verification steps instead of the appeal steps it actually needs. The seeded demo version pins the code to "CO-50" (a real CARC-style denial code) specifically to avoid this collision.</p>
+
+      <h4 style="margin-top:24px;">Construction example (CO- prefix)</h4>
+      <p>Similarly, a change-order document labeled "CO-017" would trip <code>DENIAL_RISK</code> routing if reused as its exclusion code — not the sharpest fit for a cost-variance dispute with an unresolved authorization question. The seeded demo version pins the code to "VAR-CO17" instead, which correctly routes to <code>DOCUMENTATION_BLOCK</code> (identify defects, send query, block release until resolved).</p>
+
+      <div class="callout risk">
+        <span class="callout-label">Why This Matters</span>
+        If you're hand-keying an exclusion code, or reviewing one an AI classifier assigned, treat "PA-", "CO-", "OA-", and "PR-" prefixes as reserved — they carry routing meaning beyond just being a reference number.
+      </div>
+    </section>
+
+    <section class="doc-section" id="s8">
+      <h2><span class="num">8</span> Quick-Reference Checklist — Don't Miss These</h2>
+      <ul class="checklist">
+        <li>Check the exclusion code before trusting the routing — see Section 7's PA-/CO- collision risk.</li>
+        <li>A Mission Preview modal means low confidence — verify the fields, don't rubber-stamp it.</li>
+        <li>A populated <code>defectFlags</code> array (Real Estate, Healthcare) is a hold, not informational text.</li>
+        <li>BPO's Strategist stage is a real, built page (<code>bpo-strategist.html</code>) — a BPO item does get a Strategist hop, same as other verticals; see <code>BPO_Client_Chain_Manual.docx</code> for the full stage-by-stage steps.</li>
+        <li>RCM-OS and Property Accounting — Revenue Cycle are searchable but not classifier-routed — a document won't land there automatically (Appendix A).</li>
+        <li>Mortgage, Schools, HotelOps/Concierge, Honeywell, L1 Ticket, Logistics, and Supplier/Vendor sit entirely outside this pipeline (Appendix B) — don't look for them in doc-search.</li>
+        <li>Sentinel Center (<code>html/sentinel-center.html</code>) rolls up 8 of the 9 pipeline verticals — every one but NOC — plus Mortgage, Schools, HotelOps, and Concierge from Appendix B; check Section 5's Sentinel Center Feed rows for the exact relay key.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="s9">
+      <h2><span class="num">9</span> Glossary</h2>
+      <table>
+        <tr><th>Term</th><th>Meaning</th></tr>
+        <tr><td>BNCA</td><td>Best Next Course of Action — the system's escalation/recommendation concept</td></tr>
+        <tr><td>War Room</td><td>the vertical-specific page where a routed document first lands for review</td></tr>
+        <tr><td>Strategist</td><td>the second relay stage — reconciliation/sign-off before executive escalation</td></tr>
+        <tr><td>Executive Portal</td><td>the third relay stage — where BNCA-escalated items surface for leadership</td></tr>
+        <tr><td>Exclusion Code</td><td>a short routing code assigned to a document; drives which recovery path it takes</td></tr>
+        <tr><td>Mission Preview</td><td>a confirmation modal shown when classifier confidence is below 0.6</td></tr>
+        <tr><td>sourceNode / routing</td><td>which node a document lands on, and the ordered relay path it will follow</td></tr>
+        <tr><td>Sentinel Center</td><td><code>html/sentinel-center.html</code> — cross-vertical risk board that reads each vertical's <code>TSM_*_STRATEGIST_RELAY</code> key; downstream of the relay chain, not a pipeline stage itself</td></tr>
+      </table>
+    </section>
+
+    <section class="doc-section" id="appA">
+      <h2>Appendix A: Registered but Not Classifier-Routed</h2>
+      <p>RCM-OS and Property Accounting — Revenue Cycle are registered in the shared document-search index (<code>tsm-doc-search-multi.html</code>) for manual browsing, but — per that file's own code comments, verified on a fresh clone — neither has a doc-search relay receiver on its target page, and neither is in <code>server.js</code>'s classifier vertical list. A user can still open a document into these pages manually from the doc-search index; it just won't auto-land there the way it does for the nine Section 5 verticals.</p>
+
+      <h4>RCM-OS (RCM Operating System)</h4>
+      <p>Target page: <code>html/finops-suite/tsm-rcm-os.html</code></p>
+      <p>Reconciliation Command Center — search by cadence, GL code, ledger, escrow. Indexed in the shared doc-search UI for manual browsing only; no <code>*_docsearch_relay</code> listener exists on its target page, and it is absent from <code>server.js</code>'s <code>DOC_ROUTER_NODES</code>/<code>DOC_ROUTER_PROMPT</code> vertical list, so the AI classifier cannot route a document into it yet.</p>
+
+      <h4>Property Accounting — Revenue Cycle</h4>
+      <p>Target page: <code>html/construction-suite/property-accounting-revenue-cycle.html</code></p>
+      <p>Search by pay app, lien release, AR, collections. Same status as RCM-OS: indexed for manual navigation only, not yet classifier-routed.</p>
+    </section>
+
+    <section class="doc-section" id="appB">
+      <h2>Appendix B: Verticals Outside This Pipeline</h2>
+      <p>The nine verticals in Section 5 are the ones that run through TSM's shared document-router classifier (<code>tsm-doc-search-multi.html</code>). The verticals below have their own relay chains but are not wired into that shared intake pipeline at all (not even for manual indexing, unlike Appendix A), so document-processing guidance for them isn't covered by this manual — listed here for reference only.</p>
+      <ul class="plain">
+        <li>Mortgage — <code>html/war-rooms/mortgage/mortgage-war-room.html</code></li>
+        <li>Schools — <code>html/war-rooms/schools-command/schools-command.html</code></li>
+        <li>HotelOps / Concierge — <code>html/hotelops/hotelops-war-room.html</code></li>
+        <li>Honeywell Industrial — <code>html/plant-incident.html</code></li>
+        <li>L1 Ticket Copilot — <code>html/l1-copilot/l1-ticket-copilot.html</code></li>
+        <li>Logistics — <code>html/logistics/logistics-situation-room.html</code> (Situation Room only — no Strategist/Executive Portal built yet)</li>
+        <li>Supplier/Vendor Management — <code>html/supplier-vendor/supplier-vendor-situation-room.html</code> (Situation Room only — no Strategist/Executive Portal built yet)</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="appC">
+      <h2>Appendix C: Sweet Music OS — Creation Flow (Outside This Pipeline)</h2>
+
+      <div class="callout scope">
+        <span class="callout-label">Scope</span>
+        Sweet Music OS is not a document-intake vertical. There's no classifier, no BNCA escalation, no exclusion codes, and no War Room → Strategist → Executive Portal relay chain here. This appendix exists purely as a troubleshooting reference for support staff fielding questions about the music creation tools — it is not part of the revenue-recovery pipeline described in Sections 2–8.
+      </div>
+
+      <div class="vertical" id="v-music">
+        <h3>Song Builder</h3>
+        <div class="covers">An 8-step guided wizard (Genre → Mood → Sound Inspiration → Message → Hook → Beat Intel → Structure → Notes) that generates original lyrics from the client's selections.</div>
+        <div class="node-line">Primary node: <code>html/war-rooms/music-war/creation/song-builder.html</code></div>
+
+        <h4>Expected behavior, step by step</h4>
+        <table>
+          <tr><th>Step</th><th>What the user does</th><th>What should happen</th></tr>
+          <tr><td>1 — Genre</td><td>Clicks a genre chip</td><td>Chip highlights; <code>#nextBtn</code> advances to Mood</td></tr>
+          <tr><td>2 — Mood</td><td>Clicks a mood chip</td><td>Chip highlights; advances to Sound Inspiration</td></tr>
+          <tr><td>3 — Sound Inspiration</td><td>Clicks up to 3 preset artist chips, and/or types an artist not listed into the free-text field and clicks "+ Add"</td><td>Selected chips get <code>.selected</code>; typed artists render as a chip tagged "Custom"; presets and typed artists share one 3-artist cap — a 4th attempt (either kind) triggers an alert and is rejected</td></tr>
+          <tr><td>4 — Message</td><td>Types the song's core message</td><td>Free text, no validation beyond non-empty on Generate</td></tr>
+          <tr><td>5 — Hook</td><td>Types the hook line</td><td>Free text</td></tr>
+          <tr><td>6 — Beat Intel</td><td>Enters BPM and key</td><td>Free text/number fields</td></tr>
+          <tr><td>7 — Structure</td><td>Confirms or edits song structure</td><td>Defaults are pre-filled; user can skip</td></tr>
+          <tr><td>8 — Notes</td><td>Adds free-form style notes (delivery, tone, ad-libs)</td><td>Free text, then "Generate Song"</td></tr>
+        </table>
+
+        <h4>What "Generate Song" actually does</h4>
+        <p>Submits every selection to <code>POST /api/music/sweet/ai</code> (<code>routes/music.js</code>), which calls the Groq LLaMA backend ("TSM Neural Core"). The response populates the output panel (<code>#output</code>) with Hook/Verse/Bridge sections. There is no audio generated at this stage — output is lyrics text only.</p>
+
+        <h4>Troubleshooting</h4>
+        <table>
+          <tr><th>Symptom</th><th>Likely Cause</th></tr>
+          <tr><td>Output panel shows "Error generating song. Please check your connection and try again." — spinner stops normally, no hang</td><td>Almost always <code>GROQ_API_KEY</code> is missing or blank on the server (<code>routes/music.js</code> throws <code>"GROQ_API_KEY not configured on server."</code> and the UI shows this same generic message either way — it looks identical whether Groq itself is down or the key was never set). Confirm with <code>grep GROQ_API_KEY .env</code>. If you just added the key, you must fully restart the server — <code>node --watch server.js</code> reloads on file changes but does <em>not</em> pick up new <code>.env</code> values without a restart.</td></tr>
+          <tr><td>Output panel never appears at all / spinner hangs indefinitely</td><td>Check the Network tab for the <code>/api/music/sweet/ai</code> request — a genuine Groq API timeout or outage, not a config issue</td></tr>
+          <tr><td>Typed artist won't add / no "Custom" chip appears</td><td>Confirm <code>#customArtistInput</code> and the "+ Add" button are present in the DOM — a stale cached page (pre custom-artist feature) will be missing both</td></tr>
+          <tr><td>Client says they added a 4th artist and it "did nothing"</td><td>Expected — the cap is 3 total across presets and typed names combined. The alert confirming this may be getting suppressed by a popup blocker; check browser console for the dialog event instead</td></tr>
+        </table>
+      </div>
+
+      <div class="vertical" id="v-cadence">
+        <h3>Cadence Studio</h3>
+        <div class="covers">A bar-by-bar flow analyzer. Users paste or type up to 8 lines and get a scored assessment of cadence/rhythm.</div>
+        <div class="node-line">Primary node: <code>html/war-rooms/music-war/cadence-builder.html</code></div>
+
+        <h4>Expected behavior</h4>
+        <p>Each bar goes in its own row (<code>#lyricsArea .lyric-row .lyric-input</code>). Clicking "Analyze Flow" (<code>.btn.btn-amber</code>) calls <code>analyzeFlow()</code>, which posts to <code>POST /api/music/structure</code>. On success, <code>#fbHeader</code> updates to read <code>Score: X/10</code>.</p>
+
+        <h4>Troubleshooting</h4>
+        <table>
+          <tr><th>Symptom</th><th>Likely Cause</th></tr>
+          <tr><td><code>#fbHeader</code> never updates after clicking Analyze Flow</td><td>Check <code>/api/music/structure</code> in the Network tab — same backend dependency as Song Builder, so a Groq outage affects both tools together</td></tr>
+          <tr><td>Score seems to ignore blank rows</td><td>Expected — empty <code>.lyric-input</code> rows are skipped by the analyzer, not scored as zero</td></tr>
+        </table>
+      </div>
+
+      <div class="vertical" id="v-mastering">
+        <h3>Mastering Coach</h3>
+        <div class="covers">A pre-release readiness checklist against common streaming-platform loudness targets.</div>
+        <div class="node-line">Primary node: <code>html/war-rooms/music-war/producer/mastering-coach.html</code></div>
+
+        <div class="callout risk">
+          <span class="callout-label">Do not tell clients this masters audio</span>
+          Mastering Coach does not analyze, process, or produce any audio file. The user manually types in their own Integrated LUFS and True Peak readings (from their own DAW or mastering engineer) plus optional notes. The tool compares those self-reported numbers against streaming targets and returns a readiness verdict — nothing more. If a client asks "where's my mastered file," the answer is: this tool doesn't generate one.
+        </div>
+
+        <h4>Expected behavior</h4>
+        <p>User fills <code>#lufsInput</code>, <code>#peakInput</code>, optional <code>#notesInput</code>, then clicks "Check Readiness" (<code>checkMaster()</code>). <code>#resultPanel</code> becomes visible and <code>#verdict</code> populates with a readiness assessment.</p>
+
+        <h4>Troubleshooting</h4>
+        <table>
+          <tr><th>Symptom</th><th>Likely Cause</th></tr>
+          <tr><td><code>#verdict</code> stays at "—" after clicking Check Readiness</td><td>LUFS/Peak fields likely contain non-numeric input, or one was left blank — the check needs both values</td></tr>
+          <tr><td>Client confused why their track "sounds different" after this tool</td><td>It doesn't touch the audio at all — re-confirm they understand this is a numbers-in, verdict-out readiness check, not a mastering engine</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      TSM Consultz LLC · Internal Use · Document Processing &amp; Revenue Recovery Manual v2.0
+    </footer>
+  </main>
+</div>
+</body>
+</html>
