@@ -326,10 +326,42 @@ Return ONLY valid JSON:
 
   try {
     const d = await SMOS.askJSON(prompt, 'You are a cadence AI coach.');
-    renderFeedback(d);
+    renderFeedback(reconcileFeedback(d, bars));
   } catch(e) {
     content.innerHTML = `<div style="color:var(--red);font-size:0.72rem">Error: ${e.message}</div>`;
   }
+}
+
+// The AI's own syllable-count judgment (its "issue" tag) is unreliable --
+// LLMs frequently mis-estimate syllables even when told the exact count,
+// and can invent bar numbers beyond what was actually submitted. Since we
+// already computed exact syllable counts locally (countSyllables is
+// deterministic), reconcile the AI's response against that ground truth:
+// drop any bar the user didn't submit, and override "sparse"/"overcrowded"/
+// "none" calls with our own math. Non-syllable judgments the AI is better
+// positioned for ("weak_rhyme", "strong") are preserved when the syllable
+// count is genuinely on target, so we don't erase real rhyme feedback.
+function classifyBySyllables(n, target) {
+  if (n === 0) return 'sparse';
+  const diff = n - target;
+  if (Math.abs(diff) <= 1) return 'none';
+  return diff < 0 ? 'sparse' : 'overcrowded';
+}
+
+function reconcileFeedback(d, bars) {
+  const byBar = {};
+  bars.forEach(b => { byBar[b.bar] = b; });
+
+  const reconciledBars = (d.bars || [])
+    .filter(b => byBar[b.bar]) // drop hallucinated bars that don't exist
+    .map(b => {
+      const local = byBar[b.bar];
+      const detTag = classifyBySyllables(local.syllables, targetSyl);
+      const keepAiTag = (b.issue === 'weak_rhyme' || b.issue === 'strong') && detTag === 'none';
+      return Object.assign({}, b, { issue: keepAiTag ? b.issue : detTag });
+    });
+
+  return Object.assign({}, d, { bars: reconciledBars });
 }
 
 function renderFeedback(d) {
