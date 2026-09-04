@@ -838,7 +838,11 @@ window.loadInphusionAnomaly = function() {
 </div>
 TICKET DESCRIPTION</div>
         <div class="card-body">
-          <textarea id="tkDescription" rows="10" placeholder="Paste the full ticket text here — symptoms, error messages, what the user has already tried..."></textarea>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+  <input id="tkFile" type="file" accept=".txt,.csv,.md,.json,.pdf,.docx,.xlsx,.xls,.eml,.log" style="font-size:11px;max-width:100%">
+  <button class="btn btn-outline" id="btnIngestTicketFile" type="button">INGEST TICKET FILE</button>
+  <span id="tkFileStatus" style="font-size:10px;color:var(--text-dim)">TXT / CSV / MD / JSON / PDF / DOCX / XLSX / XLS / EML / LOG</span></div>
+  <textarea id="tkDescription" rows="10" placeholder="Paste the full ticket text here — symptoms, error messages, what the user has already tried..."></textarea>
           <div class="btn-row">
             <button class="btn btn-cyan" id="btnAnalyze">RUN AI ANALYSIS</button>
             <button class="btn btn-ghost" id="btnLoadSample">LOAD SAMPLE TICKET</button>
@@ -4762,5 +4766,51 @@ window.selectQ15Scenario = function(id) {
 })();
 </script>
 <script src="/js/tsm-guide-engine.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const btnIngest = document.getElementById("btnIngestTicketFile");
+      if (!btnIngest) return;
+
+      btnIngest.addEventListener("click", async () => {
+        const fileInput = document.getElementById("tkFile");
+        const statusSpan = document.getElementById("tkFileStatus");
+        const descriptionBox = document.getElementById("tkDescription");
+        
+        if (!fileInput.files.length) {
+          statusSpan.textContent = "Select a file to ingest.";
+          return;
+        }
+        
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append("file", file);
+        
+        statusSpan.textContent = "Extracting file content...";
+        
+        try {
+          const response = await fetch("/api/doc-router/extract-file", {
+            method: "POST",
+            body: formData
+          });
+          
+          if (!response.ok) throw new Error("Extraction endpoint error");
+          
+          const result = await response.json();
+          const extractedText = result.text || result.content || "";
+          
+          if (extractedText) {
+            descriptionBox.value = extractedText;
+            statusSpan.textContent = "Ingested successfully!";
+          } else {
+            statusSpan.textContent = "No text content extracted.";
+          }
+        } catch (error) {
+          console.error("File ingestion error:", error);
+          statusSpan.textContent = "Ingestion failed.";
+        }
+      });
+    });
+
+</script>
 </body>
 </html>
