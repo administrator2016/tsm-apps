@@ -104,6 +104,28 @@
       if (filled < 2) return false;
       return document.querySelectorAll('#fbContent .fb-row').length > 0;
     },
+
+    // Song Builder: renderOutput() only builds .output-section blocks
+    // (HOOK/VERSE 1/etc.) after a successful fetch + JSON.parse of the
+    // AI response; the catch-block error path replaces #output with a
+    // single plain red div and never creates .output-section. Checking
+    // for that class instead of just #output.show (which both paths
+    // set) is what makes this immune to the error/loading states.
+    'song-builder'() {
+      return document.querySelectorAll('#output .output-section').length > 0;
+    },
+
+    // Beat Workbench: showUploadedBeat() only runs after a real
+    // successful upload response from the server and is the only place
+    // that (a) adds the 'show' class to #intelPanel and (b) sets a real
+    // src on #beatPlayer. showUploadError() only ever touches #uploadError.
+    // Require both, not just the panel's show class, so a leftover
+    // stale panel state can't false-positive this.
+    'beat-workbench'() {
+      const panel = document.getElementById('intelPanel');
+      const player = document.getElementById('beatPlayer');
+      return !!(panel && panel.classList.contains('show') && player && player.getAttribute('src'));
+    },
   };
 
   const PROGRESS_KEY = 'smos_guided_flow_progress';
