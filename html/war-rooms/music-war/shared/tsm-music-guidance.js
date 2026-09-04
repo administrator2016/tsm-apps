@@ -73,12 +73,38 @@
   // Pages that get auto inline-explainer scanning (jargon-heavy pages
   // named explicitly in scope: Song Builder + the 4 producer coaches).
   const INLINE_EXPLAINER_PAGES = [
+    '/music/cadence-builder.html',
     '/music/creation/song-builder.html',
     '/music/producer/mixing-coach.html',
     '/music/producer/mastering-coach.html',
     '/music/producer/recording-coach.html',
     '/music/producer/producer-ai.html',
   ];
+
+  // ── Guided Flow: honest auto-completion checkers ─────────────────
+  // A step is only auto-marked done when there's a real, DOM-verified
+  // signal the user actually did the work on that page — never just
+  // "the page loaded" or "they clicked something". Each checker
+  // returns true/false; polled while Guided Flow is on and the step
+  // isn't already marked done. Add one entry per FLOW step as pages
+  // get audited (only 'cadence' is covered so far).
+  const AUTO_COMPLETE_CHECKS = {
+    // Cadence Studio: don't credit "done" just for typing bars — that's
+    // the same minimum (2+ bars) the page's own analyzeFlow() requires,
+    // not real evidence of a finished cadence. Require the Cadence AI
+    // to have actually returned parsed feedback (renderFeedback()
+    // populates #fbContent with .fb-row elements only on success; the
+    // catch-block error path never does), so this can't be fooled by
+    // a spinner stuck mid-request or a failed API call.
+    cadence() {
+      let filled = 0;
+      document.querySelectorAll('.lyric-input').forEach((inp) => {
+        if (inp.value && inp.value.trim()) filled++;
+      });
+      if (filled < 2) return false;
+      return document.querySelectorAll('#fbContent .fb-row').length > 0;
+    },
+  };
 
   const PROGRESS_KEY = 'smos_guided_flow_progress';
   const ENABLED_KEY = 'smos_guided_flow_enabled';
@@ -265,6 +291,29 @@
     });
 
     render();
+
+    // Auto-detect completion of the current step, if a checker exists
+    // for it. Polls rather than relying on a single input/click event
+    // since the real signal (e.g. an async AI response landing) can
+    // arrive well after the triggering event fired.
+    const currentStep = idx >= 0 ? FLOW[idx] : null;
+    const checker = currentStep && AUTO_COMPLETE_CHECKS[currentStep.id];
+    if (checker) {
+      const poll = setInterval(() => {
+        if (!isEnabled()) return;
+        const progress = getProgress();
+        if (progress.includes(currentStep.id)) {
+          clearInterval(poll);
+          return;
+        }
+        if (checker()) {
+          progress.push(currentStep.id);
+          setProgress(progress);
+          render();
+          clearInterval(poll);
+        }
+      }, 1200);
+    }
   }
 
   // ── 3. Inline explainers (auto-detected, jargon-heavy pages only) ─
