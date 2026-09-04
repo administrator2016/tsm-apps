@@ -88,7 +88,7 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
 
 
 <script>
-const INPHUSION_WARROOM_SCENARIOS = {"RE_SLA_BREACH": {"id": "RE_SLA_BREACH", "label": "Real Estate: Unit U-103 (22d Vacancy & HVAC SLA Breach)", "payload": "[INPHUSIONSYS ANOMALY DETECTED - REAL ESTATE]\nProperty Unit: U-103\nVacant Duration: 22 Days (Target: < 7 Days)\nMaintenance Request: HVAC Repair SLA Breach (+8 hours over 24h limit)\nTenant Status: Lease Signed, Unit Uninhabitable\nAudit Note: Revenue loss warning triggered ($2,400/mo impact).", "prompt": "auditops \"InphusionSys Real Estate - Unit U-103: 22d Vacancy & HVAC SLA Breach\" --logic=strategist"}, "RE_LEASE_COMMISSION": {"id": "RE_LEASE_COMMISSION", "label": "Real Estate: Commercial Unit C-400 Lease Dispute", "payload": "[INPHUSIONSYS ANOMALY DETECTED - REAL ESTATE]\nTenant: Metro Retail Partners\nLease Escalation: Unscheduled +5% Rent Increase\nCompliance Status: Missing Tenant Estoppel Certificate\nAudit Note: Tenant disputing escalation index rate.", "prompt": "auditops \"InphusionSys Real Estate - Commercial Unit C-400 Rent Escalation Anomaly\" --logic=strategist"}};
+const INPHUSION_WARROOM_SCENARIOS = {"PM_WORKORDER_SLA": {"id": "PM_WORKORDER_SLA", "label": "PM Copilot: Work Order WO-2214 (HVAC SLA Breach, Unit 204)", "payload": "[INPHUSIONSYS ANOMALY DETECTED - PM COPILOT]\nWork Order: WO-2214\nUnit: 204\nIssue: HVAC Repair SLA Breach (+11 hours over 24h response limit)\nException Code: SLA-BREACH\nAudit Note: Tenant has filed a habitability complaint; escalate before next inspection window.", "prompt": "auditops \"InphusionSys PM Copilot - Work Order WO-2214: HVAC SLA Breach Unit 204\" --logic=strategist"}, "PM_VENDOR_INS_EXP": {"id": "PM_VENDOR_INS_EXP", "label": "PM Copilot: Vendor CoolAir HVAC — Expired Insurance Certificate", "payload": "[INPHUSIONSYS ANOMALY DETECTED - PM COPILOT]\nVendor: CoolAir HVAC Services\nException Code: INS-EXP\nCertificate Expired: 14 Days Ago\nOpen Work Orders Assigned To Vendor: 3\nAudit Note: Vendor should not be dispatched again until a current certificate is on file.", "prompt": "auditops \"InphusionSys PM Copilot - Vendor CoolAir HVAC: Expired Insurance Certificate\" --logic=strategist"}};
 
 window.runInphusionWarRoomScenario = function() {
   const sel = document.getElementById("inphusion-warroom-select");
@@ -117,7 +117,7 @@ window.runInphusionWarRoomScenario = function() {
     runBtn.click();
   }
 
-  alert("✓ Injected [" + sel.value + "] into REAL_ESTATE War Room!\nAudit Hash: AUD-INPH-" + Math.floor(Math.random()*90000 + 10000));
+  alert("✓ Injected [" + sel.value + "] into PM War Room!\nAudit Hash: AUD-INPH-" + Math.floor(Math.random()*90000 + 10000));
 };
 </script>
 
@@ -134,11 +134,11 @@ window.runInphusionWarRoomScenario = function() {
 <!-- INPHUSIONSYS WAR ROOM CONTROL BAR -->
 <div id="inphusionsys-warroom-bar" style="margin: 14px 0; padding: 12px 16px; background: rgba(0, 255, 204, 0.06); border: 1px solid #00ffcc; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
   <div style="display:flex; align-items:center; gap:10px;">
-    <span style="color:#00ffcc; font-weight:bold; font-size:12px; letter-spacing:1px; font-family:monospace;">⚡ INPHUSIONSYS [REAL_ESTATE] WAR ROOM SUITE:</span>
+    <span style="color:#00ffcc; font-weight:bold; font-size:12px; letter-spacing:1px; font-family:monospace;">⚡ INPHUSIONSYS [PM] WAR ROOM SUITE:</span>
     <select id="inphusion-warroom-select" style="background:#0d1117; color:#00ffcc; border:1px solid #00ffcc; padding:6px 10px; border-radius:4px; font-size:12px; font-family:monospace;">
-      <option value="">-- Select InphusionSys Real_Estate War Room Anomaly --</option>
-      <option value="RE_SLA_BREACH">Real Estate: Unit U-103 (22d Vacancy & HVAC SLA Breach)</option>
-      <option value="RE_LEASE_COMMISSION">Real Estate: Commercial Unit C-400 Lease Dispute</option>
+      <option value="">-- Select InphusionSys PM Copilot War Room Anomaly --</option>
+      <option value="PM_WORKORDER_SLA">PM Copilot: Work Order WO-2214 (HVAC SLA Breach, Unit 204)</option>
+      <option value="PM_VENDOR_INS_EXP">PM Copilot: Vendor CoolAir HVAC — Expired Insurance Certificate</option>
 
     </select>
   </div>
