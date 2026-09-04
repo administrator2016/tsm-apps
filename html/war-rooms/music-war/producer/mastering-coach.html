@@ -91,6 +91,8 @@
 
   <div class="loading" id="loading"><span class="spinner"></span>Comparing against streaming targets...</div>
 
+  <div id="masterError" style="display:none;background:rgba(255,59,107,0.08);border:1px solid var(--red,#ff3b6b);border-radius:8px;padding:16px;margin-bottom:24px;font-size:0.72rem;color:var(--red,#ff3b6b);"></div>
+
   <div class="result-panel" id="resultPanel">
     <h2>📡 MASTERING VERDICT</h2>
     <div class="verdict" id="verdict">—</div>
@@ -113,6 +115,7 @@ async function checkMaster() {
 
   document.getElementById('loading').classList.add('show');
   document.getElementById('resultPanel').classList.remove('show');
+  document.getElementById('masterError').style.display = 'none';
 
   const prompt = `A producer's master has these readings:
 Integrated LUFS: ${lufs || 'not provided'}
@@ -132,11 +135,18 @@ Respond ONLY with JSON:
     const d = await SMOS.askJSON(prompt, 'You are a professional mastering engineer AI who explains loudness standards in plain language.');
     renderResult(d);
   } catch(e) {
+    // Previously rendered a fixed fallback verdict/notes through the same
+    // result panel as a real analysis — honest in wording ("Could not
+    // analyze"), but identical in DOM shape to a genuine result, so
+    // nothing could tell them apart without string-matching that exact
+    // fallback phrase (fragile: silently breaks if the copy ever
+    // changes). Show a real error banner instead, same pattern as the
+    // rest of this vertical.
     console.error('[mastering-coach] error:', e.message);
-    renderResult({
-      ready:false, verdict:'Could not analyze — check manually',
-      notes:'As a rule of thumb: if your integrated LUFS reads louder (closer to 0) than -10, you are almost certainly over-limited for streaming. Pull your master gain down until you land near -14 LUFS integrated with peaks no higher than -1dB.'
-    });
+    document.getElementById('resultPanel').classList.remove('show');
+    const errEl = document.getElementById('masterError');
+    errEl.textContent = `Couldn't reach the mastering engine (${e.message}). Nothing was analyzed — try again, or check manually against the targets above: -14 LUFS integrated, -1dB true peak.`;
+    errEl.style.display = 'block';
   }
   document.getElementById('loading').classList.remove('show');
 }

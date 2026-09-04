@@ -144,6 +144,15 @@
       const panel = document.getElementById('mixPanel');
       return !!(panel && panel.classList.contains('show'));
     },
+
+    // Mastering Coach: renderResult() is the only place that adds
+    // 'show' to #resultPanel; the catch block (fixed alongside this
+    // checker to stop rendering a fallback verdict through the same
+    // panel) only ever touches #masterError now.
+    'mastering-coach'() {
+      const panel = document.getElementById('resultPanel');
+      return !!(panel && panel.classList.contains('show'));
+    },
   };
 
   const PROGRESS_KEY = 'smos_guided_flow_progress';
