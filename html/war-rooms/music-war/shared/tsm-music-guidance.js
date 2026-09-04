@@ -136,6 +136,14 @@
       const panel = document.getElementById('recPanel');
       return !!(panel && panel.classList.contains('show'));
     },
+
+    // Mixing Coach: renderMix() is the only place that adds 'show' to
+    // #mixPanel; the catch block (already fixed in 3c87ec49 to stop
+    // fabricating fake mix advice) only ever touches #mixError.
+    'mixing-coach'() {
+      const panel = document.getElementById('mixPanel');
+      return !!(panel && panel.classList.contains('show'));
+    },
   };
 
   const PROGRESS_KEY = 'smos_guided_flow_progress';
