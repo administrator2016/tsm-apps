@@ -230,8 +230,133 @@ async function updateTicketStatus(incidentId, state, config) {
   return { success: true };
 }
 
+/**
+ * createTicket(fields, config?) -> { success, number, sysId, raw }
+ * POSTs a single new record to the incident table. `fields` is a raw
+ * ServiceNow field map (short_description, caller_id, assignment_group,
+ * priority, cmdb_ci, etc.) — intentionally NOT run through DEFAULT_FIELD_MAP,
+ * since that map is for reading/normalizing records we get back, not for
+ * translating what a caller writes (per-customer field names on write are
+ * the caller's responsibility, same as the rest of this adapter's stance
+ * that field mapping is config, not code).
+ */
+async function createTicket(fields, config) {
+  const cfg = config || loadConfigFromEnv();
+  const data = await snRequest(cfg, 'POST', '/api/now/table/incident', { body: fields });
+  const record = data.result || {};
+  return {
+    success: true,
+    number: readField(record, 'number'),
+    sysId: record.sys_id && (record.sys_id.value || record.sys_id),
+    raw: record
+  };
+}
+
+/**
+ * deleteTicket(incidentId, config?) -> { success }
+ * Not part of the L1 Copilot production contract — exists so PDI/dev-instance
+ * testing (see scripts/test-servicenow-batch-pdi.js) can clean up the test
+ * records a batch run creates without leaving junk behind on a shared instance.
+ */
+async function deleteTicket(incidentId, config) {
+  const cfg = config || loadConfigFromEnv();
+  const ticket = await getTicket(incidentId, cfg);
+  if (!ticket) throw new Error(`No incident found for "${incidentId}" — cannot delete.`);
+  await snRequest(cfg, 'DELETE', `/api/now/table/incident/${ticket.sysId}`);
+  return { success: true };
+}
+
+const DEFAULT_BATCH_OPTIONS = {
+  // How many createTicket calls are in flight at once. ServiceNow Table API
+  // has no documented hard concurrency cap, but most instances (especially
+  // sub-prod/dev-tier ones like a PDI) rate-limit aggressively — keep this
+  // conservative rather than maximizing throughput.
+  chunkSize: 5,
+  // Pause between chunks, on top of per-request retry/backoff below. This is
+  // what actually protects a shared instance's rate limit budget across a
+  // large batch, not just an individual 429.
+  delayBetweenChunksMs: 500,
+  // Per-record retry count on 429/5xx before that record is reported failed.
+  maxRetries: 3,
+  initialBackoffMs: 1000
+};
+
+// Hard ceiling independent of whatever a caller passes as `options` —
+// batch-tickets is a write endpoint; an unbounded array in a single request
+// is real blast radius (duplicate incidents, notification storms) regardless
+// of how the request got there.
+const MAX_BATCH_SIZE = 500;
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function createTicketWithRetry(fields, cfg, opts) {
+  let attempt = 0;
+  let lastErr;
+  while (attempt <= opts.maxRetries) {
+    try {
+      return await createTicket(fields, cfg);
+    } catch (e) {
+      lastErr = e;
+      const retryable = e.status === 429 || (e.status >= 500 && e.status < 600);
+      if (!retryable || attempt === opts.maxRetries) throw e;
+      await sleep(opts.initialBackoffMs * Math.pow(2, attempt));
+      attempt += 1;
+    }
+  }
+  throw lastErr;
+}
+
+/**
+ * createTicketsBatch(records, options?, config?)
+ *   -> { total, succeeded, failed, results: [{ index, success, number?,
+ *        sysId?, error?, status?, fields? }] }
+ *
+ * Chunked batch create with per-record retry/backoff on 429/5xx. A single
+ * record failing (bad payload, permissions, whatever) does NOT abort the
+ * rest of the batch — every record gets an independent result so the caller
+ * can see exactly which ones need attention, rather than an all-or-nothing
+ * failure on record #340 of 500 discarding 339 successful creates.
+ */
+async function createTicketsBatch(records, options, config) {
+  const cfg = config || loadConfigFromEnv();
+  if (!isConfigured(cfg)) throw new ServiceNowNotConfiguredError();
+  if (!Array.isArray(records) || records.length === 0) {
+    throw new Error('createTicketsBatch requires a non-empty array of ticket field objects.');
+  }
+  if (records.length > MAX_BATCH_SIZE) {
+    throw new Error(`Batch of ${records.length} exceeds the ${MAX_BATCH_SIZE}-record limit per call — split into multiple calls.`);
+  }
+
+  const opts = Object.assign({}, DEFAULT_BATCH_OPTIONS, options || {});
+  const results = new Array(records.length);
+
+  for (let i = 0; i < records.length; i += opts.chunkSize) {
+    const chunk = records.slice(i, i + opts.chunkSize);
+    const chunkResults = await Promise.all(chunk.map((fields, offset) => {
+      const index = i + offset;
+      return createTicketWithRetry(fields, cfg, opts).then(
+        r => ({ index, success: true, number: r.number, sysId: r.sysId }),
+        e => ({ index, success: false, error: e.message, status: e.status, fields })
+      );
+    }));
+    chunkResults.forEach(r => { results[r.index] = r; });
+
+    const isLastChunk = i + opts.chunkSize >= records.length;
+    if (!isLastChunk && opts.delayBetweenChunksMs) {
+      await sleep(opts.delayBetweenChunksMs);
+    }
+  }
+
+  const succeeded = results.filter(r => r.success).length;
+  return { total: records.length, succeeded, failed: records.length - succeeded, results };
+}
+
 module.exports = {
   DEFAULT_FIELD_MAP,
+  DEFAULT_BATCH_OPTIONS,
+  MAX_BATCH_SIZE,
   ServiceNowNotConfiguredError,
   loadConfigFromEnv,
   isConfigured,
@@ -240,6 +365,9 @@ module.exports = {
   searchAssetsByUser,
   writeWorkNote,
   updateTicketStatus,
+  createTicket,
+  deleteTicket,
+  createTicketsBatch,
   // exported for tests only
-  _internal: { readField, snRequest, authHeader }
+  _internal: { readField, snRequest, authHeader, createTicketWithRetry }
 };

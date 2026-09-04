@@ -4041,6 +4041,25 @@ app.post('/api/l1-copilot/servicenow/status-update', async (req, res) => {
   }
 });
 
+// Batch ticket creation. Deliberately no demo-mode fallback here (unlike the
+// read endpoints above) — faking a successful bulk-create response when
+// ServiceNow isn't actually configured would be actively misleading for a
+// write operation, not just a degraded read. 503 + ok:false, honestly, same
+// as the rest of this integration when unconfigured.
+app.post('/api/l1-copilot/servicenow/batch-tickets', async (req, res) => {
+  const { tickets, options } = req.body || {};
+  if (!Array.isArray(tickets) || tickets.length === 0) {
+    return res.status(400).json({ ok: false, error: 'tickets must be a non-empty array of ticket field objects' });
+  }
+  try {
+    const result = await snAdapter.createTicketsBatch(tickets, options);
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    const status = e.code === 'SERVICENOW_NOT_CONFIGURED' ? 503 : (e.status && e.status < 500 ? 400 : 502);
+    res.status(status).json({ ok: false, error: e.message });
+  }
+});
+
 
 // --- L1 Copilot Pilot E2E orchestration ----------------------------------
 // Controlled pilot workflow:
