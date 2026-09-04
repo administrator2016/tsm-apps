@@ -930,6 +930,7 @@
           <tr><th>Symptom</th><th>Likely Cause</th></tr>
           <tr><td><code>#fbHeader</code> never updates after clicking Analyze Flow</td><td>Check <code>/api/music/structure</code> in the Network tab — same backend dependency as Song Builder, so a Groq outage affects both tools together</td></tr>
           <tr><td>Score seems to ignore blank rows</td><td>Expected — empty <code>.lyric-input</code> rows are skipped by the analyzer, not scored as zero</td></tr>
+          <tr><td>Feedback shows a bar the user never typed, or the sparse/overcrowded/good tag looks wrong for the actual syllable count</td><td>Resolved — the AI's own syllable judgment was unreliable and could invent bar numbers. <code>reconcileFeedback()</code> now drops any AI-returned bar not actually submitted and overrides syllable-based tags with a deterministic local count, keeping AI judgment only for things like rhyme quality. If this resurfaces, confirm <code>reconcileFeedback()</code> is still being called in <code>cadence-builder.html</code>'s analyze handler.</td></tr>
         </table>
       </div>
 
