@@ -4060,6 +4060,25 @@ app.post('/api/l1-copilot/servicenow/batch-tickets', async (req, res) => {
   }
 });
 
+// Batch ticket read — the counterpart to batch-tickets above, for pulling a
+// list of existing incidents (by number or sys_id) in one chunked/retried
+// call instead of the caller looping single-ticket GETs with no rate-limit
+// protection. A missing individual incident is reported per-record, same
+// as any other per-record failure; it does not abort the batch.
+app.post('/api/l1-copilot/servicenow/batch-tickets-read', async (req, res) => {
+  const { incidents, options } = req.body || {};
+  if (!Array.isArray(incidents) || incidents.length === 0) {
+    return res.status(400).json({ ok: false, error: 'incidents must be a non-empty array of incident numbers or sys_ids' });
+  }
+  try {
+    const result = await snAdapter.getTicketsBatch(incidents, options);
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    const status = e.code === 'SERVICENOW_NOT_CONFIGURED' ? 503 : (e.status && e.status < 500 ? 400 : 502);
+    res.status(status).json({ ok: false, error: e.message });
+  }
+});
+
 
 // --- L1 Copilot Pilot E2E orchestration ----------------------------------
 // Controlled pilot workflow:
@@ -4356,9 +4375,17 @@ Do not invent completed troubleshooting.`;
   }
 });
 
-app.post('/api/l1-copilot/analyze', async (req, res) => {
-  const { ticket, maxTokens } = req.body || {};
-  if (!ticket || !ticket.description) return res.status(400).json({ ok: false, error: 'ticket.description required' });
+// Core single-ticket analysis. Factored out of the /analyze route so the
+// batch route below can reuse the exact same CMDB-lookup + LLM + guardrail
+// logic per ticket, instead of duplicating it. Throws on failure (missing
+// description, LLM/JSON error) — callers decide how to surface that
+// (500 for the single route, a per-record failure entry for the batch route).
+async function analyzeSingleTicket(ticket, maxTokens) {
+  if (!ticket || !ticket.description) {
+    const err = new Error('ticket.description required');
+    err.status = 400;
+    throw err;
+  }
 
   // If ServiceNow is configured and the agent gave us an asset tag or
   // incident number, pull real CMDB/incident history so "likely cause"
@@ -4398,136 +4425,200 @@ app.post('/api/l1-copilot/analyze', async (req, res) => {
     `"extracted_fields":{"incident":null,"priority":null,"requester":null,"department":null,` +
     `"assignmentGroup":null,"asset":null,"manufacturer":null,"model":null,"warranty":null}}\n\n` +
     `Return one JSON object with both the analysis keys and the "extracted_fields" key at the same top level.`;
-  try {
-    const raw = await groqChat(SP.l1support, prompt, maxTokens || 1000);
-    const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-    // ── Deterministic severity guardrail ──────────────────────────────────
-    // The LLM provides the initial severity assessment, but obvious hard
-    // outage indicators must not be downgraded to Medium/Low solely because
-    // the model under-estimated impact.
-    //
-    // This is intentionally narrow: it only raises severity for strong,
-    // explicit outage/access-blocking language. It never lowers severity.
-    const descriptionText = String(ticket.description || '').toLowerCase();
-    const combinedTicketText = [
-      descriptionText,
-      String(ticket.department || '').toLowerCase(),
-      String(ticket.assignmentGroup || '').toLowerCase()
-    ].join(' ');
+  const raw = await groqChat(SP.l1support, prompt, maxTokens || 1000);
+  const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-    const hardOutageSignals = [
-      /\bwill not boot\b/,
-      /\bwon['’]?t boot\b/,
-      /\bdoes not boot\b/,
-      /\bcannot boot\b/,
-      /\bcan't boot\b/,
-      /\bcannot access windows\b/,
-      /\bcan't access windows\b/,
-      /\bunable to access windows\b/,
-      /\bsystem unavailable\b/,
-      /\bcompletely unavailable\b/,
-      /\bproduction (?:system|server|workstation|application) (?:is )?down\b/,
-      /\boperations? (?:are )?blocked\b/,
-      /\bbusiness (?:operations|work) (?:are )?blocked\b/
-    ];
+  // ── Deterministic severity guardrail ──────────────────────────────────
+  // The LLM provides the initial severity assessment, but obvious hard
+  // outage indicators must not be downgraded to Medium/Low solely because
+  // the model under-estimated impact.
+  //
+  // This is intentionally narrow: it only raises severity for strong,
+  // explicit outage/access-blocking language. It never lowers severity.
+  const descriptionText = String(ticket.description || '').toLowerCase();
+  const combinedTicketText = [
+    descriptionText,
+    String(ticket.department || '').toLowerCase(),
+    String(ticket.assignmentGroup || '').toLowerCase()
+  ].join(' ');
 
-    const hardOutageDetected = hardOutageSignals.some((rx) => rx.test(combinedTicketText));
+  const hardOutageSignals = [
+    /\bwill not boot\b/,
+    /\bwon['’]?t boot\b/,
+    /\bdoes not boot\b/,
+    /\bcannot boot\b/,
+    /\bcan't boot\b/,
+    /\bcannot access windows\b/,
+    /\bcan't access windows\b/,
+    /\bunable to access windows\b/,
+    /\bsystem unavailable\b/,
+    /\bcompletely unavailable\b/,
+    /\bproduction (?:system|server|workstation|application) (?:is )?down\b/,
+    /\boperations? (?:are )?blocked\b/,
+    /\bbusiness (?:operations|work) (?:are )?blocked\b/
+  ];
 
-    const originalAiSeverity = analysis.severity || null;
+  const hardOutageDetected = hardOutageSignals.some((rx) => rx.test(combinedTicketText));
 
-    if (
-      hardOutageDetected &&
-      ['low', 'medium'].includes(String(analysis.severity || '').toLowerCase())
-    ) {
-      analysis.severity = 'High';
-      analysis.severity_guardrail = {
-        applied: true,
-        original_ai_severity: originalAiSeverity,
-        final_severity: 'High',
-        reason: 'Deterministic hard-outage signal detected in the ticket; severity was raised to High for human review.'
-      };
-    } else {
-      analysis.severity_guardrail = {
-        applied: false,
-        original_ai_severity: originalAiSeverity,
-        final_severity: analysis.severity || null
-      };
-    }
+  const originalAiSeverity = analysis.severity || null;
 
-    // ── Priority / severity alignment ────────────────────────────────────
-    // The AI may identify a higher operational severity than the ticket's
-    // original priority. Do not silently change the ticket priority; surface
-    // the discrepancy for human review.
-    const priorityText = String(ticket.priority || '').toLowerCase();
-    const severityText = String(analysis.severity || '').toLowerCase();
-
-    const priorityRank =
-      priorityText.includes('1') || priorityText.includes('critical') ? 1 :
-      priorityText.includes('2') || priorityText.includes('high') ? 2 :
-      priorityText.includes('3') || priorityText.includes('medium') ? 3 :
-      priorityText.includes('4') || priorityText.includes('low') ? 4 :
-      null;
-
-    const severityRank =
-      severityText.includes('critical') ? 1 :
-      severityText.includes('high') ? 2 :
-      severityText.includes('medium') ? 3 :
-      severityText.includes('low') ? 4 :
-      null;
-
-    if (priorityRank && severityRank) {
-      const mismatch = severityRank < priorityRank;
-
-      analysis.priority_alignment = {
-        ticket_priority: ticket.priority,
-        ai_severity: analysis.severity,
-        status: mismatch ? 'MISMATCH' : 'ALIGNED',
-        recommended_priority: mismatch
-          ? `${severityRank} - ${analysis.severity.charAt(0).toUpperCase()}${analysis.severity.slice(1)}`
-          : ticket.priority,
-        requires_human_review: mismatch,
-        reason: mismatch
-          ? `AI assessed the incident as ${analysis.severity} while the ticket is currently ${ticket.priority}.`
-          : 'Ticket priority is consistent with the AI-assessed severity.'
-      };
-    } else {
-      analysis.priority_alignment = {
-        ticket_priority: ticket.priority || null,
-        ai_severity: analysis.severity || null,
-        status: 'UNABLE_TO_COMPARE',
-        requires_human_review: false
-      };
-    }
-
-    // Preserve explicitly supplied structured ticket fields.
-    // AI interprets the ticket; it should not be allowed to lose
-    // fields that were already provided by the caller.
-    const aiFields = analysis.extracted_fields || {};
-
-    analysis.extracted_fields = {
-      incident: ticket.incident ?? aiFields.incident ?? null,
-      priority: ticket.priority ?? aiFields.priority ?? null,
-      requester: ticket.requester ?? aiFields.requester ?? null,
-      department: ticket.department ?? aiFields.department ?? null,
-      assignmentGroup:
-        ticket.assignmentGroup ??
-        aiFields.assignmentGroup ??
-        null,
-      asset: ticket.asset ?? aiFields.asset ?? null,
-      manufacturer: ticket.manufacturer ?? aiFields.manufacturer ?? null,
-      model: ticket.model ?? aiFields.model ?? null,
-      warranty: ticket.warranty ?? aiFields.warranty ?? null
+  if (
+    hardOutageDetected &&
+    ['low', 'medium'].includes(String(analysis.severity || '').toLowerCase())
+  ) {
+    analysis.severity = 'High';
+    analysis.severity_guardrail = {
+      applied: true,
+      original_ai_severity: originalAiSeverity,
+      final_severity: 'High',
+      reason: 'Deterministic hard-outage signal detected in the ticket; severity was raised to High for human review.'
     };
+  } else {
+    analysis.severity_guardrail = {
+      applied: false,
+      original_ai_severity: originalAiSeverity,
+      final_severity: analysis.severity || null
+    };
+  }
 
+  // ── Priority / severity alignment ────────────────────────────────────
+  // The AI may identify a higher operational severity than the ticket's
+  // original priority. Do not silently change the ticket priority; surface
+  // the discrepancy for human review.
+  const priorityText = String(ticket.priority || '').toLowerCase();
+  const severityText = String(analysis.severity || '').toLowerCase();
+
+  const priorityRank =
+    priorityText.includes('1') || priorityText.includes('critical') ? 1 :
+    priorityText.includes('2') || priorityText.includes('high') ? 2 :
+    priorityText.includes('3') || priorityText.includes('medium') ? 3 :
+    priorityText.includes('4') || priorityText.includes('low') ? 4 :
+    null;
+
+  const severityRank =
+    severityText.includes('critical') ? 1 :
+    severityText.includes('high') ? 2 :
+    severityText.includes('medium') ? 3 :
+    severityText.includes('low') ? 4 :
+    null;
+
+  if (priorityRank && severityRank) {
+    const mismatch = severityRank < priorityRank;
+
+    analysis.priority_alignment = {
+      ticket_priority: ticket.priority,
+      ai_severity: analysis.severity,
+      status: mismatch ? 'MISMATCH' : 'ALIGNED',
+      recommended_priority: mismatch
+        ? `${severityRank} - ${analysis.severity.charAt(0).toUpperCase()}${analysis.severity.slice(1)}`
+        : ticket.priority,
+      requires_human_review: mismatch,
+      reason: mismatch
+        ? `AI assessed the incident as ${analysis.severity} while the ticket is currently ${ticket.priority}.`
+        : 'Ticket priority is consistent with the AI-assessed severity.'
+    };
+  } else {
+    analysis.priority_alignment = {
+      ticket_priority: ticket.priority || null,
+      ai_severity: analysis.severity || null,
+      status: 'UNABLE_TO_COMPARE',
+      requires_human_review: false
+    };
+  }
+
+  // Preserve explicitly supplied structured ticket fields.
+  // AI interprets the ticket; it should not be allowed to lose
+  // fields that were already provided by the caller.
+  const aiFields = analysis.extracted_fields || {};
+
+  analysis.extracted_fields = {
+    incident: ticket.incident ?? aiFields.incident ?? null,
+    priority: ticket.priority ?? aiFields.priority ?? null,
+    requester: ticket.requester ?? aiFields.requester ?? null,
+    department: ticket.department ?? aiFields.department ?? null,
+    assignmentGroup:
+      ticket.assignmentGroup ??
+      aiFields.assignmentGroup ??
+      null,
+    asset: ticket.asset ?? aiFields.asset ?? null,
+    manufacturer: ticket.manufacturer ?? aiFields.manufacturer ?? null,
+    model: ticket.model ?? aiFields.model ?? null,
+    warranty: ticket.warranty ?? aiFields.warranty ?? null
+  };
+
+  return { analysis, cmdbSourced: !!cmdbContext };
+}
+
+app.post('/api/l1-copilot/analyze', async (req, res) => {
+  const { ticket, maxTokens } = req.body || {};
+  try {
+    const { analysis, cmdbSourced } = await analyzeSingleTicket(ticket, maxTokens);
     return res.json({
       ok: true,
       analysis,
-      cmdbSourced: !!cmdbContext,
+      cmdbSourced,
       createdAt: new Date().toISOString()
     });
   } catch (e) {
+    if (e.status === 400) return res.status(400).json({ ok: false, error: e.message });
     console.error('L1 COPILOT ANALYZE ERROR:', e.message);
+    return res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Batch analysis. Chunked with a delay between chunks, same shape as
+// snAdapter's createTicketsBatch/getTicketsBatch — each ticket's LLM call is
+// independent, so one failure (bad JSON back from the model, a missing
+// description) is reported per-record and does not abort the rest of the
+// batch. Chunk size is smaller than the ServiceNow batch helpers' default:
+// each record here is an LLM call, not a lightweight REST call, so keeping
+// concurrency modest also controls cost/rate against the LLM provider, not
+// just ServiceNow.
+const ANALYZE_BATCH_DEFAULTS = { chunkSize: 3, delayBetweenChunksMs: 300 };
+const ANALYZE_MAX_BATCH_SIZE = 100;
+
+app.post('/api/l1-copilot/analyze/batch', async (req, res) => {
+  const { tickets, maxTokens, options } = req.body || {};
+  if (!Array.isArray(tickets) || tickets.length === 0) {
+    return res.status(400).json({ ok: false, error: 'tickets must be a non-empty array of ticket objects' });
+  }
+  if (tickets.length > ANALYZE_MAX_BATCH_SIZE) {
+    return res.status(400).json({ ok: false, error: `Batch of ${tickets.length} exceeds the ${ANALYZE_MAX_BATCH_SIZE}-ticket limit per call — split into multiple calls.` });
+  }
+
+  const opts = Object.assign({}, ANALYZE_BATCH_DEFAULTS, options || {});
+  const results = new Array(tickets.length);
+
+  try {
+    for (let i = 0; i < tickets.length; i += opts.chunkSize) {
+      const chunk = tickets.slice(i, i + opts.chunkSize);
+      const chunkResults = await Promise.all(chunk.map((ticket, offset) => {
+        const index = i + offset;
+        return analyzeSingleTicket(ticket, maxTokens).then(
+          ({ analysis, cmdbSourced }) => ({ index, success: true, incident: ticket && ticket.incident, analysis, cmdbSourced }),
+          e => ({ index, success: false, incident: ticket && ticket.incident, error: e.message })
+        );
+      }));
+      chunkResults.forEach(r => { results[r.index] = r; });
+
+      const isLastChunk = i + opts.chunkSize >= tickets.length;
+      if (!isLastChunk && opts.delayBetweenChunksMs) {
+        await new Promise(resolve => setTimeout(resolve, opts.delayBetweenChunksMs));
+      }
+    }
+
+    const succeeded = results.filter(r => r.success).length;
+    return res.json({
+      ok: true,
+      total: tickets.length,
+      succeeded,
+      failed: tickets.length - succeeded,
+      results,
+      createdAt: new Date().toISOString()
+    });
+  } catch (e) {
+    console.error('L1 COPILOT ANALYZE BATCH ERROR:', e.message);
     return res.status(500).json({ ok: false, error: e.message });
   }
 });

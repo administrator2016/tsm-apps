@@ -308,6 +308,23 @@ async function createTicketWithRetry(fields, cfg, opts) {
   throw lastErr;
 }
 
+async function getTicketWithRetry(incidentId, cfg, opts) {
+  let attempt = 0;
+  let lastErr;
+  while (attempt <= opts.maxRetries) {
+    try {
+      return await getTicket(incidentId, cfg);
+    } catch (e) {
+      lastErr = e;
+      const retryable = e.status === 429 || (e.status >= 500 && e.status < 600);
+      if (!retryable || attempt === opts.maxRetries) throw e;
+      await sleep(opts.initialBackoffMs * Math.pow(2, attempt));
+      attempt += 1;
+    }
+  }
+  throw lastErr;
+}
+
 /**
  * createTicketsBatch(records, options?, config?)
  *   -> { total, succeeded, failed, results: [{ index, success, number?,
@@ -353,6 +370,55 @@ async function createTicketsBatch(records, options, config) {
   return { total: records.length, succeeded, failed: records.length - succeeded, results };
 }
 
+/**
+ * getTicketsBatch(incidentIds, options?, config?)
+ *   -> { total, succeeded, failed, results: [{ index, success, ticket?,
+ *        incidentId, error?, status? }] }
+ *
+ * Chunked batch read, same chunking/retry/backoff shape as
+ * createTicketsBatch — a large "audit/analyze all my open tickets" pull is
+ * a real load pattern on a shared instance too, not just batch writes, and
+ * getTicket() itself has no protection against 429s without this wrapper.
+ * A missing incident (getTicket resolves null) is reported as success:false
+ * with a "not found" error, same as any other per-record failure — it does
+ * NOT abort the rest of the batch.
+ */
+async function getTicketsBatch(incidentIds, options, config) {
+  const cfg = config || loadConfigFromEnv();
+  if (!isConfigured(cfg)) throw new ServiceNowNotConfiguredError();
+  if (!Array.isArray(incidentIds) || incidentIds.length === 0) {
+    throw new Error('getTicketsBatch requires a non-empty array of incident numbers or sys_ids.');
+  }
+  if (incidentIds.length > MAX_BATCH_SIZE) {
+    throw new Error(`Batch of ${incidentIds.length} exceeds the ${MAX_BATCH_SIZE}-record limit per call — split into multiple calls.`);
+  }
+
+  const opts = Object.assign({}, DEFAULT_BATCH_OPTIONS, options || {});
+  const results = new Array(incidentIds.length);
+
+  for (let i = 0; i < incidentIds.length; i += opts.chunkSize) {
+    const chunk = incidentIds.slice(i, i + opts.chunkSize);
+    const chunkResults = await Promise.all(chunk.map((incidentId, offset) => {
+      const index = i + offset;
+      return getTicketWithRetry(incidentId, cfg, opts).then(
+        ticket => ticket
+          ? { index, success: true, incidentId, ticket }
+          : { index, success: false, incidentId, error: `No incident found for "${incidentId}".` },
+        e => ({ index, success: false, incidentId, error: e.message, status: e.status })
+      );
+    }));
+    chunkResults.forEach(r => { results[r.index] = r; });
+
+    const isLastChunk = i + opts.chunkSize >= incidentIds.length;
+    if (!isLastChunk && opts.delayBetweenChunksMs) {
+      await sleep(opts.delayBetweenChunksMs);
+    }
+  }
+
+  const succeeded = results.filter(r => r.success).length;
+  return { total: incidentIds.length, succeeded, failed: incidentIds.length - succeeded, results };
+}
+
 module.exports = {
   DEFAULT_FIELD_MAP,
   DEFAULT_BATCH_OPTIONS,
@@ -368,6 +434,7 @@ module.exports = {
   createTicket,
   deleteTicket,
   createTicketsBatch,
+  getTicketsBatch,
   // exported for tests only
-  _internal: { readField, snRequest, authHeader, createTicketWithRetry }
+  _internal: { readField, snRequest, authHeader, createTicketWithRetry, getTicketWithRetry }
 };
