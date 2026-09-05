@@ -5821,6 +5821,15 @@ const DOC_ROUTER_NODES = {
   // "not strategist unless nothing else fits" rule below).
   pm: ['pm-war-room', 'strategist'],
   noc: ['noc-war-room', 'strategist'],
+  // College vertical: five sub-domain nodes (Financial Aid, Bursar,
+  // Endowment, Research/F&A, Accreditation) mirroring 're''s multi-node
+  // shape above. findWarRoomsForClassification() (tsm-war-room-registry.js)
+  // only ever opens one button per vertical regardless of sourceNode
+  // granularity — same as it does for 're' — so all five nodes resolve to
+  // a single 'college-war-room' launch target (college-strategist.html,
+  // the cross-domain aggregator), while sourceNode/nodes stay
+  // domain-specific here for routing/audit accuracy.
+  college: ['college-finaid', 'college-bursar', 'college-endowment', 'college-research-fa', 'college-accred', 'strategist'],
 };
 
 const DOC_ROUTER_DOC_TYPES = [
@@ -5834,7 +5843,7 @@ const DOC_ROUTER_PROMPT = `You are TSM's document routing classifier. Analyze th
 Return JSON matching exactly this schema:
 {
   "documentType": one of ${JSON.stringify(DOC_ROUTER_DOC_TYPES)},
-  "verticals": array, subset of ["fo","ins","con","bpo","re","leg","hc","pm","noc"] — "pm" is property management (leases, work orders, vendor certificates, unit turnovers, occupancy); "noc" is network operations (incident reports, outages, asset/ticket data, uptime SLAs). Include MULTIPLE verticals if the content is genuinely relevant to more than one (e.g. a vendor invoice tied to a construction project may be relevant to both "con" and "fo"; a property sale with a legal dispute may be relevant to both "re" and "leg"; a claim denial with financial exposure may be relevant to both "hc" and "fo"; a PM vendor invoice may be relevant to both "pm" and "fo"),
+  "verticals": array, subset of ["fo","ins","con","bpo","re","leg","hc","pm","noc","college"] — "pm" is property management (leases, work orders, vendor certificates, unit turnovers, occupancy); "noc" is network operations (incident reports, outages, asset/ticket data, uptime SLAs); "college" is higher-education back-office operations — financial aid (FAFSA, Pell, R2T4 return-of-funds, verification, cohort default rate), bursar/tuition billing (payment plans, registration holds), endowment fund compliance (FASB ASU 2016-14 underwater funds, donor restrictions), research administration (grant awards, indirect cost/F&A recovery, effort reporting), and accreditation (findings, standards, site visits). Include MULTIPLE verticals if the content is genuinely relevant to more than one (e.g. a vendor invoice tied to a construction project may be relevant to both "con" and "fo"; a property sale with a legal dispute may be relevant to both "re" and "leg"; a claim denial with financial exposure may be relevant to both "hc" and "fo"; a PM vendor invoice may be relevant to both "pm" and "fo"; a college research grant invoice may be relevant to both "college" and "fo"),
   "primaryVertical": one value from "verticals",
   "routing": {
     "<vertical>": { "sourceNode": "<one valid node id for that vertical>", "nodes": ["<valid node ids...>"] }
@@ -5870,6 +5879,7 @@ leg: ${DOC_ROUTER_NODES.leg.join(', ')}
 hc:  ${DOC_ROUTER_NODES.hc.join(', ')}
 pm:  ${DOC_ROUTER_NODES.pm.join(', ')}
 noc: ${DOC_ROUTER_NODES.noc.join(', ')}
+college: ${DOC_ROUTER_NODES.college.join(', ')}  — FAFSA/Pell/R2T4/verification/cohort-default->college-finaid, tuition/payment-plan/registration-hold->college-bursar, endowment/donor-fund/FASB->college-endowment, grant/award/indirect-cost/F&A/effort-report->college-research-fa, accreditation-finding/standard/site-visit->college-accred
 
 Rules:
 - Always include "strategist" in routing.<vertical>.nodes for every vertical listed.
@@ -7362,8 +7372,8 @@ app.get('/api/integration/decisions', (req, res) => {
 // tsm-exec-portal-upgrade.js Decision Center" pattern as Mortgage/PM -- the
 // L1 Ticket Copilot's Human Decision step wires ACCEPT / KEEP CURRENT
 // PRIORITY / SEND FOR REVIEW directly into this gate.
-const EXEC_PORTAL_VERTICALS = ['healthcare', 'finops', 'insurance', 'construction', 'legal', 'realestate', 'bpo', 'mortgage', 'pm', 'l1-copilot', 'schools', 'hotelops', 'honeywell'];
-const EXEC_PORTAL_GATE_PREFIX = { healthcare: 'HC', finops: 'FIN', insurance: 'INS', construction: 'CON', legal: 'LEG', realestate: 'RE', bpo: 'BPO', mortgage: 'MTG', pm: 'PM', 'l1-copilot': 'L1', schools: 'SCH', hotelops: 'HTL', honeywell: 'HW' };
+const EXEC_PORTAL_VERTICALS = ['healthcare', 'finops', 'insurance', 'construction', 'legal', 'realestate', 'bpo', 'mortgage', 'pm', 'l1-copilot', 'schools', 'hotelops', 'honeywell', 'college'];
+const EXEC_PORTAL_GATE_PREFIX = { healthcare: 'HC', finops: 'FIN', insurance: 'INS', construction: 'CON', legal: 'LEG', realestate: 'RE', bpo: 'BPO', mortgage: 'MTG', pm: 'PM', 'l1-copilot': 'L1', schools: 'SCH', hotelops: 'HTL', honeywell: 'HW', college: 'COL' };
 const EXEC_PORTAL_HITL_GATES = {};
 EXEC_PORTAL_VERTICALS.forEach(v => {
   const gatePrefix = EXEC_PORTAL_GATE_PREFIX[v] || 'EXEC';

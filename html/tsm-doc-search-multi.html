@@ -2586,7 +2586,7 @@ function confirmClearAll() {
 // now delegates to launchWarRoom(), the same already-working relay mechanism the
 // "Send to War Room" picker uses (writes both the manual and autorun keys, which every
 // war room's own load handler does read).
-const DOCSEARCH_ROOM_KEYS = { fo:'fo-war-room', ins:'ins-war-room', con:'con-war-room', bpo:'bpo-war-room', re:'re-war-room', leg:'leg-war-room', hc:'hc-war-room', pm:'pm-war-room', noc:'noc-war-room' };
+const DOCSEARCH_ROOM_KEYS = { fo:'fo-war-room', ins:'ins-war-room', con:'con-war-room', bpo:'bpo-war-room', re:'re-war-room', leg:'leg-war-room', hc:'hc-war-room', pm:'pm-war-room', noc:'noc-war-room', college:'college-war-room' };
 
 const WAR_ROOM_ROUTES = {
   'fo-war-room':  { label:'FinOps War Room',       url:'/html/finops-suite/finops-war/finops-war-room.html',            relay:'tsm_fo_docsearch_relay',    autoKey:'TSM_FIN_WAR_RELAY' },
@@ -2648,6 +2648,26 @@ const WAR_ROOM_ROUTES = {
   'l1':                       { label:'L1 Support Copilot',              url:'/html/l1-copilot/l1-ticket-copilot.html',                   relay:'tsm_l1_docsearch_relay',              autoKey:'TSM_L1_WAR_RELAY' },
   'enterprise-exec-portal':   { label:'Enterprise Executive Decision Portal', url:'/html/enterprise/enterprise-executive-portal.html',    relay:'tsm_enterprise_docsearch_relay',      autoKey:'TSM_ENTERPRISE_WAR_RELAY' },
   'enterprise':               { label:'Enterprise Executive Decision Portal', url:'/html/enterprise/enterprise-executive-portal.html',    relay:'tsm_enterprise_docsearch_relay',      autoKey:'TSM_ENTERPRISE_WAR_RELAY' },
+  // College vertical: findWarRoomsForClassification() only opens one button
+  // per vertical ('college-war-room'), regardless of which of the five
+  // sourceNode sub-domains DOC_ROUTER_NODES.college assigned server-side —
+  // same simplification already in effect for 're''s five sub-nodes above.
+  // It opens college-strategist.html (the cross-domain aggregator) rather
+  // than any single sub-domain page, since that's the one page that shows
+  // the classification's actual domain regardless of which it was.
+  // autoKey uses its own docsearch-specific key (not any of the five
+  // TSM_COLLEGE_*_RELAY keys from relay.core.js's RELAY_REGISTRY) so this
+  // "last classified doc" relay never collides with a war room's own
+  // domain-specific relay write.
+  'college-war-room': { label:'College Strategist', url:'/html/war-rooms/college-command/college-strategist.html', relay:'tsm_college_docsearch_relay', autoKey:'TSM_COLLEGE_WAR_RELAY' },
+  // Per-sourceNode aliases so a classification's routing.college.sourceNode
+  // can resolve directly to its own specific war-room page when a caller
+  // wants that (rather than always the aggregator above).
+  'college-finaid':      { label:'College Financial Aid War Room', url:'/html/war-rooms/college-command/college-finaid-command.html',      relay:'tsm_college_docsearch_relay', autoKey:'TSM_COLLEGE_WAR_RELAY' },
+  'college-bursar':      { label:'College Bursar War Room',        url:'/html/war-rooms/college-command/college-bursar-command.html',      relay:'tsm_college_docsearch_relay', autoKey:'TSM_COLLEGE_WAR_RELAY' },
+  'college-endowment':   { label:'College Endowment War Room',     url:'/html/war-rooms/college-command/college-endowment-command.html',   relay:'tsm_college_docsearch_relay', autoKey:'TSM_COLLEGE_WAR_RELAY' },
+  'college-research-fa': { label:'College Research/F&A War Room',  url:'/html/war-rooms/college-command/college-research-fa-command.html', relay:'tsm_college_docsearch_relay', autoKey:'TSM_COLLEGE_WAR_RELAY' },
+  'college-accred':      { label:'College Accreditation War Room', url:'/html/war-rooms/college-command/college-accred-command.html',      relay:'tsm_college_docsearch_relay', autoKey:'TSM_COLLEGE_WAR_RELAY' },
 };
 
 TSMWarRoomRegistry.registerWarRooms(WAR_ROOM_ROUTES);
