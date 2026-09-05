@@ -22,6 +22,7 @@
     constructor(model) {
       this.model = model || { entities: {}, kpis: [] };
       this.data = { r2t4_cases: [], verification_cases: [], cohort_default_flags: [] };
+      this._canonicalCore = null;
     }
 
     loadSampleData() {
@@ -182,6 +183,69 @@
         },
         ai_summary: aiText || null
       };
+    }
+
+    // ── CanonicalCore integration ──────────────────────────────────────
+    // Mirrors schools-engine.js's _canonical()/_riskLevelFor()/
+    // getCanonicalRecords() exactly, generalized across this domain's three
+    // entity kinds. Unlike Schools (which uses vertical: 'sch' — a value
+    // never actually registered in architecture/canonical/entities.json's
+    // enum, a pre-existing gap), 'college_finaid' IS registered there, so
+    // validate() won't flag every record as having an unrecognized vertical.
+    async _canonical() {
+      if (this._canonicalCore) return this._canonicalCore;
+      if (typeof window === 'undefined' || !window.CanonicalCore) {
+        console.warn('TSMCollegeFinaidEngine: CanonicalCore not available -- include /runtime/kernel/canonical-core.js before college-finaid-engine.js to enable getCanonicalRecords().');
+        return null;
+      }
+      const cc = new window.CanonicalCore();
+      await cc.load();
+      this._canonicalCore = cc;
+      return cc;
+    }
+
+    _riskLevelFor(entityKey, record) {
+      const idField = this._idField(entityKey);
+      const breaches = this.getSlaBreaches(entityKey);
+      const breach = breaches.find(b => b.id === record[idField]);
+      if (!breach) return 'low';
+      const measure = breach.days_late != null ? breach.days_late : breach.days_open;
+      return measure > 10 ? 'critical' : measure > 3 ? 'high' : 'medium';
+    }
+
+    async getCanonicalRecords() {
+      const cc = await this._canonical();
+      if (!cc) return this.data;
+
+      const kindConfig = [
+        { key: 'r2t4_cases',          type: 'col_r2t4_case',           idField: 'case_id', ownerField: 'owner', statusField: 'stage', warRoom: '/html/war-rooms/college-command/college-finaid-command.html' },
+        { key: 'verification_cases',  type: 'col_verification_case',   idField: 'case_id', ownerField: 'owner', statusField: 'stage', warRoom: '/html/war-rooms/college-command/college-finaid-command.html' },
+        { key: 'cohort_default_flags',type: 'col_cohort_default_flag', idField: 'flag_id', ownerField: 'owner', statusField: 'band',  warRoom: '/html/war-rooms/college-command/college-finaid-command.html' }
+      ];
+
+      const out = {};
+      for (const cfg of kindConfig) {
+        const breaches = cfg.key !== 'cohort_default_flags' ? this.getSlaBreaches(cfg.key) : [];
+        const breachIds = new Set(breaches.map(b => b.id));
+        out[cfg.key] = this.data[cfg.key].map(r => {
+          const def = this._entityDef(cfg.key);
+          const stageOrBand = (def.stages || []).find(s => s.id === (r.stage || r.band));
+          const { record } = cc.process({
+            id: r[cfg.idField],
+            type: cfg.type,
+            vertical: 'college_finaid',
+            owner: (cfg.ownerField && r[cfg.ownerField]) || 'Unassigned',
+            status: stageOrBand ? stageOrBand.label : (r.stage || r.band),
+            current_stage: r.stage || r.band,
+            risk_level: cfg.key !== 'cohort_default_flags' ? this._riskLevelFor(cfg.key, r) : (r.band === 'sanction' ? 'critical' : r.band === 'warning' ? 'high' : 'medium'),
+            sla_state: breachIds.has(r[cfg.idField]) ? 'breached' : 'on_track',
+            linked_war_room: cfg.warRoom,
+            ...r
+          });
+          return record;
+        });
+      }
+      return out;
     }
   }
 

@@ -72,6 +72,8 @@
 </main>
 <div id="toast"></div>
 
+<script src="/html/shared/tsm-sentinel-push.js"></script>
+<script src="/runtime/kernel/canonical-core.js"></script>
 <script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
 <script src="/html/war-rooms/college-command/services/college-finaid-engine.js"></script>
 <script>
@@ -175,6 +177,87 @@
     }
   }
 
+  // ── SENTINEL PUSH ────────────────────────────────────────────────────
+  // Mirrors schools-command.html's schPushToSentinel() exactly: anomalies
+  // built from real computed data (financial summary + SLA breaches), then
+  // handed to the shared TSMSentinelPush.push() utility (which wraps them
+  // in {generatedAt, anomalies} under TSM_COLLEGE_FINAID_STRATEGIST_RELAY —
+  // Sentinel Center's own naming convention, distinct from relay.core.js's
+  // TSM_COLLEGE_FINAID_RELAY key used for the college-strategist.html hop).
+  const FINAID_SEV_THRESHOLDS = { crit: 0.30, high: 0.15 };
+  function finaidBreachSeverity(breachCount, totalCount) {
+    if (!totalCount) return breachCount > 0 ? 'MED' : 'LOW';
+    const ratio = breachCount / totalCount;
+    if (ratio >= FINAID_SEV_THRESHOLDS.crit) return 'CRIT';
+    if (ratio >= FINAID_SEV_THRESHOLDS.high) return 'HIGH';
+    if (ratio > 0) return 'MED';
+    return 'LOW';
+  }
+
+  async function pushToSentinel() {
+    if (!engine) return;
+    try {
+      const fin = await engine.getFinancialSummary();
+      const kpis = engine.computeKpis();
+      const r2t4Breaches = engine.getSlaBreaches('r2t4_cases') || [];
+      const verificationBreaches = engine.getSlaBreaches('verification_cases') || [];
+      const anomalies = [];
+
+      if ((fin.r2t4_exposure_total || 0) > 0 || r2t4Breaches.length > 0) {
+        const { confidence, note } = fin.r2t4_confidence || { confidence: 0, note: '' };
+        anomalies.push({
+          id: 'college-finaid-r2t4',
+          title: 'R2T4 — Late Return of Title IV Funds',
+          severity: finaidBreachSeverity(kpis.r2t4_over_sla || r2t4Breaches.length, kpis.open_r2t4_cases || 1),
+          exposure: fin.r2t4_exposure_total || 0,
+          confidence,
+          rootCause: `${kpis.r2t4_over_sla || r2t4Breaches.length} of ${kpis.open_r2t4_cases || 0} open R2T4 cases are past the 45-day federal return deadline.${note}`,
+          recommendedAction: 'Escalate overdue R2T4 calculations to the Returns Team lead before further penalty accrual.',
+          impacts: {}
+        });
+      }
+      if ((fin.verification_exposure_total || 0) > 0 || verificationBreaches.length > 0) {
+        const { confidence, note } = fin.verification_confidence || { confidence: 0, note: '' };
+        anomalies.push({
+          id: 'college-finaid-verification',
+          title: 'Verification Backlog Over SLA',
+          severity: finaidBreachSeverity(kpis.verification_over_sla || verificationBreaches.length, kpis.open_verification_cases || 1),
+          exposure: fin.verification_exposure_total || 0,
+          confidence,
+          rootCause: `${kpis.verification_over_sla || verificationBreaches.length} of ${kpis.open_verification_cases || 0} open verification cases are past SLA, holding Pell disbursement.${note}`,
+          recommendedAction: 'Prioritize aged verification cases, especially conflicting-information flags, ahead of the next disbursement cycle.',
+          impacts: {}
+        });
+      }
+      if ((fin.cohort_default_exposure_total || 0) > 0) {
+        const { confidence, note } = fin.cohort_default_confidence || { confidence: 0, note: '' };
+        anomalies.push({
+          id: 'college-finaid-cohort-default',
+          title: 'Cohort Default Rate Flag',
+          severity: kpis.cohort_default_flags_open > 0 ? 'HIGH' : 'LOW',
+          exposure: fin.cohort_default_exposure_total || 0,
+          confidence,
+          rootCause: `${kpis.cohort_default_flags_open || 0} cohort default rate flag(s) open.${note}`,
+          recommendedAction: 'Review default-prevention outreach and counseling coverage for the affected program(s).',
+          impacts: {}
+        });
+      }
+
+      if (window.TSMSentinelPush && window.TSMSentinelPush.push) {
+        window.TSMSentinelPush.push('COLLEGE_FINAID', anomalies);
+      } else {
+        // Fallback if the shared utility didn't load, so a push still happens.
+        localStorage.setItem('TSM_COLLEGE_FINAID_STRATEGIST_RELAY', JSON.stringify({
+          generatedAt: new Date().toISOString(),
+          anomalies
+        }));
+        window.dispatchEvent(new CustomEvent('TSM_SENTINEL_REFRESH'));
+      }
+    } catch (e) {
+      console.warn('College Finaid: sentinel push failed', e);
+    }
+  }
+
   async function relayToStrategist() {
     if (!engine) return;
     try {
@@ -186,6 +269,7 @@
         try { window.TSM.relay.write(DOMAIN, payload); } catch (e) { /* noop */ }
       }
       window.dispatchEvent(new CustomEvent('TSM_RELAY_EVENT', { detail: { domain: DOMAIN, data: payload } }));
+      await pushToSentinel();
       showToast('Relayed to College Strategist.');
     } catch (e) {
       console.warn('relayToStrategist failed', e);
@@ -204,6 +288,24 @@
     renderVerification();
     renderCohortDefault();
     await renderExposure();
+
+    // Exercise the CanonicalCore wiring so it's not dead code — logs a
+    // warning if any record fails schema validation (should be none, since
+    // 'college_finaid' is registered in architecture/canonical/entities.json,
+    // unlike Schools' unregistered 'sch' value).
+    try {
+      const cc = new window.CanonicalCore();
+      await cc.load();
+      const canonical = await engine.getCanonicalRecords();
+      Object.entries(canonical).forEach(([entityKey, records]) => {
+        records.forEach(r => {
+          const { valid, errors } = cc.validate(r);
+          if (!valid) console.warn('CanonicalCore validation failed for', entityKey, r.id, errors);
+        });
+      });
+    } catch (e) {
+      console.warn('CanonicalCore wiring check failed', e);
+    }
   }
 
   document.getElementById('relayBtn').addEventListener('click', relayToStrategist);

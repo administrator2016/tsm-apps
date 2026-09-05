@@ -15,7 +15,7 @@
     "vertical": {
       "type": "string",
       "required": true,
-      "enum": ["o2c", "crm", "cpq", "catalog", "approvals", "mdm", "integration", "governance", "wip", "healthcare", "finops", "bpo", "legal", "real-estate", "insurance", "construction"],
+      "enum": ["o2c", "crm", "cpq", "catalog", "approvals", "mdm", "integration", "governance", "wip", "healthcare", "finops", "bpo", "legal", "real-estate", "insurance", "construction", "college_finaid"],
       "description": "Which War Room / vertical owns this entity."
     },
     "owner": {

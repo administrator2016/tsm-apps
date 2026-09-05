@@ -573,6 +573,14 @@ const VERTICALS = [
   { id:'hotelops',    name:'HotelOps',     color:'#22d3ee' },
   { id:'pm',          name:'PM Copilot',   color:'#a3e635' },
   { id:'concierge',   name:'Concierge',    color:'#a855f7' },
+  // 2026-09-05: added as the priority domain of the new Financial-Aid-
+  // centered college vertical (mirrors how Schools was added first among
+  // its own peers). Bursar/Endowment/Research-F&A/Accreditation don't have
+  // real pages or Sentinel pushes yet — only Financial Aid is registered
+  // here. id is 'college_finaid' (not just 'college') since Sentinel keys
+  // 1:1 off a single TSM_<ID>_STRATEGIST_RELAY; the other four domains will
+  // get their own ids here once built, rather than overloading this one.
+  { id:'college_finaid', name:'College — Financial Aid', color:'#fb923c' },
 ];
 
 // ── EXECUTIVE PORTAL LINKS ───────────────────────────────────────────────
@@ -647,6 +655,11 @@ const EXEC_PORTAL_PATHS = {
   finops:       '/html/finops-suite/finops-war/finops-executive-portal.html',
   hotelops:     '/html/hotelops/hotelops-executive-portal.html',
   pm:           '/html/war-rooms/pm-copilot/pm-exec-portal.html',
+  // 2026-09-05: points at college-executive-portal.html, which currently
+  // renders the COMBINED multi-domain relay (TSM_COLLEGE_EXEC_RELAY) built
+  // by college-strategist.html, not a Sentinel-specific view — same
+  // read-only convention as the other portals here, just multi-domain.
+  college_finaid: '/html/war-rooms/college-command/college-executive-portal.html',
 };
 
 /**
