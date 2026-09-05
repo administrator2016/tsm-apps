@@ -68,6 +68,19 @@ function fundingDelayExposure(breaches) {
   return { total: items.reduce((s, it) => s + it.exposure, 0), currency: RATE_CARD.currency || 'USD', items };
 }
 
+// Rate card keys are uppercase ('HIGH'/'MEDIUM'/'LOW'), but nothing upstream
+// guarantees callers send severity in that case -- schools-engine.js posts
+// whatever loadRecords() was given, with no normalization, so a future CSV
+// import or SIS integration sending lowercase/mixed-case severity would
+// silently price real compliance exposure at $0 without this. Sample data
+// happens to already be uppercase, which is why this went unnoticed.
+function rateForSeverity(rates, severity) {
+  if (!severity) return null;
+  if (rates[severity] != null) return rates[severity];
+  const upper = String(severity).toUpperCase();
+  return rates[upper] != null ? rates[upper] : null;
+}
+
 function complianceExposure(exceptions) {
   const open = (exceptions || []).filter(e => e.stage !== 'remediated');
   if (!RATE_CARD || !RATE_CARD.compliance_exposure_by_severity) {
@@ -75,7 +88,8 @@ function complianceExposure(exceptions) {
   }
   const rates = RATE_CARD.compliance_exposure_by_severity;
   const items = open.map(e => {
-    const rate = rates[e.severity] != null ? rates[e.severity] : 0;
+    const matched = rateForSeverity(rates, e.severity);
+    const rate = matched != null ? matched : 0;
     return { id: e.exception_id, grant_id: e.grant_id, type: e.type, severity: e.severity, exposure: rate };
   }).sort((a, b) => b.exposure - a.exposure);
   return { total: items.reduce((s, it) => s + it.exposure, 0), currency: RATE_CARD.currency || 'USD', items };
@@ -94,7 +108,7 @@ function complianceConfidence(exceptions) {
   }
   const rates = RATE_CARD.compliance_exposure_by_severity;
   const severities = [...new Set((exceptions || []).map(e => e.severity).filter(Boolean))];
-  const missing = severities.filter(s => rates[s] == null);
+  const missing = severities.filter(s => rateForSeverity(rates, s) == null);
   if (missing.length) {
     return { confidence: 65, note: ` Rate card has no entry for severity level(s) ${missing.join(', ')} — those items priced at $0.` };
   }

@@ -16,7 +16,7 @@ const path = require('path');
 
 const PORT = process.env.PORT || 8080;
 const BASE = `http://localhost:${PORT}`;
-const PAGE_URL = `${BASE}/html/schools-command/schools-command.html`;
+const PAGE_URL = `${BASE}/html/war-rooms/schools-command/schools-command.html`;
 
 function waitForServer(timeoutMs = 15000) {
   const http = require('http');
