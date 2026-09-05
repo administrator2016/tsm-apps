@@ -49,7 +49,7 @@ const SCREENSHOT_DIR = path.join(__dirname, 'screenshots');
 // committed without baking a live credential into git history.
 const AUTH_PASSWORD = process.env.TSM_AUTH_PASSWORD || '';
 // TSM FIX: no way to run a single vertical existed, so any debug run
-// paid the cost of all 11 verticals sequentially. TSM_ONLY restricts
+// paid the cost of all 12 verticals sequentially. TSM_ONLY restricts
 // the run to one vertical by name (case-insensitive, matches
 // vertical.name), for fast iteration during debugging.
 const ONLY = process.env.TSM_ONLY || '';
@@ -384,6 +384,31 @@ const VERTICALS = [
       { kind: 'sleep', ms: 1500 },
       { kind: 'clickOnclick', fn: 'escalateExec', timeout: 20000 },
       { kind: 'goto', path: '/war-rooms/honeywell-executive-portal.html' },
+      { kind: 'waitForSelector', selector: '#tsmk-delivery-btn' },
+      { kind: 'clickId', id: 'tsmk-delivery-btn' },
+    ],
+  },
+
+  // ── Added 2026-09-05 ─────────────────────────────────────────────────
+  // College's Financial Aid war room is the priority domain with real
+  // backend wiring (routes/college-finaid-financial.js). Unlike Mortgage/
+  // Schools/HotelOps, there's no "load sample" button -- college-finaid-
+  // command.html's init() calls engine.loadSampleData() unconditionally on
+  // page load, so the chain starts one step later (straight to relay).
+  // relayBtn/relayExecBtn/tsmk-delivery-btn ids and the strategist's
+  // "No active domain relays yet" empty-state text were all read directly
+  // out of the corresponding .html files, not guessed.
+  {
+    name: 'College',
+    steps: [
+      { kind: 'goto', path: '/war-rooms/college-command/college-finaid-command.html' },
+      { kind: 'waitForSelector', selector: '#kpiRow' },
+      { kind: 'sleep', ms: 1500 }, // init() fetches the finaid model JSON + a financial-summary POST before relayBtn has real data to relay
+      { kind: 'clickId', id: 'relayBtn' },
+      { kind: 'goto', path: '/war-rooms/college-command/college-strategist.html' },
+      { kind: 'waitForTextGone', text: 'No active domain relays yet', timeout: 15000 },
+      { kind: 'clickId', id: 'relayExecBtn' },
+      { kind: 'goto', path: '/war-rooms/college-command/college-executive-portal.html' },
       { kind: 'waitForSelector', selector: '#tsmk-delivery-btn' },
       { kind: 'clickId', id: 'tsmk-delivery-btn' },
     ],
