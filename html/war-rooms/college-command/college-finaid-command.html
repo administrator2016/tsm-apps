@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>College Financial Aid — Title IV War Room</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0b0f14; --panel: #121821; --border: #223042; --text: #e6edf3;
+    --muted: #8ea0b5; --accent: #4da3ff; --high: #ff5d5d; --med: #ffb547; --low: #4caf6f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, Segoe UI, Roboto, sans-serif; }
+  header { padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 18px; margin: 0; }
+  header .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  main { padding: 24px 28px; max-width: 1200px; margin: 0 auto; }
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .kpi { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .kpi .val { font-size: 24px; font-weight: 700; }
+  .kpi .lbl { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  section { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+  section h2 { font-size: 14px; margin: 0; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+  .sev-HIGH { color: var(--high); font-weight: 600; }
+  .sev-MEDIUM { color: var(--med); font-weight: 600; }
+  .sev-LOW { color: var(--low); font-weight: 600; }
+  .exposure-box { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 20px; }
+  .exposure-total { font-size: 28px; font-weight: 700; color: var(--high); }
+  .exposure-note { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .actions { display: flex; gap: 10px; margin-top: 20px; }
+  button { background: var(--accent); border: none; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
+  button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  #toast { position: fixed; bottom: 20px; right: 20px; background: var(--panel); border: 1px solid var(--border); padding: 12px 18px; border-radius: 8px; opacity: 0; transition: opacity .2s; font-size: 13px; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>College Financial Aid — Title IV War Room</h1>
+    <div class="sub">R2T4 · Verification · Cohort Default — priority domain, real backend exposure math</div>
+  </div>
+  <div class="sub" id="clock"></div>
+</header>
+<main>
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <div class="exposure-box" id="exposureBox">Loading financial exposure…</div>
+
+  <section>
+    <h2>R2T4 Cases (Return to Title IV Funds)</h2>
+    <table id="r2t4Table"><thead><tr><th>Case</th><th>Student</th><th>Program</th><th>Stage</th><th>Severity</th><th>Days Late</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section>
+    <h2>Verification Cases</h2>
+    <table id="verTable"><thead><tr><th>Case</th><th>Student</th><th>Stage</th><th>Severity</th><th>Days Open</th><th>Pell Held</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section>
+    <h2>Cohort Default Rate Flags</h2>
+    <table id="cdrTable"><thead><tr><th>Flag</th><th>Program</th><th>Band</th><th>Trend</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <div class="actions">
+    <button id="relayBtn">Relay to College Strategist</button>
+    <button class="secondary" id="refreshBtn">Refresh Exposure</button>
+  </div>
+</main>
+<div id="toast"></div>
+
+<script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
+<script src="/html/war-rooms/college-command/services/college-finaid-engine.js"></script>
+<script>
+(function () {
+  let MODEL = null;
+  let engine = null;
+
+  const DOMAIN = 'COLLEGE_FINAID';
+  const RELAY_KEY_FALLBACK = 'TSM_' + DOMAIN + '_RELAY';
+
+  function tick() { document.getElementById('clock').textContent = new Date().toLocaleTimeString(); }
+  setInterval(tick, 1000); tick();
+
+  function showToast(msg, isErr) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.color = isErr ? 'var(--high)' : 'var(--text)';
+    t.classList.add('show');
+    clearTimeout(showToast._h);
+    showToast._h = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function renderKpis(kpis) {
+    const defs = [
+      ['open_r2t4_cases', 'Open R2T4 Cases'],
+      ['r2t4_over_sla', 'R2T4 Over 45-Day SLA'],
+      ['open_verification_cases', 'Open Verification Cases'],
+      ['verification_over_sla', 'Verification Backlog Over SLA'],
+      ['active_pell_disbursed', 'Active Pell Disbursed'],
+      ['cohort_default_flags_open', 'Cohort Default Flags Open']
+    ];
+    const row = document.getElementById('kpiRow');
+    row.innerHTML = defs.map(([key, label]) => {
+      const val = kpis[key];
+      const display = key === 'active_pell_disbursed' ? '$' + Number(val || 0).toLocaleString() : val;
+      return `<div class="kpi"><div class="val">${display}</div><div class="lbl">${label}</div></div>`;
+    }).join('');
+  }
+
+  function renderR2t4() {
+    const tbody = document.querySelector('#r2t4Table tbody');
+    tbody.innerHTML = engine.data.r2t4_cases.map(r => `
+      <tr>
+        <td>${escapeHtml(r.case_id)}</td>
+        <td>${escapeHtml(r.student_ref)}</td>
+        <td>${escapeHtml(r.program)}</td>
+        <td>${escapeHtml(r.stage)}</td>
+        <td class="sev-${escapeHtml(r.severity)}">${escapeHtml(r.severity)}</td>
+        <td>${r.days_late || 0}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderVerification() {
+    const tbody = document.querySelector('#verTable tbody');
+    tbody.innerHTML = engine.data.verification_cases.map(v => `
+      <tr>
+        <td>${escapeHtml(v.case_id)}</td>
+        <td>${escapeHtml(v.student_ref)}</td>
+        <td>${escapeHtml(v.stage)}</td>
+        <td class="sev-${escapeHtml(v.severity)}">${escapeHtml(v.severity)}</td>
+        <td>${v.days_open || 0}</td>
+        <td>$${Number(v.pell_amount_held || 0).toLocaleString()}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderCohortDefault() {
+    const tbody = document.querySelector('#cdrTable tbody');
+    tbody.innerHTML = engine.data.cohort_default_flags.map(f => `
+      <tr>
+        <td>${escapeHtml(f.flag_id)}</td>
+        <td>${escapeHtml(f.program)}</td>
+        <td class="sev-${f.band === 'SANCTION' ? 'HIGH' : f.band === 'WARNING' ? 'MEDIUM' : 'LOW'}">${escapeHtml(f.band)}</td>
+        <td>${escapeHtml(f.trend || '—')}</td>
+      </tr>
+    `).join('');
+  }
+
+  async function renderExposure() {
+    const box = document.getElementById('exposureBox');
+    box.textContent = 'Computing exposure…';
+    try {
+      const summary = await engine.getFinancialSummary();
+      box.innerHTML = `
+        <div class="exposure-total">$${Number(summary.total_exposure || 0).toLocaleString()} total exposure</div>
+        <div class="exposure-note">
+          R2T4: $${Number(summary.r2t4_exposure_total || 0).toLocaleString()} ·
+          Verification backlog: $${Number(summary.verification_exposure_total || 0).toLocaleString()} ·
+          Cohort default: $${Number(summary.cohort_default_exposure_total || 0).toLocaleString()}
+          ${summary.note ? '<br>' + escapeHtml(summary.note) : ''}
+        </div>
+      `;
+    } catch (e) {
+      box.textContent = 'Exposure computation failed — see console.';
+      console.warn('renderExposure failed', e);
+    }
+  }
+
+  async function relayToStrategist() {
+    if (!engine) return;
+    try {
+      const payload = await engine.buildRelayPayload(null);
+      const json = JSON.stringify(payload);
+      try { sessionStorage.setItem(RELAY_KEY_FALLBACK, json); } catch (e) { /* noop */ }
+      try { localStorage.setItem(RELAY_KEY_FALLBACK, json); } catch (e) { /* noop */ }
+      if (window.TSM && window.TSM.relay && window.TSM.relay.write) {
+        try { window.TSM.relay.write(DOMAIN, payload); } catch (e) { /* noop */ }
+      }
+      window.dispatchEvent(new CustomEvent('TSM_RELAY_EVENT', { detail: { domain: DOMAIN, data: payload } }));
+      showToast('Relayed to College Strategist.');
+    } catch (e) {
+      console.warn('relayToStrategist failed', e);
+      showToast('Relay failed — see console.', true);
+    }
+  }
+
+  async function init() {
+    const res = await fetch('/html/war-rooms/college-command/data/college-finaid-model.json');
+    MODEL = await res.json();
+    engine = new window.TSMCollegeFinaidEngine(MODEL);
+    engine.loadSampleData();
+
+    renderKpis(engine.computeKpis());
+    renderR2t4();
+    renderVerification();
+    renderCohortDefault();
+    await renderExposure();
+  }
+
+  document.getElementById('relayBtn').addEventListener('click', relayToStrategist);
+  document.getElementById('refreshBtn').addEventListener('click', renderExposure);
+
+  init();
+})();
+</script>
+</body>
+</html>

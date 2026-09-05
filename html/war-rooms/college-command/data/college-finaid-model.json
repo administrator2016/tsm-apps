@@ -1,0 +1,124 @@
+{
+  "version": "1.0",
+  "vertical": "college_finaid",
+  "entities": {
+    "r2t4_case": {
+      "type": "col_r2t4_case",
+      "stages": [
+        { "id": "withdrawal_reported", "label": "Withdrawal Reported", "order": 1, "sla_hours": 24 },
+        { "id": "calculation_pending", "label": "R2T4 Calculation Pending", "order": 2, "sla_hours": 72 },
+        { "id": "return_approved", "label": "Return Approved", "order": 3, "sla_hours": 24 },
+        { "id": "funds_returned", "label": "Funds Returned to Title IV", "order": 4, "sla_hours": 720 },
+        { "id": "closed", "label": "Closed", "order": 5, "sla_hours": null },
+        { "id": "escalated", "label": "Escalated — Past 45-Day Deadline", "order": 6, "sla_hours": null }
+      ]
+    },
+    "verification_case": {
+      "type": "col_verification_case",
+      "stages": [
+        { "id": "selected", "label": "Selected for Verification", "order": 1, "sla_hours": 24 },
+        { "id": "docs_requested", "label": "Documents Requested", "order": 2, "sla_hours": 48 },
+        { "id": "docs_received", "label": "Documents Received", "order": 3, "sla_hours": 48 },
+        { "id": "under_review", "label": "Under Review", "order": 4, "sla_hours": 72 },
+        { "id": "cleared", "label": "Cleared to Disburse", "order": 5, "sla_hours": null },
+        { "id": "conflicting_info", "label": "Conflicting Information Flag", "order": 6, "sla_hours": 96 }
+      ]
+    },
+    "cohort_default_flag": {
+      "type": "col_cohort_default_flag",
+      "stages": [
+        { "id": "monitoring", "label": "Monitoring", "order": 1, "sla_hours": null },
+        { "id": "watch", "label": "Watch Band", "order": 2, "sla_hours": null },
+        { "id": "warning", "label": "Warning Band", "order": 3, "sla_hours": null },
+        { "id": "sanction", "label": "Sanction Band", "order": 4, "sla_hours": null }
+      ]
+    }
+  },
+  "kpis": [
+    { "id": "open_r2t4_cases", "label": "Open R2T4 Cases", "unit": "count", "entity": "r2t4_case" },
+    { "id": "r2t4_over_sla", "label": "R2T4 Cases Over SLA", "unit": "count", "entity": "r2t4_case" },
+    { "id": "open_verification_cases", "label": "Open Verification Cases", "unit": "count", "entity": "verification_case" },
+    { "id": "verification_over_sla", "label": "Verification Backlog Over SLA", "unit": "count", "entity": "verification_case" },
+    { "id": "active_pell_disbursed", "label": "Active Pell Disbursed (Term)", "unit": "usd", "entity": "verification_case" },
+    { "id": "cohort_default_flags_open", "label": "Cohort Default Flags Open", "unit": "count", "entity": "cohort_default_flag" }
+  ],
+  "sample_data": {
+    "r2t4_cases": [
+      {
+        "case_id": "R2T4-2026-0031",
+        "student_ref": "S-88213",
+        "program": "BS Nursing",
+        "withdrawal_date_hours_ago": 820,
+        "stage": "escalated",
+        "severity": "HIGH",
+        "days_late": 12,
+        "owner": "Fin Aid — Returns Team",
+        "notes": "45-day federal return deadline missed by 12 days pending final calc sign-off."
+      },
+      {
+        "case_id": "R2T4-2026-0044",
+        "student_ref": "S-90104",
+        "program": "AA General Studies",
+        "withdrawal_date_hours_ago": 96,
+        "stage": "calculation_pending",
+        "severity": "MEDIUM",
+        "days_late": 0,
+        "owner": "Fin Aid — Returns Team",
+        "notes": "Calculation pending registrar confirmation of last date of attendance."
+      },
+      {
+        "case_id": "R2T4-2026-0050",
+        "student_ref": "S-90233",
+        "program": "BA Business",
+        "withdrawal_date_hours_ago": 30,
+        "stage": "withdrawal_reported",
+        "severity": "LOW",
+        "days_late": 0,
+        "owner": "Registrar Liaison",
+        "notes": "Newly reported, within SLA window."
+      }
+    ],
+    "verification_cases": [
+      {
+        "case_id": "VER-2026-1187",
+        "student_ref": "S-77410",
+        "stage": "conflicting_info",
+        "severity": "HIGH",
+        "days_open": 21,
+        "pell_amount_held": 3450,
+        "owner": "Fin Aid — Verification Team",
+        "notes": "Conflicting household size between FAFSA and tax transcript; disbursement held."
+      },
+      {
+        "case_id": "VER-2026-1201",
+        "student_ref": "S-77502",
+        "stage": "under_review",
+        "severity": "MEDIUM",
+        "days_open": 9,
+        "pell_amount_held": 2100,
+        "owner": "Fin Aid — Verification Team",
+        "notes": "IRS DRT mismatch under manual review."
+      },
+      {
+        "case_id": "VER-2026-1215",
+        "student_ref": "S-77588",
+        "stage": "docs_requested",
+        "severity": "LOW",
+        "days_open": 2,
+        "pell_amount_held": 1800,
+        "owner": "Fin Aid — Verification Team",
+        "notes": "Standard document request, within SLA."
+      }
+    ],
+    "cohort_default_flags": [
+      {
+        "flag_id": "CDR-2026-004",
+        "program": "Institution-wide (3-yr CDR)",
+        "band": "WARNING",
+        "trend": "up",
+        "owner": "Compliance Office",
+        "notes": "Draft CDR trending toward warning threshold ahead of official release."
+      }
+    ]
+  }
+}

@@ -3066,6 +3066,9 @@ app.use('/api/rcm', require('./routes/rcm-requirements'));
 // kpis/breaches/exceptions in the body each time), so requireAnyAuth alone
 // closes the gap here — there's no per-client bucket to scope.
 app.use('/api/schools', requireAnyAuth, require('./routes/schools-financial'));
+// College Financial Aid (Title IV) war room — same private-rate-card-server-side
+// pattern as Schools above. See routes/college-finaid-financial.js header.
+app.use('/api/college/finaid', requireAnyAuth, require('./routes/college-finaid-financial'));
 
 // ── INPHUSIONSYS (multi-vertical demo data: employees, anomalies, IT tickets) ──
 // See server/routes/inphusionsys.js header for the full endpoint contract.

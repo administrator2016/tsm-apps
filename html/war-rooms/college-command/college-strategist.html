@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>College Strategist — Multi-Domain Aggregator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0b0f14; --panel: #121821; --border: #223042; --text: #e6edf3;
+    --muted: #8ea0b5; --accent: #4da3ff; --high: #ff5d5d; --med: #ffb547; --low: #4caf6f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, Segoe UI, Roboto, sans-serif; }
+  header { padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 18px; margin: 0; }
+  header .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  main { padding: 24px 28px; max-width: 1200px; margin: 0 auto; }
+  .domain-nav { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .domain-nav a { color: var(--muted); text-decoration: none; font-size: 12px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; }
+  .domain-nav a:hover { color: var(--accent); border-color: var(--accent); }
+  .alert-card { background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--muted); border-radius: 8px; padding: 16px 18px; margin-bottom: 14px; }
+  .alert-card.stale { opacity: 0.55; }
+  .alert-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .alert-domain { font-weight: 700; font-size: 13px; letter-spacing: 0.04em; }
+  .alert-ts { color: var(--muted); font-size: 11px; }
+  .alert-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; font-size: 13px; }
+  .alert-body .metric-val { font-weight: 700; }
+  .alert-body .metric-lbl { color: var(--muted); font-size: 11px; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .actions { display: flex; gap: 10px; margin-top: 20px; }
+  button { background: var(--accent); border: none; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
+  button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  #toast { position: fixed; bottom: 20px; right: 20px; background: var(--panel); border: 1px solid var(--border); padding: 12px 18px; border-radius: 8px; opacity: 0; transition: opacity .2s; font-size: 13px; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>College Strategist</h1>
+    <div class="sub">Aggregates active alerts across all college domains — every domain shown at once, not just the latest</div>
+  </div>
+  <div class="sub" id="clock"></div>
+</header>
+<main>
+  <div class="domain-nav">
+    <a href="/html/war-rooms/college-command/college-finaid-command.html">Financial Aid (Title IV)</a>
+    <a href="#" onclick="return false;" style="opacity:.5">Bursar / Tuition — not yet built</a>
+    <a href="#" onclick="return false;" style="opacity:.5">Endowment (FASB) — not yet built</a>
+    <a href="#" onclick="return false;" style="opacity:.5">Research / F&amp;A — not yet built</a>
+    <a href="#" onclick="return false;" style="opacity:.5">Accreditation — not yet built</a>
+  </div>
+
+  <div id="alertList"></div>
+
+  <div class="actions">
+    <button id="relayExecBtn">Relay to Executive Portal</button>
+    <button class="secondary" id="refreshBtn">Refresh</button>
+  </div>
+</main>
+<div id="toast"></div>
+
+<script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
+<script>
+(function () {
+  // Domain-specific relay keys registered in relay.core.js's RELAY_REGISTRY.
+  // Each domain writes only its own key (Honeywell split-key pattern) —
+  // this Strategist reads all five and lists every one with live data,
+  // rather than picking a single "latest" the way honeywell-strategist.html
+  // does, since Financial Aid ops needs simultaneous cross-domain visibility.
+  const DOMAINS = [
+    { key: 'COLLEGE_FINAID',      label: 'FINANCIAL AID — TITLE IV',     color: 'var(--high)' },
+    { key: 'COLLEGE_BURSAR',      label: 'BURSAR / TUITION',             color: 'var(--med)' },
+    { key: 'COLLEGE_ENDOWMENT',   label: 'ENDOWMENT (FASB)',             color: 'var(--accent)' },
+    { key: 'COLLEGE_RESEARCH_FA', label: 'RESEARCH / INDIRECT COST (F&A)', color: 'var(--low)' },
+    { key: 'COLLEGE_ACCRED',      label: 'ACCREDITATION',                color: 'var(--muted)' }
+  ];
+
+  const STALE_MS = 1000 * 60 * 60 * 12; // 12h — flags a payload as stale rather than hiding it
+
+  function tick() { document.getElementById('clock').textContent = new Date().toLocaleTimeString(); }
+  setInterval(tick, 1000); tick();
+
+  function showToast(msg, isErr) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.color = isErr ? 'var(--high)' : 'var(--text)';
+    t.classList.add('show');
+    clearTimeout(showToast._h);
+    showToast._h = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  // Reads a domain's relay payload. Falls back to raw storage read if
+  // relay.core.js hasn't loaded yet (defensive — matches the fallback
+  // pattern schools-strategist.html uses for RELAY_KEY_FALLBACK).
+  function readDomain(domainKey) {
+    if (window.TSM && window.TSM.relay && window.TSM.relay.read) {
+      try {
+        const v = window.TSM.relay.read(domainKey);
+        if (v) return v;
+      } catch (e) { /* fall through to raw read */ }
+    }
+    const fallbackKey = 'TSM_' + domainKey + '_RELAY';
+    try {
+      const raw = localStorage.getItem(fallbackKey) || sessionStorage.getItem(fallbackKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function collectActiveAlerts() {
+    return DOMAINS.map(d => {
+      const payload = readDomain(d.key);
+      return { meta: d, payload };
+    }).filter(a => !!a.payload);
+  }
+
+  function metricsFor(alert) {
+    const p = alert.payload;
+    const out = [];
+    if (p.kpis) {
+      Object.entries(p.kpis).forEach(([k, v]) => {
+        const label = k.replace(/_/g, ' ');
+        const isMoney = /disbursed|value|amount/.test(k);
+        out.push({ label, value: isMoney ? '$' + Number(v || 0).toLocaleString() : v });
+      });
+    }
+    if (p.financials && p.financials.total_exposure != null) {
+      out.push({ label: 'total exposure', value: '$' + Number(p.financials.total_exposure).toLocaleString() });
+    }
+    return out;
+  }
+
+  function render() {
+    const alerts = collectActiveAlerts();
+    const list = document.getElementById('alertList');
+
+    if (!alerts.length) {
+      list.innerHTML = '<div class="empty-state">No active domain relays yet. Open the Financial Aid war room and click "Relay to College Strategist" to populate this view.</div>';
+      return;
+    }
+
+    // Sort by most recently relayed first, but ALL are shown — this is the
+    // aggregation behavior chosen over honeywell-strategist.html's
+    // "newest timestamp wins, discard the rest" pattern.
+    alerts.sort((a, b) => (b.payload.timestamp || 0) - (a.payload.timestamp || 0));
+
+    list.innerHTML = alerts.map(a => {
+      const ageMs = Date.now() - (a.payload.timestamp || 0);
+      const isStale = ageMs > STALE_MS;
+      const metrics = metricsFor(a);
+      return `
+        <div class="alert-card${isStale ? ' stale' : ''}" style="border-left-color:${a.meta.color}">
+          <div class="alert-head">
+            <span class="alert-domain">${escapeHtml(a.meta.label)}</span>
+            <span class="alert-ts">${a.payload.timestamp ? new Date(a.payload.timestamp).toLocaleString() : 'no timestamp'}${isStale ? ' — STALE' : ''}</span>
+          </div>
+          <div class="alert-body">
+            ${metrics.map(m => `<div><div class="metric-val">${escapeHtml(m.value)}</div><div class="metric-lbl">${escapeHtml(m.label)}</div></div>`).join('')}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function relayToExec() {
+    const alerts = collectActiveAlerts();
+    const combined = {
+      vertical: 'college',
+      timestamp: Date.now(),
+      domain_count: alerts.length,
+      domains: alerts.map(a => ({ domain: a.meta.key, label: a.meta.label, payload: a.payload }))
+    };
+    const json = JSON.stringify(combined);
+    const EXEC_KEY = 'TSM_COLLEGE_EXEC_RELAY';
+    try { sessionStorage.setItem(EXEC_KEY, json); } catch (e) { /* noop */ }
+    try { localStorage.setItem(EXEC_KEY, json); } catch (e) { /* noop */ }
+    showToast('Relayed ' + alerts.length + ' domain(s) to Executive Portal.');
+  }
+
+  document.getElementById('relayExecBtn').addEventListener('click', relayToExec);
+  document.getElementById('refreshBtn').addEventListener('click', render);
+  window.addEventListener('storage', e => {
+    if (DOMAINS.some(d => e.key === ('TSM_' + d.key + '_RELAY'))) render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

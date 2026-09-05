@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>College Executive Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0b0f14; --panel: #121821; --border: #223042; --text: #e6edf3;
+    --muted: #8ea0b5; --accent: #4da3ff; --high: #ff5d5d; --med: #ffb547; --low: #4caf6f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, Segoe UI, Roboto, sans-serif; }
+  header { padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 18px; margin: 0; }
+  header .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  main { padding: 24px 28px; max-width: 1200px; margin: 0 auto; }
+  .summary-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .summary-tile { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .summary-tile .val { font-size: 22px; font-weight: 700; }
+  .summary-tile .lbl { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .domain-section { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 16px; padding: 16px 18px; }
+  .domain-section h3 { margin: 0 0 10px 0; font-size: 14px; }
+  .domain-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .domain-metrics .metric-val { font-weight: 700; }
+  .domain-metrics .metric-lbl { color: var(--muted); font-size: 11px; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>College Executive Portal</h1>
+    <div class="sub">Combined view across every active college domain relay</div>
+  </div>
+  <div class="sub" id="clock"></div>
+</header>
+<main>
+  <div class="summary-bar" id="summaryBar"></div>
+  <div id="domainSections"></div>
+</main>
+
+<script>
+(function () {
+  const EXEC_KEY = 'TSM_COLLEGE_EXEC_RELAY';
+
+  function tick() { document.getElementById('clock').textContent = new Date().toLocaleTimeString(); }
+  setInterval(tick, 1000); tick();
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function readCombined() {
+    try {
+      const raw = localStorage.getItem(EXEC_KEY) || sessionStorage.getItem(EXEC_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  function totalExposure(combined) {
+    return (combined.domains || []).reduce((sum, d) => {
+      const fin = d.payload && d.payload.financials;
+      return sum + (fin && fin.total_exposure ? fin.total_exposure : 0);
+    }, 0);
+  }
+
+  function render() {
+    const combined = readCombined();
+    const summaryBar = document.getElementById('summaryBar');
+    const sections = document.getElementById('domainSections');
+
+    if (!combined || !combined.domains || !combined.domains.length) {
+      summaryBar.innerHTML = '';
+      sections.innerHTML = '<div class="empty-state">No relay from the College Strategist yet. Open the Strategist page and click "Relay to Executive Portal".</div>';
+      return;
+    }
+
+    summaryBar.innerHTML = `
+      <div class="summary-tile"><div class="val">${combined.domains.length}</div><div class="lbl">Active Domains</div></div>
+      <div class="summary-tile"><div class="val">$${Number(totalExposure(combined)).toLocaleString()}</div><div class="lbl">Combined Financial Exposure</div></div>
+      <div class="summary-tile"><div class="val">${new Date(combined.timestamp).toLocaleString()}</div><div class="lbl">Last Relayed</div></div>
+    `;
+
+    sections.innerHTML = combined.domains.map(d => {
+      const p = d.payload || {};
+      const kpis = p.kpis || {};
+      const metrics = Object.entries(kpis).map(([k, v]) => {
+        const isMoney = /disbursed|value|amount/.test(k);
+        return { label: k.replace(/_/g, ' '), value: isMoney ? '$' + Number(v || 0).toLocaleString() : v };
+      });
+      if (p.financials && p.financials.total_exposure != null) {
+        metrics.push({ label: 'total exposure', value: '$' + Number(p.financials.total_exposure).toLocaleString() });
+      }
+      return `
+        <div class="domain-section">
+          <h3>${escapeHtml(d.label)}</h3>
+          <div class="domain-metrics">
+            ${metrics.map(m => `<div><div class="metric-val">${escapeHtml(m.value)}</div><div class="metric-lbl">${escapeHtml(m.label)}</div></div>`).join('')}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  window.addEventListener('storage', e => { if (e.key === EXEC_KEY) render(); });
+  render();
+})();
+</script>
+</body>
+</html>

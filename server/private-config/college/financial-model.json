@@ -1,0 +1,12 @@
+{
+  "currency": "USD",
+  "note": "Estimate model for planning/reporting only — configure these rates to match your institution's real Title IV sanction schedule and verification-backlog cost before using externally.",
+  "r2t4_late_return_penalty_per_day": 275,
+  "verification_backlog_cost_per_day": 60,
+  "cohort_default_exposure_by_band": {
+    "SANCTION": 500000,
+    "WARNING": 75000,
+    "WATCH": 15000
+  },
+  "pell_overaward_recovery_rate": 1.0
+}
