@@ -324,7 +324,7 @@
       try { sessionStorage.setItem(RELAY_KEY_FALLBACK, json); } catch (e) { /* noop */ }
       try { localStorage.setItem(RELAY_KEY_FALLBACK, json); } catch (e) { /* noop */ }
       if (window.TSM && window.TSM.relay && window.TSM.relay.write) {
-        try { window.TSM.relay.write(DOMAIN, payload); } catch (e) { /* noop */ }
+        try { window.TSM.relay.write('COLLEGE_RESEARCH_FA', payload); } catch (e) { /* noop */ }
       }
       window.dispatchEvent(new CustomEvent('TSM_RELAY_EVENT', { detail: { domain: DOMAIN, data: payload } }));
       showToast('Relayed to College Strategist.');
