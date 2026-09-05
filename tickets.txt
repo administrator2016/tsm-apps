@@ -1,5 +1,0 @@
-1. User can't print to the 3rd floor printer, error says "offline" even though the printer shows a green light on the front panel. User is in Finance, has tried restarting their laptop already.
-
-2. Outlook won't open, crashes on launch with error 0x8004010F. Started happening this morning after a Windows update installed overnight. User has already tried restarting the computer twice.
-
-3. Laptop won't connect to VPN, GlobalProtect client says "gateway unreachable." User is working from home today, was able to connect fine yesterday. Home wifi seems to be working for everything else.
