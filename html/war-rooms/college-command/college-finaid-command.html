@@ -37,7 +37,7 @@
   #toast.show { opacity: 1; }
 </style>
 </head>
-<body>
+<body data-vertical="college" data-page-role="warroom">
 <header>
   <div>
     <h1>College Financial Aid — Title IV War Room</h1>
@@ -345,5 +345,16 @@
   init();
 })();
 </script>
+  <script src="/js/tsm-guide-engine.js" defer></script>
+  <!-- TSM Guided How-To -->
+  <link rel="stylesheet" href="/shared/tsm-guided-how-to.css">
+  <script src="/shared/tsm-guided-how-to.js" defer></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.TSMGuidedHowTo) {
+      window.TSMGuidedHowTo.inject('college');
+    }
+  });
+  </script>
 </body>
 </html>
