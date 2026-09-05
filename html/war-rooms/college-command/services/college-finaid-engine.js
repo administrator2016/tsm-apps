@@ -162,6 +162,34 @@
       }
     }
 
+    // Real Groq-backed compliance analysis — see routes/college-finaid-financial.js's
+    // POST /analysis. Same try/catch shape as getFinancialSummary() above:
+    // the endpoint itself is already resilient (always 200, degraded flag
+    // instead of throwing), but the fetch itself can still fail (network,
+    // route unmounted, etc.), so this still needs its own fallback message
+    // rather than letting the war room page's await throw uncaught.
+    async getAiAnalysis(context) {
+      try {
+        const res = await fetch('/api/college/finaid/analysis', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            kpis: this.computeKpis(),
+            r2t4_breaches: this.getSlaBreaches('r2t4_cases'),
+            verification_backlog: this.getSlaBreaches('verification_cases'),
+            cohort_default_flags: this.data.cohort_default_flags.filter(f => f.band !== 'monitoring'),
+            context: context || undefined
+          })
+        });
+        if (!res.ok) throw new Error('analysis endpoint returned ' + res.status);
+        const data = await res.json();
+        return { answer: data.answer || 'No response.', degraded: !!data.degraded };
+      } catch (e) {
+        console.warn('TSMCollegeFinaidEngine: getAiAnalysis failed', e);
+        return { answer: 'AI analysis unavailable — ' + e.message, degraded: true };
+      }
+    }
+
     // Relay payload written to TSM_COLLEGE_FINAID_RELAY (registered in
     // relay.core.js's RELAY_REGISTRY under domain key COLLEGE_FINAID).
     // Shape deliberately includes a top-level `domain` + `timestamp` so

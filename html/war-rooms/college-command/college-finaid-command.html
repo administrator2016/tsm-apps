@@ -65,6 +65,16 @@
     <table id="cdrTable"><thead><tr><th>Flag</th><th>Program</th><th>Band</th><th>Trend</th></tr></thead><tbody></tbody></table>
   </section>
 
+  <section id="aiSection">
+    <h2>AI Compliance Analysis</h2>
+    <div style="padding:16px;">
+      <div class="actions" style="margin-top:0;">
+        <button id="runAiBtn">Run AI Analysis</button>
+      </div>
+      <div id="aiOut" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12.5px;line-height:1.6;white-space:pre-wrap;margin-top:14px;min-height:60px;">Not run yet — click "Run AI Analysis".</div>
+    </div>
+  </section>
+
   <div class="actions">
     <button id="relayBtn">Relay to College Strategist</button>
     <button class="secondary" id="refreshBtn">Refresh Exposure</button>
@@ -80,6 +90,7 @@
 (function () {
   let MODEL = null;
   let engine = null;
+  let lastAiText = null;
 
   const DOMAIN = 'COLLEGE_FINAID';
   const RELAY_KEY_FALLBACK = 'TSM_' + DOMAIN + '_RELAY';
@@ -177,6 +188,25 @@
     }
   }
 
+  async function runAiAnalysis() {
+    if (!engine) return;
+    const btn = document.getElementById('runAiBtn');
+    const out = document.getElementById('aiOut');
+    btn.disabled = true;
+    btn.textContent = 'Running…';
+    out.textContent = 'Generating…';
+    try {
+      const { answer, degraded } = await engine.getAiAnalysis();
+      lastAiText = degraded ? null : answer;
+      out.textContent = answer;
+    } catch (e) {
+      out.textContent = 'Error: ' + e.message;
+      lastAiText = null;
+    }
+    btn.disabled = false;
+    btn.textContent = 'Run AI Analysis';
+  }
+
   // ── SENTINEL PUSH ────────────────────────────────────────────────────
   // Mirrors schools-command.html's schPushToSentinel() exactly: anomalies
   // built from real computed data (financial summary + SLA breaches), then
@@ -261,7 +291,7 @@
   async function relayToStrategist() {
     if (!engine) return;
     try {
-      const payload = await engine.buildRelayPayload(null);
+      const payload = await engine.buildRelayPayload(lastAiText);
       const json = JSON.stringify(payload);
       try { sessionStorage.setItem(RELAY_KEY_FALLBACK, json); } catch (e) { /* noop */ }
       try { localStorage.setItem(RELAY_KEY_FALLBACK, json); } catch (e) { /* noop */ }
@@ -310,6 +340,7 @@
 
   document.getElementById('relayBtn').addEventListener('click', relayToStrategist);
   document.getElementById('refreshBtn').addEventListener('click', renderExposure);
+  document.getElementById('runAiBtn').addEventListener('click', runAiAnalysis);
 
   init();
 })();
