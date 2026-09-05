@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>College Research / F&amp;A — War Room</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0b0f14; --panel: #121821; --border: #223042; --text: #e6edf3;
+    --muted: #8ea0b5; --accent: #4da3ff; --high: #ff5d5d; --med: #ffb547; --low: #4caf6f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, Segoe UI, Roboto, sans-serif; }
+  header { padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 18px; margin: 0; }
+  header .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  main { padding: 24px 28px; max-width: 1200px; margin: 0 auto; }
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .kpi { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .kpi .val { font-size: 24px; font-weight: 700; }
+  .kpi .lbl { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  section { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+  section h2 { font-size: 14px; margin: 0; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+  .sev-HIGH { color: var(--high); font-weight: 600; }
+  .sev-MEDIUM { color: var(--med); font-weight: 600; }
+  .sev-LOW { color: var(--low); font-weight: 600; }
+  .exposure-box { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 20px; }
+  .exposure-total { font-size: 28px; font-weight: 700; color: var(--high); }
+  .exposure-note { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .actions { display: flex; gap: 10px; margin-top: 20px; }
+  button { background: var(--accent); border: none; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
+  button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  #toast { position: fixed; bottom: 20px; right: 20px; background: var(--panel); border: 1px solid var(--border); padding: 12px 18px; border-radius: 8px; opacity: 0; transition: opacity .2s; font-size: 13px; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>College Research / F&amp;A — War Room</h1>
+    <div class="sub">Award burn rate · Indirect cost (F&amp;A) recovery · Effort reporting — lighter war room, own relay key, sample data</div>
+  </div>
+  <div class="sub" id="clock"></div>
+</header>
+<main>
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <div class="exposure-box" id="exposureBox">Loading recovery exposure…</div>
+
+  <section>
+    <h2>Award Burn Rate Flags</h2>
+    <table id="awardTable"><thead><tr><th>Award</th><th>PI</th><th>Sponsor</th><th>Severity</th><th>Burn vs Plan</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section>
+    <h2>Effort Reports Overdue</h2>
+    <table id="effortTable"><thead><tr><th>Report</th><th>PI</th><th>Award</th><th>Severity</th><th>Days Overdue</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <div class="actions">
+    <button id="relayBtn">Relay to College Strategist</button>
+    <button class="secondary" id="refreshBtn">Refresh Exposure</button>
+  </div>
+</main>
+<div id="toast"></div>
+
+<script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
+<script>
+(function () {
+  // Lighter war room — writes only to its own registered relay key
+  // (TSM_COLLEGE_RESEARCH_FA_RELAY via relay.core.js). No shared-key writes,
+  // no Sentinel/CanonicalCore wiring — matches the plant/cyber/supplier
+  // pattern, not the Financial Aid priority-domain treatment.
+  const DOMAIN = 'COLLEGE_RESEARCH_FA';
+  const RELAY_KEY_FALLBACK = 'TSM_' + DOMAIN + '_RELAY';
+
+  // Sample data only — no backend endpoint for this domain.
+  const awardFlags = [
+    { award_id: 'AWD-7710', pi: 'Dr. Alvarez', sponsor: 'NSF', severity: 'HIGH', burn_variance: '+38% vs plan' },
+    { award_id: 'AWD-7742', pi: 'Dr. Okafor', sponsor: 'NIH', severity: 'MEDIUM', burn_variance: '+14% vs plan' },
+    { award_id: 'AWD-7799', pi: 'Dr. Lindqvist', sponsor: 'DOE', severity: 'LOW', burn_variance: '-4% vs plan' }
+  ];
+  const effortReports = [
+    { report_id: 'EFF-3301', pi: 'Dr. Alvarez', award: 'AWD-7710', severity: 'HIGH', days_overdue: 22 },
+    { report_id: 'EFF-3318', pi: 'Dr. Chen', award: 'AWD-7688', severity: 'MEDIUM', days_overdue: 9 }
+  ];
+  const faRecoveryShortfall = 61500; // sample — indirect cost recovery shortfall vs negotiated rate
+
+  function tick() { document.getElementById('clock').textContent = new Date().toLocaleTimeString(); }
+  setInterval(tick, 1000); tick();
+
+  function showToast(msg, isErr) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.color = isErr ? 'var(--high)' : 'var(--text)';
+    t.classList.add('show');
+    clearTimeout(showToast._h);
+    showToast._h = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function computeKpis() {
+    const overBurn = awardFlags.filter(a => a.severity === 'HIGH' || a.severity === 'MEDIUM');
+    return {
+      open_awards: awardFlags.length + 41, // sample healthy-award baseline
+      awards_over_burn_rate: overBurn.length,
+      fa_recovery_shortfall: faRecoveryShortfall,
+      effort_reports_overdue: effortReports.length
+    };
+  }
+
+  function renderKpis(kpis) {
+    const defs = [
+      ['open_awards', 'Open Awards'],
+      ['awards_over_burn_rate', 'Awards Over Burn Rate'],
+      ['fa_recovery_shortfall', 'F&A Recovery Shortfall'],
+      ['effort_reports_overdue', 'Effort Reports Overdue']
+    ];
+    const row = document.getElementById('kpiRow');
+    row.innerHTML = defs.map(([key, label]) => {
+      const val = kpis[key];
+      const display = key === 'fa_recovery_shortfall' ? '$' + Number(val || 0).toLocaleString() : val;
+      return `<div class="kpi"><div class="val">${display}</div><div class="lbl">${label}</div></div>`;
+    }).join('');
+  }
+
+  function renderAwards() {
+    const tbody = document.querySelector('#awardTable tbody');
+    tbody.innerHTML = awardFlags.map(a => `
+      <tr>
+        <td>${escapeHtml(a.award_id)}</td>
+        <td>${escapeHtml(a.pi)}</td>
+        <td>${escapeHtml(a.sponsor)}</td>
+        <td class="sev-${escapeHtml(a.severity)}">${escapeHtml(a.severity)}</td>
+        <td>${escapeHtml(a.burn_variance)}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderEffort() {
+    const tbody = document.querySelector('#effortTable tbody');
+    tbody.innerHTML = effortReports.map(e => `
+      <tr>
+        <td>${escapeHtml(e.report_id)}</td>
+        <td>${escapeHtml(e.pi)}</td>
+        <td>${escapeHtml(e.award)}</td>
+        <td class="sev-${escapeHtml(e.severity)}">${escapeHtml(e.severity)}</td>
+        <td>${e.days_overdue}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderExposure() {
+    const box = document.getElementById('exposureBox');
+    const kpis = computeKpis();
+    box.innerHTML = `
+      <div class="exposure-total">$${Number(kpis.fa_recovery_shortfall).toLocaleString()} F&amp;A recovery shortfall</div>
+      <div class="exposure-note">
+        ${kpis.awards_over_burn_rate} of ${kpis.open_awards} open awards over planned burn rate ·
+        ${kpis.effort_reports_overdue} effort report(s) overdue
+      </div>
+    `;
+  }
+
+  function buildRelayPayload() {
+    return {
+      domain: DOMAIN,
+      timestamp: Date.now(),
+      kpis: computeKpis(),
+      financials: { total_exposure: computeKpis().fa_recovery_shortfall },
+      cases: { award_flags: awardFlags, effort_reports: effortReports }
+    };
+  }
+
+  function relayToStrategist() {
+    try {
+      const payload = buildRelayPayload();
+      const json = JSON.stringify(payload);
+      try { sessionStorage.setItem(RELAY_KEY_FALLBACK, json); } catch (e) { /* noop */ }
+      try { localStorage.setItem(RELAY_KEY_FALLBACK, json); } catch (e) { /* noop */ }
+      if (window.TSM && window.TSM.relay && window.TSM.relay.write) {
+        try { window.TSM.relay.write(DOMAIN, payload); } catch (e) { /* noop */ }
+      }
+      window.dispatchEvent(new CustomEvent('TSM_RELAY_EVENT', { detail: { domain: DOMAIN, data: payload } }));
+      showToast('Relayed to College Strategist.');
+    } catch (e) {
+      console.warn('relayToStrategist failed', e);
+      showToast('Relay failed — see console.', true);
+    }
+  }
+
+  function init() {
+    renderKpis(computeKpis());
+    renderAwards();
+    renderEffort();
+    renderExposure();
+  }
+
+  document.getElementById('relayBtn').addEventListener('click', relayToStrategist);
+  document.getElementById('refreshBtn').addEventListener('click', renderExposure);
+
+  init();
+})();
+</script>
+</body>
+</html>
