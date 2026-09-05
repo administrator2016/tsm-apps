@@ -7,15 +7,15 @@
       subtitle:
         'Follow the operating path from school problem → evidence → decision → action → executive report.',
       steps: [
-        ['START', 'Start with a mission or operational problem.'],
-        ['INPUT', 'Load the documents, records, or evidence.'],
-        ['ANALYZE', 'Run intelligence analysis.'],
-        ['REVIEW', 'Review findings, severity, and exposure.'],
-        ['DECIDE', 'Prioritize what requires action.'],
-        ['EXECUTE', 'Assign and execute corrective work.'],
-        ['REPORT', 'Generate the report leadership needs.'],
-        ['MEASURE', 'Track whether the problem is improving.'],
-        ['REPEAT', 'Run the workflow again as new work arrives.']
+        ['START', 'Start with a mission or operational problem.', { selector: '[data-tab="grants"]' }],
+        ['INPUT', 'Load the documents, records, or evidence.', { selector: '#schBtnLoadSample' }],
+        ['ANALYZE', 'Run intelligence analysis.', { selector: '#schBtnRunAnalysis' }],
+        ['REVIEW', 'Review findings, severity, and exposure.', { selector: '#schSnapGrid' }],
+        ['DECIDE', 'Prioritize what requires action.', { selector: '#schBreachBody' }],
+        ['EXECUTE', 'Assign and execute corrective work.', { selector: '#schBtnEnrich' }],
+        ['REPORT', 'Generate the report leadership needs.', { selector: '#tsm-chain-exec' }],
+        ['MEASURE', 'Track whether the problem is improving.', { selector: '#schKpiGrid' }],
+        ['REPEAT', 'Run the workflow again as new work arrives.', { selector: '#schBtnRunAnalysis' }]
       ]
     },
     // HC OFFICE MANAGER · DOCUMENT INTAKE — mirrors the real page's own order
