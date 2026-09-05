@@ -1372,9 +1372,9 @@ console.log("TSM_UI: Direct Neural Link Established.");
           <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()">🎓 Run AI Analysis</button>
           <div class="ai-output-panel" id="ai-output"></div>
           <div class="export-bar" id="ai-export-bar" style="display:none">
-            <button class="export-btn" onclick="exportResult('ai-output','txt')">⬇ Export TXT</button>
-            <button class="export-btn" onclick="exportResult('ai-output','md')">⬇ Export MD</button>
-            <button class="export-btn" onclick="copyResult('ai-output')">📋 Copy</button>
+            <button class="export-btn" onclick="exportResult('ai-output','txt')" data-tsm-how-to-label="export-txt">⬇ Export TXT</button>
+            <button class="export-btn" onclick="exportResult('ai-output','md')" data-tsm-how-to-label="export-md">⬇ Export MD</button>
+            <button class="export-btn" onclick="copyResult('ai-output')" data-tsm-how-to-label="copy">📋 Copy</button>
           </div>
         </div>
       </div>
