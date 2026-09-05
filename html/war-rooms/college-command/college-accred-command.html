@@ -60,12 +60,49 @@
     <table id="standardTable"><thead><tr><th>Standard</th><th>Description</th><th>Severity</th></tr></thead><tbody></tbody></table>
   </section>
 
+  <section id="aiSection">
+    <h2>
+      AI Accreditation Readiness Intelligence
+      <span id="aiStatus" style="float:right;font-size:11px;font-weight:400;color:var(--muted)">AI: SERVER</span>
+    </h2>
+    <div style="padding:16px;">
+      <div class="actions" style="margin-top:0;">
+        <button id="runAiBtn">Run AI Analysis</button>
+        <button class="secondary" id="aiKeyBtn">⚙ AI Settings</button>
+      </div>
+      <div id="aiEngineGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:16px;">
+        <div>
+          <div style="color:var(--muted);font-size:11px;text-transform:uppercase;font-weight:600;margin-bottom:6px;">Readiness Risk</div>
+          <div id="aiRiskOut" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12.5px;line-height:1.6;white-space:pre-wrap;min-height:60px;">Not run yet — click "Run AI Analysis".</div>
+        </div>
+        <div>
+          <div style="color:var(--muted);font-size:11px;text-transform:uppercase;font-weight:600;margin-bottom:6px;">Recommended Actions</div>
+          <div id="aiActionOut" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12.5px;line-height:1.6;white-space:pre-wrap;min-height:60px;">Not run yet — click "Run AI Analysis".</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <div class="actions">
     <button id="relayBtn">Relay to College Strategist</button>
     <button class="secondary" id="refreshBtn">Refresh Status</button>
   </div>
 </main>
 <div id="toast"></div>
+
+<div id="aiKeyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;align-items:center;justify-content:center;">
+  <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px;width:90%;max-width:380px;">
+    <div style="font-size:13px;font-weight:700;margin-bottom:10px;">AI Settings</div>
+    <div style="color:var(--muted);font-size:11.5px;line-height:1.5;margin-bottom:12px;">
+      This page talks to the server proxy at <code>/api/chat</code> first — no key needed. The field below is only an in-memory, same-tab fallback for environments where that proxy isn't reachable; nothing is saved to disk.
+    </div>
+    <input id="aiKeyInput" type="password" placeholder="Groq API key (session only)" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;margin-bottom:12px;">
+    <div class="actions" style="margin-top:0;">
+      <button id="aiKeySaveBtn">Save for This Tab</button>
+      <button class="secondary" id="aiKeyCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
 <script>
@@ -167,12 +204,114 @@
     `;
   }
 
+  // ── AI — ported from finops-accounting.html's proxy-first/direct-key
+  // pattern (same as college-bursar-command.html's port). Tries /api/chat
+  // first (server-managed key), falls back to a session-only key entered
+  // via the AI Settings modal (never persisted).
+  let sessionAiKey = '';
+  let sessionAiModel = 'openai/gpt-oss-120b';
+
+  function updateAiStatus(mode) {
+    const el = document.getElementById('aiStatus');
+    if (!el) return;
+    if (mode === 'server') { el.textContent = 'AI: CONNECTED'; el.style.color = 'var(--low)'; }
+    else if (mode === 'fallback') { el.textContent = 'AI: FALLBACK KEY'; el.style.color = 'var(--med)'; }
+    else if (mode === 'unavailable') { el.textContent = 'AI: UNAVAILABLE'; el.style.color = 'var(--high)'; }
+    else { el.textContent = 'AI: SERVER'; el.style.color = 'var(--muted)'; }
+  }
+
+  async function callGroqDirect(system, userMsg, maxTokens) {
+    if (!sessionAiKey) throw new Error('No Groq key set — open AI Settings and add one');
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionAiKey },
+      body: JSON.stringify({
+        model: sessionAiModel,
+        messages: [{ role: 'system', content: system }, { role: 'user', content: userMsg }],
+        max_tokens: maxTokens,
+        temperature: 0.3
+      })
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error?.message || ('Groq API ' + resp.status));
+    }
+    const data = await resp.json();
+    updateAiStatus('fallback');
+    return data.choices?.[0]?.message?.content || '';
+  }
+
+  async function callAccredAI(system, userMsg, maxTokens) {
+    try {
+      const resp = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: `${system}\n\n${userMsg}`, conversationHistory: [] })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.answer && !data.degraded) { updateAiStatus('server'); return data.answer; }
+      }
+    } catch (e) { /* fall through to direct key */ }
+
+    if (!sessionAiKey) { updateAiStatus('unavailable'); throw new Error('Server AI proxy is not reachable here. Click ⚙ AI Settings to add a fallback key for this tab and try again.'); }
+    return callGroqDirect(system, userMsg, maxTokens);
+  }
+
+  function serializeAccredCase() {
+    const findingLines = findings.map(f =>
+      `${f.finding_id} · ${f.standard} · severity ${f.severity} · ${f.days_open} days open · owner ${f.owner}`
+    ).join('\n');
+    const standardLines = standardsAtRisk.map(s =>
+      `${s.standard_id} · ${s.description} · severity ${s.severity}`
+    ).join('\n');
+    const kpis = computeKpis();
+    return `ACCREDITATION SNAPSHOT\nOpen findings: ${kpis.open_findings} (${kpis.findings_past_due} past the 45-day mark)\nStandards at risk: ${kpis.standards_at_risk}\nDays to next site visit: ${kpis.days_to_next_site_visit}\n\nOPEN FINDINGS\n${findingLines || 'None'}\n\nSTANDARDS AT RISK\n${standardLines || 'None'}`;
+  }
+
+  async function runAiAnalysis() {
+    const btn = document.getElementById('runAiBtn');
+    const riskOut = document.getElementById('aiRiskOut');
+    const actionOut = document.getElementById('aiActionOut');
+    btn.disabled = true;
+    btn.textContent = 'Running…';
+    riskOut.textContent = 'Generating…';
+    actionOut.textContent = 'Generating…';
+
+    const caseText = serializeAccredCase();
+    const SYSTEMS = [
+      'You are an accreditation compliance and risk AI for a college accreditation office. Given open findings and standards at risk ahead of an upcoming site visit, quantify readiness risk, flag which findings/standards are most likely to escalate to a formal sanction (warning, probation, show-cause) if unresolved before the site visit, and note which items are most time-sensitive relative to the days-to-site-visit window. Be specific to the findings provided.',
+      'You are an accreditation operations AI. Generate a concise action plan for this batch of open findings and at-risk standards: recommended next step per item (evidence gathering, self-study narrative update, board/committee action, liaison notification, etc.), owner, and target timeframe ahead of the next site visit. Be specific and actionable.'
+    ];
+
+    try {
+      const riskText = await callAccredAI(SYSTEMS[0], caseText, 500);
+      riskOut.textContent = riskText;
+    } catch (e) {
+      riskOut.textContent = 'Error: ' + e.message;
+    }
+
+    try {
+      const actionText = await callAccredAI(SYSTEMS[1], caseText, 500);
+      actionOut.textContent = actionText;
+    } catch (e) {
+      actionOut.textContent = 'Error: ' + e.message;
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Run AI Analysis';
+  }
+
   function buildRelayPayload() {
+    const riskEl = document.getElementById('aiRiskOut');
+    const actionEl = document.getElementById('aiActionOut');
+    const aiRan = riskEl && !/^(Not run yet|Generating…|Error:)/.test(riskEl.textContent);
     return {
       domain: DOMAIN,
       timestamp: Date.now(),
       kpis: computeKpis(),
-      cases: { findings: findings, standards_at_risk: standardsAtRisk }
+      cases: { findings: findings, standards_at_risk: standardsAtRisk },
+      ai_analysis: aiRan ? { risk_prioritization: riskEl.textContent, action_plan: actionEl.textContent } : null
     };
   }
 
@@ -202,6 +341,19 @@
 
   document.getElementById('relayBtn').addEventListener('click', relayToStrategist);
   document.getElementById('refreshBtn').addEventListener('click', renderExposure);
+  document.getElementById('runAiBtn').addEventListener('click', runAiAnalysis);
+  document.getElementById('aiKeyBtn').addEventListener('click', () => {
+    document.getElementById('aiKeyInput').value = sessionAiKey;
+    document.getElementById('aiKeyModal').style.display = 'flex';
+  });
+  document.getElementById('aiKeyCancelBtn').addEventListener('click', () => {
+    document.getElementById('aiKeyModal').style.display = 'none';
+  });
+  document.getElementById('aiKeySaveBtn').addEventListener('click', () => {
+    sessionAiKey = document.getElementById('aiKeyInput').value.trim();
+    document.getElementById('aiKeyModal').style.display = 'none';
+    showToast(sessionAiKey ? 'Fallback key saved for this tab.' : 'Fallback key cleared.');
+  });
 
   init();
 })();
