@@ -222,8 +222,8 @@
   <p>Every walkthrough deck built to demonstrate TSM's vertical intelligence engines &mdash; one archive, one download away. Filter by sector or grab the full set below.</p>
 
   <div class="console">
-    <div class="cell"><div class="k">Decks on file</div><div class="v" id="stat-count">14</div></div>
-    <div class="cell"><div class="k">Sectors covered</div><div class="v">10</div></div>
+    <div class="cell"><div class="k">Decks on file</div><div class="v" id="stat-count">16</div></div>
+    <div class="cell"><div class="k">Sectors covered</div><div class="v">11</div></div>
     <div class="cell"><div class="k">Archive size</div><div class="v">4.7 MB</div></div>
     <div class="cell"><div class="k">Last sync</div><div class="v" style="font-size:15px;">Aug 22, 2026</div></div>
   </div>
@@ -241,6 +241,7 @@
   <button data-filter="hotelops">HotelOps</button>
   <button data-filter="finops">FinOps</button>
   <button data-filter="career">Career</button>
+  <button data-filter="resources">Resources</button>
 </div>
 
 <main class="grid" id="grid">
@@ -635,10 +636,36 @@
     </div>
   </div>
 
+  <!-- Resources -->
+  <div class="card" style="--accent:var(--faint)" data-sector="resources"
+       data-slug="doc-manual" data-title="Document Processing &amp; Revenue Recovery Manual"
+       data-direct-link="/document-processing-revenue-recovery-manual.html">
+    <div class="card-top">
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 3h9l4 4v14H6z" stroke="var(--faint)" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 10h7M9 14h7M9 18h4" stroke="var(--faint)" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </div>
+      <div class="case-no">REF&nbsp;01</div>
+    </div>
+    <div class="sector">Resources</div>
+    <h3>Document Processing &amp; Revenue Recovery Manual</h3>
+    <p>Internal employee operating guide (v2.0) &mdash; how every incoming document moves from upload to a routed, dollars-and-cents next step, across all verticals.</p>
+    <div class="preview-hint">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
+      Click to open &middot; full manual
+    </div>
+    <div class="card-foot">
+      <span class="filesize">HTML &middot; Internal Doc</span>
+      <a class="dl" href="/document-processing-revenue-recovery-manual.html" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Open
+      </a>
+    </div>
+  </div>
+
 </main>
 
 <footer>
-  TSM INTELLIGENCE &nbsp;/&nbsp; ARCHIVE INDEX v1 &nbsp;/&nbsp; 15 FILES INDEXED
+  TSM INTELLIGENCE &nbsp;/&nbsp; ARCHIVE INDEX v1 &nbsp;/&nbsp; 16 FILES INDEXED
 </footer>
 
 <div class="modal-backdrop" id="modal-backdrop">
@@ -862,7 +889,17 @@
   }
 
   cards.forEach(card => {
-    card.addEventListener('click', () => openModal(card));
+    card.addEventListener('click', () => {
+      // Reference docs (e.g. the Revenue Recovery Manual) have no slide
+      // deck to preview -- open them directly instead of running them
+      // through the pptx slide-preview modal, which expects real
+      // ./preview-slides/{slug}/slide-NN.png files to exist.
+      if (card.dataset.directLink) {
+        window.open(card.dataset.directLink, '_blank', 'noopener');
+        return;
+      }
+      openModal(card);
+    });
   });
 
   btnPrev.addEventListener('click', () => goTo(state.index - 1));
