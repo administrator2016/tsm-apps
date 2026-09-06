@@ -1720,6 +1720,132 @@ document.addEventListener('click', function(e){
   <script src="/js/core/tsm-kernel-upgrade.js"></script>
   <script src="../../js/tsm-guide-engine.js" defer></script>
   <script src="/shared/tsm-guided-how-to.js" defer></script>
+
+  <!-- ============================================================
+       INSURANCE COMMAND: PORTFOLIO EXPOSURE PANEL (additive retrofit)
+       Appended rather than woven into the large legacy tab code above —
+       a structural edit here risked breaking working functionality.
+       Self-contained: own styles (scoped under .tsm-ic-*), own engine
+       instance, own relay/Sentinel wiring. Real backend at
+       routes/insurance-pc-financial.js.
+       ============================================================ -->
+  <style>
+    .tsm-ic-panel { max-width: 1200px; margin: 20px auto; padding: 18px; background: #0a1510; border: 1px solid #1a2e1f; border-radius: 4px; font-family: 'Share Tech Mono', monospace; color: #c8e6c9; }
+    .tsm-ic-panel h3 { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: #88aa88; letter-spacing: .1em; text-transform: uppercase; margin: 0 0 14px 0; }
+    .tsm-ic-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
+    .tsm-ic-card { background: #060d0a; border: 1px solid #1a2e1f; border-radius: 4px; padding: 14px; }
+    .tsm-ic-label { font-size: 10px; color: #445544; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; }
+    .tsm-ic-value { font-family: 'Rajdhani', sans-serif; font-size: 24px; font-weight: 700; color: #f87171; }
+    .tsm-ic-note { font-size: 11px; color: #445544; margin-bottom: 12px; }
+    .tsm-ic-btn { background: #38bdf822; border: 1px solid #38bdf8; color: #38bdf8; font-family: 'Share Tech Mono', monospace; font-size: 11px; padding: 8px 14px; border-radius: 3px; cursor: pointer; margin-right: 10px; }
+    .tsm-ic-btn:hover { background: #38bdf844; }
+    .tsm-ic-status { font-size: 11px; color: #1ee8b6; }
+  </style>
+  <div class="tsm-ic-panel" id="tsmIcPcPanel">
+    <h3>Portfolio Exposure — Insurance Command <span style="float:right;font-size:10px;color:#38bdf8;">TSM_INSURANCE_PC_ENGINE</span></h3>
+    <div class="tsm-ic-grid">
+      <div class="tsm-ic-card"><div class="tsm-ic-label">Senior Review Cost</div><div class="tsm-ic-value" id="icPcReviewCost">$0</div></div>
+      <div class="tsm-ic-card"><div class="tsm-ic-label">Liability Reserve Risk</div><div class="tsm-ic-value" id="icPcReserveRisk">$0</div></div>
+      <div class="tsm-ic-card"><div class="tsm-ic-label">Premium In Queue</div><div class="tsm-ic-value" id="icPcPremium" style="color:#38bdf8;">$0</div></div>
+      <div class="tsm-ic-card"><div class="tsm-ic-label">Total Modeled Exposure</div><div class="tsm-ic-value" id="icPcTotal">$0</div></div>
+    </div>
+    <div class="tsm-ic-note" id="icPcNote"></div>
+    <button class="tsm-ic-btn" onclick="tsmIcPcRefresh()">↻ REFRESH EXPOSURE</button>
+    <button class="tsm-ic-btn" onclick="tsmIcPcRelay()">⇢ RELAY TO STRATEGIST</button>
+    <button class="tsm-ic-btn" onclick="tsmIcPcSentinel()">⚑ PUSH TO SENTINEL</button>
+    <span class="tsm-ic-status" id="icPcStatus"></span>
+  </div>
+  <script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
+  <script src="/html/shared/tsm-sentinel-push.js"></script>
+  <script src="/html/war-rooms/insurance-command/services/insurance-pc-engine.js"></script>
+  <script>
+  (function () {
+    var icPcEngine = new TSMInsurancePcEngine();
+    icPcEngine.loadSampleData();
+    var icPcLastAi = null;
+
+    window.tsmIcPcRefresh = async function () {
+      try {
+        var fin = await icPcEngine.getFinancialSummary();
+        document.getElementById('icPcReviewCost').textContent = '$' + Number(fin.senior_review_cost_total || 0).toLocaleString();
+        document.getElementById('icPcReserveRisk').textContent = '$' + Number(fin.liability_reserve_risk_total || 0).toLocaleString();
+        document.getElementById('icPcPremium').textContent = '$' + Number(fin.total_premium_in_queue || 0).toLocaleString();
+        document.getElementById('icPcTotal').textContent = '$' + Number(fin.total_exposure || 0).toLocaleString();
+        document.getElementById('icPcNote').textContent = fin.note || '';
+      } catch (e) {
+        document.getElementById('icPcNote').textContent = 'Exposure unavailable — ' + e.message;
+      }
+    };
+
+    function icPcSeverity(count, total) {
+      if (!total) return count > 0 ? 'MED' : 'LOW';
+      var ratio = count / total;
+      if (ratio >= 0.30) return 'CRIT';
+      if (ratio >= 0.15) return 'HIGH';
+      if (ratio > 0) return 'MED';
+      return 'LOW';
+    }
+
+    window.tsmIcPcSentinel = async function () {
+      try {
+        var fin = await icPcEngine.getFinancialSummary();
+        var kpis = icPcEngine.computeKpis();
+        var anomalies = [];
+        if ((fin.senior_review_cost_total || 0) > 0) {
+          anomalies.push({
+            id: 'insurance-pc-senior-review',
+            title: 'Underwriting Submissions Needing Senior Review',
+            severity: icPcSeverity(kpis.submissions_needing_senior_review, kpis.open_submissions || 1),
+            exposure: fin.senior_review_cost_total || 0,
+            confidence: (fin.review_confidence || {}).confidence || 0,
+            rootCause: (kpis.submissions_needing_senior_review || 0) + ' of ' + (kpis.open_submissions || 0) + ' open submissions are HIGH severity.' + ((fin.review_confidence || {}).note || ''),
+            recommendedAction: 'Route HIGH-severity submissions to a senior underwriter before binding.',
+            impacts: {}
+          });
+        }
+        if ((fin.liability_reserve_risk_total || 0) > 0) {
+          anomalies.push({
+            id: 'insurance-pc-liability-risk',
+            title: 'Liability Reserve Risk',
+            severity: kpis.open_liability_exposures > 0 ? 'HIGH' : 'LOW',
+            exposure: fin.liability_reserve_risk_total || 0,
+            confidence: (fin.reserve_confidence || {}).confidence || 0,
+            rootCause: (kpis.open_liability_exposures || 0) + ' open liability exposure(s) tracked.' + ((fin.reserve_confidence || {}).note || ''),
+            recommendedAction: 'Review reserve adequacy on HIGH-severity liability exposures with the claims team.',
+            impacts: {}
+          });
+        }
+        if (window.TSMSentinelPush && window.TSMSentinelPush.push) {
+          window.TSMSentinelPush.push('INSURANCE_PC', anomalies);
+        } else {
+          localStorage.setItem('TSM_INSURANCE_PC_STRATEGIST_RELAY', JSON.stringify({ generatedAt: new Date().toISOString(), anomalies: anomalies }));
+          window.dispatchEvent(new CustomEvent('TSM_SENTINEL_REFRESH'));
+        }
+      } catch (e) {
+        console.warn('Insurance P&C: sentinel push failed', e);
+      }
+    };
+
+    window.tsmIcPcRelay = async function () {
+      var status = document.getElementById('icPcStatus');
+      try {
+        var payload = await icPcEngine.buildRelayPayload(icPcLastAi);
+        if (window.TSM && window.TSM.relay && window.TSM.relay.write) {
+          window.TSM.relay.write('INSURANCE_PC', payload);
+        } else {
+          localStorage.setItem('TSM_INSURANCE_PC_RELAY', JSON.stringify(payload));
+        }
+        await window.tsmIcPcSentinel();
+        status.textContent = 'Relayed ' + new Date().toLocaleTimeString();
+      } catch (e) {
+        status.style.color = '#f87171';
+        status.textContent = 'Relay failed — ' + e.message;
+      }
+    };
+
+    window.tsmIcPcRefresh();
+  })();
+  </script>
 </body>
 </html><script>
 

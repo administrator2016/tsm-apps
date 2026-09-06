@@ -157,6 +157,37 @@ tr:hover td { background:#0a1510; }
     </div>
   </div>
 
+  <div class="full-col">
+    <div class="panel">
+      <div class="panel-title">Portfolio Exposure <span id="exposure-badge">TSM_INSURANCE_CLAIMS_ENGINE</span></div>
+      <div class="stat-grid" id="exposure-grid" style="margin-bottom:12px;">
+        <div class="stat-card">
+          <div class="stat-label">Reserve Adequacy Risk</div>
+          <div class="stat-value" id="exp-reserve-risk">$0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Appeal Handling Cost</div>
+          <div class="stat-value" id="exp-appeal-cost">$0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Reserve Amount</div>
+          <div class="stat-value" id="exp-total-reserve">$0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Modeled Exposure</div>
+          <div class="stat-value danger" id="exp-total">$0</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--dim);margin-bottom:12px;" id="exp-note"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="nav-btn" onclick="renderExposure()">↻ REFRESH EXPOSURE</button>
+        <button class="nav-btn" onclick="relayToStrategist()">⇢ RELAY TO STRATEGIST</button>
+        <button class="nav-btn" onclick="pushToSentinel()">⚑ PUSH TO SENTINEL</button>
+        <span id="relay-status" style="font-size:11px;color:var(--green);align-self:center;"></span>
+      </div>
+    </div>
+  </div>
+
   <div class="two-col">
 
     <div class="panel">
@@ -271,7 +302,18 @@ tr:hover td { background:#0a1510; }
 
 </div>
 
+<script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
+<script src="/html/shared/tsm-sentinel-push.js"></script>
+<script src="/html/war-rooms/insurance-command/services/insurance-claims-engine.js"></script>
 <script>
+// Real backend-wired engine for this domain (routes/insurance-claims-financial.js),
+// replacing the earlier standalone /api/hc/query calls below. loadSampleData()
+// seeds it so the Portfolio Exposure panel has something to show before any
+// claim is entered; addToQueue() below appends real entries as they come in.
+const claimsEngine = new TSMInsuranceClaimsEngine();
+claimsEngine.loadSampleData();
+let lastClaimsAiText = null;
+
 // Clock
 setInterval(() => {
   document.getElementById('navClock').textContent = new Date().toLocaleTimeString();
@@ -292,18 +334,19 @@ async function callAI(prompt) {
   out.innerHTML = '<span class="thinking">&gt; TSM Neural Core processing...</span>';
   document.getElementById('engine-label').textContent = 'RUNNING';
   try {
-    const res = await fetch('/api/hc/query', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: prompt })
-    });
-    const data = await res.json();
-    const text = data.response || data.message || data.content || JSON.stringify(data);
-    out.innerHTML = '<span class="output-stream">' + text.replace(/</g,'&lt;') + '</span>';
-    document.getElementById('engine-label').textContent = 'COMPLETE';
+    // Routed through the real Claims & Appeals backend (routes/insurance-
+    // claims-financial.js's /analysis endpoint) instead of the old, wrong
+    // /api/hc/query. The freeform step/analysis prompt is passed as
+    // `context`; kpis/claims/appeals come from the engine's own tracked
+    // data so the AI sees the whole queue, not just this one form entry.
+    const { answer, degraded } = await claimsEngine.getAiAnalysis(prompt);
+    lastClaimsAiText = degraded ? null : answer;
+    out.innerHTML = '<span class="output-stream">' + String(answer).replace(/</g,'&lt;') + '</span>';
+    document.getElementById('engine-label').textContent = degraded ? 'DEGRADED' : 'COMPLETE';
   } catch(e) {
     out.innerHTML = '<span style="color:var(--danger)">&gt; Engine error: ' + e.message + '</span>';
     document.getElementById('engine-label').textContent = 'ERROR';
+    lastClaimsAiText = null;
   }
 }
 
@@ -345,6 +388,19 @@ function addToQueue() {
   `);
   document.getElementById('queue-count').textContent = queueCount + ' ENTR' + (queueCount === 1 ? 'Y' : 'IES');
 
+  // Feed this intake entry into the real Claims engine so the Portfolio
+  // Exposure panel (and any relay/Sentinel push) reflects it, not just the
+  // sample data loaded at page open.
+  claimsEngine.loadRecords('claims', [{
+    claim_id: document.getElementById('f-claimno').value || 'CLM-' + Date.now(),
+    policy_ref: document.getElementById('f-payer').value || 'UNKNOWN',
+    line: document.getElementById('f-type').value,
+    severity: isBnca ? 'HIGH' : (amt > 2000 ? 'MEDIUM' : 'LOW'),
+    days_open: 0,
+    reserve_amount: amt
+  }]);
+  renderExposure();
+
   // Push to doc index
   try {
     const rec = {
@@ -363,6 +419,95 @@ function addToQueue() {
     localStorage.setItem('tsm_doc_index', JSON.stringify(idx.slice(0,200)));
   } catch(e) {}
 }
+
+// ── PORTFOLIO EXPOSURE (real backend, routes/insurance-claims-financial.js) ──
+async function renderExposure() {
+  try {
+    const fin = await claimsEngine.getFinancialSummary();
+    document.getElementById('exp-reserve-risk').textContent = '$' + Number(fin.reserve_adequacy_risk_total || 0).toLocaleString();
+    document.getElementById('exp-appeal-cost').textContent = '$' + Number(fin.appeal_handling_cost_total || 0).toLocaleString();
+    document.getElementById('exp-total-reserve').textContent = '$' + Number(fin.total_reserve_amount || 0).toLocaleString();
+    document.getElementById('exp-total').textContent = '$' + Number(fin.total_exposure || 0).toLocaleString();
+    document.getElementById('exp-note').textContent = fin.note || '';
+    // Keep the top stat card's "Total Exposure" in sync with the real
+    // modeled number rather than the raw sum of claimed amounts.
+    document.getElementById('s-exposure').textContent = '$' + Number(fin.total_exposure || fin.total_reserve_amount || 0).toLocaleString();
+    const kpis = claimsEngine.computeKpis();
+    document.getElementById('s-open').textContent = kpis.open_claims;
+  } catch (e) {
+    document.getElementById('exp-note').textContent = 'Exposure unavailable — ' + e.message;
+  }
+}
+
+// ── SENTINEL PUSH ─────────────────────────────────────────────────────
+const CLAIMS_SEV_THRESHOLDS = { crit: 0.30, high: 0.15 };
+function claimsBreachSeverity(count, total) {
+  if (!total) return count > 0 ? 'MED' : 'LOW';
+  const ratio = count / total;
+  if (ratio >= CLAIMS_SEV_THRESHOLDS.crit) return 'CRIT';
+  if (ratio >= CLAIMS_SEV_THRESHOLDS.high) return 'HIGH';
+  if (ratio > 0) return 'MED';
+  return 'LOW';
+}
+
+async function pushToSentinel() {
+  try {
+    const fin = await claimsEngine.getFinancialSummary();
+    const kpis = claimsEngine.computeKpis();
+    const anomalies = [];
+    if ((fin.reserve_adequacy_risk_total || 0) > 0) {
+      anomalies.push({
+        id: 'insurance-claims-reserve-risk',
+        title: 'Reserve Adequacy Risk',
+        severity: claimsBreachSeverity(kpis.claims_over_30_days, kpis.open_claims || 1),
+        exposure: fin.reserve_adequacy_risk_total || 0,
+        confidence: (fin.reserve_confidence || {}).confidence || 0,
+        rootCause: `${kpis.claims_over_30_days || 0} of ${kpis.open_claims || 0} open claims are past 30 days open.${(fin.reserve_confidence || {}).note || ''}`,
+        recommendedAction: 'Prioritize aged, high-reserve claims for adjuster review before further development.',
+        impacts: {}
+      });
+    }
+    if ((fin.appeal_handling_cost_total || 0) > 0) {
+      anomalies.push({
+        id: 'insurance-claims-appeals',
+        title: 'Open Appeals — Handling Cost',
+        severity: kpis.open_appeals > 0 ? 'MED' : 'LOW',
+        exposure: fin.appeal_handling_cost_total || 0,
+        confidence: (fin.appeal_confidence || {}).confidence || 0,
+        rootCause: `${kpis.open_appeals || 0} open appeal(s).${(fin.appeal_confidence || {}).note || ''}`,
+        recommendedAction: 'Review recurring denial reasons for a systemic pattern before responding case-by-case.',
+        impacts: {}
+      });
+    }
+    if (window.TSMSentinelPush && window.TSMSentinelPush.push) {
+      window.TSMSentinelPush.push('INSURANCE_CLAIMS', anomalies);
+    } else {
+      localStorage.setItem('TSM_INSURANCE_CLAIMS_STRATEGIST_RELAY', JSON.stringify({ generatedAt: new Date().toISOString(), anomalies }));
+      window.dispatchEvent(new CustomEvent('TSM_SENTINEL_REFRESH'));
+    }
+  } catch (e) {
+    console.warn('Insurance Claims: sentinel push failed', e);
+  }
+}
+
+async function relayToStrategist() {
+  const status = document.getElementById('relay-status');
+  try {
+    const payload = await claimsEngine.buildRelayPayload(lastClaimsAiText);
+    if (window.TSM && window.TSM.relay && window.TSM.relay.write) {
+      window.TSM.relay.write('INSURANCE_CLAIMS', payload);
+    } else {
+      localStorage.setItem('TSM_INSURANCE_CLAIMS_RELAY', JSON.stringify(payload));
+    }
+    await pushToSentinel();
+    status.textContent = 'Relayed ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    status.style.color = 'var(--danger)';
+    status.textContent = 'Relay failed — ' + e.message;
+  }
+}
+
+renderExposure();
 </script>
   <script src="/core/tsm-kernel.js"></script>
   <!-- stripped -->

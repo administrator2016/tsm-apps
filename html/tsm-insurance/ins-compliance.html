@@ -110,6 +110,25 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
     <span class="reg-badge warn">PROMPT PAYMENT LAWS</span>
   </div>
 
+  <div class="full-col">
+    <div class="panel">
+      <div class="panel-title">Portfolio Exposure <span id="exposure-badge">TSM_INSURANCE_COMPLIANCE_ENGINE</span></div>
+      <div class="stat-grid" style="margin-bottom:12px;">
+        <div class="stat-card"><div class="stat-label">Regulatory Fine Exposure</div><div class="stat-value danger" id="exp-fine">$0</div></div>
+        <div class="stat-card"><div class="stat-label">Litigation Reserve</div><div class="stat-value danger" id="exp-litigation">$0</div></div>
+        <div class="stat-card"><div class="stat-label">Matters In Active Litigation</div><div class="stat-value" id="exp-active-litigation">0</div></div>
+        <div class="stat-card"><div class="stat-label">Total Modeled Exposure</div><div class="stat-value danger" id="exp-total">$0</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--dim);margin-bottom:12px;" id="exp-note"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="nav-btn" onclick="renderExposure()">↻ REFRESH EXPOSURE</button>
+        <button class="nav-btn" onclick="relayToStrategist()">⇢ RELAY TO STRATEGIST</button>
+        <button class="nav-btn" onclick="pushToSentinel()">⚑ PUSH TO SENTINEL</button>
+        <span id="relay-status" style="font-size:11px;color:var(--green);align-self:center;"></span>
+      </div>
+    </div>
+  </div>
+
   <div class="two-col">
     <div class="panel">
       <div class="panel-title">Compliance Intake <span>ENGINE 01</span></div>
@@ -193,7 +212,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
   </div>
 </div>
 
+<script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
+<script src="/html/shared/tsm-sentinel-push.js"></script>
+<script src="/html/war-rooms/insurance-command/services/insurance-compliance-engine.js"></script>
 <script>
+// Real backend-wired engine for this domain (routes/insurance-compliance-financial.js),
+// replacing the earlier standalone /api/hc/query calls below.
+const complianceEngine = new TSMInsuranceComplianceEngine();
+complianceEngine.loadSampleData();
+let lastComplianceAiText = null;
+
 setInterval(()=>{document.getElementById('navClock').textContent=new Date().toLocaleTimeString();},1000);
 function toggleCheck(cb){cb.closest('.check-item').classList.toggle('done',cb.checked);}
 function getContext(){
@@ -210,21 +238,118 @@ async function callAI(prompt){
   out.innerHTML='<span class="thinking">&gt; TSM Neural Core processing...</span>';
   document.getElementById('engine-label').textContent='RUNNING';
   try{
-    const res=await fetch('/api/hc/query',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:prompt})});
-    const data=await res.json();
-    const text=data.response||data.message||data.content||JSON.stringify(data);
-    out.innerHTML='<span style="color:#c8e6c9">'+text.replace(/</g,'&lt;')+'</span>';
-    document.getElementById('engine-label').textContent='COMPLETE';
+    // Routed through the real Compliance & Legal backend (routes/insurance-
+    // compliance-financial.js's /analysis endpoint) instead of the old,
+    // wrong /api/hc/query. The freeform prompt is passed as `context`.
+    const { answer, degraded } = await complianceEngine.getAiAnalysis(prompt);
+    lastComplianceAiText = degraded ? null : answer;
+    out.innerHTML='<span style="color:#c8e6c9">'+String(answer).replace(/</g,'&lt;')+'</span>';
+    document.getElementById('engine-label').textContent = degraded ? 'DEGRADED' : 'COMPLETE';
   }catch(e){
     out.innerHTML='<span style="color:var(--danger)">&gt; Engine error: '+e.message+'</span>';
     document.getElementById('engine-label').textContent='ERROR';
+    lastComplianceAiText = null;
   }
+}
+function priorityToSeverity(p){
+  p = String(p||'').toLowerCase();
+  if (p.indexOf('critical') === 0) return 'HIGH';
+  if (p.indexOf('high') === 0) return 'HIGH';
+  if (p.indexOf('medium') === 0) return 'MEDIUM';
+  return 'LOW';
 }
 function runAnalysis(){
   callAI(`You are a TSM Insurance Compliance Officer. Analyze this compliance matter and provide: 1) Regulatory gap assessment, 2) Violation risk and penalty exposure, 3) Corrective action steps, 4) Filing or response requirements, 5) Timeline and priority recommendations.\n\n${getContext()}`);
   document.getElementById('s-open').textContent=parseInt(document.getElementById('s-open').textContent)+1;
+
+  // Feed this intake entry into the real Compliance engine as a regulatory
+  // finding so the Portfolio Exposure panel reflects it.
+  complianceEngine.loadRecords('regulatory_findings', [{
+    finding_id: document.getElementById('f-no').value || 'CMP-' + Date.now(),
+    regulation: document.getElementById('f-area').value,
+    severity: priorityToSeverity(document.getElementById('f-priority').value),
+    days_open: 0,
+    jurisdiction: document.getElementById('f-state').value || 'N/A'
+  }]);
+  renderExposure();
 }
 function runStep(el){callAI(`You are a TSM Insurance Compliance Officer. ${el.dataset.prompt}\n\nCompliance Context:\n${getContext()}`);}
+
+// ── PORTFOLIO EXPOSURE (real backend, routes/insurance-compliance-financial.js) ──
+async function renderExposure() {
+  try {
+    const fin = await complianceEngine.getFinancialSummary();
+    document.getElementById('exp-fine').textContent = '$' + Number(fin.regulatory_fine_exposure_total || 0).toLocaleString();
+    document.getElementById('exp-litigation').textContent = '$' + Number(fin.litigation_reserve_total || 0).toLocaleString();
+    document.getElementById('exp-total').textContent = '$' + Number(fin.total_exposure || 0).toLocaleString();
+    document.getElementById('exp-note').textContent = fin.note || '';
+    const kpis = complianceEngine.computeKpis();
+    document.getElementById('exp-active-litigation').textContent = kpis.matters_in_active_litigation;
+    document.getElementById('s-viol').textContent = kpis.high_severity_findings;
+  } catch (e) {
+    document.getElementById('exp-note').textContent = 'Exposure unavailable — ' + e.message;
+  }
+}
+
+// ── SENTINEL PUSH ─────────────────────────────────────────────────────
+async function pushToSentinel() {
+  try {
+    const fin = await complianceEngine.getFinancialSummary();
+    const kpis = complianceEngine.computeKpis();
+    const anomalies = [];
+    if ((fin.regulatory_fine_exposure_total || 0) > 0) {
+      anomalies.push({
+        id: 'insurance-compliance-fines',
+        title: 'Regulatory Fine Exposure',
+        severity: kpis.high_severity_findings > 0 ? 'HIGH' : 'MED',
+        exposure: fin.regulatory_fine_exposure_total || 0,
+        confidence: (fin.fine_confidence || {}).confidence || 0,
+        rootCause: `${kpis.high_severity_findings || 0} of ${kpis.open_regulatory_findings || 0} open findings are HIGH severity.${(fin.fine_confidence || {}).note || ''}`,
+        recommendedAction: 'Escalate HIGH-severity regulatory findings to legal counsel ahead of any DOI deadline.',
+        impacts: {}
+      });
+    }
+    if ((fin.litigation_reserve_total || 0) > 0) {
+      anomalies.push({
+        id: 'insurance-compliance-litigation',
+        title: 'Litigation Reserve Exposure',
+        severity: kpis.matters_in_active_litigation > 0 ? 'HIGH' : 'LOW',
+        exposure: fin.litigation_reserve_total || 0,
+        confidence: (fin.litigation_confidence || {}).confidence || 0,
+        rootCause: `${kpis.matters_in_active_litigation || 0} of ${kpis.open_legal_matters || 0} legal matters are in active litigation.${(fin.litigation_confidence || {}).note || ''}`,
+        recommendedAction: 'Confirm reserve adequacy on active-litigation matters with outside counsel.',
+        impacts: {}
+      });
+    }
+    if (window.TSMSentinelPush && window.TSMSentinelPush.push) {
+      window.TSMSentinelPush.push('INSURANCE_COMPLIANCE', anomalies);
+    } else {
+      localStorage.setItem('TSM_INSURANCE_COMPLIANCE_STRATEGIST_RELAY', JSON.stringify({ generatedAt: new Date().toISOString(), anomalies }));
+      window.dispatchEvent(new CustomEvent('TSM_SENTINEL_REFRESH'));
+    }
+  } catch (e) {
+    console.warn('Insurance Compliance: sentinel push failed', e);
+  }
+}
+
+async function relayToStrategist() {
+  const status = document.getElementById('relay-status');
+  try {
+    const payload = await complianceEngine.buildRelayPayload(lastComplianceAiText);
+    if (window.TSM && window.TSM.relay && window.TSM.relay.write) {
+      window.TSM.relay.write('INSURANCE_COMPLIANCE', payload);
+    } else {
+      localStorage.setItem('TSM_INSURANCE_COMPLIANCE_RELAY', JSON.stringify(payload));
+    }
+    await pushToSentinel();
+    status.textContent = 'Relayed ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    status.style.color = 'var(--danger)';
+    status.textContent = 'Relay failed — ' + e.message;
+  }
+}
+
+renderExposure();
 </script>
   <script src="/core/tsm-kernel.js"></script>
   <!-- stripped -->
