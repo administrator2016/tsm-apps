@@ -581,6 +581,7 @@ const VERTICALS = [
   // 1:1 off a single TSM_<ID>_STRATEGIST_RELAY; the other four domains will
   // get their own ids here once built, rather than overloading this one.
   { id:'college_finaid', name:'College — Financial Aid', color:'#fb923c' },
+  { id:'noc',         name:'NOC',          color:'#f59e0b' },
 ];
 
 // ── EXECUTIVE PORTAL LINKS ───────────────────────────────────────────────
@@ -643,6 +644,17 @@ const VERTICALS = [
 // invented. Also registered PM in relay.core.js's RELAY_REGISTRY, which was
 // previously missing it (window.TSM.relay.write('PM', ...) was silently
 // throwing "Unknown relay domain: PM", caught and swallowed).
+//
+// Added NOC as a vertical: it was previously absent from this whole file
+// (VERTICALS list and EXEC_PORTAL_PATHS both), so noc-strategist.html's data
+// never surfaced here even after a war-room relay. Added nocPushToSentinel()
+// to noc-war-room.html (called from relayToStrategist(), same placement as
+// pmPushToSentinel()/schPushToSentinel()), writing real SEV-2+ incident
+// counts, SLA penalty exposure, and devices-down/uptime-gap numbers straight
+// off noc-engine.js's computeKpis()/getSlaExposure()/getFinancialSummary()
+// -- via the shared TSMSentinelPush.push() utility, so no hand-rolled
+// localStorage/event-dispatch tail was needed. Exec portal path below
+// confirmed to resolve to a real file on disk.
 const EXEC_PORTAL_PATHS = {
   schools:      '/html/war-rooms/schools-command/schools-executive-portal.html',
   mortgage:     '/html/war-rooms/mortgage/mortgage-executive-portal.html',
@@ -660,6 +672,7 @@ const EXEC_PORTAL_PATHS = {
   // by college-strategist.html, not a Sentinel-specific view — same
   // read-only convention as the other portals here, just multi-domain.
   college_finaid: '/html/war-rooms/college-command/college-executive-portal.html',
+  noc:          '/html/l1-copilot/noc/noc-executive-portal.html',
 };
 
 /**

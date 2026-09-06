@@ -220,6 +220,7 @@ tr:hover td{background:rgba(45,212,191,.03)}
 
 <script src="/runtime/kernel/canonical-core.js"></script>
 <script src="/l1-copilot/noc/services/noc-engine.js"></script>
+<script src="/html/shared/tsm-sentinel-push.js"></script>
 <script>
 (function () {
   let MODEL = null;
@@ -492,6 +493,78 @@ tr:hover td{background:rgba(45,212,191,.03)}
     }
   }
 
+  // ── RELAY TO SENTINEL CENTER ──────────────────────────────────────────────
+  // Sentinel reads TSM_NOC_STRATEGIST_RELAY from localStorage as
+  // {generatedAt, anomalies}, per html/sentinel-center.html's VERTICALS
+  // convention (mirrors pmPushToSentinel()/schPushToSentinel()). NOC was
+  // previously absent from that VERTICALS list entirely, so no key was ever
+  // written here. Every number below comes straight off noc-engine.js's real
+  // computeKpis()/getSlaExposure()/getFinancialSummary() -- the same
+  // deterministic model data the war room itself renders -- never invented.
+  // Only pushes anomalies that are actually present, same as PM/Schools.
+  function nocPushToSentinel() {
+    if (!engine) return;
+    try {
+      const kpis = engine.computeKpis();
+      const slaExposure = engine.getSlaExposure();
+      const finSummary = engine.getFinancialSummary();
+      const openIncidents = engine.data.incidents.filter(i => !['resolved', 'closed'].includes(i.stage));
+      const sev2PlusOpen = openIncidents.filter(i => i.severity === 'SEV1' || i.severity === 'SEV2');
+      const anomalies = [];
+
+      if (sev2PlusOpen.length > 0) {
+        anomalies.push({
+          id: 'noc-sev2-plus-open',
+          title: 'SEV-2+ Incidents Open',
+          severity: TSMSentinelPush.breachSeverity(sev2PlusOpen.length, openIncidents.length || 1),
+          exposure: slaExposure.total || 0,
+          confidence: 90,
+          rootCause: `${sev2PlusOpen.length} of ${openIncidents.length} open incidents are SEV-1 or SEV-2. Per NOC's triage order, these should be worked before uptime SLA reports since they're the live event a report only reports on afterward.`,
+          recommendedAction: 'Triage open SEV-2+ incidents before processing pending uptime SLA breach reports.',
+          impacts: {}
+        });
+      }
+
+      if (kpis.incident_breach_count > 0) {
+        anomalies.push({
+          id: 'noc-sla-penalty-exposure',
+          title: 'Incident SLA Clock Breaches',
+          severity: TSMSentinelPush.breachSeverity(kpis.incident_breach_count, openIncidents.length || 1),
+          exposure: slaExposure.total || 0,
+          confidence: slaExposure.total > 0 ? 85 : 40,
+          rootCause: `${kpis.incident_breach_count} incident(s) are past their SLA clock, worth an estimated ${slaExposure.currency || 'USD'} ${slaExposure.total || 0} in penalty exposure at the modeled per-severity rate.`,
+          recommendedAction: 'Escalate the oldest SLA-breached incidents first (sorted by hours over in the war room).',
+          impacts: {}
+        });
+      }
+
+      if (kpis.devices_down > 0) {
+        anomalies.push({
+          id: 'noc-devices-down',
+          title: 'Devices Down / Uptime Gap',
+          severity: TSMSentinelPush.breachSeverity(kpis.devices_down, kpis.devices_down + (kpis.uptime_pct > 0 ? 1 : 0) || 1),
+          exposure: finSummary.revenue_at_risk_per_hour || 0,
+          confidence: finSummary.revenue_at_risk_per_hour > 0 ? 80 : 40,
+          rootCause: `Fleet uptime is at ${kpis.uptime_pct}% with ${kpis.devices_down} device(s) down, worth an estimated ${finSummary.currency || 'USD'} ${finSummary.revenue_at_risk_per_hour || 0}/hr in revenue at risk at the modeled rate.`,
+          recommendedAction: 'Dispatch on the highest-impact down devices first; confirm against the correlation graph for shared root cause.',
+          impacts: {}
+        });
+      }
+
+      if (window.TSMSentinelPush && window.TSMSentinelPush.push) {
+        window.TSMSentinelPush.push('NOC', anomalies);
+      } else {
+        localStorage.setItem('TSM_NOC_STRATEGIST_RELAY', JSON.stringify({
+          generatedAt: new Date().toISOString(),
+          anomalies
+        }));
+        window.dispatchEvent(new CustomEvent('TSM_SENTINEL_REFRESH'));
+      }
+    } catch (e) {
+      console.warn('NOC: sentinel push failed', e);
+    }
+  }
+
   function relayToStrategist() {
     const aiText = document.getElementById('aiOutput').textContent;
     const payload = engine.buildRelayPayload(aiText);
@@ -504,6 +577,8 @@ tr:hover td{background:rgba(45,212,191,.03)}
     try {
       TSM.relay.write("NOC", payload, {caseId, stage: 'war-room'});
     } catch (e) { console.warn('Relay storage failed', e); }
+
+    nocPushToSentinel();
 
     if (window.TSMEventBus && window.TSMEventBus.emit) {
       window.TSMEventBus.emit('WAR_ROOM_READY', { vertical: 'noc', payload, ts: Date.now() });
