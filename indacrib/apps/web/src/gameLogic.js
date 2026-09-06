@@ -13,3 +13,13 @@ export async function startRound(gameMode) {
       throw new Error(`Unknown game mode: ${gameMode}`);
   }
 }
+
+// 4-letter room codes (e.g. "FZQK") — no I/O/1/0, avoids confusion when read aloud or typed on a phone.
+export function generateRoomCode() {
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let code = '';
+  for (let i = 0; i < 4; i++) {
+    code += letters[Math.floor(Math.random() * letters.length)];
+  }
+  return code;
+}
