@@ -676,6 +676,14 @@ const EXEC_PORTAL_PATHS = {
   healthcare:   '/html/healthcare/executive-portal.html',
   finops:       '/html/finops-suite/finops-war/finops-executive-portal.html',
   hotelops:     '/html/hotelops/hotelops-executive-portal.html',
+  // 2026-09-06: 'concierge' has been in VERTICALS since at least the
+  // hotelops/concierge rename (see note above) and already gets sample
+  // anomaly data (see the `concierge:` entry further down), but had no
+  // portal path here at all -- execPortalUrl() silently returned null for
+  // it, same class of bug the hotelops note above describes. Points at its
+  // real Concierge Transport portal (quote/book/track rides), distinct
+  // from HotelOps' own executive portal above.
+  concierge:    '/html/concierge/concierge-executive-portal.html',
   pm:           '/html/war-rooms/pm-copilot/pm-exec-portal.html',
   // 2026-09-05: points at college-executive-portal.html, which currently
   // renders the COMBINED multi-domain relay (TSM_COLLEGE_EXEC_RELAY) built
