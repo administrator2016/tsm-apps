@@ -192,17 +192,44 @@ function renderEngineOutput(text) {
 /* ---------- Business-value framing helpers ---------- */
 
 // Deterministic, rule-based next action -- derived from stage + breach
-// status + ownership, never invented.
-function nextAction(rec, isBreached){
+// status + ownership, PLUS the loan's own linked condition/exception
+// records when any exist (never invented -- pulled straight from the
+// same records.conditions/records.exceptions the relay payload already
+// carries). Falls back to the generic stage-based line when a loan has
+// no linked condition/exception rows (e.g. VA-MT-008 in sample data),
+// so this never fabricates a detail that isn't actually on file.
+function priorityItemForLoan(records, loanId){
+  const conditions = ((records && records.conditions) || []).filter(c => c.loan_id === loanId && c.stage !== 'cleared');
+  const exceptions = ((records && records.exceptions) || []).filter(e => e.loan_id === loanId && e.stage !== 'remediated');
+  // A compliance exception outranks a plain condition regardless of its
+  // own severity -- it's the one category with real regulatory/fine
+  // exposure attached (see getComplianceExposure() in the engine).
+  if (exceptions.length) {
+    const sevRank = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+    const top = exceptions.slice().sort((a, b) =>
+      (sevRank[b.severity] || 0) - (sevRank[a.severity] || 0) ||
+      (b.entered_stage_at_hours_ago || 0) - (a.entered_stage_at_hours_ago || 0))[0];
+    return top.type + ' exception';
+  }
+  if (conditions.length) {
+    const oldest = conditions.slice().sort((a, b) =>
+      (b.entered_stage_at_hours_ago || 0) - (a.entered_stage_at_hours_ago || 0))[0];
+    return oldest.description;
+  }
+  return null;
+}
+
+function nextAction(rec, isBreached, records){
   const owner = rec.owner || 'Unassigned';
+  const item = priorityItemForLoan(records, rec.loan_id);
   if(rec.stage === 'application' && owner === 'Unassigned') return 'Assign a processor and begin file setup now.';
   if(rec.stage === 'application') return 'Continue intake against SLA clock.';
   if(rec.stage === 'processing' && isBreached) return 'Processing stalled past SLA \u2014 escalate to processing lead.';
   if(rec.stage === 'processing') return 'Continue document collection; monitor against SLA clock.';
-  if(rec.stage === 'underwriting' && isBreached) return 'Underwriting past SLA \u2014 escalate to UW manager.';
-  if(rec.stage === 'underwriting') return 'Awaiting UW decision; confirm queue position.';
-  if(rec.stage === 'conditions' && isBreached) return 'Conditions stalled past SLA \u2014 follow up with borrower/processor today.';
-  if(rec.stage === 'conditions') return 'Track condition clearance against SLA clock.';
+  if(rec.stage === 'underwriting' && isBreached) return item ? ('Underwriting past SLA \u2014 escalate to UW manager; ' + item + ' still outstanding.') : 'Underwriting past SLA \u2014 escalate to UW manager.';
+  if(rec.stage === 'underwriting') return item ? ('Awaiting UW decision; ' + item + ' in progress.') : 'Awaiting UW decision; confirm queue position.';
+  if(rec.stage === 'conditions' && isBreached) return item ? ('Conditions stalled past SLA \u2014 resolve ' + item + ' today.') : 'Conditions stalled past SLA \u2014 follow up with borrower/processor today.';
+  if(rec.stage === 'conditions') return item ? ('Track condition clearance \u2014 ' + item + ' is the open item.') : 'Track condition clearance against SLA clock.';
   if(rec.stage === 'clear_to_close') return 'Confirm CD accuracy and schedule closing.';
   if(rec.stage === 'denied') return 'Review for alternative program or reconsideration of value.';
   return 'Confirm status and close out.';
@@ -214,11 +241,29 @@ function impactFromSeverity(sev){
   return { cls: 'low', label: 'LOW IMPACT' };
 }
 
-// Business Impact Delta — deterministic, no LLM-guessed dollars. Reuses the
-// exact total_exposure figure the mortgage engine already computes from the
-// financial_model rate card (closing-delay + compliance exposure) and hands
-// it to the same shared TSMBNCAExposureEngine used by Insurance/RE/
-// Healthcare/BPO/FinOps/Legal/HotelOps -- nothing invented here.
+// Business Impact Delta — deterministic, no LLM-guessed dollars.
+//
+// Was: fin.total_exposure (closing-delay-cost-per-day + flat compliance
+// penalty rate card) — a real number, but an operational-cost figure with
+// no relationship to loan size, so it read as disconnected from the AI
+// Pipeline Analysis narrative above it (which frames risk in terms of
+// loan principal, e.g. "$1.91M at risk"). Switched the base to loan
+// principal at risk instead: the sum of loan_amount across open loans
+// that are HIGH severity or currently past SLA -- the same two signals
+// already driving the Impact badge and the time-hot styling elsewhere on
+// this page, just totaled in dollars instead of shown per-row. This is
+// computed here from records.loan_files directly, not copied from
+// data.ai_summary's own stated figure, since the LLM narrative's dollar
+// math has been observed to be off by a meaningful margin (it can name a
+// set of loans that doesn't actually sum to the number it states) --
+// this keeps the money-shot number reproducible in JS at all times.
+function loanValueAtRisk(records, breachIds){
+  const loans = ((records && records.loan_files) || []).filter(l => !['funded','denied'].includes(l.stage));
+  return loans
+    .filter(l => l.severity === 'HIGH' || breachIds.has(l.loan_id))
+    .reduce((sum, l) => sum + (l.loan_amount || 0), 0);
+}
+
 function severityFromSlaRatio(overSla, openLoans){
   if (!openLoans) return overSla > 0 ? 'MED' : 'LOW';
   const ratio = overSla / openLoans;
@@ -228,11 +273,10 @@ function severityFromSlaRatio(overSla, openLoans){
   return 'LOW';
 }
 
-function renderBusinessImpactDelta(data){
-  const fin = data.financials || {};
-  const baseExposure = Number(fin.total_exposure) || 0;
+function renderBusinessImpactDelta(data, breachIds){
+  const baseExposure = loanValueAtRisk(data.records, breachIds || new Set());
   if (!baseExposure || !window.TSMBNCAExposureEngine) {
-    return `<div class="sec"><div class="sec-hdr"><span class="lbl">BUSINESS IMPACT DELTA</span></div><div class="no-items">No quantifiable exposure reported${fin.note ? ' — ' + escapeHtml(fin.note) : ''}.</div></div>`;
+    return `<div class="sec"><div class="sec-hdr"><span class="lbl">BUSINESS IMPACT DELTA</span></div><div class="no-items">No loans currently flagged HIGH severity or past SLA — nothing quantifiable to project.</div></div>`;
   }
   const kpis = data.kpis || {};
   const severity = severityFromSlaRatio(kpis.loans_over_sla || 0, kpis.open_loan_files || 0);
@@ -243,7 +287,7 @@ function renderBusinessImpactDelta(data){
   });
   const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
   return `<div class="sec">
-    <div class="sec-hdr"><span class="lbl">BUSINESS IMPACT DELTA</span><span class="sec-hdr-note">closing-delay + compliance exposure &middot; deterministic projection</span></div>
+    <div class="sec-hdr"><span class="lbl">BUSINESS IMPACT DELTA</span><span class="sec-hdr-note">loan principal at risk (HIGH severity or past SLA) &middot; deterministic projection</span></div>
     <div class="tsm-delta-row">
       <div class="tsm-delta-box tsm-delta-no"><div class="tsm-delta-lbl">No Action</div><div class="tsm-delta-val">${fmt(impact.ifIgnored.exposure)}</div></div>
       <div class="tsm-delta-box tsm-delta-act"><div class="tsm-delta-lbl">With Action</div><div class="tsm-delta-val">${fmt(impact.ifActed.exposure)}</div></div>
@@ -292,7 +336,7 @@ function renderActionQueue(records, breachIds){
         <td>${escapeHtml(r.stage)}</td>
         <td class="${isBreached?'time-hot':''}">${hours!==undefined?hours+'h':'&mdash;'}</td>
         <td>${escapeHtml(r.owner||'Unassigned')}</td>
-        <td class="action-hint">${escapeHtml(nextAction(r, isBreached))}</td>
+        <td class="action-hint">${escapeHtml(nextAction(r, isBreached, records))}</td>
       </tr>`;
     }).join('');
   return `<div class="sec">
@@ -336,7 +380,7 @@ function render(){
   html += `<div class="ai-box" id="strategistBncaBox" style="display:none;"></div>`;
 
   html += renderWipBoard(data.loan_wip);
-  html += renderBusinessImpactDelta(data);
+  html += renderBusinessImpactDelta(data, breachIds);
   html += renderActionQueue(data.records, breachIds);
 
   document.getElementById('wrap').innerHTML = html;
