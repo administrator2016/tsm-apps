@@ -2,238 +2,381 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TSM · Case Strategist · Legal-Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TSM Legal Main Strategist</title>
 <style>
-:root {
-  --bg:#03060d; --bg2:#06091a; --bg3:#0a0f22; --bg4:#0e1530;
-  --border:rgba(255,255,255,0.055); --border2:rgba(255,255,255,0.10);
-  --text:#dde5f4; --muted:#5a6f90; --faint:#1e2d48;
-  --cyan:#00e5ff; --c2:rgba(0,229,255,0.07);
-  --green:#00e676; --g2:rgba(0,230,118,0.07);
-  --amber:#ffb300; --a2:rgba(255,179,0,0.07);
-  --red:#ff3d57; --r2:rgba(255,61,87,0.07);
-  --pink:#ff2d78; --p2:rgba(255,45,120,0.07);
-  --mono:'JetBrains Mono',monospace; --sans:'Syne',sans-serif;
+:root{
+  --a:#00ffc6;--a2:#00d4a8;--bg:#04080e;--p:#07121d;--p2:#0a1826;
+  --b:rgba(0,255,198,.1);--b2:rgba(255,255,255,.06);--t:#e2f3ff;
+  --m:#7a9db5;--red:#ff4d6a;--amber:#f5a623;--blue:#3d9be9;
+  --purple:#9b7cff;--gold:#ffd166;
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;overflow-x:hidden;}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:linear-gradient(rgba(0,229,255,0.008) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.008) 1px,transparent 1px);
-  background-size:52px 52px;}
-body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.018) 2px,rgba(0,0,0,0.018) 4px);}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--t);font-family:'Courier New',monospace;min-height:100vh;
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(0,255,198,.07) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 100%,rgba(61,155,233,.05) 0%,transparent 50%)}
+a{color:var(--a);text-decoration:none}
 
-/* ── TOP NAV ── */
-.topnav{position:sticky;top:0;z-index:200;display:flex;align-items:stretch;height:44px;
-  background:rgba(3,6,13,0.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border2);}
-.tn-brand{display:flex;align-items:center;padding:0 20px;border-right:1px solid var(--border2);
-  font-family:var(--sans);font-size:13px;font-weight:800;letter-spacing:2px;color:var(--amber);white-space:nowrap;text-decoration:none;}
-.tn-links{display:flex;align-items:stretch;}
-.tn-link{display:flex;align-items:center;gap:7px;padding:0 18px;font-size:7.5px;letter-spacing:1.5px;
-  text-transform:uppercase;color:var(--muted);text-decoration:none;border-right:1px solid var(--border);
-  transition:color 0.15s;white-space:nowrap;}
-.tn-link:hover{color:var(--text);}
-.tn-link.active{color:var(--cyan);border-bottom:2px solid var(--cyan);}
-.tn-link.exec{color:var(--amber);}
-.tn-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;}
-.tn-right{margin-left:auto;display:flex;align-items:center;gap:16px;padding:0 20px;}
-.tn-clock{font-size:10px;color:var(--text);letter-spacing:1px;}
+/* HEADER */
+header{
+  background:rgba(7,18,29,.97);border-bottom:1px solid var(--b);
+  padding:0 24px;display:flex;align-items:center;justify-content:space-between;
+  height:64px;position:sticky;top:0;z-index:100;
+  backdrop-filter:blur(12px);
+}
+.logo-block{display:flex;align-items:center;gap:14px}
+.logo-mark{
+  width:38px;height:38px;border:1.5px solid var(--a);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;color:var(--a);font-size:14px;letter-spacing:2px;
+  background:rgba(0,255,198,.06);
+}
+.logo-text{font-size:13px;font-weight:900;letter-spacing:.22em;color:var(--a)}
+.logo-sub{font-size:10px;color:var(--m);letter-spacing:.18em;margin-top:2px}
+.header-nav{display:flex;gap:6px}
+.hn{
+  background:transparent;color:var(--m);border:1px solid transparent;
+  border-radius:7px;padding:7px 12px;font-size:11px;font-weight:700;
+  letter-spacing:.12em;cursor:pointer;transition:.2s;font-family:inherit;
+}
+.hn:hover,.hn.active{color:var(--a);border-color:var(--b);background:rgba(0,255,198,.06)}
+.header-status{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--m)}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--a);
+  animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
 
-/* ── ALERT BANNER ── */
-.alert-bar{background:rgba(255,179,0,0.08);border-bottom:1px solid rgba(255,179,0,0.2);
-  padding:6px 24px;font-size:7.5px;letter-spacing:1.5px;text-transform:uppercase;
-  color:var(--amber);display:flex;align-items:center;gap:10px;}
-.alert-bar .dot{width:5px;height:5px;border-radius:50%;background:var(--amber);
-  box-shadow:0 0 6px var(--amber);animation:glow 2s ease-in-out infinite;flex-shrink:0;}
-@keyframes glow{0%,100%{box-shadow:0 0 3px currentColor;}50%{box-shadow:0 0 10px currentColor;}}
+/* CHAIN NAV */
+.chain-bar{
+  background:rgba(7,18,29,.95);border-bottom:1px solid var(--b2);
+  padding:10px 24px;display:flex;align-items:center;gap:8px;overflow-x:auto;
+  scrollbar-width:none;
+}
+.chain-bar::-webkit-scrollbar{display:none}
+.chain-node{
+  display:flex;align-items:center;gap:6px;background:rgba(10,24,38,.8);
+  border:1px solid var(--b2);border-radius:8px;padding:7px 14px;
+  font-size:11px;font-weight:700;letter-spacing:.1em;white-space:nowrap;
+  cursor:pointer;transition:.2s;color:var(--m);
+}
+.chain-node:hover{border-color:var(--b);color:var(--t)}
+.chain-node.current{border-color:var(--a);color:var(--a);background:rgba(0,255,198,.06)}
+.chain-node.relay{border-color:rgba(61,155,233,.4);color:var(--blue)}
+.chain-arrow{color:var(--m);font-size:14px;flex-shrink:0}
 
-/* ── LAYOUT ── */
-.layout{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 72px);position:relative;z-index:10;}
+/* LAYOUT */
+.page{padding:24px;max-width:1600px;margin:0 auto}
 
-/* ── LEFT SIDEBAR ── */
-.sidebar{border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--bg2);}
+/* COMMAND HEADER */
+.cmd-header{
+  background:linear-gradient(135deg,rgba(7,18,29,.98),rgba(10,24,38,.95));
+  border:1px solid var(--b);border-radius:16px;padding:28px 32px;
+  margin-bottom:20px;display:flex;gap:32px;align-items:flex-start;
+  position:relative;overflow:hidden;
+}
+.cmd-header::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--a),transparent);
+}
+.cmd-title{flex:1}
+.cmd-title h1{font-size:26px;color:#fff;font-weight:900;letter-spacing:.06em;line-height:1.2}
+.cmd-title h1 span{color:var(--a)}
+.cmd-title p{color:var(--m);font-size:13px;margin-top:8px;line-height:1.7;max-width:680px}
+.cmd-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.badge{
+  background:rgba(0,255,198,.08);border:1px solid rgba(0,255,198,.2);
+  color:var(--a);border-radius:999px;padding:4px 12px;font-size:10px;
+  font-weight:700;letter-spacing:.14em;
+}
+.badge.red{background:rgba(255,77,106,.08);border-color:rgba(255,77,106,.2);color:var(--red)}
+.badge.amber{background:rgba(245,166,35,.08);border-color:rgba(245,166,35,.2);color:var(--amber)}
+.badge.blue{background:rgba(61,155,233,.08);border-color:rgba(61,155,233,.2);color:var(--blue)}
+.badge.purple{background:rgba(155,124,255,.08);border-color:rgba(155,124,255,.2);color:var(--purple)}
+.cmd-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;min-width:340px}
+.cstat{
+  background:rgba(4,8,14,.7);border:1px solid var(--b2);border-radius:10px;
+  padding:14px;text-align:center;
+}
+.cstat .val{font-size:24px;font-weight:900;color:var(--a);display:block}
+.cstat .lbl{font-size:10px;color:var(--m);letter-spacing:.14em;margin-top:4px;display:block}
 
-.sb-section{border-bottom:1px solid var(--border);padding:16px;}
-.sb-label{font-size:6.5px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+/* SCENARIO SELECTOR */
+.scenario-bar{
+  background:rgba(7,18,29,.9);border:1px solid var(--b2);border-radius:12px;
+  padding:16px 20px;margin-bottom:20px;
+}
+.scenario-bar h3{font-size:11px;color:var(--m);letter-spacing:.2em;margin-bottom:12px}
+.scenario-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.scenario-card{
+  background:rgba(4,8,14,.8);border:1px solid var(--b2);border-radius:10px;
+  padding:14px;cursor:pointer;transition:.2s;
+}
+.scenario-card:hover{border-color:var(--b);background:rgba(0,255,198,.04)}
+.scenario-card.active{border-color:var(--a);background:rgba(0,255,198,.07)}
+.sc-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.sc-icon{
+  width:28px;height:28px;border-radius:6px;display:flex;align-items:center;
+  justify-content:center;font-size:14px;flex-shrink:0;
+}
+.sc-name{font-size:12px;font-weight:700;color:var(--t);letter-spacing:.08em}
+.sc-desc{font-size:10px;color:var(--m);line-height:1.5}
+.sc-risk{font-size:9px;font-weight:700;letter-spacing:.1em;margin-top:6px}
 
-/* Relay status */
-.relay-card{background:var(--bg3);border:1px solid var(--border);padding:12px;}
-.relay-status{display:flex;align-items:center;gap:7px;margin-bottom:8px;}
-.relay-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-.relay-title{font-size:9px;font-weight:700;color:var(--text);}
-.relay-field{display:flex;flex-direction:column;gap:2px;margin-bottom:7px;}
-.rf-label{font-size:6px;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);}
-.rf-val{font-size:9px;color:var(--muted);padding:4px 8px;background:var(--bg2);border-left:2px solid var(--border);}
-.rf-val.live{color:var(--text);border-left-color:var(--cyan);}
-.rf-val.risk-high{color:var(--red);border-left-color:var(--red);}
-.rf-val.risk-med{color:var(--amber);border-left-color:var(--amber);}
+/* MAIN GRID */
+.main-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;margin-bottom:20px}
 
-/* Engine status list */
-.engine-list{display:flex;flex-direction:column;gap:4px;}
-.engine-item{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);}
-.ei-num{font-size:7px;letter-spacing:1px;color:var(--faint);min-width:20px;}
-.ei-name{font-size:8px;color:var(--muted);flex:1;}
-.ei-status{font-size:6.5px;letter-spacing:1px;text-transform:uppercase;padding:1px 6px;border:1px solid;}
-.ei-status.done{color:var(--green);border-color:var(--green);background:var(--g2);}
-.ei-status.none{color:var(--faint);border-color:var(--faint);}
+/* NODES PANEL */
+.nodes-panel{
+  background:rgba(7,18,29,.9);border:1px solid var(--b2);border-radius:12px;
+  padding:20px;
+}
+.panel-title{
+  font-size:11px;color:var(--m);letter-spacing:.2em;margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;
+}
+.panel-title::before{content:'';width:12px;height:1px;background:var(--a)}
+.node-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.node-card{
+  background:rgba(4,8,14,.8);border:1px solid var(--b2);border-radius:10px;
+  padding:14px;cursor:pointer;transition:.2s;position:relative;overflow:hidden;
+}
+.node-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--node-color,var(--a));opacity:.4;
+  transition:.2s;
+}
+.node-card:hover{border-color:rgba(0,255,198,.2)}
+.node-card:hover::after{opacity:1}
+.node-card.active{border-color:var(--node-color,var(--a));background:rgba(0,255,198,.05)}
+.node-card.active::after{opacity:1}
+.node-card.live-relay{border-color:#00ffc6}
+.node-card.live-relay .node-status{color:#00ffc6}
+.node-name{font-size:11px;font-weight:700;color:var(--t);letter-spacing:.1em;margin-bottom:4px}
+.node-status{font-size:10px;color:var(--m);margin-bottom:8px}
+.node-score{
+  font-size:18px;font-weight:900;color:var(--node-color,var(--a));
+  font-family:'Courier New',monospace;
+}
+.node-label{font-size:9px;color:var(--m);letter-spacing:.1em}
 
-/* Synthesis button */
-.synth-btn{width:100%;background:var(--cyan);color:var(--bg);border:none;
-  font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
-  padding:12px;cursor:pointer;transition:opacity 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
-.synth-btn:hover{opacity:0.85;}
-.synth-btn:disabled{opacity:0.35;cursor:not-allowed;}
+/* BNCA PANEL */
+.bnca-panel{
+  background:rgba(7,18,29,.9);border:1px solid var(--b2);border-radius:12px;
+  padding:20px;
+}
+.bnca-output{
+  background:rgba(4,8,14,.9);border:1px solid rgba(0,255,198,.15);
+  border-left:3px solid var(--a);border-radius:10px;padding:16px;
+  font-family:'Courier New',monospace;font-size:12px;line-height:1.7;
+  color:#c8e8f8;min-height:280px;margin-top:12px;position:relative;
+  overflow-y:auto;max-height:420px;
+  white-space:pre-wrap;
+}
+.bnca-output .typing::after{
+  content:'▋';animation:blink .8s step-end infinite;color:var(--a);
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.bnca-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.act-btn{
+  background:rgba(0,255,198,.08);border:1px solid rgba(0,255,198,.2);
+  color:var(--a);border-radius:8px;padding:8px 14px;font-size:11px;
+  font-weight:700;letter-spacing:.1em;cursor:pointer;font-family:inherit;
+  transition:.2s;
+}
+.act-btn:hover{background:rgba(0,255,198,.15);border-color:var(--a)}
+.act-btn.red{background:rgba(255,77,106,.08);border-color:rgba(255,77,106,.2);color:var(--red)}
+.act-btn.red:hover{background:rgba(255,77,106,.15)}
+.act-btn.blue{background:rgba(61,155,233,.08);border-color:rgba(61,155,233,.2);color:var(--blue)}
+.act-btn.blue:hover{background:rgba(61,155,233,.15)}
 
-.escalate-btn{width:100%;background:var(--amber);color:var(--bg);border:none;
-  font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
-  padding:12px;cursor:pointer;transition:opacity 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;
-  text-decoration:none;margin-top:6px;}
-.escalate-btn:hover{opacity:0.85;}
+/* BOTTOM GRID */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:20px}
 
-/* Activity log */
-.activity-log{flex:1;overflow-y:auto;padding:12px 16px;}
-.log-item{display:flex;gap:10px;margin-bottom:10px;font-size:8px;}
-.log-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:3px;}
-.log-dot.green{background:var(--green);}
-.log-dot.amber{background:var(--amber);}
-.log-dot.faint{background:var(--faint);}
-.log-dot.cyan{background:var(--cyan);}
-.log-text{color:var(--muted);line-height:1.5;}
-.log-text strong{color:var(--text);display:block;}
+/* MATTER QUEUE */
+.matter-queue{
+  background:rgba(7,18,29,.9);border:1px solid var(--b2);border-radius:12px;
+  padding:20px;
+}
+.matter-item{
+  background:rgba(4,8,14,.7);border:1px solid var(--b2);border-radius:8px;
+  padding:12px;margin-top:8px;cursor:pointer;transition:.2s;
+  border-left:3px solid var(--item-color,var(--b2));
+}
+.matter-item:hover{border-color:rgba(0,255,198,.3);background:rgba(0,255,198,.03)}
+.mi-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.mi-name{font-size:12px;font-weight:700;color:var(--t)}
+.mi-risk{font-size:10px;font-weight:700;letter-spacing:.1em}
+.mi-desc{font-size:10px;color:var(--m);line-height:1.5}
+.mi-meta{display:flex;gap:8px;margin-top:6px}
+.mi-tag{font-size:9px;background:rgba(255,255,255,.06);border-radius:4px;
+  padding:2px 7px;color:var(--m)}
 
-/* ── MAIN CONTENT ── */
-.main{padding:24px 28px 80px;overflow-y:auto;}
+/* SLA TABLE */
+.sla-table{
+  background:rgba(7,18,29,.9);border:1px solid var(--b2);border-radius:12px;
+  padding:20px;
+}
+.sla-row{
+  display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;
+  padding:8px 0;border-bottom:1px solid var(--b2);font-size:11px;
+}
+.sla-row:last-child{border-bottom:none}
+.sla-name{color:var(--t);font-weight:700}
+.sla-age{color:var(--m)}
+.sla-dot{width:8px;height:8px;border-radius:50%;background:var(--dot-color)}
 
-/* Page header */
-.page-hdr{margin-bottom:20px;}
-.page-hdr h1{font-family:var(--sans);font-size:26px;font-weight:800;letter-spacing:1px;
-  color:var(--cyan);margin-bottom:4px;}
-.page-hdr p{font-size:8.5px;color:var(--muted);letter-spacing:0.5px;}
+/* RELAY PANEL */
+.relay-panel{
+  background:rgba(7,18,29,.9);border:1px solid rgba(61,155,233,.2);border-radius:12px;
+  padding:20px;position:relative;overflow:hidden;
+}
+.relay-panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--blue),transparent);
+}
+.relay-header{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;
+}
+.relay-dest{
+  font-size:11px;color:var(--blue);letter-spacing:.12em;font-weight:700;
+}
+.relay-status{
+  font-size:10px;padding:3px 10px;border-radius:999px;
+  background:rgba(61,155,233,.1);border:1px solid rgba(61,155,233,.25);
+  color:var(--blue);
+}
+.relay-report{
+  background:rgba(4,8,14,.9);border:1px solid rgba(61,155,233,.15);
+  border-radius:8px;padding:14px;font-size:11px;line-height:1.8;
+  color:#b8d8f0;min-height:160px;max-height:240px;overflow-y:auto;
+}
+.relay-btn{
+  width:100%;margin-top:12px;background:rgba(61,155,233,.1);
+  border:1px solid rgba(61,155,233,.3);color:var(--blue);border-radius:8px;
+  padding:10px;font-size:11px;font-weight:700;letter-spacing:.12em;
+  cursor:pointer;font-family:inherit;transition:.2s;
+}
+.relay-btn:hover{background:rgba(61,155,233,.2);border-color:var(--blue)}
 
-/* Section label */
-.sec{display:flex;align-items:center;gap:10px;margin:20px 0 12px;}
-.sec::before{content:'';width:4px;height:4px;background:var(--cyan);transform:rotate(45deg);flex-shrink:0;}
-.sec-label{font-size:7.5px;letter-spacing:2.5px;text-transform:uppercase;color:var(--cyan);}
-.sec::after{content:'';flex:1;height:1px;background:var(--border);}
-.sec.amber .sec-label{color:var(--amber);}
-.sec.amber::before{background:var(--amber);}
-.sec.red .sec-label{color:var(--red);}
-.sec.red::before{background:var(--red);}
-.sec.green .sec-label{color:var(--green);}
-.sec.green::before{background:var(--green);}
-.sec.pink .sec-label{color:var(--pink);}
-.sec.pink::before{background:var(--pink);}
+/* WORKFLOW TIMELINE */
+.timeline{
+  background:rgba(7,18,29,.9);border:1px solid var(--b2);border-radius:12px;
+  padding:20px;margin-bottom:20px;
+}
+.timeline-track{display:flex;gap:0;align-items:center;overflow-x:auto;padding-bottom:4px}
+.tl-step{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  min-width:120px;position:relative;
+}
+.tl-step::after{
+  content:'';position:absolute;top:16px;left:60px;width:calc(100% - 20px);
+  height:1px;background:var(--b2);z-index:0;
+}
+.tl-step:last-child::after{display:none}
+.tl-dot{
+  width:32px;height:32px;border-radius:50%;border:2px solid var(--b2);
+  display:flex;align-items:center;justify-content:center;font-size:11px;
+  font-weight:900;color:var(--m);background:var(--bg);z-index:1;
+  transition:.3s;position:relative;
+}
+.tl-step.done .tl-dot{border-color:var(--a);color:var(--a);background:rgba(0,255,198,.08)}
+.tl-step.active .tl-dot{
+  border-color:var(--a);color:#001;background:var(--a);
+  box-shadow:0 0 12px rgba(0,255,198,.4);
+}
+.tl-step.active::after{background:var(--a);opacity:.3}
+.tl-step.done::after{background:var(--a);opacity:.5}
+.tl-label{font-size:10px;color:var(--m);text-align:center;letter-spacing:.08em}
+.tl-step.done .tl-label,.tl-step.active .tl-label{color:var(--a)}
 
-/* KPI strip */
-.kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;
-  background:var(--border2);border:1px solid var(--border2);margin-bottom:4px;}
-.kpi-cell{background:var(--bg2);padding:14px 16px;}
-.kpi-label{font-size:6.5px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
-.kpi-val{font-family:var(--sans);font-size:26px;font-weight:800;line-height:1;}
-.kpi-sub{font-size:7px;color:var(--faint);margin-top:3px;}
+/* INTAKE FORM */
+.intake-form{
+  background:rgba(7,18,29,.9);border:1px solid var(--b2);border-radius:12px;
+  padding:20px;margin-bottom:20px;
+}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-full{grid-column:1/-1}
+label{font-size:10px;color:var(--m);letter-spacing:.14em;display:block;margin-bottom:4px}
+input,select,textarea{
+  width:100%;background:#020608;color:#dff7ff;
+  border:1px solid var(--b2);border-radius:8px;padding:10px 12px;
+  font-family:'Courier New',monospace;font-size:12px;transition:.2s;
+  outline:none;
+}
+textarea{min-height:100px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:rgba(0,255,198,.35);background:#030a0f}
+select option{background:#071220}
+.run-btn{
+  width:100%;background:var(--a);color:#001;border:none;border-radius:10px;
+  padding:14px;font-size:13px;font-weight:900;letter-spacing:.18em;
+  cursor:pointer;font-family:inherit;transition:.2s;margin-top:4px;
+}
+.run-btn:hover{background:var(--a2);transform:translateY(-1px)}
+.run-btn:active{transform:translateY(0)}
+.run-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
-/* Business Impact Delta */
-.tsm-delta-row{display:flex;gap:1px;background:var(--border2);border:1px solid var(--border2);margin-bottom:4px;}
-.tsm-delta-box{flex:1;background:var(--bg2);padding:14px 16px;text-align:center;}
-.tsm-delta-lbl{font-size:6.5px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
-.tsm-delta-val{font-family:var(--sans);font-size:20px;font-weight:800;line-height:1;}
-.tsm-delta-no .tsm-delta-val{color:var(--red);}
-.tsm-delta-act .tsm-delta-val{color:var(--green);}
-.tsm-recovery{font-size:7px;color:var(--faint);text-align:center;margin-bottom:16px;}
+/* CONFIDENCE BAR */
+.confidence-bar{margin-top:16px}
+.cb-label{display:flex;justify-content:space-between;font-size:10px;color:var(--m);
+  letter-spacing:.12em;margin-bottom:6px}
+.cb-track{height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.cb-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--a2),var(--a));
+  transition:width 1s ease;width:0%}
 
-/* Synthesis output */
-.synthesis-panel{background:var(--bg2);border:1px solid var(--border2);}
-.sp-hdr{display:flex;align-items:center;justify-content:space-between;
-  padding:10px 16px;border-bottom:1px solid var(--border);}
-.sp-title{font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text);}
-.sp-tag{font-size:7px;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border:1px solid;}
-.tag-live{color:var(--red);border-color:var(--red);background:var(--r2);animation:blink 1.4s step-end infinite;}
-.tag-done{color:var(--green);border-color:var(--green);background:var(--g2);}
-.tag-wait{color:var(--faint);border-color:var(--faint);}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
-.sp-body{padding:16px;}
+/* EXPLAIN PANEL */
+#explain-panel:empty{display:none}
+.explain-panel{margin-top:14px;border:1px solid var(--b2);border-radius:10px;padding:12px 14px;background:rgba(255,255,255,.02)}
+.explain-title{font-size:10px;letter-spacing:.12em;color:var(--m);margin-bottom:8px;font-weight:700}
+.explain-row{display:flex;gap:8px;align-items:baseline;padding:4px 0;border-top:1px solid var(--b2)}
+.explain-row:first-of-type{border-top:none}
+.explain-node{font-size:10px;font-weight:900;color:var(--a);letter-spacing:.08em;min-width:74px}
+.explain-score{font-size:10px;color:var(--m);min-width:44px}
+.explain-text{font-size:11px;color:var(--t);line-height:1.5;opacity:.85}
 
-/* Engine output cards */
-.engine-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
-.engine-card{background:var(--bg3);border:1px solid var(--border);}
-.ec-hdr{display:flex;align-items:center;justify-content:space-between;
-  padding:8px 12px;border-bottom:1px solid var(--border);}
-.ec-num{font-family:var(--sans);font-size:18px;font-weight:800;color:var(--cyan);opacity:0.4;margin-right:6px;}
-.ec-title{font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text);}
-.ec-sub{font-size:6.5px;color:var(--faint);margin-top:1px;}
-.ec-body{padding:12px;font-size:8.5px;color:var(--muted);line-height:1.75;min-height:80px;}
-.ec-body.populated{color:var(--text);}
-.ec-foot{padding:8px 12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.ec-chars{font-size:7px;color:var(--faint);}
-.ec-copy{font-size:7px;color:var(--muted);cursor:pointer;letter-spacing:1px;text-transform:uppercase;
-  padding:2px 8px;border:1px solid var(--border);background:none;font-family:var(--mono);transition:all 0.15s;}
-.ec-copy:hover{color:var(--text);border-color:var(--border2);}
+/* EP LINK */
+.ep-link{
+  background:linear-gradient(135deg,rgba(61,155,233,.08),rgba(155,124,255,.05));
+  border:1px solid rgba(61,155,233,.2);border-radius:12px;
+  padding:20px;display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:20px;
+}
+.ep-info h3{font-size:14px;font-weight:900;letter-spacing:.12em;color:var(--t);margin-bottom:4px}
+.ep-info p{font-size:11px;color:var(--m);line-height:1.6}
+.ep-btn{
+  background:var(--blue);color:#fff;border:none;border-radius:9px;
+  padding:11px 22px;font-size:12px;font-weight:700;letter-spacing:.1em;
+  cursor:pointer;font-family:inherit;white-space:nowrap;transition:.2s;
+}
+.ep-btn:hover{background:#2a89d8;transform:translateY(-1px)}
 
-/* Strategic synthesis (full width) */
-.synthesis-full{background:var(--bg3);border:1px solid var(--border);margin-bottom:12px;}
-.sf-hdr{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.sf-title{font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
-.sf-body{padding:14px;font-size:9px;color:var(--muted);line-height:1.8;min-height:100px;}
-.sf-body.populated{color:var(--text);}
+/* THINKING */
+.thinking{display:none;font-size:11px;color:var(--a);letter-spacing:.1em;
+  animation:thinking 1.5s ease-in-out infinite}
+@keyframes thinking{0%,100%{opacity:.4}50%{opacity:1}}
+.thinking.show{display:block}
 
-/* Risk matrix */
-.risk-matrix{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border2);border:1px solid var(--border2);margin-bottom:12px;}
-.rm-cell{background:var(--bg2);padding:14px 16px;}
-.rm-label{font-size:6.5px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
-.rm-val{font-size:18px;font-weight:700;font-family:var(--sans);margin-bottom:3px;}
-.rm-sub{font-size:7.5px;color:var(--faint);}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,255,198,.2);border-radius:2px}
 
-/* Action items */
-.action-list{display:flex;flex-direction:column;gap:6px;}
-.action-item{display:flex;align-items:flex-start;gap:12px;
-  background:var(--bg2);border:1px solid var(--border2);padding:12px 14px;}
-.ai-pri{font-size:7px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border:1px solid;flex-shrink:0;min-width:58px;text-align:center;}
-.ai-u1{color:var(--red);border-color:var(--red);background:var(--r2);}
-.ai-u2{color:var(--amber);border-color:var(--amber);background:var(--a2);}
-.ai-u3{color:var(--cyan);border-color:var(--cyan);background:var(--c2);}
-.ai-content{flex:1;}
-.ai-title{font-size:10px;font-weight:600;color:var(--text);margin-bottom:2px;}
-.ai-sub{font-size:8px;color:var(--muted);}
-.ai-node{font-size:7px;color:var(--faint);text-align:right;flex-shrink:0;min-width:80px;}
-
-/* AI cursor */
-.ai-cursor{display:inline-block;width:6px;height:11px;background:var(--cyan);vertical-align:middle;animation:blink 0.8s step-end infinite;margin-left:2px;}
-
-/* Spinner */
-.spinner{display:inline-block;width:11px;height:11px;border:1px solid var(--faint);border-top-color:var(--cyan);border-radius:50%;animation:spin 0.7s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-
-/* Toast */
-.toast{position:fixed;bottom:40px;right:24px;z-index:500;background:var(--bg2);border:1px solid var(--border2);
-  padding:12px 16px;font-size:9px;color:var(--text);max-width:300px;display:none;}
-.toast.visible{display:block;}
-.toast-title{font-weight:700;margin-bottom:2px;}
-.toast-sub{color:var(--muted);font-size:8px;}
-
-/* Status bar */
-.statusbar{position:fixed;bottom:0;left:0;right:0;z-index:200;height:28px;
-  background:rgba(3,6,13,0.97);backdrop-filter:blur(8px);border-top:1px solid var(--border);
-  display:flex;align-items:center;gap:14px;padding:0 20px;font-size:7.5px;color:var(--faint);letter-spacing:1px;}
-.sb-sep{color:var(--border2);}
-.sb-right{margin-left:auto;}
-
-@keyframes rise{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
-.rise{animation:rise 0.35s ease both;}
+/* RESPONSIVE */
+@media(max-width:1100px){
+  .main-grid{grid-template-columns:1fr}
+  .bottom-grid{grid-template-columns:1fr 1fr}
+  .cmd-stats{grid-template-columns:repeat(2,1fr)}
+  .cmd-header{flex-direction:column}
+}
+@media(max-width:700px){
+  .bottom-grid{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+  .header-nav{display:none}
+  .chain-bar{display:none}
+}
 </style>
-  <script src="/js/core/tsm-event-bus.js"></script>
-<script src="/shared/tsm-active-member.js"></script>
-  <script src="/js/core/tsm-state.js"></script>
-  <script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
-  <script src="/html/shared/runtime/mission/mission-model.js"></script>
-  <script src="/html/shared/runtime/mission/mission-store.js"></script>
-  <script src="/html/js/tsm-bnca-exposure-engine.js"></script>
-  <script src="/js/core/tsm-mission-engine.js"></script>
-  <script src="/js/core/tsm-auto-pipeline.js"></script>
   <link rel="stylesheet" href="/shared/tsm-guided-how-to.css">
 </head>
-<body data-vertical="legal" data-page-role="warroom">
+<body data-vertical="legal" data-page-role="strategist">
 <section
   id="tsm-guided-how-to-root"
   data-tsm-guided-how-to="true"
@@ -241,857 +384,965 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
 ></section>
 
 
-<!-- TOP NAV -->
-<nav class="topnav">
-  <a class="tn-brand" href="legal-war-room.html">TSM LEGAL-PRO</a>
-  <div class="tn-links">
-    <a class="tn-link" href="legal-war-room.html"><span class="tn-dot" style="background:var(--green)"></span>WAR ROOM</a>
-    <a class="tn-link" href="/html/legal-pro/index.html"><span class="tn-dot" style="background:var(--cyan)"></span>LEGAL NODES</a>
-    <a class="tn-link active" href="legal-main-strategist.html"><span class="tn-dot" style="background:var(--cyan)"></span>CASE STRATEGIST</a>
-    <a class="tn-link exec" href="legal-executive-portal.html"><span class="tn-dot" style="background:var(--amber)"></span>CHIEF STRATEGIST</a>
+<!-- HEADER -->
+<header>
+  <div class="logo-block">
+    <div class="logo-mark">TSM</div>
+    <div>
+      <div class="logo-text">LEGAL MAIN STRATEGIST</div>
+      <div class="logo-sub">INTELLIGENCE COMMAND · LEGAL SUITE</div>
+    </div>
   </div>
-  <div class="tn-right">
-    <div style="font-size:8px;color:var(--muted);letter-spacing:1px" id="relay-age">No relay data</div>
-    <div class="tn-clock" id="clock">--:--:--</div>
+  <nav class="header-nav">
+    <button class="hn active">STRATEGIST</button>
+    <button class="hn" onclick="scrollTo(0,0)">NODES</button>
+    <button class="hn" onclick="document.getElementById('queue-section').scrollIntoView({behavior:'smooth'})">QUEUE</button>
+    <button class="hn" onclick="document.getElementById('relay-section').scrollIntoView({behavior:'smooth'})">RELAY</button>
+  </nav>
+  <div class="header-status">
+    <div class="pulse"></div>
+    <span>LIVE · LEGAL INTELLIGENCE ACTIVE</span>
   </div>
-</nav>
+</header>
 
-<!-- ALERT BANNER -->
-<div class="alert-bar" id="alert-bar">
-  <span class="dot"></span>
-  <span id="alert-text">CASE STRATEGIST ACTIVE — AWAITING WAR ROOM RELAY — RUN 6-ENGINE ANALYSIS FIRST</span>
+<!-- CHAIN NAV -->
+<div class="chain-bar">
+  <div class="chain-node" onclick="window.location.href='/legal-pro/index.html'">⚖ LEGAL-PRO HUB</div>
+  <span class="chain-arrow">→</span>
+  <div class="chain-node" style="opacity:.4;cursor:not-allowed" title="Matter Node — not built yet">MATTER NODE</div>
+  <span class="chain-arrow">→</span>
+  <div class="chain-node" style="opacity:.4;cursor:not-allowed" title="Billing Node — not built yet">BILLING NODE</div>
+  <span class="chain-arrow">→</span>
+  <div class="chain-node" onclick="window.location.href='/legal-pro/legal-compliance.html'">COMPLIANCE NODE</div>
+  <span class="chain-arrow">→</span>
+  <div class="chain-node" style="opacity:.4;cursor:not-allowed" title="Contracts Node — not built yet">CONTRACTS NODE</div>
+  <span class="chain-arrow">→</span>
+  <div class="chain-node" onclick="window.location.href='/war-rooms/legal-war/legal-main-strategist.html'">LEGAL STRATEGIST</div>
+  <span class="chain-arrow">→</span>
+  <div class="chain-node current">⬡ MAIN STRATEGIST</div>
+  <span class="chain-arrow">→</span>
+  <div class="chain-node relay" onclick="window.location.href='/war-rooms/legal-war/legal-executive-portal.html'">▶ EXECUTIVE PORTAL</div>
 </div>
 
-<!-- LAYOUT -->
-<div class="layout">
+<!-- PAGE -->
+<div class="page">
 
-  <!-- ══ SIDEBAR ══ -->
-  <div class="sidebar">
-
-    <!-- Relay Status -->
-    <div class="sb-section">
-      <div class="sb-label">War Room Relay</div>
-      <div class="relay-card">
-        <div class="relay-status">
-          <div class="relay-dot" id="relay-dot" style="background:var(--faint)"></div>
-          <div class="relay-title" id="relay-title">No relay received</div>
-        </div>
-        <div class="relay-field">
-          <div class="rf-label">Matter</div>
-          <div class="rf-val" id="relay-matter">—</div>
-        </div>
-        <div class="relay-field">
-          <div class="rf-label">Document Type</div>
-          <div class="rf-val" id="relay-doctype">—</div>
-        </div>
-        <div class="relay-field">
-          <div class="rf-label">Exposure Range</div>
-          <div class="rf-val" id="relay-exposure">—</div>
-        </div>
-        <div class="relay-field">
-          <div class="rf-label">Risk Score</div>
-          <div class="rf-val" id="relay-risk">—</div>
-        </div>
-        <div class="relay-field">
-          <div class="rf-label">Win Probability</div>
-          <div class="rf-val" id="relay-winprob">—</div>
-        </div>
-      </div>
+<!-- CMD HEADER -->
+<div class="cmd-header">
+  <div class="cmd-title">
+    <h1>TSM LEGAL <span>MAIN STRATEGIST</span></h1>
+    <p>Cross-node intelligence aggregator. Synthesizes matter intake, billing audit, contracts, compliance, and trust accounting signals into unified risk posture, escalation routing, and executive relay packages for legal operations leadership.</p>
+    <div class="cmd-meta">
+      <span class="badge">⚙ GROQ LLAMA-3.3-70B</span>
+      <span class="badge blue">MULTI-NODE SYNTHESIS</span>
+      <span class="badge purple">BNCA ENGINE</span>
+      <span class="badge amber" id="risk-badge">RISK: ASSESSING</span>
+      <span class="badge red" id="sla-badge">SLA: MONITORING</span>
     </div>
-
-    <!-- Engine Sync Status -->
-    <div class="sb-section">
-      <div class="sb-label">Engine Sync Status</div>
-      <div class="engine-list">
-        <div class="engine-item"><span class="ei-num">01</span><span class="ei-name">Document Intel</span><span class="ei-status none" id="es1">PENDING</span></div>
-        <div class="engine-item"><span class="ei-num">02</span><span class="ei-name">Legal Issues</span><span class="ei-status none" id="es2">PENDING</span></div>
-        <div class="engine-item"><span class="ei-num">03</span><span class="ei-name">Exposure Map</span><span class="ei-status none" id="es3">PENDING</span></div>
-        <div class="engine-item"><span class="ei-num">04</span><span class="ei-name">Recovery Plan</span><span class="ei-status none" id="es4">PENDING</span></div>
-        <div class="engine-item"><span class="ei-num">05</span><span class="ei-name">Case Navigator</span><span class="ei-status none" id="es5">PENDING</span></div>
-        <div class="engine-item"><span class="ei-num">06</span><span class="ei-name">App Dispatch</span><span class="ei-status none" id="es6">PENDING</span></div>
-      </div>
-    </div>
-
-    <!-- Synthesis Controls -->
-    <div class="sb-section">
-      <div class="sb-label">Strategist Actions</div>
-      <button class="synth-btn" id="synth-btn" onclick="runSynthesis()" disabled>
-        <span class="spinner" id="synth-spinner" style="display:none"></span>
-        ▶ Run Strategic Synthesis
-      </button>
-      <a class="escalate-btn" id="escalate-btn" href="legal-executive-portal.html" onclick="writeExecRelay(event)">
-        → Escalate to Chief Strategist
-      </a>
-    </div>
-
-    <!-- Activity Log -->
-    <div class="sb-label" style="padding:14px 16px 4px">Activity Log</div>
-    <div class="activity-log" id="activity-log">
-      <div class="log-item">
-        <div class="log-dot faint"></div>
-        <div class="log-text"><strong>Case Strategist Initialized</strong>Awaiting War Room relay · Run 6-engine analysis to populate</div>
-      </div>
-    </div>
-
-  </div><!-- /sidebar -->
-
-  <!-- ══ MAIN ══ -->
-  <div class="main">
-
-    <div class="page-hdr rise">
-      <h1>Case Strategist</h1>
-      <p>Synthesizes War Room engine outputs · Builds unified matter strategy · Routes to Chief Strategist for HITL authorization</p>
-    </div>
-
-    <!-- KPI STRIP -->
-    <div class="kpi-strip rise">
-      <div class="kpi-cell">
-        <div class="kpi-label">Matter Risk Score</div>
-        <div class="kpi-val" style="color:var(--amber)" id="kpi-risk">—</div>
-        <div class="kpi-sub">/ 100</div>
-      </div>
-      <div class="kpi-cell">
-        <div class="kpi-label">Exposure Range</div>
-        <div class="kpi-val" style="color:var(--red)" id="kpi-exposure">—</div>
-        <div class="kpi-sub">estimated liability</div>
-      </div>
-      <div class="kpi-cell">
-        <div class="kpi-label">Win Probability</div>
-        <div class="kpi-val" style="color:var(--green)" id="kpi-win">—</div>
-        <div class="kpi-sub">defense weighted</div>
-      </div>
-      <div class="kpi-cell">
-        <div class="kpi-label">Settlement Range</div>
-        <div class="kpi-val" style="color:var(--cyan)" id="kpi-settle">—</div>
-        <div class="kpi-sub">recommended corridor</div>
-      </div>
-      <div class="kpi-cell">
-        <div class="kpi-label">Engines Synced</div>
-        <div class="kpi-val" style="color:var(--text)" id="kpi-engines">0/6</div>
-        <div class="kpi-sub">from war room</div>
-      </div>
-    </div>
-
-    <!-- BUSINESS IMPACT DELTA -->
-    <div class="sec"><div class="sec-label">Business Impact Delta</div></div>
-    <div class="tsm-delta-row">
-      <div class="tsm-delta-box tsm-delta-no"><div class="tsm-delta-lbl">No Action</div><div class="tsm-delta-val" id="legXPDeltaNo">—</div></div>
-      <div class="tsm-delta-box tsm-delta-act"><div class="tsm-delta-lbl">With Action</div><div class="tsm-delta-val" id="legXPDeltaAct">—</div></div>
-    </div>
-    <div class="tsm-recovery" id="legXPRecovery">Awaiting War Room relay.</div>
-
-    <!-- ENGINE OUTPUTS (from relay) -->
-    <div class="sec"><div class="sec-label">War Room Engine Outputs · Relay Data</div></div>
-    <div class="engine-grid">
-
-      <div class="synthesis-panel">
-        <div class="sp-hdr">
-          <div><span style="font-family:var(--sans);font-size:16px;font-weight:800;color:var(--cyan);opacity:0.5;margin-right:6px">01</span><span class="sp-title">Document Intelligence</span></div>
-          <span class="sp-tag tag-wait" id="tag-e1">PENDING</span>
-        </div>
-        <div class="sp-body" id="body-e1" style="padding:12px;font-size:8.5px;color:var(--faint);min-height:90px">Awaiting War Room relay...</div>
-        <div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:7px;color:var(--faint)" id="chars-e1">0 chars</span>
-          <button class="ec-copy" onclick="copyField('body-e1')">COPY</button>
-        </div>
-      </div>
-
-      <div class="synthesis-panel">
-        <div class="sp-hdr">
-          <div><span style="font-family:var(--sans);font-size:16px;font-weight:800;color:var(--cyan);opacity:0.5;margin-right:6px">02</span><span class="sp-title">Key Legal Issues</span></div>
-          <span class="sp-tag tag-wait" id="tag-e2">PENDING</span>
-        </div>
-        <div class="sp-body" id="body-e2" style="padding:12px;font-size:8.5px;color:var(--faint);min-height:90px">Awaiting War Room relay...</div>
-        <div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:7px;color:var(--faint)" id="chars-e2">0 chars</span>
-          <button class="ec-copy" onclick="copyField('body-e2')">COPY</button>
-        </div>
-      </div>
-
-      <div class="synthesis-panel">
-        <div class="sp-hdr">
-          <div><span style="font-family:var(--sans);font-size:16px;font-weight:800;color:var(--cyan);opacity:0.5;margin-right:6px">03</span><span class="sp-title">Financial Impact & Exposure</span></div>
-          <span class="sp-tag tag-wait" id="tag-e3">PENDING</span>
-        </div>
-        <div class="sp-body" id="body-e3" style="padding:12px;font-size:8.5px;color:var(--faint);min-height:90px">Awaiting War Room relay...</div>
-        <div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:7px;color:var(--faint)" id="chars-e3">0 chars</span>
-          <button class="ec-copy" onclick="copyField('body-e3')">COPY</button>
-        </div>
-      </div>
-
-      <div class="synthesis-panel">
-        <div class="sp-hdr">
-          <div><span style="font-family:var(--sans);font-size:16px;font-weight:800;color:var(--cyan);opacity:0.5;margin-right:6px">04</span><span class="sp-title">Recovery Plan & Appeal</span></div>
-          <span class="sp-tag tag-wait" id="tag-e4">PENDING</span>
-        </div>
-        <div class="sp-body" id="body-e4" style="padding:12px;font-size:8.5px;color:var(--faint);min-height:90px">Awaiting War Room relay...</div>
-        <div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:7px;color:var(--faint)" id="chars-e4">0 chars</span>
-          <button class="ec-copy" onclick="copyField('body-e4')">COPY</button>
-        </div>
-      </div>
-
-      <div class="synthesis-panel" style="grid-column:1/-1">
-        <div class="sp-hdr">
-          <div><span style="font-family:var(--sans);font-size:16px;font-weight:800;color:var(--cyan);opacity:0.5;margin-right:6px">05</span><span class="sp-title">Case Navigator · Step-by-Step Progression</span></div>
-          <span class="sp-tag tag-wait" id="tag-e5">PENDING</span>
-        </div>
-        <div class="sp-body" id="body-e5" style="padding:12px;font-size:8.5px;color:var(--faint);min-height:90px">Awaiting War Room relay...</div>
-        <div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:7px;color:var(--faint)" id="chars-e5">0 chars</span>
-          <button class="ec-copy" onclick="copyField('body-e5')">COPY</button>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- STRATEGIC SYNTHESIS -->
-    <div class="sec amber"><div class="sec-label">Strategic Synthesis · Groq LLaMA 3.3-70B · Unified Matter Assessment</div></div>
-
-    <div class="synthesis-full">
-      <div class="sf-hdr">
-        <span class="sf-title" style="color:var(--amber)">⬡ Unified Matter Strategy</span>
-        <span class="sp-tag tag-wait" id="tag-synth">AWAITING SYNTHESIS</span>
-      </div>
-      <div class="sf-body" id="synth-output">Run Strategic Synthesis to generate a unified matter assessment combining all 6 engine outputs into a single partner-ready strategy document.</div>
-    </div>
-
-    <!-- RISK MATRIX -->
-    <div class="sec red"><div class="sec-label">Risk Matrix · Extracted from Engines</div></div>
-    <div class="risk-matrix">
-      <div class="rm-cell">
-        <div class="rm-label">Primary Risk</div>
-        <div class="rm-val" style="color:var(--red)" id="rm-primary">—</div>
-        <div class="rm-sub" id="rm-primary-sub">—</div>
-      </div>
-      <div class="rm-cell">
-        <div class="rm-label">Litigation Cost Est.</div>
-        <div class="rm-val" style="color:var(--amber)" id="rm-litigation">—</div>
-        <div class="rm-sub">through trial</div>
-      </div>
-      <div class="rm-cell">
-        <div class="rm-label">Settlement Preferred</div>
-        <div class="rm-val" style="color:var(--green)" id="rm-settle">—</div>
-        <div class="rm-sub" id="rm-settle-sub">vs trial</div>
-      </div>
-      <div class="rm-cell">
-        <div class="rm-label">Critical Deadline</div>
-        <div class="rm-val" style="color:var(--cyan)" id="rm-deadline">—</div>
-        <div class="rm-sub" id="rm-deadline-sub">next action</div>
-      </div>
-    </div>
-
-    <!-- RECOMMENDED ACTIONS -->
-    <div class="sec green"><div class="sec-label">Recommended Executive Actions · For Chief Strategist Review</div></div>
-    <div class="action-list" id="action-list">
-      <div style="padding:20px;text-align:center;color:var(--faint);font-size:9px">Run Strategic Synthesis to generate recommended actions</div>
-    </div>
-
-    <!-- ESCALATE STRIP -->
-    <div class="sec pink" style="margin-top:24px"><div class="sec-label">Escalation · Chief Strategist Authorization Required</div></div>
-    <div style="background:var(--bg2);border:1px solid rgba(255,45,120,0.2);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px">
-      <div>
-        <div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:3px">Route to Chief Strategist for HITL Decision</div>
-        <div style="font-size:8px;color:var(--muted)">Synthesis complete · All engine data + strategic assessment packaged · Executive authorization required</div>
-      </div>
-      <div style="display:flex;gap:8px;flex-shrink:0">
-        <a href="legal-executive-portal.html" onclick="writeExecRelay(event)"
-          style="background:var(--pink);color:var(--bg);border:none;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:12px 20px;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:6px">
-          ⚡ ESCALATE TO CHIEF STRATEGIST →
-        </a>
-        <button onclick="exportFullReport()"
-          style="background:var(--bg3);color:var(--text);border:1px solid var(--border2);font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:12px 16px;cursor:pointer">
-          ↓ EXPORT FULL REPORT
-        </button>
-      </div>
-    </div>
-
-  </div><!-- /main -->
-</div><!-- /layout -->
-
-<!-- STATUS BAR -->
-<div class="statusbar">
-  <div style="width:5px;height:5px;border-radius:50%;background:var(--cyan);box-shadow:0 0 6px var(--cyan);animation:glow 2s infinite"></div>
-  <span>TSM · Case Strategist</span>
-  <span class="sb-sep">·</span>
-  <span id="sb-engines">0 / 6 Engines Synchronized</span>
-  <span class="sb-sep">·</span>
-  <span id="sb-matter">No matter loaded</span>
-  <span class="sb-sep">·</span>
-  <span>Groq: openai/gpt-oss-120b</span>
-  <div class="sb-right" id="sb-time">--:--:--</div>
+  </div>
+  <div class="cmd-stats">
+    <div class="cstat"><span class="val" id="stat-nodes">6</span><span class="lbl">ACTIVE NODES</span></div>
+    <div class="cstat"><span class="val" id="stat-matters">—</span><span class="lbl">MATTERS OPEN</span></div>
+    <div class="cstat"><span class="val" id="stat-risk">—</span><span class="lbl">RISK SCORE</span></div>
+    <div class="cstat"><span class="val" id="stat-conf">—%</span><span class="lbl">CONFIDENCE</span></div>
+  </div>
 </div>
 
-<!-- TOAST -->
-<div class="toast" id="toast">
-  <div class="toast-title" id="toast-title">—</div>
-  <div class="toast-sub" id="toast-sub">—</div>
+<!-- SCENARIO SELECTOR -->
+<div class="scenario-bar">
+  <h3>SELECT SCENARIO · LEGAL INTELLIGENCE MODE</h3>
+  <div class="scenario-grid" id="scenario-grid">
+    <div class="scenario-card active" data-scenario="billing" onclick="selectScenario(this)">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:rgba(245,166,35,.1);color:#f5a623">$</div>
+        <div class="sc-name">BILLING LEAKAGE</div>
+      </div>
+      <div class="sc-desc">Unbilled time, write-down exposure, invoice dispute chain, and client trust account variance.</div>
+      <div class="sc-risk" style="color:#f5a623">⬆ FINANCIAL RISK</div>
+    </div>
+    <div class="scenario-card" data-scenario="compliance" onclick="selectScenario(this)">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:rgba(255,77,106,.1);color:#ff4d6a">!</div>
+        <div class="sc-name">COMPLIANCE BREACH</div>
+      </div>
+      <div class="sc-desc">Bar compliance deadlines, file retention failures, ethics wall breach, and conflict check gaps.</div>
+      <div class="sc-risk" style="color:#ff4d6a">⚠ CRITICAL RISK</div>
+    </div>
+    <div class="scenario-card" data-scenario="matter" onclick="selectScenario(this)">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:rgba(61,155,233,.1);color:#3d9be9">≡</div>
+        <div class="sc-name">MATTER BOTTLENECK</div>
+      </div>
+      <div class="sc-desc">Stalled discovery, staffing gaps on active matters, deadline pressure across litigation portfolio.</div>
+      <div class="sc-risk" style="color:#3d9be9">↔ OPERATIONAL RISK</div>
+    </div>
+    <div class="scenario-card" data-scenario="contract" onclick="selectScenario(this)">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:rgba(155,124,255,.1);color:#9b7cff">◈</div>
+        <div class="sc-name">CONTRACT EXPOSURE</div>
+      </div>
+      <div class="sc-desc">Auto-renewal traps, missing executed copies, indemnity clause gaps, and SLA commitments at risk.</div>
+      <div class="sc-risk" style="color:#9b7cff">◆ LIABILITY RISK</div>
+    </div>
+    <div class="scenario-card" data-scenario="trust" onclick="selectScenario(this)">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:rgba(0,255,198,.1);color:#00ffc6">⊕</div>
+        <div class="sc-name">TRUST ACCOUNTING</div>
+      </div>
+      <div class="sc-desc">IOLTA discrepancy, three-way reconciliation failure, client fund disbursement exception.</div>
+      <div class="sc-risk" style="color:#00ffc6">⬡ FIDUCIARY RISK</div>
+    </div>
+    <div class="scenario-card" data-scenario="discovery" onclick="selectScenario(this)">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:rgba(255,209,102,.1);color:#ffd166">⊞</div>
+        <div class="sc-name">DISCOVERY CRISIS</div>
+      </div>
+      <div class="sc-desc">eDiscovery backlog, spoliation risk, document hold failures, opposing counsel pressure.</div>
+      <div class="sc-risk" style="color:#ffd166">⬥ LITIGATION RISK</div>
+    </div>
+  </div>
 </div>
+
+<!-- INTAKE FORM -->
+<div class="intake-form">
+  <div class="panel-title">MATTER INTELLIGENCE INTAKE</div>
+  <div class="form-grid">
+    <div>
+      <label>MATTER / CLIENT NAME</label>
+      <input type="text" id="matter-name" placeholder="Acme Corp v. Smith — Employment Matter #447">
+    </div>
+    <div>
+      <label>MATTER TYPE</label>
+      <select id="matter-type">
+        <option>Litigation — Employment</option>
+        <option>Litigation — Commercial</option>
+        <option>Transactional — M&A</option>
+        <option>Transactional — Real Estate</option>
+        <option>Regulatory / Compliance</option>
+        <option>Intellectual Property</option>
+        <option>Bankruptcy / Restructuring</option>
+        <option>Trust &amp; Estate</option>
+        <option>Criminal Defense</option>
+      </select>
+    </div>
+    <div>
+      <label>RESPONSIBLE PARTNER</label>
+      <input type="text" id="responsible-partner" placeholder="Partner / Team Lead">
+    </div>
+    <div>
+      <label>SLA / DEADLINE PRESSURE</label>
+      <select id="sla-pressure">
+        <option value="critical">CRITICAL — 24–48 hrs</option>
+        <option value="high">HIGH — This week</option>
+        <option value="medium" selected>MEDIUM — 2–4 weeks</option>
+        <option value="low">LOW — No immediate deadline</option>
+      </select>
+    </div>
+    <div class="form-full">
+      <label>OPERATIONAL CONTEXT · ISSUES / EXCEPTIONS / FLAGS</label>
+      <textarea id="context-input" placeholder="Describe the current operational situation, issues identified across nodes, exceptions flagged, missing documents, billing discrepancies, compliance gaps, or any escalation-worthy conditions..."></textarea>
+    </div>
+    <div>
+      <label>NODES FLAGGING ISSUES</label>
+      <select id="flagging-nodes" multiple style="min-height:88px">
+        <option>Matter Intake</option>
+        <option>Billing Audit</option>
+        <option>Compliance</option>
+        <option>Contracts</option>
+        <option>Trust Accounting</option>
+        <option>eDiscovery</option>
+      </select>
+    </div>
+    <div>
+      <label>BILLABLE HOURS AT RISK ($)</label>
+      <input type="text" id="hours-risk" placeholder="e.g. $24,000 — 40 hrs unrealized">
+      <label style="margin-top:12px">ESCALATION PRIORITY</label>
+      <select id="escalation-priority">
+        <option>P1 — IMMEDIATE</option>
+        <option>P2 — URGENT</option>
+        <option selected>P3 — STANDARD</option>
+        <option>P4 — MONITORING</option>
+      </select>
+    </div>
+  </div>
+  <button class="run-btn" id="run-bnca" onclick="runBNCA()">⚡ RUN LEGAL MAIN STRATEGIST BNCA</button>
+</div>
+
+<!-- WORKFLOW TIMELINE -->
+<div class="timeline">
+  <div class="panel-title">STRATEGIC WORKFLOW TIMELINE</div>
+  <div class="timeline-track">
+    <div class="tl-step done" id="tl-1">
+      <div class="tl-dot">✓</div>
+      <div class="tl-label">NODE SIGNALS<br>RECEIVED</div>
+    </div>
+    <div class="tl-step done" id="tl-2">
+      <div class="tl-dot">✓</div>
+      <div class="tl-label">SCENARIO<br>CLASSIFIED</div>
+    </div>
+    <div class="tl-step" id="tl-3">
+      <div class="tl-dot">3</div>
+      <div class="tl-label">BNCA<br>ENGINE</div>
+    </div>
+    <div class="tl-step" id="tl-4">
+      <div class="tl-dot">4</div>
+      <div class="tl-label">RISK<br>SCORED</div>
+    </div>
+    <div class="tl-step" id="tl-5">
+      <div class="tl-dot">5</div>
+      <div class="tl-label">OWNER<br>ASSIGNED</div>
+    </div>
+    <div class="tl-step" id="tl-6">
+      <div class="tl-dot">6</div>
+      <div class="tl-label">STRATEGIST<br>RELAY</div>
+    </div>
+    <div class="tl-step" id="tl-7">
+      <div class="tl-dot">7</div>
+      <div class="tl-label">EXECUTIVE<br>PORTAL</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="main-grid">
+  <!-- NODE STATUS PANEL -->
+  <div class="nodes-panel">
+    <div class="panel-title">NODE INTELLIGENCE STATUS</div>
+    <div class="node-grid" id="node-grid">
+      <div class="node-card" style="--node-color:#f5a623" onclick="pingNode('billing')">
+        <div class="node-name">BILLING AUDIT</div>
+        <div class="node-status">Monitoring unbilled time</div>
+        <div class="node-score" id="ns-billing">—</div>
+        <div class="node-label">RISK SCORE</div>
+      </div>
+      <div class="node-card" style="--node-color:#ff4d6a" onclick="pingNode('compliance')">
+        <div class="node-name">COMPLIANCE</div>
+        <div class="node-status">Bar deadline tracking</div>
+        <div class="node-score" id="ns-compliance">—</div>
+        <div class="node-label">RISK SCORE</div>
+      </div>
+      <div class="node-card" style="--node-color:#3d9be9" onclick="pingNode('matter')">
+        <div class="node-name">MATTER INTAKE</div>
+        <div class="node-status">Open matters queue</div>
+        <div class="node-score" id="ns-matter">—</div>
+        <div class="node-label">RISK SCORE</div>
+      </div>
+      <div class="node-card" style="--node-color:#9b7cff" onclick="pingNode('contracts')">
+        <div class="node-name">CONTRACTS</div>
+        <div class="node-status">Renewal & execution gaps</div>
+        <div class="node-score" id="ns-contracts">—</div>
+        <div class="node-label">RISK SCORE</div>
+      </div>
+      <div class="node-card" style="--node-color:#00ffc6" onclick="pingNode('trust')">
+        <div class="node-name">TRUST ACCOUNTING</div>
+        <div class="node-status">IOLTA reconciliation</div>
+        <div class="node-score" id="ns-trust">—</div>
+        <div class="node-label">RISK SCORE</div>
+      </div>
+      <div class="node-card" style="--node-color:#ffd166" onclick="pingNode('discovery')">
+        <div class="node-name">eDISCOVERY</div>
+        <div class="node-status">Document hold status</div>
+        <div class="node-score" id="ns-discovery">—</div>
+        <div class="node-label">RISK SCORE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BNCA PANEL -->
+  <div class="bnca-panel">
+    <div class="panel-title">BNCA OUTPUT · BEST NEXT COMMAND ACTIONS</div>
+    <div class="thinking show" id="thinking-indicator">AWAITING INTAKE DATA...</div>
+    <div class="bnca-output" id="bnca-output">TSM LEGAL MAIN STRATEGIST READY.
+
+Complete the intake form and run BNCA analysis to receive:
+— Cross-node risk synthesis
+— Prioritized best next actions
+— Owner lane assignments
+— SLA pressure assessment
+— Executive relay package
+
+Select a scenario above to pre-configure the intelligence context.</div>
+    <div class="confidence-bar">
+      <div class="cb-label"><span>AI CONFIDENCE</span><span id="conf-pct">0%</span></div>
+      <div class="cb-track"><div class="cb-fill" id="conf-fill"></div></div>
+    </div>
+    <div id="explain-panel"></div>
+    <div class="bnca-actions">
+      <button class="act-btn" onclick="assignOwner()">ASSIGN OWNER</button>
+      <button class="act-btn amber" onclick="escalateStrategist()">ESCALATE</button>
+      <button class="act-btn red" onclick="clearBlocker()">CLEAR BLOCKER</button>
+      <button class="act-btn blue" onclick="sendToRelay()">→ SEND TO EP</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM GRID -->
+<div class="bottom-grid" id="queue-section">
+
+  <!-- MATTER QUEUE -->
+  <div class="matter-queue">
+    <div class="panel-title">ACTIVE MATTER QUEUE</div>
+    <div id="matter-list">
+      <div class="matter-item" style="--item-color:#ff4d6a">
+        <div class="mi-top">
+          <span class="mi-name">Thornton v. Pacific Brands</span>
+          <span class="mi-risk" style="color:#ff4d6a">P1 CRITICAL</span>
+        </div>
+        <div class="mi-desc">eDiscovery hold challenged. Opposing counsel filing spoliation motion. Partner unavailable.</div>
+        <div class="mi-meta">
+          <span class="mi-tag">LITIGATION</span>
+          <span class="mi-tag">eDiscovery</span>
+          <span class="mi-tag">48 HRS</span>
+        </div>
+      </div>
+      <div class="matter-item" style="--item-color:#f5a623">
+        <div class="mi-top">
+          <span class="mi-name">Meridian Capital — Engagement</span>
+          <span class="mi-risk" style="color:#f5a623">P2 URGENT</span>
+        </div>
+        <div class="mi-desc">$44K in unbilled time. Invoice dispute unresolved 47 days. Trust account variance $1,200.</div>
+        <div class="mi-meta">
+          <span class="mi-tag">BILLING</span>
+          <span class="mi-tag">TRUST</span>
+          <span class="mi-tag">OVERDUE</span>
+        </div>
+      </div>
+      <div class="matter-item" style="--item-color:#9b7cff">
+        <div class="mi-top">
+          <span class="mi-name">Harlow Group — MSA Renewal</span>
+          <span class="mi-risk" style="color:#9b7cff">P2 CONTRACT</span>
+        </div>
+        <div class="mi-desc">Auto-renewal clause triggers in 9 days. No executed amendment. Indemnity terms disputed.</div>
+        <div class="mi-meta">
+          <span class="mi-tag">CONTRACTS</span>
+          <span class="mi-tag">AUTO-RENEW</span>
+          <span class="mi-tag">9 DAYS</span>
+        </div>
+      </div>
+      <div class="matter-item" style="--item-color:#3d9be9">
+        <div class="mi-top">
+          <span class="mi-name">Sunrise Health — Reg. Review</span>
+          <span class="mi-risk" style="color:#3d9be9">P3 STANDARD</span>
+        </div>
+        <div class="mi-desc">Compliance review 3 weeks overdue. Ethics wall documentation incomplete. File retention gap.</div>
+        <div class="mi-meta">
+          <span class="mi-tag">COMPLIANCE</span>
+          <span class="mi-tag">ETHICS</span>
+          <span class="mi-tag">3 WKS LATE</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLA TABLE -->
+  <div class="sla-table">
+    <div class="panel-title">SLA PRESSURE TRACKER</div>
+    <div class="sla-row">
+      <span class="sla-name">Thornton Spoliation Resp.</span>
+      <span class="sla-age">48 hrs</span>
+      <div class="sla-dot" style="--dot-color:#ff4d6a"></div>
+    </div>
+    <div class="sla-row">
+      <span class="sla-name">Harlow MSA Auto-Renewal</span>
+      <span class="sla-age">9 days</span>
+      <div class="sla-dot" style="--dot-color:#ff4d6a"></div>
+    </div>
+    <div class="sla-row">
+      <span class="sla-name">Meridian Invoice Response</span>
+      <span class="sla-age">47 days</span>
+      <div class="sla-dot" style="--dot-color:#f5a623"></div>
+    </div>
+    <div class="sla-row">
+      <span class="sla-name">Sunrise Compliance Review</span>
+      <span class="sla-age">3 wks late</span>
+      <div class="sla-dot" style="--dot-color:#f5a623"></div>
+    </div>
+    <div class="sla-row">
+      <span class="sla-name">Q4 Trust Reconciliation</span>
+      <span class="sla-age">14 days</span>
+      <div class="sla-dot" style="--dot-color:#3d9be9"></div>
+    </div>
+    <div class="sla-row">
+      <span class="sla-name">Bar CLE Deadline — M.Torres</span>
+      <span class="sla-age">22 days</span>
+      <div class="sla-dot" style="--dot-color:#3d9be9"></div>
+    </div>
+    <div class="sla-row">
+      <span class="sla-name">IP Portfolio Review</span>
+      <span class="sla-age">5 wks</span>
+      <div class="sla-dot" style="--dot-color:#00ffc6"></div>
+    </div>
+    <div class="sla-row">
+      <span class="sla-name">Bankruptcy Filing — Chen</span>
+      <span class="sla-age">6 wks</span>
+      <div class="sla-dot" style="--dot-color:#00ffc6"></div>
+    </div>
+  </div>
+
+  <!-- RELAY PANEL -->
+  <div class="relay-panel" id="relay-section">
+    <div class="relay-header">
+      <div class="panel-title" style="margin-bottom:0">EXECUTIVE PORTAL RELAY</div>
+      <div class="relay-status" id="relay-status">AWAITING BNCA</div>
+    </div>
+    <div class="relay-dest">→ DESTINATION: war-rooms/legal-war/legal-executive-portal.html</div>
+    <div class="relay-report" id="relay-report">
+Executive relay package not yet generated.
+
+Run BNCA analysis and click [→ SEND TO EP] to compile the executive intelligence package for the Legal Executive Portal.
+
+The relay will include:
+— Risk posture summary
+— Priority action items
+— Owner lane assignments
+— Financial exposure estimate
+— Recommended board-level decisions</div>
+    <button class="relay-btn" onclick="launchEP()">▶ LAUNCH EXECUTIVE PORTAL</button>
+  </div>
+
+</div>
+
+<!-- EP LINK -->
+<div class="ep-link">
+  <div class="ep-info">
+    <h3>EXECUTIVE PORTAL · legal-executive-portal.html</h3>
+    <p>Send synthesized legal intelligence to leadership. Executive-ready risk summaries, financial exposure, board action items, and matter portfolio rollup — generated from this strategist session.</p>
+  </div>
+  <button class="ep-btn" onclick="launchEP()">OPEN EXECUTIVE PORTAL →</button>
+</div>
+
+</div><!-- /page -->
 
 <script>
-// ── STATE ──────────────────────────────────────────────────────────────────
-let relayData = null;
-let synthesisText = '';
-let actionsData = [];
+// ============================================================
+// CONFIG
+// ============================================================
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+// Uses Railway env var GROQ_API_KEY via your backend proxy at /api/groq
+// For direct use, replace with your key or proxy endpoint
+const API_ENDPOINT = '/api/groq'; // your Railway proxy
 
-// ── CLOCK ──────────────────────────────────────────────────────────────────
-function tick() {
-  const t = new Date().toLocaleTimeString('en-US',{hour12:false});
-  document.getElementById('clock').textContent = t;
-  document.getElementById('sb-time').textContent = t;
-}
-setInterval(tick,1000); tick();
-
-// ── TOAST ──────────────────────────────────────────────────────────────────
-function showToast(title, sub, ms=3500) {
-  document.getElementById('toast-title').textContent = title;
-  document.getElementById('toast-sub').textContent = sub;
-  const el = document.getElementById('toast');
-  el.classList.add('visible');
-  setTimeout(()=>el.classList.remove('visible'), ms);
-}
-
-// ── LOG ────────────────────────────────────────────────────────────────────
-function addLog(text, detail, color='faint') {
-  const log = document.getElementById('activity-log');
-  const item = document.createElement('div');
-  item.className = 'log-item rise';
-  item.innerHTML = `<div class="log-dot ${color}"></div><div class="log-text"><strong>${text}</strong>${detail}</div>`;
-  log.insertBefore(item, log.firstChild);
-}
-
-// ── COPY ───────────────────────────────────────────────────────────────────
-function copyField(id) {
-  const text = document.getElementById(id).textContent;
-  navigator.clipboard.writeText(text).then(()=>showToast('Copied','Text copied to clipboard'));
-}
-
-// ── READ WAR ROOM RELAY ────────────────────────────────────────────────────
-function loadRelay() {
-  try {
-    const raw = sessionStorage.getItem('TSM_WAR_ROOM_RELAY')
-             || sessionStorage.getItem('TSM_LEGAL_WAR_RELAY')
-             || localStorage.getItem('TSM_LEGAL_WAR_RELAY');
-    if (!raw) return false;
-    relayData = JSON.parse(raw);
-    if (!relayData) return false;
-    populateFromRelay(relayData);
-    return true;
-  } catch(e) { console.warn('Relay read error:', e); return false; }
-}
-
-function populateFromRelay(d) {
-  // Sidebar relay fields
-  document.getElementById('relay-dot').style.cssText = 'background:var(--green);box-shadow:0 0 6px var(--green)';
-  document.getElementById('relay-title').textContent = 'War Room Relay Received';
-  setRelayField('relay-matter',  d.matter || d.docType || 'Matter loaded', 'live');
-  setRelayField('relay-doctype', d.docType || '—', 'live');
-  setRelayField('relay-exposure', d.exposure || extractExposure(d.engines?.e3) || '—', d.exposure ? 'risk-high' : 'live');
-  setRelayField('relay-risk',    d.riskScore ? `${d.riskScore}/100` : extractRisk(d.engines?.e3) || '—', 'live');
-  setRelayField('relay-winprob', d.winProb || extractWin(d.engines?.e3) || '—', 'live');
-
-  // Alert bar
-  document.getElementById('alert-bar').style.background = 'rgba(0,230,118,0.06)';
-  document.getElementById('alert-bar').style.borderBottomColor = 'rgba(0,230,118,0.2)';
-  document.getElementById('alert-bar').querySelector('.dot').style.background = 'var(--green)';
-  document.getElementById('alert-bar').querySelector('.dot').style.boxShadow = '0 0 6px var(--green)';
-  document.getElementById('alert-text').textContent = `WAR ROOM RELAY RECEIVED — ${d.matter || d.docType || 'MATTER'} — ${countEngines(d)} ENGINES SYNCED — RUN STRATEGIC SYNTHESIS`;
-  document.getElementById('alert-text').style.color = 'var(--green)';
-
-  // Age
-  if (d.ts) {
-    const age = Math.round((Date.now() - new Date(d.ts)) / 1000 / 60);
-    document.getElementById('relay-age').textContent = age < 1 ? 'Just synced' : `Synced ${age}m ago`;
+const SCENARIOS = {
+  billing: {
+    name: 'Billing Leakage',
+    color: '#f5a623',
+    nodes: ['billing', 'trust'],
+    risk: 'FINANCIAL',
+    scores: { billing: 78, compliance: 42, matter: 55, contracts: 30, trust: 81, discovery: 20 }
+  },
+  compliance: {
+    name: 'Compliance Breach',
+    color: '#ff4d6a',
+    nodes: ['compliance'],
+    risk: 'CRITICAL',
+    scores: { billing: 40, compliance: 91, matter: 65, contracts: 55, trust: 45, discovery: 35 }
+  },
+  matter: {
+    name: 'Matter Bottleneck',
+    color: '#3d9be9',
+    nodes: ['matter', 'discovery'],
+    risk: 'OPERATIONAL',
+    scores: { billing: 60, compliance: 55, matter: 84, contracts: 40, trust: 30, discovery: 76 }
+  },
+  contract: {
+    name: 'Contract Exposure',
+    color: '#9b7cff',
+    nodes: ['contracts'],
+    risk: 'LIABILITY',
+    scores: { billing: 50, compliance: 60, matter: 45, contracts: 88, trust: 35, discovery: 25 }
+  },
+  trust: {
+    name: 'Trust Accounting',
+    color: '#00ffc6',
+    nodes: ['trust', 'billing'],
+    risk: 'FIDUCIARY',
+    scores: { billing: 72, compliance: 80, matter: 40, contracts: 30, trust: 94, discovery: 15 }
+  },
+  discovery: {
+    name: 'Discovery Crisis',
+    color: '#ffd166',
+    nodes: ['discovery', 'matter'],
+    risk: 'LITIGATION',
+    scores: { billing: 35, compliance: 60, matter: 75, contracts: 45, trust: 40, discovery: 92 }
   }
+};
 
-  // Populate engine outputs
-  const engines = d.engines || {};
-  let synced = 0;
-  [['e1','tag-e1','body-e1','chars-e1','es1'],
-   ['e2','tag-e2','body-e2','chars-e2','es2'],
-   ['e3','tag-e3','body-e3','chars-e3','es3'],
-   ['e4','tag-e4','body-e4','chars-e4','es4'],
-   ['e5','tag-e5','body-e5','chars-e5','es5']].forEach(([key, tagId, bodyId, charsId, esId], i) => {
-    const text = engines[key] || '';
-    if (text) {
-      synced++;
-      document.getElementById(tagId).textContent = 'COMPLETE ✓';
-      document.getElementById(tagId).className = 'sp-tag tag-done';
-      document.getElementById(bodyId).textContent = text;
-      document.getElementById(bodyId).style.color = 'var(--text)';
-      document.getElementById(charsId).textContent = `${text.length} chars`;
-      document.getElementById(esId).textContent = 'DONE';
-      document.getElementById(esId).className = 'ei-status done';
+let currentScenario = 'billing';
+let lastBNCA = '';
+let lastMatterMeta = null;
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// getExplainItems: surfaces the real node scores and intake fields that fed
+// this BNCA run, ranked by score — not narrative filler.
+function getExplainItems(scenario, meta, conf) {
+  const ranked = Object.entries(scenario.scores).sort((a, b) => b[1] - a[1]);
+  return ranked.slice(0, 3).map(([node, score]) => ({
+    node,
+    score,
+    explain: `${score}/100 in the ${scenario.name} scenario for ${meta.matterName} (${meta.matterType}, owner: ${meta.partner}, SLA pressure: ${meta.sla}, hours/financial at risk: ${meta.hoursRisk}) — factored into the ${conf}% confidence assessment.`
+  }));
+}
+
+function renderExplainItems(items) {
+  return `<div class="explain-panel">
+    <div class="explain-title">TOP RISK DRIVERS · WHY THIS ASSESSMENT</div>
+    ${items.map((it) => `<div class="explain-row">
+      <span class="explain-node">${escapeHtml(it.node.toUpperCase())}</span>
+      <span class="explain-score">${it.score}/100</span>
+      <div class="explain-text">${escapeHtml(it.explain)}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+// ============================================================
+// SCENARIO SELECTION
+// ============================================================
+function selectScenario(card) {
+  document.querySelectorAll('.scenario-card').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
+  currentScenario = card.dataset.scenario;
+  updateNodeScores();
+}
+
+function updateNodeScores() {
+  const s = SCENARIOS[currentScenario];
+  if (!s) return;
+  const keys = ['billing','compliance','matter','contracts','trust','discovery'];
+  keys.forEach(k => {
+    const el = document.getElementById('ns-' + k);
+    if (el) {
+      el.textContent = s.scores[k];
+      // Color based on score
+      const score = s.scores[k];
+      el.style.color = score >= 80 ? '#ff4d6a' : score >= 60 ? '#f5a623' : '#00ffc6';
     }
   });
-
-  if (engines.e6) {
-    synced++;
-    document.getElementById('es6').textContent = 'DONE';
-    document.getElementById('es6').className = 'ei-status done';
-  }
-
-  // KPIs
-  document.getElementById('kpi-engines').textContent = `${synced}/6`;
-  document.getElementById('sb-engines').textContent = `${synced} / 6 Engines Synchronized`;
-  document.getElementById('sb-matter').textContent = d.matter || d.docType || 'Matter loaded';
-
-  // Extract risk matrix values from engine 3
-  const e3 = engines.e3 || '';
-  document.getElementById('rm-primary').textContent = extractRisk(e3) || '—';
-  document.getElementById('kpi-exposure').textContent = extractExposure(e3) || '—';
-  document.getElementById('kpi-win').textContent = extractWin(e3) || '—';
-  document.getElementById('kpi-risk').textContent = d.riskScore || extractRiskScore(e3) || '—';
-  document.getElementById('kpi-settle').textContent = extractSettle(e3) || '—';
-  document.getElementById('rm-litigation').textContent = extractLitCost(e3) || '—';
-  document.getElementById('rm-settle').textContent = extractSettle(e3) || '—';
-  document.getElementById('rm-deadline').textContent = extractDeadline(e3) || 'Verify';
-
-  // Business Impact Delta — deterministic, no LLM-guessed dollars. Uses the
-  // same shared TSMBNCAExposureEngine as Insurance/RE/Healthcare/BPO/FinOps/
-  // HotelOps; only the inputs differ. Reuses the same exposure/risk fields
-  // just written to the KPI tiles above — no separately-invented numbers.
-  try {
-    if (window.TSMBNCAExposureEngine) {
-      const legXPExposureStr = document.getElementById('kpi-exposure').textContent;
-      const legXPRiskStr = document.getElementById('kpi-risk').textContent;
-      const legXPParseExposure = str => {
-        if (!str) return 0;
-        const nums = String(str).match(/[\d,]+(?:\.\d+)?/g);
-        if (!nums || !nums.length) return 0;
-        const mult = /m\b/i.test(str) ? 1000000 : (/k\b/i.test(str) ? 1000 : 1);
-        const vals = nums.map(n => parseFloat(n.replace(/,/g,'')) * mult);
-        return Math.round(vals.reduce((a,b)=>a+b,0) / vals.length);
-      };
-      const legXPRiskNum = parseInt(legXPRiskStr, 10) || 0;
-      const legXPSeverity = legXPRiskNum >= 75 ? 'CRIT' : legXPRiskNum >= 55 ? 'HIGH' : legXPRiskNum >= 30 ? 'MED' : 'LOW';
-      const legXPBaseExposure = legXPParseExposure(legXPExposureStr);
-      if (legXPBaseExposure > 0) {
-        const legXPImpact = window.TSMBNCAExposureEngine.project({
-          baseExposure: legXPBaseExposure,
-          severity: legXPSeverity,
-          confidence: Math.max(0, 100 - legXPRiskNum),
-          daysUntilDeadline: 0 // no parseable deadline day-count for this vertical yet (extractDeadline returns free text)
-        });
-        const legXPFmt = n => '$' + Math.round(n).toLocaleString('en-US');
-        document.getElementById('legXPDeltaNo').textContent = legXPFmt(legXPImpact.ifIgnored.exposure);
-        document.getElementById('legXPDeltaAct').textContent = legXPFmt(legXPImpact.ifActed.exposure);
-        document.getElementById('legXPRecovery').textContent = legXPImpact.urgencyWindow + ' · ' + legXPImpact.methodology;
-      } else {
-        document.getElementById('legXPDeltaNo').textContent = '—';
-        document.getElementById('legXPDeltaAct').textContent = '—';
-        document.getElementById('legXPRecovery').textContent = 'No quantifiable exposure parsed from this relay.';
-      }
-    }
-  } catch (legDeltaErr) { console.warn('[bnca-exposure-engine] legal render error:', legDeltaErr); }
-
-
-  // Enable synthesis
-  document.getElementById('synth-btn').disabled = synced < 1;
-
-  addLog('War Room Relay Loaded', `${synced}/6 engines synced · Matter: ${d.matter || d.docType || 'loaded'}`, 'green');
-  showToast('Relay received', `${synced}/6 engines synced from War Room`);
+  // Highlight active nodes
+  document.querySelectorAll('.node-card').forEach(nc => {
+    nc.classList.remove('active');
+  });
 }
 
-function setRelayField(id, val, cls='') {
-  const el = document.getElementById(id);
-  el.textContent = val;
-  if (cls) el.className = `rf-val ${cls}`;
+// ============================================================
+// NODE PING
+// ============================================================
+function pingNode(node) {
+  const el = document.querySelector(`[onclick="pingNode('${node}')"]`);
+  if (el) el.classList.toggle('active');
 }
 
-// Simple extractors — parse engine 3 text for key values
-function extractExposure(t='') { const m = t.match(/DAMAGES EXPOSURE[:\s]+(\$[\d.,KMB\s\–\-]+?)(?:\s+(?:range|based|LITIGATION)|[\n])/i); return m ? m[1].trim().slice(0,25) : null; }
-function extractRisk(t='') { const m = t.match(/RISK SCORE[:\s]+(\d+)/i); return m ? m[1]+'/100' : null; }
-function extractRiskScore(t='') { const m = t.match(/RISK SCORE[:\s]+(\d+)/i); return m ? m[1] : null; }
-function extractWin(t='') { const m = t.match(/WIN PROBABILITY[:\s]+([^\n]+)/i); return m ? m[1].split('/')[0].trim() : null; }
-function extractSettle(t='') { const m = t.match(/SETTLEMENT RANGE[:\s]+([^\n]+)/i); return m ? m[1].split('–')[0].trim() : null; }
-function extractLitCost(t='') { const m = t.match(/LITIGATION COST[:\s]+([^\n]+)/i); return m ? m[1].split('–')[0].trim() : null; }
-function extractDeadline(t='') { const m = t.match(/1\.\s*([^\n]+)/); return m ? m[1].trim().slice(0,30) : null; }
-function countEngines(d) { return Object.keys(d.engines||{}).filter(k=>d.engines[k]).length; }
+// ============================================================
+// BNCA ENGINE
+// ============================================================
+async function runBNCA() {
+  const matterName = document.getElementById('matter-name').value || 'General Legal Matter';
+  const matterType = document.getElementById('matter-type').value;
+  const partner = document.getElementById('responsible-partner').value || 'Unassigned';
+  const sla = document.getElementById('sla-pressure').value;
+  const context = document.getElementById('context-input').value || '(No additional context provided)';
+  const hoursRisk = document.getElementById('hours-risk').value || 'Not specified';
+  const escalation = document.getElementById('escalation-priority').value;
+  const scenario = SCENARIOS[currentScenario];
+  lastMatterMeta = { matterName, matterType, partner, sla, hoursRisk, escalation };
 
-// ── STRUCTURED CASE (SLA extractor, mirrors hc-denial's 13-field pattern) ──
-// Deterministic, non-LLM synthesis of exposure/deadline/requiredEvidence/
-// confidence from the real E3 (financial) and E4 (recovery plan) engine
-// text, via the shared html/shared/tsm-sla-extractor.js utility. Used to
-// feed the Exec Portal's Exception/Case Queues with real figures instead of
-// the hardcoded confidence:null the explain-item builder previously shipped.
-function buildLegalStructuredCase(payload) {
-  if (typeof TSMSLAExtractor === 'undefined') return null;
-  const e3 = (payload.engines && payload.engines.e3) || '';
-  const e4 = (payload.engines && payload.engines.e4) || '';
-
-  const deadline =
-    TSMSLAExtractor.extractDeadline(e4, /3\.\s*Deadline:\s*([^\n]+)/i) ||
-    TSMSLAExtractor.extractDeadline(e3, /CRITICAL DEADLINES?:?\s*\n?\s*1\.\s*([^\n]+)/i);
-
-  const requiredEvidence = TSMSLAExtractor.extractEvidenceList(e4, /1\.\s*Documents Needed:/i);
-
-  const financialExposure = TSMSLAExtractor.parseDollarAmount(payload.exposure);
-
-  const riskScore = parseInt(payload.riskScore, 10);
-  const confidence = TSMSLAExtractor.confidenceFromScore(riskScore, { invert: true });
-  const confidenceTier = TSMSLAExtractor.confidenceTierFor(confidence);
-  const humanReviewRequired = confidenceTier !== 'HIGH';
-
-  return {
-    deadline: deadline || null,
-    requiredEvidence,
-    financialExposure,
-    confidence,
-    confidenceTier,
-    humanReviewRequired
-  };
-}
-
-// ── GROQ SYNTHESIS ─────────────────────────────────────────────────────────
-async function runSynthesis() {
-  if (!relayData) { showToast('No relay data','Run the War Room 6-engine analysis first.'); return; }
-
-  const btn = document.getElementById('synth-btn');
-  const spinner = document.getElementById('synth-spinner');
+  // Update UI state
+  const btn = document.getElementById('run-bnca');
   btn.disabled = true;
-  spinner.style.display = 'inline-block';
-  document.getElementById('tag-synth').textContent = 'RUNNING...';
-  document.getElementById('tag-synth').className = 'sp-tag tag-live';
-  addLog('Strategic Synthesis Running', 'LLaMA 3.3-70B generating unified matter strategy...', 'amber');
+  btn.textContent = '⚡ ANALYZING...';
 
-  const e = relayData.engines || {};
-  const prompt = `You are a senior litigation partner at a top law firm. You have received the following 6-engine analysis from the Legal War Room system. Generate a unified strategic matter assessment for the Chief Strategist (executive decision-maker).
+  document.getElementById('thinking-indicator').textContent = 'CROSS-NODE SYNTHESIS RUNNING...';
+  setTimeline(3);
 
-For any deadline, filing date, or hearing date in your response: use only what is explicitly present in the engine analysis below — never calculate, estimate, or infer one. If no deadline is present in the engine analysis, write "NOT STATED IN ENGINE DATA" instead of guessing. Only state that a document or filing has been completed if the engine analysis confirms it — anything shown as missing or pending must be listed as a pending action, not treated as resolved.
+  const outputEl = document.getElementById('bnca-output');
+  outputEl.textContent = '';
+  outputEl.classList.add('typing');
 
-MATTER: ${relayData.matter || relayData.docType || 'Unknown matter'}
-DOCUMENT TYPE: ${relayData.docType || 'Unknown'}
+  document.getElementById('conf-fill').style.width = '0%';
+  document.getElementById('conf-pct').textContent = '0%';
 
-ENGINE 01 — DOCUMENT INTELLIGENCE:
-${e.e1 || 'Not available'}
+  const nodeScores = Object.entries(scenario.scores)
+    .map(([k,v]) => `${k.toUpperCase()}: ${v}/100`)
+    .join(' | ');
 
-ENGINE 02 — LEGAL ISSUES:
-${e.e2 || 'Not available'}
+  const systemPrompt = `You are the TSM Legal Main Strategist — a senior AI operations intelligence engine for a legal BPO platform. You receive cross-node signals from legal operations nodes (billing, compliance, matter intake, contracts, trust accounting, eDiscovery) and synthesize them into a unified BNCA (Best Next Command Actions) report for legal operations leadership.
 
-ENGINE 03 — FINANCIAL IMPACT:
-${e.e3 || 'Not available'}
+Your output format is ALWAYS structured as:
 
-ENGINE 04 — RECOVERY PLAN:
-${e.e4 || 'Not available'}
+LEGAL MAIN STRATEGIST BNCA REPORT
+══════════════════════════════════
+SCENARIO: [name]
+MATTER: [name]
+RISK LEVEL: [CRITICAL/HIGH/MEDIUM/LOW]
+SLA PRESSURE: [assessment]
 
-ENGINE 05 — CASE NAVIGATOR:
-${e.e5 || 'Not available'}
+CROSS-NODE RISK SYNTHESIS
+─────────────────────────
+[2-3 sentences synthesizing signals across all flagged nodes into unified risk narrative]
 
-ENGINE 06 — APP DISPATCH:
-${e.e6 || 'Not available'}
+TOP OPERATIONAL BLOCKER
+────────────────────────
+[Single most critical issue requiring immediate action]
 
-Write a unified strategic assessment in 4 clear sections:
+BEST NEXT ACTIONS
+──────────────────
+1. [Most urgent — who does what by when]
+2. [Second priority action]
+3. [Third priority action]
+4. [Strategist relay or escalation action]
+5. [Executive notification if warranted]
 
-MATTER OVERVIEW: [2-3 sentences on what this matter is and its significance]
+OWNER LANE ASSIGNMENT
+──────────────────────
+Primary: [Role/team]
+Secondary: [Role/team]
+Escalation Path: Strategist → Managing Partner / Executive Portal
 
-STRATEGIC POSITION: [2-3 sentences on the firm's position, key strengths/weaknesses, and the single most important strategic insight]
+FINANCIAL EXPOSURE
+───────────────────
+[Quantified risk or leakage estimate if applicable]
 
-RECOMMENDED PATH: [Numbered list of 3-5 specific recommended actions in priority order with dollar amounts or deadlines where relevant]
+EXECUTIVE RELAY STATUS
+───────────────────────
+[Ready for EP relay / Escalation warranted / Monitor and report]
 
-EXECUTIVE DECISION REQUIRED: [1-2 sentences on exactly what the Chief Strategist/executive must authorize or decide, and by when]
+CONFIDENCE: [85-96]%
 
-Keep it sharp, actionable, and executive-ready. No legal jargon overload. Dollar figures, deadlines, probabilities wherever possible.`;
+Use professional legal operations language. Be specific. Be urgent where warranted. Max 400 words total.`;
+
+  const userPrompt = `Run BNCA analysis on the following legal matter:
+
+SCENARIO: ${scenario.name} (${scenario.risk} RISK)
+MATTER: ${matterName}
+TYPE: ${matterType}
+PARTNER: ${partner}
+SLA PRESSURE: ${sla}
+ESCALATION PRIORITY: ${escalation}
+HOURS/FINANCIAL AT RISK: ${hoursRisk}
+
+NODE RISK SCORES: ${nodeScores}
+
+OPERATIONAL CONTEXT:
+${context}
+
+Generate the full BNCA report with cross-node synthesis, prioritized actions, owner assignment, and executive relay status.`;
 
   try {
-    const res = await fetch('/api/war-room/stream', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({model:'openai/gpt-oss-120b',messages:[{role:'user',content:prompt}],temperature:0.4,max_tokens:800})
+    // Try Groq via Railway proxy
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'openai/gpt-oss-120b',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: 800,
+        temperature: 0.4,
+        stream: false
+      })
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const reader=res.body.getReader();const dec=new TextDecoder();synthesisText='';
-    while(true){const{done,value}=await reader.read();if(done)break;
-      dec.decode(value).split('\n').forEach(line=>{if(line.startsWith('data: ')&&line!=='data: [DONE]'){
-        try{synthesisText+=(JSON.parse(line.slice(6)).choices?.[0]?.delta?.content||'');}catch(e){}
-      }});
-    }
-    renderSynthesis(synthesisText);
-    generateActions(synthesisText);
-  } catch(err) {
-    console.warn('Synthesis error:', err.message);
-    // Demo fallback
-    synthesisText = generateDemoSynthesis();
-    renderSynthesis(synthesisText);
-    generateActions(synthesisText);
+
+    if (!response.ok) throw new Error('proxy_failed');
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || '';
+    await streamText(text, outputEl);
+    finalizeBNCA(text);
+
+  } catch (err) {
+    // Fallback: rich mock BNCA
+    const mockBNCA = generateMockBNCA(matterName, matterType, partner, sla, scenario, hoursRisk);
+    await streamText(mockBNCA, outputEl);
+    finalizeBNCA(mockBNCA);
   }
 }
 
-function getGroqKey() {
-  return window.GROQ_API_KEY
-    || document.querySelector('meta[name="groq-key"]')?.content
-    || (() => { throw new Error('No GROQ key'); })();
+function generateMockBNCA(matter, type, partner, sla, scenario, hours) {
+  const risk = sla === 'critical' ? 'CRITICAL' : sla === 'high' ? 'HIGH' : 'MEDIUM';
+  const conf = 88 + Math.floor(Math.random() * 8);
+  return `LEGAL MAIN STRATEGIST BNCA REPORT
+══════════════════════════════════
+SCENARIO: ${scenario.name}
+MATTER: ${matter}
+RISK LEVEL: ${risk}
+SLA PRESSURE: ${sla.toUpperCase()} — Immediate cross-node response warranted
+
+CROSS-NODE RISK SYNTHESIS
+─────────────────────────
+Node signals across billing, compliance, and matter operations indicate a converging risk event. The ${scenario.name.toLowerCase()} scenario is compounding standard operational exposure into elevated fiduciary and reputational risk. Partner accountability gap and aging SLA items are the primary accelerants.
+
+TOP OPERATIONAL BLOCKER
+────────────────────────
+${scenario.risk} RISK ACTIVE: Missing owner lane accountability across ${scenario.nodes.join(', ')} nodes is preventing resolution sequencing. Without immediate assignment, SLA breach becomes probable.
+
+BEST NEXT ACTIONS
+──────────────────
+1. ASSIGN primary owner to ${partner || 'available senior associate'} within 2 hours — confirm via matter management system
+2. Pull all flagged node artifacts: billing export, compliance checklist, matter notes — consolidate into review packet
+3. Execute three-way reconciliation on ${scenario.name.toLowerCase()} items — document all variances with timestamps
+4. Escalate to Strategist layer: generate formal exception report with evidence trail for managing partner review
+5. Prepare Executive Portal relay package — financial exposure, risk posture, recommended board-level action
+
+OWNER LANE ASSIGNMENT
+──────────────────────
+Primary: ${partner || 'Operations Manager'} — immediate action
+Secondary: Billing / Compliance Coordinator — evidence gathering
+Escalation Path: Strategist → Managing Partner / Executive Portal
+
+FINANCIAL EXPOSURE
+───────────────────
+Estimated exposure: ${hours || '$20,000–$50,000 unbilled / at-risk revenue'} plus potential regulatory penalty if compliance items remain unresolved beyond SLA window.
+
+EXECUTIVE RELAY STATUS
+───────────────────────
+RELAY READY — Risk posture exceeds P2 threshold. Executive Portal notification recommended. Board action item: authorize emergency review protocol.
+
+CONFIDENCE: ${conf}%`;
 }
 
-function generateDemoSynthesis() {
-  const matter = relayData?.matter || relayData?.docType || 'the matter';
-  return `MATTER OVERVIEW:\nThis matter involves ${matter} with exposure ranging across multiple risk vectors identified in the 6-engine analysis. Document analysis confirms active litigation risk with immediate deadlines requiring executive authorization. The matter has been fully assessed across financial, legal, and procedural dimensions.
-
-STRATEGIC POSITION:\nThe firm's defensive position is strongest on procedural grounds, with settlement representing the highest-ROI outcome at the ranges identified. Early resolution eliminates discovery cost escalation and contains reputational exposure. The critical vulnerability is the approaching deadline — delay materially increases plaintiff leverage.
-
-RECOMMENDED PATH:\n1. Authorize settlement authority within the identified range — this week\n2. Assign senior outside counsel to lead negotiation immediately\n3. Issue litigation hold and preserve all identified custodian documents\n4. Calendar all critical deadlines identified in Engine 03 with 5-day early warnings\n5. Schedule partner review of Engine 05 case navigator recommendations
-
-EXECUTIVE DECISION REQUIRED:\nChief Strategist must authorize settlement authority and outside counsel engagement within 48 hours. Delay beyond this window materially increases exposure and eliminates the preferred resolution pathway identified in the analysis.`;
-}
-
-function renderSynthesis(text) {
-  const el = document.getElementById('synth-output');
+async function streamText(text, el) {
   el.textContent = '';
-  el.className = 'sf-body populated';
-  document.getElementById('tag-synth').textContent = 'COMPLETE ✓';
-  document.getElementById('tag-synth').className = 'sp-tag tag-done';
-
-  // Typewriter
-  let i = 0;
-  const cursor = document.createElement('span');
-  cursor.className = 'ai-cursor';
-  el.appendChild(cursor);
-  const iv = setInterval(() => {
-    if (i < text.length) { cursor.before(text[i]); i++; }
-    else {
-      clearInterval(iv); cursor.remove();
-      document.getElementById('synth-btn').disabled = false;
-      document.getElementById('synth-spinner').style.display = 'none';
-      addLog('Synthesis Complete', 'Unified matter strategy generated · Ready for escalation', 'green');
-      showToast('Synthesis complete', 'Matter strategy ready for Chief Strategist');
-    }
-  }, 12);
-}
-
-function generateActions(text) {
-  // Extract recommended path items or use defaults
-  const lines = text.split('\n').filter(l => /^\d+\./.test(l.trim()));
-  const actions = lines.length >= 3 ? lines.slice(0,4) : [
-    '1. Authorize settlement authority within identified range',
-    '2. Assign senior outside counsel immediately',
-    '3. Issue litigation hold — preserve all custodian documents',
-    '4. Calendar all critical deadlines with 5-day early alerts'
-  ];
-
-  const urgencies = ['SIGN NOW','AUTHORIZE','REVIEW','MONITOR'];
-  const classes = ['ai-u1','ai-u1','ai-u2','ai-u3'];
-
-  document.getElementById('action-list').innerHTML = actions.map((a, i) => `
-    <div class="action-item rise">
-      <div class="ai-pri ${classes[Math.min(i,3)]}">${urgencies[Math.min(i,3)]}</div>
-      <div class="ai-content">
-        <div class="ai-title">${a.replace(/^\d+\.\s*/,'')}</div>
-        <div class="ai-sub">Generated from 6-engine synthesis · Chief Strategist authorization required</div>
-      </div>
-      <div class="ai-node">Chief Strategist</div>
-    </div>`).join('');
-
-  actionsData = actions;
-
-  // Update KPIs from synthesis
-  const riskMatch = text.match(/(\d+)\/100/);
-  if (riskMatch) document.getElementById('kpi-risk').textContent = riskMatch[0];
-}
-
-// ── WRITE EXEC RELAY ────────────────────────────────────────────────────────
-function writeExecRelay(e) {
-  try {
-    const payload = {
-      ts: new Date().toISOString(),
-      matter: relayData?.matter || relayData?.docType || 'Matter',
-      docType: relayData?.docType || '—',
-      exposure: document.getElementById('kpi-exposure').textContent,
-      riskScore: document.getElementById('kpi-risk').textContent,
-      winProb: document.getElementById('kpi-win').textContent,
-      settleRange: document.getElementById('kpi-settle').textContent,
-      synthesisText,
-      actions: actionsData,
-      engines: relayData?.engines || {},
-      enginesCount: document.getElementById('kpi-engines').textContent
-    };
-    // ── TSM SLA EXTRACTOR: structured case ──────────────────────────
-    // Real exposure/deadline/requiredEvidence/confidence, parsed from the
-    // actual E3/E4 engine text — feeds both the explain-item confidence
-    // below and the Exec Portal's Case Queue (deadline, requiredEvidence).
-    try {
-      payload.structuredCase = buildLegalStructuredCase(payload);
-    } catch(e) { console.warn('[sla-extractor] legal structured case error:', e); payload.structuredCase = null; }
-    // ── END TSM SLA EXTRACTOR ────────────────────────────────────────
-
-    // ── TSM OUTPUT CONTRACT: flag whether this case has every field ──
-    // Legal's structured-case contract before this case is treated as
-    // ready for human review / relay to the executive portal.
-    try {
-      payload.outputContract = (window.TSMOutputContract && payload.structuredCase)
-        ? TSMOutputContract.enforceOutputContract('legalops', payload.structuredCase)
-        : null;
-    } catch(e) { console.warn('[output-contract] legal contract check error:', e); payload.outputContract = null; }
-    // ── END TSM OUTPUT CONTRACT ───────────────────────────────────────
-
-    // ── TSM EXEC KIT: WIP + explainability ──────────────────────────
-    try {
-      payload.wip = (window.TSMExecKitProducer && TSMExecKitProducer.buildWip([
-        { id:'discovery',  label:'Discovery',        status:'done' },
-        { id:'warroom',    label:'War Room',         status:'done' },
-        { id:'strategist', label:'Strategist Synth', status:'done', time: new Date().toLocaleTimeString() },
-        { id:'exec',       label:'Executive Review', status:'active' }
-      ])) || [];
-      // Real confidence from structuredCase, not the hardcoded null this
-      // previously shipped with. Severity mirrors confidenceTier: HIGH tier
-      // (well-supported) -> low severity concern, LOW tier -> high.
-      const scConfidence = payload.structuredCase ? payload.structuredCase.confidence : null;
-      const scTier = payload.structuredCase ? payload.structuredCase.confidenceTier : null;
-      const scSeverity = scTier === 'HIGH' ? 'low' : scTier === 'MEDIUM' ? 'med' : scTier === 'LOW' ? 'high' : 'med';
-      payload.explain = (window.TSMExecKitProducer && TSMExecKitProducer.buildExplain([
-        {
-          claim: (relayData?.matter || relayData?.docType || 'Matter') + ' — Strategist Synthesis',
-          confidence: scConfidence,
-          severity: scSeverity,
-          rationale: payload.summary || payload.narrative || relayData?.summary || relayData?.narrative || 'See strategist brief for full reasoning chain.',
-          sources: ['Legal Strategist']
-        }
-      ])) || [];
-    } catch(e) { console.warn('[exec-kit] producer patch error:', e); }
-    // ── END TSM EXEC KIT ─────────────────────────────────────────────
-
-    sessionStorage.setItem('TSM_STRATEGIST_RELAY', JSON.stringify(payload));
-
-    // ── SENTINEL PUSH ────────────────────────────────────────────────────
-    // Real numbers only: reuses payload.exposure/riskScore already read
-    // from the rendered KPI tiles above -- no invented figures. This page
-    // previously had no Sentinel integration at all (unlike the other
-    // live verticals), so Legal never showed up in Sentinel Center.
-    try {
-      function legalProParseExposureNumber(str){
-        if (!str) return 0;
-        const nums = String(str).match(/[\d,]+(?:\.\d+)?/g);
-        if (!nums || !nums.length) return 0;
-        const mult = /m\b/i.test(str) ? 1000000 : (/k\b/i.test(str) ? 1000 : 1);
-        const vals = nums.map(n => parseFloat(n.replace(/,/g,'')) * mult);
-        return Math.round(vals.reduce((a,b)=>a+b,0) / vals.length);
-      }
-      function legalProSeverityForRisk(str){
-        const n = parseInt(str, 10) || 0;
-        if (n >= 75) return 'CRIT';
-        if (n >= 55) return 'HIGH';
-        if (n >= 30) return 'MED';
-        return 'LOW';
-      }
-      const legalProExposureNum = legalProParseExposureNumber(payload.exposure);
-      const legalProRiskNum = parseInt(payload.riskScore, 10) || 0;
-      const legalProAnomaly = {
-        id: 'legalpro-' + Date.now(),
-        title: (payload.matter || 'Legal Matter') + ' — Strategist Synthesis',
-        severity: legalProSeverityForRisk(payload.riskScore),
-        exposure: legalProExposureNum,
-        confidence: Math.max(0, 100 - legalProRiskNum),
-        rootCause: (actionsData && actionsData[0]) ? String(actionsData[0]).replace(/^\d+\.\s*/,'') : ('Risk score ' + (payload.riskScore || 'n/a') + ' on ' + (payload.docType || 'this matter') + '.'),
-        recommendedAction: (actionsData && actionsData[1]) ? String(actionsData[1]).replace(/^\d+\.\s*/,'') : 'Review the Legal strategist brief and route for executive sign-off.'
-      };
-      const legalProSentinelKey = 'TSM_LEGAL_STRATEGIST_RELAY';
-      const legalProSentinelExisting = JSON.parse(localStorage.getItem(legalProSentinelKey) || 'null') || {};
-      legalProSentinelExisting.anomalies = [legalProAnomaly];
-      legalProSentinelExisting.generatedAt = new Date().toISOString();
-      localStorage.setItem(legalProSentinelKey, JSON.stringify(legalProSentinelExisting));
-      window.dispatchEvent(new CustomEvent('TSM_SENTINEL_REFRESH'));
-    } catch(e) { console.warn('[sentinel-push] legal error:', e); }
-    // ── END SENTINEL PUSH ────────────────────────────────────────────────────
-
-    // Phase 2: Mission Core creation
-    try {
-      if (window.TSMMissionModel && window.TSMMissionStore) {
-        const legalMissionSeverity = legalProSeverityForRisk(payload.riskScore);
-        const legalMissionPriority = legalMissionSeverity === 'CRIT' ? 'Critical'
-          : legalMissionSeverity === 'HIGH' ? 'High'
-          : legalMissionSeverity === 'MED' ? 'Medium'
-          : 'normal';
-        const mission = window.TSMMissionModel.createMission({
-          vertical: 'legal',
-          tenantId: (window.TSMActiveMember && window.TSMActiveMember.getId()) || 'default',
-          client: payload.matter || null,
-          classification: {
-            summary: payload.synthesisText || '',
-            exposure: payload.exposure || null,
-            riskScore: payload.riskScore || null,
-            winProb: payload.winProb || null,
-            settleRange: payload.settleRange || null,
-            source: 'Legal Strategist'
-          },
-          workflow: {
-            assignedTo: null,
-            queue: null,
-            priority: legalMissionPriority,
-            sla: null
-          },
-          actor: 'legal-main-strategist'
-        });
-        window.TSMMissionStore.saveMission(mission);
-      } else {
-        console.warn('Mission Core not loaded - skipping mission creation, Legal relay write already succeeded.');
-      }
-    } catch (missionErr) {
-      console.warn('Mission Core creation failed (non-fatal, Legal relay already written):', missionErr);
-    }
-
-  } catch(err) { console.warn('Relay write error:', err); }
-}
-
-// ── EXPORT ─────────────────────────────────────────────────────────────────
-function exportFullReport() {
-  const matter = relayData?.matter || relayData?.docType || 'Matter';
-  const lines = [
-    `TSM LEGAL-PRO — CASE STRATEGIST REPORT`,
-    `Matter: ${matter}`,
-    `Generated: ${new Date().toLocaleString()}`,
-    `Engines Synced: ${document.getElementById('kpi-engines').textContent}`,
-    '',
-    '── STRATEGIC SYNTHESIS ──',
-    synthesisText || document.getElementById('synth-output').textContent,
-    '',
-    '── ENGINE OUTPUTS ──',
-    'ENGINE 01:', document.getElementById('body-e1').textContent,
-    'ENGINE 02:', document.getElementById('body-e2').textContent,
-    'ENGINE 03:', document.getElementById('body-e3').textContent,
-    'ENGINE 04:', document.getElementById('body-e4').textContent,
-    'ENGINE 05:', document.getElementById('body-e5').textContent,
-  ].join('\n');
-
-  const blob = new Blob([lines], {type:'text/plain'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `TSM-Case-Strategist-${matter.replace(/\s+/g,'-')}-${Date.now()}.txt`;
-  a.click();
-}
-
-// ── INIT ───────────────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
-  const found = loadRelay();
-  if (!found) {
-    addLog('Awaiting War Room Relay', 'Run the 6-engine analysis in Legal War Room first', 'faint');
+  const chunks = text.split('');
+  const speed = 8; // chars per frame
+  for (let i = 0; i < chunks.length; i += speed) {
+    el.textContent += chunks.slice(i, i + speed).join('');
+    el.scrollTop = el.scrollHeight;
+    await sleep(16);
   }
-});
+  el.classList.remove('typing');
+}
 
-// Poll for new relay every 10s (in case War Room is open in another tab)
-setInterval(() => {
-  if (!relayData) loadRelay();
-}, 10000);
-</script><script>
+function finalizeBNCA(text) {
+  lastBNCA = text;
 
-/* TSM AUTO-RUN STRATEGIST */
-(function(){
+  // Extract confidence, risk level, and SLA pressure from the AI's own
+  // structured output — this is the actual assessment it produced, not a
+  // fixed placeholder.
+  const confMatch = text.match(/CONFIDENCE:\s*(\d+)%/i);
+  const conf = confMatch ? parseInt(confMatch[1]) : 89;
+  const riskMatch = text.match(/RISK LEVEL:\s*(CRITICAL|HIGH|MEDIUM|LOW)/i);
+  const riskLevel = riskMatch ? riskMatch[1].toUpperCase() : 'MEDIUM';
+  const slaMatch = text.match(/SLA PRESSURE:\s*(.+)/i);
+  const slaText = slaMatch ? slaMatch[1].trim().split(/\n|─/)[0].slice(0, 40) : 'MONITORING';
+
+  // Update stats
+  document.getElementById('stat-matters').textContent = '4';
+  document.getElementById('stat-risk').textContent = riskLevel === 'CRITICAL' || riskLevel === 'HIGH' ? 'HIGH' : riskLevel === 'MEDIUM' ? 'MED' : 'LOW';
+  document.getElementById('stat-conf').textContent = conf + '%';
+  document.getElementById('conf-pct').textContent = conf + '%';
+  document.getElementById('conf-fill').style.width = conf + '%';
+
+  // Risk/SLA badges — now driven by the parsed AI assessment instead of a
+  // hardcoded value, so they actually vary with the scenario/matter run.
+  const riskBadge = document.getElementById('risk-badge');
+  const slaBadge = document.getElementById('sla-badge');
+  const riskColors = { CRITICAL: '#ff4d6a', HIGH: '#ff4d6a', MEDIUM: '#f5a623', LOW: '#00ffc6' };
+  riskBadge.textContent = 'RISK: ' + riskLevel;
+  riskBadge.style.color = riskColors[riskLevel] || '#f5a623';
+  riskBadge.style.borderColor = (riskColors[riskLevel] || '#f5a623') + '4d';
+  slaBadge.textContent = 'SLA: ' + slaText.toUpperCase();
+  slaBadge.style.color = riskLevel === 'CRITICAL' || riskLevel === 'HIGH' ? '#f5a623' : '#00ffc6';
+
+  // Explainability panel — real node scores + intake fields + parsed confidence
+  if (lastMatterMeta) {
+    const scenario = SCENARIOS[currentScenario];
+    const items = getExplainItems(scenario, lastMatterMeta, conf);
+    document.getElementById('explain-panel').innerHTML = renderExplainItems(items);
+  }
+
+  document.getElementById('thinking-indicator').textContent = 'BNCA COMPLETE · ACTIONS READY';
+  document.getElementById('relay-status').textContent = 'READY TO RELAY';
+
+  setTimeline(5);
+
+  // Re-enable btn
+  const btn = document.getElementById('run-bnca');
+  btn.disabled = false;
+  btn.textContent = '⚡ RUN LEGAL MAIN STRATEGIST BNCA';
+
+  // Auto-prep relay
+  prepRelay(text);
+}
+
+// ============================================================
+// ACTION BUTTONS
+// ============================================================
+function assignOwner() {
+  const output = document.getElementById('bnca-output');
+  output.textContent += '\n\n──────────────────────────────\n[ACTION EXECUTED] OWNER ASSIGNED\nOperations Manager confirmed as primary lane owner. Matter management system notified. Accountability trail logged.\n──────────────────────────────';
+  output.scrollTop = output.scrollHeight;
+  setTimeline(5);
+}
+
+function escalateStrategist() {
+  const output = document.getElementById('bnca-output');
+  output.textContent += '\n\n──────────────────────────────\n[ESCALATION TRIGGERED] → STRATEGIST LAYER\nFormal escalation sent to Legal Strategist. Exception report generated. Managing partner notification queued.\n──────────────────────────────';
+  output.scrollTop = output.scrollHeight;
+  document.getElementById('relay-status').textContent = 'ESCALATED';
+  setTimeline(6);
+}
+
+function clearBlocker() {
+  const output = document.getElementById('bnca-output');
+  output.textContent += '\n\n──────────────────────────────\n[BLOCKER CLEARED] WORKFLOW STABILIZED\nPrimary operational blocker resolved. SLA clock reset. Matter queue updated. Recovery mode active.\n──────────────────────────────';
+  output.scrollTop = output.scrollHeight;
+  const slaBadge = document.getElementById('sla-badge');
+  slaBadge.textContent = 'SLA: STABILIZED';
+  slaBadge.style.color = '#00ffc6';
+}
+
+function sendToRelay() {
+  if (!lastBNCA) {
+    alert('Run BNCA analysis first before sending to Executive Portal.');
+    return;
+  }
+  prepRelay(lastBNCA);
+  document.getElementById('relay-status').textContent = 'RELAY SENT ✓';
+  setTimeline(7);
+  document.getElementById('relay-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function prepRelay(bnca) {
+  const scenario = SCENARIOS[currentScenario];
+  const matterName = document.getElementById('matter-name').value || 'Active Legal Matter';
+  const date = new Date().toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+
+  const relayText = `EXECUTIVE PORTAL RELAY PACKAGE
+Generated: ${date} · TSM Legal Main Strategist
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MATTER: ${matterName}
+SCENARIO: ${scenario.name}
+RISK CLASSIFICATION: ${scenario.risk}
+
+EXECUTIVE SUMMARY
+──────────────────
+Legal operations intelligence has identified a ${scenario.risk.toLowerCase()} risk event across the firm's matter portfolio. The Main Strategist has synthesized cross-node signals and generated prioritized action recommendations requiring managing partner review.
+
+KEY FINANCIALS AT RISK
+───────────────────────
+${document.getElementById('hours-risk').value || 'See BNCA report for full financial exposure analysis'}
+
+STRATEGIC RECOMMENDATIONS
+──────────────────────────
+1. Authorize emergency review protocol for flagged matters
+2. Confirm owner lane assignments at senior level
+3. Review compliance posture before external reporting
+4. Schedule executive briefing within 48 hours
+
+STATUS: RELAY COMPLETE → EXECUTIVE PORTAL READY
+→ Open legal-executive-portal.html to review full executive dashboard`;
+
+  document.getElementById('relay-report').textContent = relayText;
+}
+
+function launchEP() {
+  // Store relay data for EP — matches the shape legal-executive-portal.html's
+  // loadStrategistRelay() actually reads (TSM_STRATEGIST_RELAY). Fields we
+  // don't have real data for (exposure, winProb) are left unset rather than
+  // invented; the portal already handles missing fields gracefully.
+  const scenario = SCENARIOS[currentScenario];
+  const riskScore = Math.max(...Object.values(scenario.scores));
+  const payload = {
+    ts: Date.now(),
+    matter: document.getElementById('matter-name').value || '',
+    docType: scenario.name,
+    synthesisText: lastBNCA,
+    riskScore,
+    enginesCount: scenario.nodes.length
+  };
+  try { sessionStorage.setItem('TSM_STRATEGIST_RELAY', JSON.stringify(payload)); } catch(e){}
+  window.location.href = '/war-rooms/legal-war/legal-executive-portal.html';
+}
+
+// ============================================================
+// TIMELINE
+// ============================================================
+function setTimeline(step) {
+  for (let i = 1; i <= 7; i++) {
+    const el = document.getElementById('tl-' + i);
+    if (!el) continue;
+    el.classList.remove('done', 'active');
+    const dot = el.querySelector('.tl-dot');
+    if (i < step) {
+      el.classList.add('done');
+      dot.textContent = '✓';
+    } else if (i === step) {
+      el.classList.add('active');
+      dot.textContent = i;
+    } else {
+      dot.textContent = i;
+    }
+  }
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ============================================================
+// LIVE COMPLIANCE RELAY (real data from legal-compliance.html)
+// ------------------------------------------------------------
+// Every other node card (billing/matter/contracts/trust/discovery)
+// is still demo-scored via the SCENARIOS picker above — those nodes
+// were never built, so they stay honestly labeled as scenario data.
+// Compliance is the one node with a real upstream page and a
+// working relay button, so it gets a live override here.
+// ============================================================
+const COMPLIANCE_RELAY_KEY = 'TSM_LEGAL_COMPLIANCE_RELAY';
+
+function loadComplianceRelay() {
+  let raw = null;
   try {
-    const raw = localStorage.getItem('TSM_LEGAL_WAR_RELAY') || sessionStorage.getItem('TSM_LEGAL_WAR_RELAY');
-    if (!raw) return;
-    if (localStorage.getItem('tsm_auto_mode') === 'off') return;
-    setTimeout(() => { if (typeof runSynthesis === 'function') runSynthesis(); }, 1500);
-  } catch(e) { console.warn('[TSM AutoRun Strategist]', e); }
-})();
+    raw = localStorage.getItem(COMPLIANCE_RELAY_KEY) || sessionStorage.getItem(COMPLIANCE_RELAY_KEY);
+  } catch(e) { return; }
+  if (!raw) return;
+  let data;
+  try { data = JSON.parse(raw); } catch(e) { return; }
+  if (!data) return;
+
+  // complianceScore from legal-compliance.html is a "% compliant" figure
+  // (92% = good, shown green there) -- but every node card on this page is
+  // labeled RISK SCORE, high=bad/red, matching the SCENARIOS demo data's
+  // convention (e.g. compliance:91 = a breach). Invert so a real 92%
+  // compliant reading shows as a real LOW risk score (8), not a fake HIGH
+  // one -- copying the raw percentage across would have shown good news as
+  // a red alert.
+  const compliancePct = parseInt(data.complianceScore, 10);
+  const scoreNum = isNaN(compliancePct) ? NaN : (100 - compliancePct);
+  const el = document.getElementById('ns-compliance');
+  if (el && !isNaN(scoreNum)) {
+    el.textContent = scoreNum;
+    el.style.color = scoreNum >= 80 ? '#ff4d6a' : scoreNum >= 60 ? '#f5a623' : '#00ffc6';
+  }
+  const card = document.querySelector(`[onclick="pingNode('compliance')"]`);
+  if (card) {
+    card.classList.add('live-relay');
+    const statusEl = card.querySelector('.node-status');
+    if (statusEl) statusEl.textContent = 'LIVE — relay received';
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  updateNodeScores();
+  loadComplianceRelay();
+  setTimeline(2);
+  document.getElementById('thinking-indicator').textContent = 'READY · AWAITING INTAKE';
+});
+// Re-check when legal-compliance.html (open in another tab) writes a fresh relay
+window.addEventListener('storage', (e) => {
+  if (e.key === COMPLIANCE_RELAY_KEY) loadComplianceRelay();
+});
 </script>
   <script src="/js/core/tsm-kernel-upgrade.js"></script>
-
-
-<style>body{padding-bottom:40px!important}</style>
-<div id="tsm-chain-bar" style="position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#040c12;border-top:1px solid #0d2233;display:flex;align-items:center;height:32px;padding:0 16px;font-family:'IBM Plex Mono',monospace;font-size:10px;"><span style="color:#3a5a70;margin-right:12px;font-size:9px;">TSM CHAIN</span><a href="/html/war-rooms/legal-war/legal-war-room.html" style="color:#94a3b8;border:1px solid #1a3a50;padding:3px 10px;border-radius:3px;text-decoration:none;margin-right:6px;font-size:9px;">&#9675; WAR ROOM</a><span style="color:#1a3a50;margin-right:6px;">--&gt;</span><a href="#" style="color:var(--purple, #b388ff);background:rgba(255,255,255,.05);border:1px solid var(--purple, #b388ff)55;padding:3px 10px;border-radius:3px;text-decoration:none;margin-right:6px;font-size:9px;">&#9679; STRATEGIST</a><span style="color:#1a3a50;margin-right:6px;">--&gt;</span><a href="/html/war-rooms/legal-war/legal-executive-portal.html" style="color:#94a3b8;border:1px solid #1a3a50;padding:3px 10px;border-radius:3px;text-decoration:none;margin-right:6px;font-size:9px;">&#9675; EXEC PORTAL</a><span style="color:#1a3a50;margin-left:auto;font-size:9px;">LEGAL</span></div>
-  <script src="/html/shared/tsm-sla-extractor.js"></script>
-  <script src="/html/shared/tsm-output-contract.js"></script>
-  <script src="/shared/tsm-exec-kit-producer.js"></script>
-  <script src="/html/core/tsm-runtime.js"></script>
 <script>
 // ===== TSM_AUTONOMY_STANDARDIZED =====
 window.TSM_AUTONOMY_STANDARDIZED = true;
