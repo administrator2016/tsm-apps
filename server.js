@@ -3074,6 +3074,14 @@ app.use('/api/college/endowment', requireAnyAuth, require('./routes/college-endo
 app.use('/api/college/research-fa', requireAnyAuth, require('./routes/college-research-fa-financial'));
 app.use('/api/college/accred', requireAnyAuth, require('./routes/college-accred-financial'));
 
+// Insurance war room — same private-rate-card-server-side pattern as College
+// above. See routes/insurance-claims-financial.js header for the full
+// endpoint contract; the other three insurance domains follow the same shape.
+app.use('/api/insurance/claims', requireAnyAuth, require('./routes/insurance-claims-financial'));
+app.use('/api/insurance/pc', requireAnyAuth, require('./routes/insurance-pc-financial'));
+app.use('/api/insurance/compliance', requireAnyAuth, require('./routes/insurance-compliance-financial'));
+app.use('/api/insurance/licensing', requireAnyAuth, require('./routes/insurance-licensing-financial'));
+
 // ── INPHUSIONSYS (multi-vertical demo data: employees, anomalies, IT tickets) ──
 // See server/routes/inphusionsys.js header for the full endpoint contract.
 // Covers all 11 verticals; /scenarios and /run-live are legacy aliases kept
