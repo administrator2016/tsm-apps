@@ -50,6 +50,14 @@
         panel.innerHTML =
           '<div class="panel"><div class="panel-hdr">VIP ARRIVALS</div>' +
           '<div class="panel-body" id="panel-vip-arrivals-body" style="padding:0;">Loading&hellip;</div></div>';
+      } else if (slug === 'indacrib') {
+        panel.innerHTML =
+          '<div class="panel"><div class="panel-hdr">INDACRIB &mdash; GUEST GAME</div>' +
+          '<div class="panel-body" id="panel-indacrib-body" style="padding:0;">Loading&hellip;</div></div>';
+      } else if (slug === 'concierge-transport') {
+        panel.innerHTML =
+          '<div class="panel"><div class="panel-hdr">CONCIERGE TRANSPORT</div>' +
+          '<div class="panel-body" id="panel-concierge-transport-body" style="padding:0;">Loading&hellip;</div></div>';
       } else if (slug === 'housekeeping') {
         panel.innerHTML =
           '<div class="panel"><div class="panel-hdr">HOUSEKEEPING</div>' +
@@ -115,6 +123,12 @@
         }
         if (slug === 'vip-arrivals' && typeof renderVipTab === 'function') {
           renderVipTab();
+        }
+        if (slug === 'indacrib' && typeof renderIndaCribTab === 'function') {
+          renderIndaCribTab();
+        }
+        if (slug === 'concierge-transport' && typeof renderConciergeTransportTab === 'function') {
+          renderConciergeTransportTab();
         }
         if (slug === 'housekeeping' && typeof renderHousekeepingTab === 'function') {
           renderHousekeepingTab();
