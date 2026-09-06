@@ -65,6 +65,11 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 .entity-tab:hover{color:var(--text)}
 .entity-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
 
+.owner-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.owner-chip{padding:4px 10px;font-size:9px;letter-spacing:1px;color:var(--text-dim);border:1px solid var(--border);cursor:pointer;background:transparent}
+.owner-chip:hover{color:var(--text);border-color:var(--text-dim)}
+.owner-chip.active{color:var(--gold);border-color:var(--gold)}
+
 .kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px}
 .kpi-card{background:var(--card);border:1px solid var(--border);padding:12px 10px}
 .kpi-label{font-size:8px;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase}
@@ -214,6 +219,8 @@ tr:hover td{background:rgba(212,175,55,.03)}
 
     <div class="entity-tabs" id="entityTabs"></div>
 
+    <div class="owner-chips" id="ownerChips"></div>
+
     <div class="kpi-grid" id="kpiGrid"></div>
 
     <div class="section">
@@ -248,9 +255,50 @@ tr:hover td{background:rgba(212,175,55,.03)}
   let MODEL = null;
   let engine = null;
   let activeEntity = 'loan_files'; // loan_files | conditions | exceptions
+  let activeOwner = 'ALL'; // 'ALL' or a real owner value from loan_files (MLO Team A, Processor A, UW Desk 1, ...)
 
   const ENTITY_LABELS = { loan_files: 'LOAN FILES', conditions: 'UW CONDITIONS', exceptions: 'COMPLIANCE EXCEPTIONS' };
   const ID_FIELDS = { loan_files: 'loan_id', conditions: 'condition_id', exceptions: 'exception_id' };
+
+  // Owner filter — scoped to the real `owner` field on loan_files (MLO Team A,
+  // Processor A/B/C, UW Desk 1/2, Closer A). Conditions/exceptions don't carry
+  // their own owner, so they inherit it from the loan file they belong to via
+  // loan_id. This is a client-side view filter only — it does not touch
+  // engine.data, storage, or the relay payload, so Strategist/Exec Portal
+  // still see the full unfiltered portfolio.
+  function getLoanOwnerMap() {
+    const map = {};
+    (engine.data.loan_files || []).forEach(r => { map[r.loan_id] = r.owner; });
+    return map;
+  }
+
+  function getOwnersList() {
+    const owners = new Set((engine.data.loan_files || []).map(r => r.owner).filter(Boolean));
+    return Array.from(owners).sort();
+  }
+
+  function filteredRecords() {
+    const records = engine.data[activeEntity] || [];
+    if (activeOwner === 'ALL') return records;
+    if (activeEntity === 'loan_files') return records.filter(r => r.owner === activeOwner);
+    const ownerMap = getLoanOwnerMap();
+    return records.filter(r => ownerMap[r.loan_id] === activeOwner);
+  }
+
+  function renderOwnerChips() {
+    const wrap = document.getElementById('ownerChips');
+    const owners = getOwnersList();
+    if (!owners.length) { wrap.innerHTML = ''; return; }
+    const all = ['ALL', ...owners];
+    wrap.innerHTML = '';
+    all.forEach(owner => {
+      const chip = document.createElement('div');
+      chip.className = 'owner-chip' + (owner === activeOwner ? ' active' : '');
+      chip.textContent = owner === 'ALL' ? 'ALL OWNERS' : owner.toUpperCase();
+      chip.onclick = () => { activeOwner = owner; renderOwnerChips(); renderTracker(); renderTable(); };
+      wrap.appendChild(chip);
+    });
+  }
 
   function setClock() {
     const el = document.getElementById('navClock');
@@ -329,11 +377,11 @@ tr:hover td{background:rgba(212,175,55,.03)}
 
   function renderTracker() {
     const def = (MODEL.entities || {})[entitySingular(activeEntity)] || { stages: [] };
-    const dist = engine.getStageDistribution(activeEntity);
+    const records = filteredRecords();
     const tracker = document.getElementById('tracker');
     tracker.innerHTML = (def.stages || []).map(s => {
-      const count = (dist[s.id] || { count: 0 }).count;
-      const hot = s.sla_hours != null && (engine.data[activeEntity] || []).some(r => r.stage === s.id && (r.entered_stage_at_hours_ago || 0) > s.sla_hours);
+      const count = records.filter(r => r.stage === s.id).length;
+      const hot = s.sla_hours != null && records.some(r => r.stage === s.id && (r.entered_stage_at_hours_ago || 0) > s.sla_hours);
       const scEl = document.getElementById(`sc-${activeEntity}-${s.id}`);
       if (scEl) scEl.textContent = count;
       return `<div class="tracker-stage${hot ? ' hot' : ''}"><div class="ts-label">${s.label}</div><div class="ts-count">${count}</div></div>`;
@@ -341,15 +389,19 @@ tr:hover td{background:rgba(212,175,55,.03)}
   }
 
   function renderTable() {
-    document.getElementById('tableEntityLabel').textContent = ENTITY_LABELS[activeEntity];
+    document.getElementById('tableEntityLabel').textContent = ENTITY_LABELS[activeEntity]
+      + (activeOwner !== 'ALL' ? ` — ${activeOwner.toUpperCase()}` : '');
     const breaches = engine.getSlaBreaches(activeEntity);
     const breachIds = new Set(breaches.map(b => b.id));
     const idField = ID_FIELDS[activeEntity];
-    const records = engine.data[activeEntity] || [];
+    const allRecords = engine.data[activeEntity] || [];
+    const records = filteredRecords();
     const body = document.getElementById('breachBody');
-    document.getElementById('breachMeta').textContent = breaches.length ? `${breaches.length} over SLA` : '';
+    const breachCount = records.filter(r => breachIds.has(r[idField])).length;
+    document.getElementById('breachMeta').textContent = breachCount ? `${breachCount} over SLA` : '';
 
-    if (!records.length) { body.innerHTML = '<div class="empty-state">No data loaded yet. Click LOAD SAMPLE DATA.</div>'; return; }
+    if (!allRecords.length) { body.innerHTML = '<div class="empty-state">No data loaded yet. Click LOAD SAMPLE DATA.</div>'; return; }
+    if (!records.length) { body.innerHTML = `<div class="empty-state">No ${ENTITY_LABELS[activeEntity].toLowerCase()} for ${activeOwner}.</div>`; return; }
 
     let cols, rows;
     if (activeEntity === 'loan_files') {
@@ -388,6 +440,7 @@ tr:hover td{background:rgba(212,175,55,.03)}
   }
 
   function renderAll() {
+    renderOwnerChips();
     renderKpis();
     renderTracker();
     renderTable();
