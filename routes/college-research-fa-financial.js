@@ -103,7 +103,11 @@ async function callGroq(systemPrompt, message, maxTokens = 900) {
 // unhandled 500 instead of the graceful, always-200 behavior these routes
 // intend.
 function asArray(x) {
-  return Array.isArray(x) ? x : [];
+  // Also drop null/undefined/non-object entries within an otherwise-valid
+  // array (e.g. a blank row from a CSV/JSON upload parsed as null) —
+  // mapping over those still throws "Cannot read properties of null"
+  // even after the array-vs-non-array check above passes.
+  return Array.isArray(x) ? x.filter(item => item != null && typeof item === 'object') : [];
 }
 
 function overburnExposure(awards) {
