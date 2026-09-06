@@ -1256,6 +1256,17 @@ const VERTICALS = {
       "ins-war-room":   { label:"Insurance War Room", route:"/html/war-rooms/insure-war/insurance-war-room.html" },
       "strategist":     { label:"Strategist",         route:"/html/war-rooms/insure-war/insurance-strategist.html" },
       "bnca-engine":    { label:"BNCA Escalated",     route:"/html/war-rooms/insure-war/insurance-executive-portal.html" },
+      // Insurance Command suite (2026-09-06) — 4 independent domain command
+      // pages, same split-node pattern as the hw-plant/hw-supplier/hw-cyber
+      // nodes on the Honeywell vertical above: each is its own destination,
+      // not another stop on the legacy ins-war-room -> strategist -> bnca
+      // pipeline above. Exec portal reachable from any of the 4 pages'
+      // own nav, not listed here separately since it's a combined view
+      // rather than a document-intake destination.
+      "ins-cmd-claims":     { label:"Claims Command",           route:"/html/tsm-insurance/ins-claims.html" },
+      "ins-cmd-pc":         { label:"P&C Command",              route:"/html/tsm-insurance/pc-command.html" },
+      "ins-cmd-compliance": { label:"Compliance Command",       route:"/html/tsm-insurance/ins-compliance.html" },
+      "ins-cmd-licensing":  { label:"Licensing & CE Command",   route:"/html/tsm-insurance/ins-licensing.html" },
     },
     seed: [
       { fileName:"CLM-INS-4412_Ramirez.record",    documentType:"CLAIM",           vendor:"State Farm",        invoiceNo:"CLM-INS-4412",exclusionCode:"CO-4",    amount:15400,  sourceNode:"ins-az",   routing:["ins-az","ins-hub","strategist"],            timestamp:Date.now()-2*3600000, _ext:{client:"Luis Ramirez",  ref:"POL-SF-9944"} },
@@ -1263,6 +1274,10 @@ const VERTICALS = {
       { fileName:"BNCA_CLM-INS-4412.report",       documentType:"ESCALATION",      vendor:"State Farm",        invoiceNo:"CLM-INS-4412",exclusionCode:"CO-4",    amount:15400,  sourceNode:"ins-az",   routing:["ins-az","strategist","bnca-engine"],        timestamp:Date.now()-6*3600000, _ext:{client:"Luis Ramirez",  ref:"ESC-CLM4412"} },
       { fileName:"Renewal_Audit_Q2.record",         documentType:"DOCUMENT REPORT", vendor:"Travelers",        invoiceNo:"RNW-Q2",      exclusionCode:"",        amount:0,      sourceNode:"ins-bpo",  routing:["ins-bpo","strategist"],                    timestamp:Date.now()-1*86400000,_ext:{client:"Portfolio",      ref:"RNW-AUD-001"} },
       { fileName:"Remittance_Nationwide_Jul.record",documentType:"REMITTANCE",      vendor:"Nationwide",       invoiceNo:"REM-07-24",   exclusionCode:"",        amount:43200,  sourceNode:"ins-hub",  routing:["ins-hub","strategist"],                    timestamp:Date.now()-2*86400000,_ext:{client:"Nationwide",     ref:"REM-07"} },
+      { fileName:"CLM-RES-8834_Whitfield.record",   documentType:"CLAIM",           vendor:"Progressive",      invoiceNo:"CLM-RES-8834",exclusionCode:"RES-30", amount:18500,  sourceNode:"ins-cmd-claims",     routing:["ins-cmd-claims"],     timestamp:Date.now()-3*3600000,  _ext:{client:"Dana Whitfield", ref:"CLM-RES-8834"} },
+      { fileName:"PC_Loss_Inspection_WarehouseFire.record", documentType:"INSPECTION", vendor:"Travelers",     invoiceNo:"PC-WH-2291",  exclusionCode:"PC-CAT", amount:340000, sourceNode:"ins-cmd-pc",         routing:["ins-cmd-pc"],         timestamp:Date.now()-7*3600000,  _ext:{client:"Meridian Logistics", ref:"PC-WH-2291"} },
+      { fileName:"DOI_Market_Conduct_Inquiry_AZ.record", documentType:"DOCUMENT REPORT", vendor:"",            invoiceNo:"CMP-1188",    exclusionCode:"MC-14",  amount:0,      sourceNode:"ins-cmd-compliance",  routing:["ins-cmd-compliance"], timestamp:Date.now()-1*86400000, _ext:{client:"Internal",        ref:"CMP-1188"} },
+      { fileName:"NPN_License_Expiry_Notice_AZ.record", documentType:"DOCUMENT REPORT", vendor:"NIPR",         invoiceNo:"LIC-501234",  exclusionCode:"LIC-30", amount:0,      sourceNode:"ins-cmd-licensing",   routing:["ins-cmd-licensing"],  timestamp:Date.now()-9*3600000,  _ext:{client:"NPN-501234",      ref:"LIC-501234"} },
     ]
   },
   con: {
