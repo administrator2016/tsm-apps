@@ -2,1240 +2,263 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Construction Operations Intelligence</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Game Night</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #070b0e;
-  --s1: #0b1015;
-  --s2: #0f1519;
-  --s3: #131a1f;
-  --border: #1a2530;
-  --border2: #243040;
-  --cyan: #00e5cc;
-  --cyan2: #00b8a5;
-  --green: #00ff88;
-  --amber: #f59e0b;
-  --orange: #fb923c;
-  --red: #ef4444;
-  --blue: #3b82f6;
-  --purple: #a78bfa;
-  --white: #e2eaf0;
-  --text: #b0c4d4;
-  --muted: #506070;
-  --mono: 'Share Tech Mono', monospace;
-  --orb: 'Orbitron', monospace;
-  --raj: 'Rajdhani', sans-serif;
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-  background:var(--bg);
-  color:var(--text);
-  font-family:var(--raj);
-  height:100vh;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
-}
+  :root {
+    --bg: #0F2B30;
+    --bg-raised: #16383E;
+    --amber: #F2A93B;
+    --coral: #E8735A;
+    --seafoam: #7FB8AC;
+    --text: #F5EFE6;
+    --text-dim: #A9C2BE;
+  }
 
-/* ── SCANLINE OVERLAY ── */
-body::before {
-  content:'';
-  position:fixed;
-  top:0;left:0;width:100%;height:100%;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,229,204,.012) 2px,rgba(0,229,204,.012) 4px);
-  pointer-events:none;
-  z-index:9999;
-}
+  * { box-sizing: border-box; }
 
-/* ── TOPBAR ── */
-.topbar {
-  background:linear-gradient(90deg,#040a0d,#071018,#040a0d);
-  border-bottom:1px solid var(--cyan2);
-  padding:0 1.2rem;
-  height:42px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  flex-shrink:0;
-  position:relative;
-}
-.topbar::after {
-  content:'';
-  position:absolute;
-  bottom:0;left:0;width:100%;height:1px;
-  background:linear-gradient(90deg,transparent,var(--cyan),var(--cyan2),var(--cyan),transparent);
-  animation:scanbar 4s linear infinite;
-}
-@keyframes scanbar { 0%{opacity:.4} 50%{opacity:1} 100%{opacity:.4} }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-@keyframes blink { 0%,100%{opacity:1} 49%{opacity:1} 50%{opacity:0} 99%{opacity:0} }
-@keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
-@keyframes slideIn { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
 
-.logo {
-  font-family:var(--orb);
-  font-size:.8rem;
-  font-weight:900;
-  color:var(--cyan);
-  letter-spacing:.2rem;
-  display:flex;
-  align-items:center;
-  gap:.4rem;
-}
-.logo-sep { color:var(--muted); font-weight:400; }
-.logo-sub { color:var(--muted); font-weight:400; font-size:.7rem; }
+  h1 {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 2rem;
+    margin: 0 0 8px;
+    text-align: center;
+  }
 
-.topbar-right {
-  display:flex;
-  align-items:center;
-  gap:1rem;
-  font-family:var(--mono);
-  font-size:.55rem;
-}
-.tb-btn {
-  background:transparent;
-  border:1px solid var(--border2);
-  color:var(--text);
-  padding:.3rem .8rem;
-  font-family:var(--mono);
-  font-size:.55rem;
-  cursor:pointer;
-  letter-spacing:.1rem;
-  transition:all .15s;
-  text-transform:uppercase;
-}
-.tb-btn:hover { border-color:var(--cyan); color:var(--cyan); }
-.tb-btn.primary { border-color:var(--cyan2); color:var(--cyan); }
-.tb-btn.cmd { border-color:var(--amber); color:var(--amber); }
+  p.subtitle {
+    color: var(--text-dim);
+    text-align: center;
+    margin: 0 0 40px;
+    font-size: 1rem;
+  }
 
-/* ── MAIN LAYOUT ── */
-.main {
-  display:flex;
-  flex:1;
-  overflow:hidden;
-}
+  .card {
+    width: 100%;
+    max-width: 360px;
+    background: var(--bg-raised);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
 
-/* ── LEFT SIDEBAR ── */
-.sidebar {
-  width:210px;
-  flex-shrink:0;
-  background:linear-gradient(180deg,#050d12,#040a0d);
-  border-right:1px solid var(--border);
-  display:flex;
-  flex-direction:column;
-  overflow-y:auto;
-  padding:.5rem 0;
-}
-.sidebar::-webkit-scrollbar { width:2px; }
-.sidebar::-webkit-scrollbar-thumb { background:var(--cyan2); }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
 
-.sb-section {
-  padding:.4rem 1rem .2rem;
-  font-family:var(--mono);
-  font-size:.5rem;
-  color:var(--muted);
-  letter-spacing:.15rem;
-  text-transform:uppercase;
-  border-top:1px solid var(--border);
-  margin-top:.3rem;
-}
-.sb-section:first-child { border-top:none; margin-top:0; }
+  input {
+    width: 100%;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.1em;
+    text-align: center;
+    text-transform: uppercase;
+    background: var(--bg);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    color: var(--text);
+    padding: 14px;
+    margin-bottom: 16px;
+  }
 
-.playbook-item {
-  padding:.45rem 1rem;
-  cursor:pointer;
-  border-left:2px solid transparent;
-  transition:all .15s;
-}
-.playbook-item:hover { background:rgba(0,229,204,.06); border-left-color:var(--cyan2); }
-.playbook-item.active { background:rgba(0,229,204,.1); border-left-color:var(--cyan); }
-.pb-title { font-size:.65rem; font-weight:600; color:var(--white); letter-spacing:.03rem; }
-.pb-sub { font-size:.55rem; color:var(--muted); margin-top:.1rem; }
+  input:focus {
+    outline: none;
+    border-color: var(--amber);
+  }
 
-.sys-row {
-  padding:.3rem 1rem;
-  display:flex;
-  align-items:center;
-  gap:.4rem;
-  font-family:var(--mono);
-  font-size:.55rem;
-}
-.sys-dot {
-  width:5px; height:5px;
-  border-radius:50%;
-  flex-shrink:0;
-  animation:pulse 2s infinite;
-}
-.sys-label { color:var(--muted); }
-.sys-val { color:var(--cyan); margin-left:auto; }
+  input::placeholder {
+    color: var(--text-dim);
+    letter-spacing: normal;
+    text-transform: none;
+    font-family: -apple-system, sans-serif;
+    font-size: 1rem;
+  }
 
-.how-to {
-  padding:.5rem 1rem;
-  font-size:.58rem;
-  color:var(--muted);
-  line-height:1.7;
-}
-.how-to-title {
-  font-family:var(--mono);
-  font-size:.5rem;
-  color:var(--cyan);
-  letter-spacing:.15rem;
-  margin-bottom:.4rem;
-  text-transform:uppercase;
-}
-.how-to ol { padding-left:1rem; }
-.how-to li { margin-bottom:.25rem; }
+  button {
+    width: 100%;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+  }
 
-/* ── CONTENT AREA ── */
-.content {
-  flex:1;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
-}
+  button:active {
+    transform: scale(0.97);
+  }
 
-/* ── TAB BAR ── */
-.tabbar {
-  background:var(--s1);
-  border-bottom:1px solid var(--border);
-  padding:.4rem .75rem;
-  display:flex;
-  gap:.4rem;
-  flex-shrink:0;
-}
-.tab-btn {
-  font-family:var(--mono);
-  font-size:.55rem;
-  letter-spacing:.1rem;
-  padding:.3rem .8rem;
-  border:1px solid var(--border);
-  background:transparent;
-  color:var(--muted);
-  cursor:pointer;
-  transition:all .15s;
-  text-transform:uppercase;
-}
-.tab-btn:hover { border-color:var(--border2); color:var(--text); }
-.tab-btn.active { border-color:var(--cyan); color:var(--cyan); background:rgba(0,229,204,.08); }
+  .btn-join {
+    background: var(--amber);
+    color: #1A1006;
+  }
 
-/* ── SPLIT AREA: MODULES + RIGHT PANEL ── */
-.workspace {
-  display:grid;
-  grid-template-columns:1fr 280px;
-  flex:1;
-  overflow:hidden;
-}
+  .btn-create {
+    background: transparent;
+    color: var(--seafoam);
+    border: 2px solid var(--seafoam);
+  }
 
-/* ── MODULE GRID ── */
-.module-area {
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-  border-right:1px solid var(--border);
-}
+  .error {
+    color: var(--coral);
+    font-size: 0.9rem;
+    text-align: center;
+    margin-top: 12px;
+    min-height: 1.2em;
+  }
 
-.module-grid {
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:1px;
-  background:var(--border);
-  flex:1;
-  overflow-y:auto;
-  align-content:start;
-}
-.module-grid::-webkit-scrollbar { width:2px; }
-.module-grid::-webkit-scrollbar-thumb { background:var(--cyan2); }
-
-.mod-card {
-  background:var(--s1);
-  padding:.75rem;
-  cursor:pointer;
-  transition:all .15s;
-  position:relative;
-  display:flex;
-  flex-direction:column;
-  gap:.3rem;
-  min-height:90px;
-}
-.mod-card::before {
-  content:'';
-  position:absolute;
-  top:0;left:0;
-  width:100%;height:2px;
-  background:var(--card-color,var(--cyan));
-  opacity:.4;
-}
-.mod-card:hover { background:var(--s2); }
-.mod-card:hover::before { opacity:1; }
-.mod-card.running { background:rgba(0,229,204,.04); }
-.mod-card.running::before { opacity:1; animation:pulse 1.5s infinite; }
-
-.mod-cat {
-  font-family:var(--mono);
-  font-size:.45rem;
-  color:var(--card-color,var(--cyan));
-  letter-spacing:.1rem;
-  opacity:.7;
-  text-transform:uppercase;
-}
-.mod-name {
-  font-size:.7rem;
-  font-weight:700;
-  color:var(--white);
-  letter-spacing:.02rem;
-  line-height:1.2;
-}
-.mod-desc {
-  font-size:.55rem;
-  color:var(--muted);
-  line-height:1.4;
-  margin-top:auto;
-}
-
-/* ── INTELLIGENCE FEED ── */
-.feed-bar {
-  background:var(--s1);
-  border-top:1px solid var(--border);
-  padding:.4rem .75rem;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  flex-shrink:0;
-}
-.feed-label {
-  font-family:var(--mono);
-  font-size:.5rem;
-  color:var(--cyan);
-  letter-spacing:.15rem;
-  text-transform:uppercase;
-}
-.feed-status {
-  font-family:var(--mono);
-  font-size:.5rem;
-  color:var(--muted);
-}
-
-.feed-output {
-  height:160px;
-  overflow-y:auto;
-  padding:.6rem .75rem;
-  font-family:var(--mono);
-  font-size:.6rem;
-  line-height:1.7;
-  color:var(--text);
-  background:var(--bg);
-  border-top:1px solid var(--border);
-  flex-shrink:0;
-}
-.feed-output::-webkit-scrollbar { width:2px; }
-.feed-output::-webkit-scrollbar-thumb { background:var(--cyan2); }
-.feed-output .feed-tag { color:var(--cyan); font-weight:700; }
-.feed-output .feed-section { color:var(--amber); }
-.feed-output .feed-bold { color:var(--white); font-weight:700; }
-.feed-placeholder { color:var(--muted); font-style:italic; }
-
-/* ── RIGHT PANEL ── */
-.right-panel {
-  background:var(--s1);
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-}
-
-.rp-section {
-  border-bottom:1px solid var(--border);
-  padding:.6rem .75rem;
-}
-.rp-title {
-  font-family:var(--mono);
-  font-size:.5rem;
-  color:var(--cyan);
-  letter-spacing:.15rem;
-  text-transform:uppercase;
-  margin-bottom:.5rem;
-}
-
-.report-item {
-  padding:.35rem 0;
-  border-bottom:1px solid rgba(255,255,255,.04);
-  cursor:pointer;
-}
-.report-item:last-child { border-bottom:none; }
-.report-item:hover .ri-name { color:var(--cyan); }
-.ri-name { font-size:.6rem; color:var(--text); transition:color .15s; }
-.ri-date { font-family:var(--mono); font-size:.5rem; color:var(--muted); margin-top:.1rem; }
-
-.rp-textarea {
-  width:100%;
-  background:var(--s2);
-  border:1px solid var(--border2);
-  color:var(--text);
-  font-family:var(--mono);
-  font-size:.58rem;
-  padding:.5rem;
-  resize:none;
-  outline:none;
-  height:80px;
-  line-height:1.5;
-}
-.rp-textarea:focus { border-color:var(--cyan2); }
-.rp-textarea::placeholder { color:var(--muted); }
-
-.rp-btn {
-  width:100%;
-  margin-top:.4rem;
-  background:transparent;
-  border:1px solid var(--cyan2);
-  color:var(--cyan);
-  font-family:var(--mono);
-  font-size:.55rem;
-  padding:.4rem;
-  cursor:pointer;
-  letter-spacing:.1rem;
-  transition:all .15s;
-  text-transform:uppercase;
-}
-.rp-btn:hover { background:rgba(0,229,204,.1); }
-.rp-btn.danger { border-color:var(--border2); color:var(--muted); }
-.rp-btn.danger:hover { border-color:var(--red); color:var(--red); }
-
-.stat-row {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:.25rem 0;
-  font-size:.6rem;
-}
-.stat-label { color:var(--muted); }
-.stat-val { font-family:var(--mono); color:var(--white); }
-
-/* ── HIDDEN ── */
-.mod-card.hidden { display:none; }
+  .divider {
+    color: var(--text-dim);
+    text-align: center;
+    margin: 20px 0;
+    font-size: 0.9rem;
+  }
 </style>
-<script>
-window.TSM_UI = {
-    runAudit: async (sector, factor) => {
-        const feed = document.querySelector('.intelligence-feed-output') || document.getElementById('intelligence-feed-output');
-        if (feed) feed.innerHTML = '<span style="color: #00ffff;">[STRATEGIST] Internal Link: Processing...</span>';
-        try {
-            const res = await fetch(window.location.origin + '/api/audit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: `auditops "${sector}" --factor "${factor}" --logic strategist` })
-            });
-            const data = await res.json();
-            if (feed) feed.innerText = `[STRATEGIST] ${data.output || "Analysis Complete."}`;
-        } catch (e) {
-            if (feed) feed.innerText = "[STRATEGIST] Local API Bridge Failed.";
-        }
-    }
-};
-// Wire the sector cards to the auto-fill search prompt logic
-document.addEventListener('click', (e) => {
-    const card = e.target.closest('.module-card');
-    if (card) {
-        const sector = card.dataset.sector || "Construction";
-        const factor = card.querySelector('h3')?.innerText || "General Audit";
-        TSM_UI.runAudit(sector, factor);
-    }
-});
-console.log("TSM_UI: Direct Neural Link Established.");
-</script>
-window.TSM_UI = {
-    runAudit: async (sector, factor) => {
-        const feed = document.querySelector('.intelligence-feed-output') || document.getElementById('intelligence-feed-output');
-        if (feed) feed.innerHTML = '<span style="color: #00ffff;">[STRATEGIST] Internal Link: Processing...</span>';
-        try {
-            const res = await fetch(window.location.origin + '/api/audit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: `auditops "${sector}" --factor "${factor}" --logic strategist` })
-            });
-            const data = await res.json();
-            if (feed) feed.innerText = `[STRATEGIST] ${data.output || "Analysis Complete."}`;
-        } catch (e) {
-            if (feed) feed.innerText = "[STRATEGIST] Local API Bridge Failed.";
-        }
-    }
-};
-// Wire the sector cards to the auto-fill search prompt logic
-document.addEventListener('click', (e) => {
-    const card = e.target.closest('.module-card');
-    if (card) {
-        const sector = card.dataset.sector || "Construction";
-        const factor = card.querySelector('h3')?.innerText || "General Audit";
-        TSM_UI.runAudit(sector, factor);
-    }
-});
-console.log("TSM_UI: Direct Neural Link Established.");
-</script>
-<script>window.showTab = function(id, el) {document.querySelectorAll(".tab-content").forEach(c=>c.style.display="none");document.getElementById(id).style.display="block";document.querySelectorAll(".nav-tab").forEach(n=>n.classList.remove("active"));if(el)el.classList.add("active");}</script>
-function TSM_UI() {
-    this.runAudit = async (sector, factor) => {
-        const feed = document.querySelector('.intelligence-feed-output') || document.getElementById('intelligence-feed-output');
-        if (feed) feed.innerHTML = '<span style="color: #00ffff;">[STRATEGIST] Neural Link: Processing...</span>';
-        try {
-            const res = await fetch(window.location.origin + '/api/audit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: `auditops "${sector}" --factor "${factor}" --logic strategist` })
-            });
-            const data = await res.json();
-            if (feed) feed.innerText = `[STRATEGIST] ${data.output || "Synthesis Complete."}`;
-        } catch (e) {
-            if (feed) feed.innerText = "[STRATEGIST] Local API Bridge Failed.";
-        }
-    };
-}
-window.TSM_UI = TSM_UI;
-console.log("TSM_UI: Constructor Neural Link ACTIVE.");
-</script>
 </head>
 <body>
 
-<!-- TOPBAR -->
-<div class="topbar">
-  <div class="logo">
-    AUDITOPS <span class="logo-sep">//</span> <span class="logo-sub">SOVEREIGN CORE</span>
-  </div>
-  <div class="topbar-right">
-    <a class="tb-btn" href="https://construction-pro.tsmatter.com" style="text-decoration:none;display:inline-flex;align-items:center;gap:.4rem" title="Go to Construction Pro">← PRO</a>
-    <button class="tb-btn" onclick="openHowTo()">HOW TO</button>
-    <button class="tb-btn primary" onclick="buildReport()">CUSTOM REPORT</button>
-    <button class="tb-btn" onclick="exportCurrent()">EXPORT CURRENT</button>
-    <button class="tb-btn cmd" onclick="openCommand()">— COMMAND</button>
-  </div>
-</div>
+  <h1>Game Night</h1>
+  <p class="subtitle">Pick a game, gather your group, play on your phones</p>
 
-<!-- MAIN -->
-<div class="main">
-
-  <!-- LEFT SIDEBAR -->
-  <div class="sidebar">
-    <div class="sb-section">PLAYBOOKS</div>
-
-    <div class="playbook-item active" onclick="runPlaybook('material-theft',this)">
-      <div class="pb-title">Material Theft</div>
-      <div class="pb-sub">Loss Prevention</div>
-    </div>
-    <div class="playbook-item" onclick="runPlaybook('safety-protocol',this)">
-      <div class="pb-title">Safety Protocol</div>
-      <div class="pb-sub">Site Compliance</div>
-    </div>
-    <div class="playbook-item" onclick="runPlaybook('subcontractor-exposure',this)">
-      <div class="pb-title">Subcontractor Exposure</div>
-      <div class="pb-sub">Financial / Liability</div>
-    </div>
-    <div class="playbook-item" onclick="runPlaybook('cash-flow-stress',this)">
-      <div class="pb-title">Cash Flow Stress Test</div>
-      <div class="pb-sub">Liquidity / Forecast</div>
-    </div>
-    <div class="playbook-item" onclick="runPlaybook('osha-audit',this)">
-      <div class="pb-title">OSHA Readiness Audit</div>
-      <div class="pb-sub">Inspection Prep</div>
-    </div>
-    <div class="playbook-item" onclick="runPlaybook('lien-exposure',this)">
-      <div class="pb-title">Lien Exposure Review</div>
-      <div class="pb-sub">Legal / Title Risk</div>
-    </div>
-    <div class="playbook-item" onclick="runPlaybook('bid-strategy',this)">
-      <div class="pb-title">Bid Strategy Analysis</div>
-      <div class="pb-sub">Win Rate / Margin</div>
-    </div>
-
-    <div class="sb-section">SYSTEM</div>
-    <div class="sys-row">
-      <div class="sys-dot" style="background:var(--cyan)"></div>
-      <span class="sys-label">UPLINK</span>
-      <span class="sys-val">ACTIVE</span>
-    </div>
-    <div class="sys-row" id="sys-status-row">
-      <div class="sys-dot" style="background:var(--green)"></div>
-      <span class="sys-label" id="sys-status-text">SYSTEM READY</span>
-    </div>
-
-    <div class="sb-section">HOW TO GUIDE</div>
-    <div class="how-to">
-      <ol>
-        <li>Choose a module or playbook.</li>
-        <li>Use the top filters to narrow by category.</li>
-        <li>Click any module card to run analysis.</li>
-        <li>Review output in the Intelligence Feed.</li>
-        <li>Export the latest output or save it to report history.</li>
-        <li>Use Custom Report to combine multiple saved outputs.</li>
-      </ol>
-    </div>
+  <div class="card">
+    <label for="room-code">Have a room code?</label>
+    <input id="room-code" placeholder="e.g. FZQK" maxlength="4">
+    <label for="display-name">Your name</label>
+    <input id="display-name" placeholder="Your name" style="text-transform: none; letter-spacing: normal; font-family: -apple-system, sans-serif; font-size: 1rem;">
+    <button class="btn-join" id="join-btn">Join game</button>
+    <p class="error" id="join-error"></p>
   </div>
 
-  <!-- CONTENT AREA -->
-  <div class="content">
+  <p class="divider">— or —</p>
 
-    <!-- TAB BAR -->
-    <div class="tabbar">
-      <button class="tab-btn active" onclick="filterTab('ALL',this)">ALL</button>
-      <button class="tab-btn" onclick="filterTab('SAFETY',this)">SAFETY</button>
-      <button class="tab-btn" onclick="filterTab('FINANCE',this)">FINANCE</button>
-      <button class="tab-btn" onclick="filterTab('LOGISTICS',this)">LOGISTICS</button>
-      <button class="tab-btn" onclick="filterTab('COMPLIANCE',this)">COMPLIANCE</button>
-      <button class="tab-btn" onclick="filterTab('OPERATIONS',this)">OPERATIONS</button>
-      <button class="tab-btn" onclick="filterTab('GEOTECH',this)">GEOTECH</button>
-      <button class="tab-btn" onclick="filterTab('LEGAL',this)">LEGAL</button>
-    </div>
-
-    <!-- WORKSPACE -->
-    <div class="workspace">
-
-      <!-- MODULE GRID -->
-      <div class="module-area">
-        <div class="module-grid" id="moduleGrid">
-          <!-- SAFETY -->
-          <div class="mod-card" data-cat="SAFETY" style="--card-color:var(--red)" onclick="runModule(this,'OSHA Compliance Audit','Review all open safety incidents, OSHA compliance metrics, and fine exposure risk for a mid-size general contractor. Identify top 3 compliance gaps, estimate fine exposure in dollars, and provide a 30-day remediation plan. Use ► section markers.')">
-            <div class="mod-cat">SAFETY</div>
-            <div class="mod-name">OSHA Compliance Audit</div>
-            <div class="mod-desc">Fine exposure + 30-day remediation</div>
-          </div>
-          <div class="mod-card" data-cat="SAFETY" style="--card-color:var(--red)" onclick="runModule(this,'Incident Root Cause Analysis','Analyze patterns of recent jobsite incidents across fall hazards, equipment, and chemical exposure. Identify systemic root causes, calculate true cost of each incident type, and recommend targeted interventions with ROI. Use ► section markers.')">
-            <div class="mod-cat">SAFETY</div>
-            <div class="mod-name">Incident Root Cause</div>
-            <div class="mod-desc">Hidden costs + targeted interventions</div>
-          </div>
-          <div class="mod-card" data-cat="SAFETY" style="--card-color:var(--red)" onclick="runModule(this,'PPE & Safety Program ROI','Calculate the ROI of an enhanced PPE and safety training program for a construction company with 100+ workers. Include reduced incident rates, lower workers comp premiums, OSHA fine avoidance, and productivity gains. Use ► section markers.')">
-            <div class="mod-cat">SAFETY</div>
-            <div class="mod-name">PPE & Safety ROI</div>
-            <div class="mod-desc">12-month break-even + 3-year value</div>
-          </div>
-          <div class="mod-card" data-cat="SAFETY" style="--card-color:var(--red)" onclick="runModule(this,'OSHA 300 Log Audit','Audit an OSHA 300 log for recordkeeping accuracy, incident classification errors, and citation exposure. Identify misclassified recordable incidents, unreported cases, and documentation gaps. Estimate total fine exposure and provide a correction protocol. Use ► section markers.')">
-            <div class="mod-cat">SAFETY</div>
-            <div class="mod-name">OSHA 300 Log Audit</div>
-            <div class="mod-desc">Recordkeeping + citation exposure</div>
-          </div>
-
-          <!-- FINANCE -->
-          <div class="mod-card" data-cat="FINANCE" style="--card-color:var(--green)" onclick="runModule(this,'Cost Overrun Recovery Plan','Analyze a project 15% over budget with 40% work remaining. Identify cost overrun drivers, provide a concrete recovery plan, and estimate recoverable dollars for each action. Include quick wins vs structural fixes. Use ► section markers.')">
-            <div class="mod-cat">FINANCE</div>
-            <div class="mod-name">Cost Overrun Recovery</div>
-            <div class="mod-desc">Claw back margin — quick wins + fixes</div>
-          </div>
-          <div class="mod-card" data-cat="FINANCE" style="--card-color:var(--green)" onclick="runModule(this,'Cash Flow Optimization','Analyze cash flow optimization for a GC with $47M in active projects. Cover accelerating collections, front-loading, retainage recovery, financing options, and the 5 highest-impact levers to improve days cash on hand by 20+ days. Use ► section markers.')">
-            <div class="mod-cat">FINANCE</div>
-            <div class="mod-name">Cash Flow Optimization</div>
-            <div class="mod-desc">20+ day improvement on cash on hand</div>
-          </div>
-          <div class="mod-card" data-cat="FINANCE" style="--card-color:var(--green)" onclick="runModule(this,'Bid Margin Analysis','Analyze bidding strategy to maximize win rate AND profitability. Cover high-margin project types, competitor analysis, overhead allocation, hidden bid costs, and a bid scoring model. Provide specific percentage targets for each cost category. Use ► section markers.')">
-            <div class="mod-cat">FINANCE</div>
-            <div class="mod-name">Bid Margin Analysis</div>
-            <div class="mod-desc">Win rate + profitability optimization</div>
-          </div>
-          <div class="mod-card" data-cat="FINANCE" style="--card-color:var(--green)" onclick="runModule(this,'Retainage Release Strategy','Analyze retainage held and owed across all active projects and subcontracts. Model early release scenarios and calculate the cash flow benefit. Flag projects where retainage exceeds contract thresholds or statutory limits. Provide a step-by-step retainage recovery protocol. Use ► section markers.')">
-            <div class="mod-cat">FINANCE</div>
-            <div class="mod-name">Retainage Strategy</div>
-            <div class="mod-desc">Retention billing & release optimization</div>
-          </div>
-
-          <!-- LOGISTICS -->
-          <div class="mod-card" data-cat="LOGISTICS" style="--card-color:var(--cyan)" onclick="runModule(this,'Weather Risk Forecasting','Forecast weather-related delays for the next 30 days. Identify vulnerable activities and recommend schedule buffers or protective measures. Calculate the cost of each day of weather delay by trade. Use ► section markers.')">
-            <div class="mod-cat">LOGISTICS</div>
-            <div class="mod-name">Weather Risk</div>
-            <div class="mod-desc">Weather delay forecasting + mitigation</div>
-          </div>
-          <div class="mod-card" data-cat="LOGISTICS" style="--card-color:var(--cyan)" onclick="runModule(this,'Soil & Geotechnical Risk Analysis','Analyze geotechnical reports for bearing capacity adequacy, settlement risk, expansive soil conditions, groundwater depth, and compaction test results. Flag conditions requiring design modifications. Estimate cost impact of each risk. Use ► section markers.')">
-            <div class="mod-cat">LOGISTICS</div>
-            <div class="mod-name">Soil Report</div>
-            <div class="mod-desc">Geotech risk + bearing capacity</div>
-          </div>
-          <div class="mod-card" data-cat="LOGISTICS" style="--card-color:var(--cyan)" onclick="runModule(this,'Equipment Utilization Analysis','Analyze equipment utilization rates, idle time, and maintenance costs. Identify underutilized assets that can be demobilized, calculate own vs rent ROI threshold, and provide a fleet rebalancing strategy to reduce equipment costs 10-15%. Use ► section markers.')">
-            <div class="mod-cat">LOGISTICS</div>
-            <div class="mod-name">Tool Tracking</div>
-            <div class="mod-desc">Asset utilization + ROI analysis</div>
-          </div>
-          <div class="mod-card" data-cat="LOGISTICS" style="--card-color:var(--cyan)" onclick="runModule(this,'Underground Utility Conflict Analysis','Cross-reference excavation plans with utility as-builts and 811 locate data. Flag conflict zones by risk level and recommend potholing locations. Estimate cost and schedule impact of each identified conflict. Use ► section markers.')">
-            <div class="mod-cat">LOGISTICS</div>
-            <div class="mod-name">Utility Map</div>
-            <div class="mod-desc">811 data + excavation clash detection</div>
-          </div>
-          <div class="mod-card" data-cat="LOGISTICS" style="--card-color:var(--cyan)" onclick="runModule(this,'Traffic Flow & Site Access Analysis','Analyze site access logistics, traffic flow during construction, haul route planning, crane radius conflicts, and staging area optimization. Identify risks to schedule from access constraints. Use ► section markers.')">
-            <div class="mod-cat">LOGISTICS</div>
-            <div class="mod-name">Traffic Flow</div>
-            <div class="mod-desc">Site access + haul route optimization</div>
-          </div>
-          <div class="mod-card" data-cat="LOGISTICS" style="--card-color:var(--cyan)" onclick="runModule(this,'Supply Chain & Materials Optimization','Analyze material procurement, waste percentages, and over-ordering. Recommend substitutions or quantity adjustments to reduce cost by 10%. Cover supply chain risk, lead times, and procurement sequencing. Use ► section markers.')">
-            <div class="mod-cat">LOGISTICS</div>
-            <div class="mod-name">Supply Chain</div>
-            <div class="mod-desc">Procurement + waste reduction</div>
-          </div>
-          <div class="mod-card" data-cat="LOGISTICS" style="--card-color:var(--cyan)" onclick="runModule(this,'Materials Optimization Analysis','Analyze material waste, substitution opportunities, and procurement timing. Identify the top cost reduction opportunities across major material categories. Calculate total savings potential and provide a 60-day implementation plan. Use ► section markers.')">
-            <div class="mod-cat">LOGISTICS</div>
-            <div class="mod-name">Material Optimization</div>
-            <div class="mod-desc">Waste reduction + cost savings</div>
-          </div>
-
-          <!-- COMPLIANCE -->
-          <div class="mod-card" data-cat="COMPLIANCE" style="--card-color:var(--amber)" onclick="runModule(this,'Davis-Bacon Prevailing Wage Audit','Audit certified payroll for Davis-Bacon prevailing wage compliance, fringe benefit calculation accuracy, and deduction authorization completeness. Identify underpayment exposure and provide a correction protocol. Use ► section markers.')">
-            <div class="mod-cat">COMPLIANCE</div>
-            <div class="mod-name">Davis-Bacon Audit</div>
-            <div class="mod-desc">Prevailing wage + certified payroll</div>
-          </div>
-          <div class="mod-card" data-cat="COMPLIANCE" style="--card-color:var(--amber)" onclick="runModule(this,'Environmental Compliance Audit','Review SWPPP compliance documentation, stormwater discharge records, dust control measures, and hazmat handling logs. Identify items that could trigger EPA enforcement. Calculate fine exposure and provide a 30-day remediation checklist. Use ► section markers.')">
-            <div class="mod-cat">COMPLIANCE</div>
-            <div class="mod-name">Environmental Audit</div>
-            <div class="mod-desc">SWPPP + EPA + air quality</div>
-          </div>
-          <div class="mod-card" data-cat="COMPLIANCE" style="--card-color:var(--amber)" onclick="runModule(this,'Workforce Compliance Audit','Audit certified payroll for prevailing wage compliance, verify I-9 documentation status, and confirm OSHA 10/30 certifications are current for all workers on site. Identify underpayment exposure and flag workers with expired OSHA cards. Use ► section markers.')">
-            <div class="mod-cat">COMPLIANCE</div>
-            <div class="mod-name">Workforce Compliance</div>
-            <div class="mod-desc">I-9 + OSHA certs + prevailing wage</div>
-          </div>
-          <div class="mod-card" data-cat="COMPLIANCE" style="--card-color:var(--amber)" onclick="runModule(this,'Noise & Vibration Compliance','Review noise monitoring logs, vibration readings near sensitive structures, and city permit hour restrictions. Flag hours-of-operation violations or vibration threshold exceedances. Calculate fine exposure and project delay risk. Use ► section markers.')">
-            <div class="mod-cat">COMPLIANCE</div>
-            <div class="mod-name">Noise & Vibration</div>
-            <div class="mod-desc">Community impact + permit compliance</div>
-          </div>
-
-          <!-- OPERATIONS -->
-          <div class="mod-card" data-cat="OPERATIONS" style="--card-color:var(--purple)" onclick="runModule(this,'Critical Path Acceleration','A project is 4 days behind on the critical path. Provide a recovery schedule analysis: crash options and cost per day, fast-tracking opportunities, resource reallocation, and how to document delays for time extension claims. Use ► section markers.')">
-            <div class="mod-cat">OPERATIONS</div>
-            <div class="mod-name">Critical Path Accel.</div>
-            <div class="mod-desc">Crash options + delay documentation</div>
-          </div>
-          <div class="mod-card" data-cat="OPERATIONS" style="--card-color:var(--purple)" onclick="runModule(this,'RFI Constructive Change Analysis','Analyze an RFI log for constructive change order exposure, owner response delay patterns, and documentation gaps that weaken claims. Calculate the dollar value of unbilled constructive changes and assess compensable delay. Use ► section markers.')">
-            <div class="mod-cat">OPERATIONS</div>
-            <div class="mod-name">RFI Analysis</div>
-            <div class="mod-desc">Change order exposure + delay patterns</div>
-          </div>
-          <div class="mod-card" data-cat="OPERATIONS" style="--card-color:var(--purple)" onclick="runModule(this,'Labor Productivity Analysis','Analyze labor productivity for a GC with 127 field workers at 84% efficiency. Identify the top 5 productivity killers, calculate the dollar cost of each percentage point of lost productivity, and provide a 60-day action plan to reach 90%+ efficiency. Use ► section markers.')">
-            <div class="mod-cat">OPERATIONS</div>
-            <div class="mod-name">Labor Productivity</div>
-            <div class="mod-desc">60-day plan to reach 90%+ efficiency</div>
-          </div>
-          <div class="mod-card" data-cat="OPERATIONS" style="--card-color:var(--purple)" onclick="runModule(this,'Subcontractor Performance Review','Analyze subcontractor performance across 8 KPIs. Cover financial impact of underperforming subs, scoring system, strategies to improve mid-project, contract clauses that protect the GC, and how to build a preferred vendor program that improves margins 2-4% per project. Use ► section markers.')">
-            <div class="mod-cat">OPERATIONS</div>
-            <div class="mod-name">Subcontractor Review</div>
-            <div class="mod-desc">8-KPI scoring + preferred vendor ROI</div>
-          </div>
-          <div class="mod-card" data-cat="OPERATIONS" style="--card-color:var(--purple)" onclick="runModule(this,'Commissioning Readiness Assessment','Assess commissioning status for all MEP systems including TAB, controls, fire life safety, building envelope testing, and utility connections. Identify items blocking Certificate of Occupancy. Prioritize by lead time and calculate per-day CO delay cost. Use ► section markers.')">
-            <div class="mod-cat">OPERATIONS</div>
-            <div class="mod-name">Commissioning</div>
-            <div class="mod-desc">MEP startup + CO readiness</div>
-          </div>
-          <div class="mod-card" data-cat="OPERATIONS" style="--card-color:var(--purple)" onclick="runModule(this,'BIM Coordination Workflow Audit','Audit a BIM coordination workflow for RFI integration efficiency, model versioning control adequacy, and multi-discipline synchronization gaps. Identify RFIs resolved in the field without model updates and coordination meeting gaps. Quantify rework cost. Use ► section markers.')">
-            <div class="mod-cat">OPERATIONS</div>
-            <div class="mod-name">BIM Coordination</div>
-            <div class="mod-desc">Clash detection + version control</div>
-          </div>
-
-          <!-- GEOTECH -->
-          <div class="mod-card" data-cat="GEOTECH" style="--card-color:var(--orange)" onclick="runModule(this,'Concrete QC & Pour Log Audit','Review all concrete pour logs, cylinder break test results, slump tests, and temperature records. Flag pours with failing 28-day breaks, improper cure conditions, or out-of-spec slump. Calculate structural risk and remediation cost for each deficient pour. Use ► section markers.')">
-            <div class="mod-cat">GEOTECH</div>
-            <div class="mod-name">Concrete QC</div>
-            <div class="mod-desc">Mix design, cure & cylinder breaks</div>
-          </div>
-          <div class="mod-card" data-cat="GEOTECH" style="--card-color:var(--orange)" onclick="runModule(this,'Seismic & Wind Risk Assessment','Evaluate site seismic design category, wind exposure classification, and lateral system performance. Flag detailing deficiencies, missing special inspections, or submittals deviating from structural engineer requirements. Estimate liability exposure. Use ► section markers.')">
-            <div class="mod-cat">GEOTECH</div>
-            <div class="mod-name">Seismic & Wind Risk</div>
-            <div class="mod-desc">Lateral load gaps + special inspections</div>
-          </div>
-          <div class="mod-card" data-cat="GEOTECH" style="--card-color:var(--orange)" onclick="runModule(this,'Site Civil & Grading Review','Review site civil grading plans, compaction test results, drainage design, and as-built surveys. Identify areas failing compaction thresholds, inadequate drainage slopes, or grades outside spec. Calculate rework cost and schedule impact. Use ► section markers.')">
-            <div class="mod-cat">GEOTECH</div>
-            <div class="mod-name">Site Civil & Grading</div>
-            <div class="mod-desc">Drainage + compaction + grade tolerance</div>
-          </div>
-          <div class="mod-card" data-cat="GEOTECH" style="--card-color:var(--orange)" onclick="runModule(this,'Structural Monitoring Analysis','Analyze structural sensor data and inspection reports for unusual deflection, vibration, settlement, or load patterns. Flag readings outside design tolerances. Assess structural risk, estimate remediation cost, and recommend an accelerated monitoring protocol. Use ► section markers.')">
-            <div class="mod-cat">GEOTECH</div>
-            <div class="mod-name">Structural Monitoring</div>
-            <div class="mod-desc">Load, deflection & settlement</div>
-          </div>
-
-          <!-- LEGAL -->
-          <div class="mod-card" data-cat="LEGAL" style="--card-color:var(--blue)" onclick="runModule(this,'Lien & Contract Risk Audit','Audit the legal risk profile of a GC with 8 active projects. Cover mechanics lien deadlines, preliminary notice requirements, lien waiver mistakes, contract clauses that expose GCs to unlimited liability, insurance coverage gaps, and the 5 contract modifications that protect GC margin. Use ► section markers.')">
-            <div class="mod-cat">LEGAL</div>
-            <div class="mod-name">Lien & Contract Risk</div>
-            <div class="mod-desc">Filing deadlines + rights waiver value</div>
-          </div>
-          <div class="mod-card" data-cat="LEGAL" style="--card-color:var(--blue)" onclick="runModule(this,'Subcontractor Default Risk Scoring','Score all active subcontractors on payment history, schedule adherence, quality defects, and financial health indicators. Flag any at risk of default or bond claim. Calculate total exposure from underperforming subs and recommend mitigation. Use ► section markers.')">
-            <div class="mod-cat">LEGAL</div>
-            <div class="mod-name">Sub Default Risk</div>
-            <div class="mod-desc">Performance scoring + bond exposure</div>
-          </div>
-          <div class="mod-card" data-cat="LEGAL" style="--card-color:var(--blue)" onclick="runModule(this,'Dispute & Claim Strategy','A project has escalating disputes with an owner over $340K in extra costs. Outline the claim strategy: documentation requirements, notice obligations, claim calculation methodology including Eichleay formula, and negotiation vs arbitration analysis. Use ► section markers.')">
-            <div class="mod-cat">LEGAL</div>
-            <div class="mod-name">Dispute Strategy</div>
-            <div class="mod-desc">Eichleay formula + recovery rates</div>
-          </div>
-          <div class="mod-card" data-cat="LEGAL" style="--card-color:var(--blue)" onclick="runModule(this,'Insurance & Bonds Coverage Review','Review builders risk, GL, professional liability, and payment/performance bond status. Flag expiring policies within 60 days, coverage gaps relative to contract requirements, and open claims. Calculate total uninsured exposure and recommend corrective actions. Use ► section markers.')">
-            <div class="mod-cat">LEGAL</div>
-            <div class="mod-name">Insurance & Bonds</div>
-            <div class="mod-desc">Coverage gaps + open claims</div>
-          </div>
-        </div>
-
-        <!-- INTELLIGENCE FEED -->
-        <div class="feed-bar">
-          <span class="feed-label">INTELLIGENCE FEED</span>
-          <div style="display:flex;align-items:center;gap:.5rem">
-            <button onclick="saveCurrentToReport()" style="font-family:var(--mono);font-size:.5rem;letter-spacing:.08rem;padding:.25rem .6rem;background:transparent;border:1px solid var(--cyan2);color:var(--cyan);cursor:pointer;text-transform:uppercase" title="Save current output to report builder">SAVE →</button>
-            <button onclick="copyFeedOutput()" style="font-family:var(--mono);font-size:.5rem;letter-spacing:.08rem;padding:.25rem .6rem;background:transparent;border:1px solid var(--border2);color:var(--muted);cursor:pointer;text-transform:uppercase" title="Copy to clipboard">COPY</button>
-            <span class="feed-status" id="feedStatus">SELECT A MODULE TO BEGIN</span>
-          </div>
-        </div>
-        <div class="feed-output" id="feedOutput">
-          <span class="feed-placeholder">Select a module or playbook above to run analysis. Output will appear here.</span>
-        </div>
-      </div>
-
-      <!-- RIGHT PANEL -->
-      <div class="right-panel">
-
-        <div class="rp-section" style="max-height:180px;overflow-y:auto">
-          <div class="rp-title">REPORT HISTORY</div>
-          <div id="reportHistory">
-            <div style="font-size:.55rem;color:var(--muted);font-family:var(--mono)">No reports saved yet.</div>
-          </div>
-          <button class="rp-btn" style="margin-top:.5rem" onclick="saveCurrentFeed()">&#43; SAVE CURRENT OUTPUT</button>
-        </div>
-
-        <div class="rp-section" style="flex:1;overflow-y:auto">
-          <div class="rp-title">CUSTOM REPORT BUILDER</div>
-          <input
-            type="text"
-            id="reportTitle"
-            placeholder="Custom AuditOps Report"
-            style="width:100%;background:var(--s2);border:1px solid var(--border2);color:var(--white);font-family:var(--mono);font-size:.58rem;padding:.4rem .5rem;outline:none;margin-bottom:.4rem;"
-          >
-          <div style="font-size:.55rem;color:var(--muted);margin-bottom:.4rem;font-family:var(--mono)">Click history items to add. Edit freely.</div>
-          <textarea
-            class="rp-textarea"
-            id="reportContent"
-            placeholder="Select saved outputs or edit this report manually..."
-            style="height:90px"
-          ></textarea>
-          <button class="rp-btn" onclick="buildReport()">&#43; ADD ALL SAVED</button>
-          <button class="rp-btn" style="margin-top:.3rem;border-color:var(--green);color:var(--green)" onclick="exportReport()">&#8595; EXPORT REPORT (.TXT)</button>
-          <button class="rp-btn" style="margin-top:.3rem;border-color:var(--amber);color:var(--amber)" onclick="copyReport()">&#8853; COPY TO CLIPBOARD</button>
-          <button class="rp-btn danger" onclick="clearReport()">&#10005; CLEAR</button>
-        </div>
-
-        <div class="rp-section">
-          <div class="rp-title">SESSION SUMMARY</div>
-          <div class="stat-row">
-            <span class="stat-label">Modules</span>
-            <span class="stat-val" id="statModules">30</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Saved outputs</span>
-            <span class="stat-val" id="statSaved">0</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Last module</span>
-            <span class="stat-val" id="statLast" style="font-size:.5rem;color:var(--muted)">—</span>
-          </div>
-        </div>
-
-      </div>
-    </div>
+  <div class="card">
+    <button class="btn-create" id="create-btn">Start a new game</button>
   </div>
-</div>
 
-// ── STATE ──────────────────────────────────────────────────
-let savedOutputs = [];
-let runningCard = null;
-const GROQ_KEY = '';  // served via /api/chat proxy
+  <script type="module">
+    import { supabase, saveSession, generateRoomCode } from './js/supabase-client.js';
 
-const SYSTEM = `You are the TSM Construction Intelligence Strategist — an elite AI for construction company owners, GCs, project managers, and developers. You have expert-level knowledge of:
-- OSHA compliance, safety programs, incident analysis, and workers comp optimization
-- Construction finance: cost codes, job costing, cash flow, change order management, retainage
-- Project management: critical path, schedule recovery, RFI management, BIM coordination
-- Legal: lien law (all 50 states), subcontract risk, dispute resolution, Eichleay formula claims
-- Geotech: soil reports, compaction testing, concrete QC, seismic design categories
-- Compliance: Davis-Bacon, SWPPP, EPA, prevailing wage, OSHA 300 logs
-- Equipment: fleet optimization, own vs rent analysis, utilization metrics
-- Subcontractor management: performance scoring, default risk, preferred vendor programs
-Always respond with ► section headers. Every analysis must include specific dollar amounts, timelines, and actionable recommendations. Be direct, expert, and commercially precise.`;
+    const joinBtn = document.getElementById('join-btn');
+    const createBtn = document.getElementById('create-btn');
+    const roomCodeInput = document.getElementById('room-code');
+    const nameInput = document.getElementById('display-name');
+    const joinError = document.getElementById('join-error');
 
-const PLAYBOOKS = {
-  'material-theft': 'Analyze material theft and loss prevention for a construction site. Cover: the most commonly stolen materials and their replacement costs, surveillance and inventory control systems with ROI, subcontractor accountability protocols, insurance claim procedures, and how to build a loss prevention program that reduces shrinkage by 60-80%. Include specific dollar amounts for a mid-size commercial project. Use ► section markers.',
-  'safety-protocol': 'Perform a comprehensive safety protocol audit for a construction company. Cover: OSHA 300 log accuracy, required safety programs and documentation, toolbox talk frequency and documentation, PPE compliance enforcement, incident reporting procedures, and the 5 most common OSHA citations in commercial construction. Estimate total fine exposure and provide a 30-day remediation checklist. Use ► section markers.',
-  'subcontractor-exposure': 'Analyze subcontractor financial and legal exposure for a GC with 15 active subcontracts. Cover: payment bond adequacy, retainage structure, lien waiver collection procedures, insurance certificate compliance, the top 5 sub default risk indicators, and the GC liability exposure from underperforming subs. Calculate total exposure and provide a risk mitigation protocol. Use ► section markers.',
-  'cash-flow-stress': 'Perform a cash flow stress test for a construction company with $12M in backlog and $1.8M cash position. Model 3 scenarios: (1) owner payment delayed 30 days on 2 projects, (2) major subcontractor default requiring replacement, (3) materials price spike of 15%. For each scenario: calculate the cash impact, identify the break point, and provide a specific liquidity response plan. Use ► section markers.',
-  'osha-audit': 'Perform a complete OSHA inspection readiness audit for a commercial construction site. Cover: documentation requirements (SDS, HAZCOM, emergency action plan), required postings, personal fall arrest system compliance, scaffold inspection records, equipment pre-use inspection logs, confined space program, and lockout/tagout procedures. Flag the top 10 most likely citations and their penalty ranges. Use ► section markers.',
-  'lien-exposure': 'Analyze lien and title risk for a GC with 8 active projects. Cover: preliminary notice requirements by state for all tier subs and suppliers, lien deadline calculation methodology, conditional vs unconditional lien release tracking, joint check agreement procedures, retainage lien rights, and the dollar value of lien rights commonly lost through procedural errors. Provide a lien calendar and release tracking protocol. Use ► section markers.',
-  'bid-strategy': 'Analyze bidding strategy to maximize both win rate and profitability for a $25M annual volume GC. Cover: how to identify high-margin project types, estimating accuracy improvement strategies, overhead allocation methodology, the hidden bid costs most contractors miss, competitor analysis approach, and how to build a bid scoring model that targets 18-22% gross margin. Provide specific percentage targets for each cost category. Use ► section markers.'
-};
+    joinBtn.addEventListener('click', async () => {
+      const roomCode = roomCodeInput.value.trim().toUpperCase();
+      const displayName = nameInput.value.trim();
+      joinError.textContent = '';
 
-// ── TAB FILTER ─────────────────────────────────────────────
-function filterTab(cat, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.mod-card').forEach(card => {
-    if (cat === 'ALL') {
-      card.classList.remove('hidden');
-    } else {
-      card.classList.toggle('hidden', card.dataset.cat !== cat);
-    }
-  });
-}
+      if (!roomCode || !displayName) {
+        joinError.textContent = 'Enter a room code and your name';
+        return;
+      }
 
-// ── RUN MODULE ─────────────────────────────────────────────
-async function runModule(card, title, prompt) {
-  if (runningCard) runningCard.classList.remove('running');
-  runningCard = card;
-  card.classList.add('running');
+      joinBtn.disabled = true;
+      joinBtn.textContent = 'Joining...';
 
-  const feed = document.getElementById('feedOutput');
-  const status = document.getElementById('feedStatus');
-  document.getElementById('statLast').textContent = title;
-  status.textContent = 'Completed: ' + title;
+      const { data: game, error: gameError } = await supabase
+        .from('games')
+        .select('id, status')
+        .eq('room_code', roomCode)
+        .maybeSingle();
 
-  feed.innerHTML = `<span class="feed-tag">[STRATEGIST] ${title}</span>\n\n<span style="color:var(--muted)">Analyzing...</span>`;
+      if (gameError || !game) {
+        joinError.textContent = "That room code doesn't exist";
+        joinBtn.disabled = false;
+        joinBtn.textContent = 'Join game';
+        return;
+      }
 
-  try {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [
-          { role: 'system', content: SYSTEM },
-          { role: 'user', content: prompt }
-        ]
-      })
+      const { data: player, error: playerError } = await supabase
+        .from('players')
+        .insert({ game_id: game.id, display_name: displayName, is_host: false })
+        .select()
+        .single();
+
+      if (playerError) {
+        joinError.textContent = 'Could not join — try again';
+        console.error(playerError);
+        joinBtn.disabled = false;
+        joinBtn.textContent = 'Join game';
+        return;
+      }
+
+      saveSession(game.id, player.id, false);
+      window.location.href = `lobby.html?room=${roomCode}`;
     });
-    const data = await res.json();
-    const text = data.answer || data.response || data.content ||
-      (data.choices && data.choices[0]?.message?.content) || 'No response received.';
 
-    const formatted = `<span class="feed-tag">[STRATEGIST] ${title}</span>\n\n` +
-      text.replace(/►\s*/g, '<span class="feed-section">►</span> ')
-          .replace(/\*\*(.*?)\*\*/g, '<span class="feed-bold">$1</span>');
+    createBtn.addEventListener('click', async () => {
+      const displayName = nameInput.value.trim();
+      if (!displayName) {
+        joinError.textContent = 'Enter your name first';
+        nameInput.focus();
+        return;
+      }
 
-    feed.innerHTML = formatted;
-    feed.scrollTop = 0;
+      createBtn.disabled = true;
+      createBtn.textContent = 'Creating...';
 
-    // Auto-save to report history
-    saveOutput(title, text);
-    card.classList.remove('running');
-    setStatus('Analysis complete — ' + title);
-  } catch(e) {
-    feed.innerHTML = `<span style="color:var(--red)">[ERROR] Analysis failed: ${e.message}</span>\n<span style="color:var(--muted)">Check network connection and API configuration.</span>`;
-    card.classList.remove('running');
-    setStatus('ERROR — check connection');
-  }
-}
+      // Try a few times in case of a rare room_code collision (unique constraint).
+      let game = null;
+      for (let attempt = 0; attempt < 5 && !game; attempt++) {
+        const roomCode = generateRoomCode();
+        const { data, error } = await supabase
+          .from('games')
+          .insert({ room_code: roomCode, status: 'lobby' })
+          .select()
+          .single();
 
-// ── RUN PLAYBOOK ───────────────────────────────────────────
-async function runPlaybook(key, el) {
-  document.querySelectorAll('.playbook-item').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  const prompt = PLAYBOOKS[key];
-  const title = el.querySelector('.pb-title').textContent;
-  if (!prompt) return;
-
-  const feed = document.getElementById('feedOutput');
-  document.getElementById('statLast').textContent = title;
-  document.getElementById('feedStatus').textContent = 'Running: ' + title;
-  feed.innerHTML = `<span class="feed-tag">[PLAYBOOK] ${title}</span>\n\n<span style="color:var(--muted)">Running playbook analysis...</span>`;
-
-  try {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [
-          { role: 'system', content: SYSTEM },
-          { role: 'user', content: prompt }
-        ]
-      })
-    });
-    const data = await res.json();
-    const text = data.answer || data.response || data.content ||
-      (data.choices && data.choices[0]?.message?.content) || 'No response received.';
-
-    feed.innerHTML = `<span class="feed-tag">[PLAYBOOK] ${title}</span>\n\n` +
-      text.replace(/►\s*/g, '<span class="feed-section">►</span> ')
-          .replace(/\*\*(.*?)\*\*/g, '<span class="feed-bold">$1</span>');
-    feed.scrollTop = 0;
-    saveOutput(title, text);
-    setStatus('Playbook complete — ' + title);
-  } catch(e) {
-    feed.innerHTML = `<span style="color:var(--red)">[ERROR] ${e.message}</span>`;
-    setStatus('ERROR');
-  }
-}
-
-// ── SAVE OUTPUT ────────────────────────────────────────────
-function saveOutput(title, text) {
-  savedOutputs.push({ title, text, time: new Date() });
-  document.getElementById('statSaved').textContent = savedOutputs.length;
-
-  const hist = document.getElementById('reportHistory');
-  const item = document.createElement('div');
-  item.className = 'report-item';
-  item.innerHTML = `<div class="ri-name">${title}</div><div class="ri-date">${new Date().toLocaleString()}</div>`;
-  item.onclick = () => loadToReport(title, text);
-  if (hist.querySelector('[style]')) hist.innerHTML = '';
-  hist.insertBefore(item, hist.firstChild);
-}
-
-function loadToReport(title, text) {
-  const current = document.getElementById('reportContent').value;
-  document.getElementById('reportContent').value =
-    (current ? current + '\n\n---\n\n' : '') + `## ${title}\n\n${text}`;
-}
-
-// ── REPORT ACTIONS ─────────────────────────────────────────
-function buildReport() {
-  if (savedOutputs.length === 0) {
-    alert('Run some analyses first, then use Custom Report to combine them.');
-    return;
-  }
-  const combined = savedOutputs.map(o => `## ${o.title}\n\n${o.text}`).join('\n\n---\n\n');
-  document.getElementById('reportContent').value = combined;
-}
-
-function exportReport() {
-  const title = document.getElementById('reportTitle').value || 'Construction Intelligence Report';
-  const content = document.getElementById('reportContent').value;
-  if (!content.trim()) { alert('No content to export.'); return; }
-  const blob = new Blob([`# ${title}\n\nGenerated: ${new Date().toLocaleString()}\n\n${content}`],
-    { type: 'text/plain' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = title.replace(/\s+/g,'-').toLowerCase() + '.txt';
-  a.click();
-}
-
-function exportCurrent() {
-  const content = document.getElementById('feedOutput').innerText;
-  if (!content || content.includes('Select a module')) { alert('No output to export.'); return; }
-  const blob = new Blob([content], { type: 'text/plain' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = 'intelligence-output.txt'; a.click();
-}
-
-function clearReport() {
-  document.getElementById('reportContent').value = '';
-  document.getElementById('reportTitle').value = '';
-}
-
-function openHowTo() {
-  alert('HOW TO USE CONSTRUCTION INTELLIGENCE:\n\n1. Choose a MODULE CATEGORY using the top tabs (Safety, Finance, Logistics, etc.)\n2. Click any MODULE CARD to run an AI analysis\n3. Review output in the INTELLIGENCE FEED\n4. Outputs auto-save to REPORT HISTORY on the right\n5. Click a report history item to load it into the CUSTOM REPORT BUILDER\n6. Use EXPORT REPORT to download your combined report\n7. PLAYBOOKS (left sidebar) run multi-topic analyses\n\nFor best results: run multiple related modules, then use Custom Report to combine insights into a single deliverable.');
-}
-
-function openCommand() {
-  const cmd = prompt('SOVEREIGN COMMAND — Enter analysis request:');
-  if (!cmd) return;
-  runModule({classList:{add:()=>{},remove:()=>{}}}, 'Custom Command', cmd);
-}
-
-function setStatus(msg) {
-  document.getElementById('sys-status-text').textContent = msg;
-  setTimeout(() => document.getElementById('sys-status-text').textContent = 'SYSTEM READY', 5000);
-}
-
-// ── SAVE CURRENT FEED TO REPORT ───────────────────────────
-function saveCurrentToReport() {
-  const feed = document.getElementById('feedOutput');
-  const text = feed.innerText;
-  if (!text || text.includes('Select a module')) {
-    setStatus('Nothing to save — run a module first');
-    return;
-  }
-  const lastMod = document.getElementById('statLast').textContent || 'Analysis';
-  loadToReport(lastMod, text);
-  setStatus('Saved to report builder ✓');
-
-  // Flash the right panel
-  const rp = document.getElementById('reportContent');
-  rp.style.borderColor = 'var(--cyan)';
-  setTimeout(() => rp.style.borderColor = '', 1500);
-}
-
-function copyFeedOutput() {
-  const feed = document.getElementById('feedOutput');
-  const text = feed.innerText;
-  if (!text || text.includes('Select a module')) return;
-  navigator.clipboard.writeText(text).then(() => setStatus('Copied to clipboard ✓'));
-}
-
-// ── SAVE CURRENT FEED MANUALLY ────────────────────────────
-function saveCurrentFeed() {
-  const feed = document.getElementById('feedOutput');
-  const text = feed.innerText;
-  if (!text || text.includes('Select a module')) {
-    alert('Run a module first, then save the output.');
-    return;
-  }
-  const lastLabel = document.getElementById('statLast').textContent;
-  const title = lastLabel !== '—' ? lastLabel : 'Manual Save ' + new Date().toLocaleTimeString();
-  saveOutput(title, text);
-  setStatus('Output saved: ' + title);
-}
-
-// ── COPY REPORT TO CLIPBOARD ───────────────────────────────
-function copyReport() {
-  const content = document.getElementById('reportContent').value;
-  if (!content.trim()) { alert('No content to copy.'); return; }
-  navigator.clipboard.writeText(content).then(() => {
-    setStatus('Report copied to clipboard');
-  }).catch(() => {
-    // Fallback
-    const ta = document.createElement('textarea');
-    ta.value = content;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    setStatus('Report copied to clipboard');
-  });
-}
-
-// ── INIT ───────────────────────────────────────────────────
-document.getElementById('statModules').textContent =
-  document.querySelectorAll('.mod-card').length;
-</script>
-<script>window.ui = new TSM_UI();</script>
-<div id="tsm-ai-widget" style="position:fixed;bottom:16px;right:16px;z-index:9999;width:340px;font-family:'Share Tech Mono',monospace">
-  <div id="tsm-ai-toggle" onclick="document.getElementById('tsm-ai-panel').style.display=document.getElementById('tsm-ai-panel').style.display==='none'?'flex':'none'" style="background:#0a1628;border:1px solid rgba(0,229,255,0.3);border-radius:3px;padding:7px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:9px;color:#00e5ff;letter-spacing:.1em;box-shadow:0 0 20px rgba(0,229,255,0.1)">
-    <span style="width:6px;height:6px;border-radius:50%;background:#00e676;animation:tsmpulse 2s infinite;flex-shrink:0"></span>
-    TSM AI · CONSTRUCTION NODE · LIVE
-  </div>
-  <div id="tsm-ai-panel" style="display:none;flex-direction:column;gap:0;background:#070d18;border:1px solid rgba(0,229,255,0.2);border-radius:3px;margin-top:4px;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,0.6)">
-    <div style="padding:8px 12px;border-bottom:1px solid rgba(0,229,255,0.08);font-size:8px;color:#5a7a9a;letter-spacing:.1em">// TSM AI COMMAND · /api/construction/query</div>
-    <div id="tsm-ai-msgs" style="max-height:240px;overflow-y:auto;padding:8px 12px;display:flex;flex-direction:column;gap:6px;font-size:10px;line-height:1.6;scrollbar-width:thin;scrollbar-color:rgba(0,229,255,0.1) transparent"></div>
-    <div id="tsm-ai-think" style="display:none;padding:4px 12px;font-size:8px;color:#00b8d4;letter-spacing:.08em;animation:tsmpulse 1s infinite">// AI PROCESSING…</div>
-    <div style="display:flex;gap:0;border-top:1px solid rgba(0,229,255,0.08)">
-      <input id="tsm-ai-input" placeholder="Ask construction AI…" onkeydown="if(event.key==='Enter')tsmAsk()" style="flex:1;background:transparent;border:none;outline:none;padding:8px 12px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#c8d8e8;caret-color:#00e5ff" />
-      <button onclick="tsmAsk()" style="background:transparent;border:none;border-left:1px solid rgba(0,229,255,0.08);padding:8px 12px;font-family:'Share Tech Mono',monospace;font-size:8px;color:#00e5ff;cursor:pointer;letter-spacing:.08em">SEND</button>
-    </div>
-  </div>
-</div>
-<style>
-@keyframes tsmpulse{0%,100%{opacity:1}50%{opacity:.3}}
-#tsm-ai-msgs::-webkit-scrollbar{width:2px}
-#tsm-ai-msgs::-webkit-scrollbar-thumb{background:rgba(0,229,255,0.15)}
-</style>
-async function tsmAsk() {
-  var input = document.getElementById('tsm-ai-input');
-  var msgs = document.getElementById('tsm-ai-msgs');
-  var think = document.getElementById('tsm-ai-think');
-  var q = input.value.trim();
-  if (!q) return;
-  input.value = '';
-
-  var uDiv = document.createElement('div');
-  uDiv.style.cssText = 'color:#00b8d4;border-left:2px solid rgba(0,229,255,0.3);padding-left:6px';
-  uDiv.textContent = q;
-  msgs.appendChild(uDiv);
-
-  think.style.display = 'block';
-  msgs.scrollTop = msgs.scrollHeight;
-
-  try {
-    var res = await fetch('/api/construction/query', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ question: q, app: 'construction', maxTokens: 1024 })
-    });
-    var data = await res.json();
-    var text = data.answer || data.response || 'No response.';
-    think.style.display = 'none';
-
-    var aDiv = document.createElement('div');
-    aDiv.style.cssText = 'color:#c8d8e8;border-left:2px solid rgba(0,229,255,0.08);padding-left:6px;white-space:pre-wrap';
-    msgs.appendChild(aDiv);
-
-    var words = text.split(' ');
-    for (var i = 0; i < words.length; i++) {
-      aDiv.textContent += (i===0?'':' ') + words[i];
-      msgs.scrollTop = msgs.scrollHeight;
-      if (i%8===0) await new Promise(function(r){setTimeout(r,15)});
-    }
-  } catch(e) {
-    think.style.display = 'none';
-    var eDiv = document.createElement('div');
-    eDiv.style.color = '#ff4d6d';
-    eDiv.textContent = 'Error: ' + e.message;
-    msgs.appendChild(eDiv);
-  }
-}
-// Also wire callAI if it exists on the page
-if (typeof callAI === 'undefined') {
-  window.callAI = async function(systemPrompt, userMessage, onChunk, onDone) {
-    try {
-      var res = await fetch('/api/construction/query', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ question: userMessage, context: systemPrompt, app: 'construction', maxTokens: 1024 })
-      });
-      var data = await res.json();
-      var text = data.answer || data.response || 'No response.';
-      if (onChunk) {
-        var words = text.split(' ');
-        for (var i = 0; i < words.length; i++) {
-          onChunk((i===0?'':' ') + words[i]);
-          if (i%8===0) await new Promise(function(r){setTimeout(r,15)});
+        if (data) game = data;
+        else if (error && error.code !== '23505') { // 23505 = unique_violation, retry; anything else, bail
+          console.error(error);
+          break;
         }
       }
-      if (onDone) onDone();
-    } catch(e) {
-      if (onChunk) onChunk('[AI Error] ' + e.message);
-      if (onDone) onDone();
-    }
-  };
-}
-</script>
 
-<script src="/tsm-ai-client.js"></script>
-  window.APP_CONFIG = { sector: "CONSTRUCTION", level: "PRO", logic: "strategist" };
-</script>
+      if (!game) {
+        joinError.textContent = 'Could not create a game — try again';
+        createBtn.disabled = false;
+        createBtn.textContent = 'Start a new game';
+        return;
+      }
 
-window.go = function(target) {
-    console.log("TSM_SHIELD: Global redirect blocked. Processing local audit logic.");
-    return false;
-};
+      const { data: player, error: playerError } = await supabase
+        .from('players')
+        .insert({ game_id: game.id, display_name: displayName, is_host: true })
+        .select()
+        .single();
 
-// Force cards to use the constructor we verified in the console
-document.addEventListener('DOMContentLoaded', () => {
-    const cards = document.querySelectorAll('.module-card, .playbook-card, [onclick*="go"]');
-    cards.forEach(card => {
-        card.removeAttribute('onclick'); // Strip legacy hook
-        card.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const sector = card.querySelector('.sector-label')?.innerText || "Construction";
-            const module = card.querySelector('h3')?.innerText || "Audit";
-            if (window.tsmInstance) {
-                window.tsmInstance.runAudit(sector, module);
-            }
-        });
+      if (playerError) {
+        joinError.textContent = 'Could not create a game — try again';
+        console.error(playerError);
+        createBtn.disabled = false;
+        createBtn.textContent = 'Start a new game';
+        return;
+      }
+
+      saveSession(game.id, player.id, true);
+      window.location.href = `lobby.html?room=${game.room_code}`;
     });
-});
-</script>
-
-// Prevent ANY legacy 'go' function from working
-window.go = function() { return false; };
-
-// The Global Event Interceptor
-document.addEventListener('click', function(e) {
-    const target = e.target.closest('.module-card, .playbook-card, button');
-    if (target) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log("TSM_SHIELD: Redirect intercepted. Running local Audit.");
-        
-        // Manual trigger for your TSM_UI instance
-        if (window.tsmInstance) {
-            const sector = target.querySelector('.sector-label')?.innerText || "Construction";
-            const module = target.querySelector('h3')?.innerText || "Audit";
-            window.tsmInstance.runAudit(sector, module);
-        }
-    }
-}, true); // The 'true' here is key—it catches the event before it bubbles
-</script>
+  </script>
 </body>
 </html>
-function go(url) { 
-    console.log("Navigation blocked: Strategist Node Active.");
-    return false; 
-}
-</script>

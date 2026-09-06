@@ -10,14 +10,27 @@ Deno.serve(async () => {
   const openaiKey = Deno.env.get('OPENAI_API_KEY')!;
   const tmdbKey = Deno.env.get('TMDB_API_KEY')!;
 
-  // 1. Pull popular movie titles from TMDB
+  // ---------- CATCHPHRASES ----------
   const tmdbRes = await fetch(
     `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbKey}`
   );
   const { results: movies } = await tmdbRes.json();
 
-  // 2. Ask GPT-4o-mini for catchphrases per title, insert into catchphrases table
+  const { data: existingPhrases } = await supabase.from('catchphrases').select('source');
+  const alreadySeededMovies = new Set((existingPhrases ?? []).map((row) => row.source));
+
+  let phrasesProcessed = 0;
+  let phrasesSkipped = 0;
+
   for (const movie of movies.slice(0, 10)) {
+    if (alreadySeededMovies.has(movie.title)) {
+      console.log(`Skipping catchphrases for "${movie.title}" — already seeded`);
+      phrasesSkipped++;
+      continue;
+    }
+
+    console.log(`Processing catchphrases: ${movie.title}`);
+
     const gptRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -32,14 +45,86 @@ Deno.serve(async () => {
       }),
     });
     const gptData = await gptRes.json();
+
+    if (!gptRes.ok || !gptData.choices) {
+      console.error(`OpenAI request failed for "${movie.title}":`, JSON.stringify(gptData));
+      continue;
+    }
+
     const lines = gptData.choices[0].message.content.split('\n').filter(Boolean);
 
     for (const phrase of lines) {
-      await supabase.from('catchphrases').insert({ phrase, source: movie.title });
+      const { error } = await supabase.from('catchphrases').insert({ phrase, source: movie.title });
+      if (error) console.error(`Catchphrase insert failed for "${movie.title}":`, JSON.stringify(error));
+    }
+
+    phrasesProcessed++;
+  }
+
+  // ---------- CHARADES WORDS ----------
+  const { data: existingWords } = await supabase.from('charades_words').select('word');
+  const alreadySeededWords = new Set((existingWords ?? []).map((row) => row.word.toLowerCase()));
+
+  console.log('Requesting charades words batch from OpenAI');
+
+  const charadesRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${openaiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'user',
+          content:
+            'Generate 30 fun charades words or short phrases for a party game, spanning a mix of categories: movies, animals, actions/verbs, everyday objects, famous people, and jobs. ' +
+            'Respond with exactly one per line in the format "word | category" (e.g. "Riding a bike | Action"). No numbering, no extra text, no blank lines.',
+        },
+      ],
+    }),
+  });
+  const charadesData = await charadesRes.json();
+
+  let wordsInserted = 0;
+  let wordsSkipped = 0;
+
+  if (!charadesRes.ok || !charadesData.choices) {
+    console.error('OpenAI request failed for charades words:', JSON.stringify(charadesData));
+  } else {
+    const lines = charadesData.choices[0].message.content.split('\n').filter(Boolean);
+    console.log(`Got ${lines.length} charades word candidates`);
+
+    for (const line of lines) {
+      const [wordRaw, categoryRaw] = line.split('|').map((part) => part?.trim());
+      if (!wordRaw || !categoryRaw) {
+        console.error(`Skipping malformed charades line: "${line}"`);
+        continue;
+      }
+
+      if (alreadySeededWords.has(wordRaw.toLowerCase())) {
+        wordsSkipped++;
+        continue;
+      }
+
+      const { error } = await supabase
+        .from('charades_words')
+        .insert({ word: wordRaw, category: categoryRaw });
+
+      if (error) {
+        console.error(`Charades word insert failed for "${wordRaw}":`, JSON.stringify(error));
+      } else {
+        wordsInserted++;
+      }
     }
   }
 
-  return new Response(JSON.stringify({ seeded: movies.length }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return new Response(
+    JSON.stringify({
+      catchphrases: { totalMovies: movies.length, processed: phrasesProcessed, skipped: phrasesSkipped },
+      charadesWords: { inserted: wordsInserted, skipped: wordsSkipped },
+    }),
+    { headers: { 'Content-Type': 'application/json' } }
+  );
 });
