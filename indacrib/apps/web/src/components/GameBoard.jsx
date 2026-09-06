@@ -24,12 +24,25 @@ export default function GameBoard({ gameId, roomCode }) {
   }
 
   return (
-    <div>
-      <h2>Game in progress</h2>
-      <div id="game-display">{JSON.stringify(prompt)}</div>
-      <button onClick={() => handleNewPrompt('catchphrase')}>New CatchPhrase</button>
-      <button onClick={() => handleNewPrompt('karaoke')}>New Karaoke Track</button>
-      <button onClick={() => handleNewPrompt('charades')}>New Charades Word</button>
+    <div className="idc-canvas">
+      <div className="idc-card">
+        <h1 className="idc-wordmark">InDaCrib</h1>
+        <p className="idc-subtitle">Room {roomCode}</p>
+
+        <div id="game-display" className={prompt ? 'idc-prompt' : 'idc-prompt idc-prompt-empty'}>
+          {prompt ? JSON.stringify(prompt) : 'Pick a game mode to start the round'}
+        </div>
+
+        <button className="idc-btn idc-btn-mode" onClick={() => handleNewPrompt('catchphrase')}>
+          New CatchPhrase
+        </button>
+        <button className="idc-btn idc-btn-mode" onClick={() => handleNewPrompt('karaoke')}>
+          New Karaoke Track
+        </button>
+        <button className="idc-btn idc-btn-mode" onClick={() => handleNewPrompt('charades')}>
+          New Charades Word
+        </button>
+      </div>
     </div>
   );
 }

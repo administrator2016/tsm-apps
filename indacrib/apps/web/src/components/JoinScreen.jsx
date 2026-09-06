@@ -104,29 +104,48 @@ export default function JoinScreen({ onJoined }) {
   }
 
   return (
-    <div>
-      <h1>Join InDaCrib</h1>
-      <input
-        placeholder="Room code"
-        value={roomCode}
-        onChange={(e) => setRoomCode(e.target.value)}
-        maxLength={4}
-        disabled={loading}
-      />
-      <input
-        placeholder="Your name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        disabled={loading}
-      />
-      <button onClick={handleJoin} disabled={loading}>
-        {loading ? 'Please wait…' : 'Join'}
-      </button>
-      <p>— or —</p>
-      <button onClick={handleCreate} disabled={loading}>
-        {loading ? 'Please wait…' : 'Start a new game'}
-      </button>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+    <div className="idc-canvas">
+      <div className="idc-card">
+        <h1 className="idc-wordmark">InDaCrib</h1>
+        <p className="idc-subtitle">Join a room or start your own game</p>
+
+        <div className="idc-field">
+          <label htmlFor="idc-room-code">Room code</label>
+          <input
+            id="idc-room-code"
+            className="idc-input"
+            placeholder="ABCD"
+            value={roomCode}
+            onChange={(e) => setRoomCode(e.target.value)}
+            maxLength={4}
+            disabled={loading}
+          />
+        </div>
+
+        <div className="idc-field">
+          <label htmlFor="idc-name">Your name</label>
+          <input
+            id="idc-name"
+            className="idc-input"
+            placeholder="Your name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={loading}
+          />
+        </div>
+
+        <button className="idc-btn idc-btn-primary" onClick={handleJoin} disabled={loading}>
+          {loading ? 'Please wait…' : 'Join'}
+        </button>
+
+        <div className="idc-divider">or</div>
+
+        <button className="idc-btn idc-btn-secondary" onClick={handleCreate} disabled={loading}>
+          {loading ? 'Please wait…' : 'Start a new game'}
+        </button>
+
+        {error && <p className="idc-error">{error}</p>}
+      </div>
     </div>
   );
 }

@@ -1,0 +1,289 @@
+/* InDaCrib — design tokens & shared UI
+   Party-game aesthetic: layered gradient canvas + frosted glass panels.
+   One bold move (the gradient wordmark + glowing room code) carries the
+   personality; everything else stays restrained and consistent. */
+
+@import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800&family=Sora:wght@400;500;600;700&display=swap');
+
+:root {
+  --canvas: #140a26;
+  --violet: #7b2ff7;
+  --pink: #ff5da2;
+  --sky: #3ec6ff;
+  --amber: #ffc857;
+
+  --glass-fill: rgba(255, 255, 255, 0.09);
+  --glass-fill-strong: rgba(255, 255, 255, 0.14);
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --text: #fbf9ff;
+  --text-dim: rgba(251, 249, 255, 0.68);
+  --danger: #ff8a80;
+
+  --radius: 20px;
+  --radius-sm: 12px;
+  --display: 'Unbounded', sans-serif;
+  --body: 'Sora', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--body);
+  color: var(--text);
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Animated gradient canvas ---------- */
+.idc-canvas {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  overflow: hidden;
+}
+
+.idc-canvas::before,
+.idc-canvas::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.55;
+  z-index: 0;
+  animation: idc-drift 18s ease-in-out infinite;
+}
+
+.idc-canvas::before {
+  width: 60vmax;
+  height: 60vmax;
+  background: radial-gradient(circle at 30% 30%, var(--violet), transparent 65%);
+  top: -20vmax;
+  left: -18vmax;
+}
+
+.idc-canvas::after {
+  width: 55vmax;
+  height: 55vmax;
+  background: radial-gradient(circle at 70% 70%, var(--pink), var(--sky) 70%, transparent 75%);
+  bottom: -22vmax;
+  right: -16vmax;
+  animation-delay: -9s;
+}
+
+@keyframes idc-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(4%, 5%) scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .idc-canvas::before,
+  .idc-canvas::after { animation: none; }
+}
+
+/* ---------- Glass card ---------- */
+.idc-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 400px;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 32px 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- Wordmark ---------- */
+.idc-wordmark {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 2.1rem;
+  line-height: 1.1;
+  margin: 0 0 6px;
+  background: linear-gradient(120deg, var(--pink), var(--amber) 55%, var(--sky));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.idc-subtitle {
+  margin: 0 0 26px;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+}
+
+/* ---------- Fields ---------- */
+.idc-field {
+  margin-bottom: 14px;
+}
+
+.idc-field label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.idc-input {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.idc-input::placeholder { color: rgba(251, 249, 255, 0.4); }
+
+.idc-input:focus {
+  border-color: var(--sky);
+  background: rgba(255, 255, 255, 0.11);
+}
+
+/* ---------- Buttons ---------- */
+.idc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.15s ease, opacity 0.15s ease;
+}
+
+.idc-btn:active { transform: scale(0.98); }
+.idc-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+.idc-btn-primary {
+  background: linear-gradient(120deg, var(--pink), var(--violet));
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(123, 47, 247, 0.35);
+}
+.idc-btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+
+.idc-btn-secondary {
+  background: var(--glass-fill-strong);
+  color: var(--text);
+  border: 1px solid var(--glass-border);
+}
+.idc-btn-secondary:hover:not(:disabled) { background: rgba(255, 255, 255, 0.2); }
+
+.idc-btn-mode {
+  background: linear-gradient(120deg, var(--sky), var(--violet));
+  color: #fff;
+  margin-bottom: 10px;
+}
+
+/* ---------- Divider ---------- */
+.idc-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+.idc-divider::before,
+.idc-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--glass-border);
+}
+
+/* ---------- Error ---------- */
+.idc-error {
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 138, 128, 0.15);
+  border: 1px solid rgba(255, 138, 128, 0.4);
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+/* ---------- Room code (Lobby) ---------- */
+.idc-room-label {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.idc-room-code {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 3rem;
+  letter-spacing: 0.12em;
+  text-align: center;
+  margin: 0 0 20px;
+  background: linear-gradient(120deg, var(--amber), var(--pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 40px rgba(255, 200, 87, 0.35);
+}
+
+.idc-waiting {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  margin-bottom: 24px;
+}
+
+.idc-pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sky);
+  margin-right: 8px;
+  animation: idc-pulse 1.4s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+@keyframes idc-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+/* ---------- Game board ---------- */
+.idc-prompt {
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 18px;
+  margin-bottom: 22px;
+  border-radius: var(--radius-sm);
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-border);
+}
+
+.idc-prompt-empty {
+  color: var(--text-dim);
+  font-weight: 400;
+  font-size: 0.95rem;
+}
