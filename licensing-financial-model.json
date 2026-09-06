@@ -1,0 +1,7 @@
+{
+  "currency": "USD",
+  "note": "Estimate model for planning/reporting only — configure these figures to match your agency's real average annual commission-per-license and actual CE non-compliance fine schedule before using externally.",
+  "lapsed_license_revenue_at_risk_per_license": 32000,
+  "license_expiry_risk_window_days": 30,
+  "ce_noncompliance_fine_per_deficient_hour": 150
+}

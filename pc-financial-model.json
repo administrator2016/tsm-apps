@@ -1,0 +1,10 @@
+{
+  "currency": "USD",
+  "note": "Estimate model for planning/reporting only — configure these rates to match your book's real underwriting review cost and liability reserve development history before using externally.",
+  "senior_review_cost_per_high_severity_submission": 650,
+  "liability_reserve_risk_by_severity": {
+    "LOW": 0.03,
+    "MEDIUM": 0.10,
+    "HIGH": 0.25
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "currency": "USD",
+  "note": "Estimate model for planning/reporting only — configure these rates to match your institution's real late-fee schedule, aging-band write-off history, and average per-term tuition before using externally.",
+  "late_fee_accrual_per_day_past_due": 5,
+  "collections_writeoff_risk_by_aging_band": {
+    "CURRENT": 0.0,
+    "30_DAY": 0.02,
+    "60_DAY": 0.08,
+    "90_DAY_PLUS": 0.20
+  },
+  "registration_hold_revenue_at_risk_per_hold": 4200
+}

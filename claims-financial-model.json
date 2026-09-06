@@ -1,0 +1,10 @@
+{
+  "currency": "USD",
+  "note": "Estimate model for planning/reporting only — configure these rates to match your carrier's real reserve-development history and appeal handling costs before using externally.",
+  "reserve_adequacy_risk_by_severity": {
+    "LOW": 0.02,
+    "MEDIUM": 0.08,
+    "HIGH": 0.20
+  },
+  "appeal_handling_cost_per_appeal": 1800
+}

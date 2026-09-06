@@ -1,0 +1,15 @@
+{
+  "currency": "USD",
+  "note": "Estimate model for planning/reporting only — configure these figures to match your jurisdiction's real fine schedules and your legal department's actual litigation reserve practice before using externally.",
+  "regulatory_fine_exposure_by_severity": {
+    "LOW": 5000,
+    "MEDIUM": 25000,
+    "HIGH": 100000
+  },
+  "litigation_reserve_by_severity": {
+    "LOW": 15000,
+    "MEDIUM": 75000,
+    "HIGH": 250000
+  },
+  "litigation_reserve_active_statuses": ["In litigation", "Discovery"]
+}
