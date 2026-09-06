@@ -390,6 +390,7 @@
           <li><a href="#v-hc">Healthcare</a></li>
           <li><a href="#v-pm">PM Copilot</a></li>
           <li><a href="#v-noc">Network Operations Center</a></li>
+          <li><a href="#v-college">College Command</a></li>
         </ul>
       </li>
       <li><a href="#s6">6. Document Card Controls</a></li>
@@ -430,7 +431,7 @@
     <section class="doc-section" id="s1">
       <h2><span class="num">1</span> Purpose &amp; the Big Picture</h2>
       <p>This manual explains how a document — an invoice, a claim, a permit, a title report, anything — moves through TSM's shared intake pipeline from the moment it's uploaded to the moment it becomes a routed, actionable, dollars-and-cents next step.</p>
-      <p>The pipeline is a single shared entry point (<code>html/tsm-doc-search-multi.html</code>) that every one of the nine verticals in Section 5 feeds through. A document doesn't get a different upload experience per client vertical — it gets classified once, against a shared AI router, and then handed to the vertical's own War Room → Strategist → Executive Portal relay chain.</p>
+      <p>The pipeline is a single shared entry point (<code>html/tsm-doc-search-multi.html</code>) that every one of the ten verticals in Section 5 feeds through. A document doesn't get a different upload experience per client vertical — it gets classified once, against a shared AI router, and then handed to the vertical's own War Room → Strategist → Executive Portal relay chain.</p>
       <p>Two other groups of verticals exist outside that chain, and this manual is explicit about the difference rather than blurring it: Appendix A covers verticals that are indexed in the shared search UI but not yet wired into the AI classifier, and Appendix B covers verticals with their own real relay chains that don't touch this shared pipeline at all.</p>
       <p>A parallel, read-only view sits above all of this: <code>html/sentinel-center.html</code> polls the same <code>TSM_&lt;VERTICAL&gt;_STRATEGIST_RELAY</code> keys each vertical's Strategist stage writes and rolls them into a single cross-vertical risk board. It doesn't change how a document is processed — it's downstream of the relay chain, not part of it — but Section 5's per-vertical relay tables note which Sentinel key each Strategist stage feeds, since that's the same write a Strategist reviewer is already producing.</p>
     </section>
@@ -482,6 +483,7 @@
         <a href="#v-finops">FinOps</a><a href="#v-insurance">Insurance</a><a href="#v-construction">Construction</a>
         <a href="#v-bpo">BPO Internal</a><a href="#v-re">Real Estate</a><a href="#v-legal">Legal</a>
         <a href="#v-hc">Healthcare</a><a href="#v-pm">PM Copilot</a><a href="#v-noc">NOC</a>
+        <a href="#v-college">College Command</a>
       </div>
 
       <!-- FinOps -->
@@ -869,6 +871,59 @@
           Uptime SLA breaches carry contractual credit exposure back to the client — the sooner a breach report is actioned, the smaller the credit typically owed.
         </div>
       </div>
+
+      <div class="vertical" id="v-college">
+        <h3>College Command (Higher-Education Back-Office)</h3>
+        <div class="covers">Higher-ed financial operations across five domains: financial aid (Title IV), bursar/tuition, endowment compliance, research administration, and accreditation.</div>
+        <div class="node-line">Primary node: <code>college-strategist</code> — <code>html/war-rooms/college-command/college-strategist.html</code> (cross-domain aggregator; five sub-domain War Rooms feed into it)</div>
+
+        <h4>Document types you'll see</h4>
+        <p>Unlike the other nine verticals in this section, College Command has no seed/reference document set in the codebase yet, so this table lists the document categories the classifier prompt (<code>server.js</code>'s <code>DOC_ROUTER_PROMPT</code>) is actually configured to route, not real example filenames — treat filenames here as illustrative only.</p>
+        <table>
+          <tr><th>Sub-Domain</th><th>Classifier Trigger Terms</th><th>Routes To</th></tr>
+          <tr><td>Financial Aid</td><td>FAFSA, Pell, R2T4, verification, cohort default</td><td><code>college-finaid</code></td></tr>
+          <tr><td>Bursar</td><td>tuition, payment plan, registration hold</td><td><code>college-bursar</code></td></tr>
+          <tr><td>Endowment</td><td>endowment, donor fund, FASB (ASU 2016-14)</td><td><code>college-endowment</code></td></tr>
+          <tr><td>Research / F&amp;A</td><td>grant, award, indirect cost, effort report</td><td><code>college-research-fa</code></td></tr>
+          <tr><td>Accreditation</td><td>accreditation finding, standard, site visit</td><td><code>college-accred</code></td></tr>
+        </table>
+
+        <h4>How this vertical is actioned today</h4>
+        <p>College documents use the shared "Open Node" action like every other vertical. Because the classifier tags a document with a specific <code>routing.college.sourceNode</code>, <code>tsm-doc-search-multi.html</code> opens the matching sub-domain's own War Room page directly (e.g. an R2T4 document opens <code>college-finaid-command.html</code>) rather than always landing on the shared Strategist aggregator — the Strategist page is the fallback/default when no specific sub-domain is known.</p>
+
+        <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
+        <table>
+          <tr><th>Stage</th><th>File Path</th></tr>
+          <tr><td>War Room (Financial Aid)</td><td><code>html/war-rooms/college-command/college-finaid-command.html</code></td></tr>
+          <tr><td>War Room (Bursar)</td><td><code>html/war-rooms/college-command/college-bursar-command.html</code></td></tr>
+          <tr><td>War Room (Endowment)</td><td><code>html/war-rooms/college-command/college-endowment-command.html</code></td></tr>
+          <tr><td>War Room (Research/F&amp;A)</td><td><code>html/war-rooms/college-command/college-research-fa-command.html</code></td></tr>
+          <tr><td>War Room (Accreditation)</td><td><code>html/war-rooms/college-command/college-accred-command.html</code></td></tr>
+          <tr><td>Strategist (all 5 domains)</td><td><code>html/war-rooms/college-command/college-strategist.html</code></td></tr>
+          <tr><td>Executive Portal</td><td><code>html/war-rooms/college-command/college-executive-portal.html</code></td></tr>
+          <tr><td>Sentinel Center Feed</td><td>Financial Aid only — reads via localStorage key <code>TSM_COLLEGE_FINAID_STRATEGIST_RELAY</code></td></tr>
+        </table>
+
+        <div class="callout risk">
+          <span class="callout-label">A document opened from doc-search does NOT auto-populate the destination War Room — this is a real wiring gap, not user error</span>
+          <code>tsm-doc-search-multi.html</code> writes the classified document's data to <code>TSM_COLLEGE_WAR_RELAY</code> before opening a College War Room page, exactly like it does for the other nine verticals (e.g. Construction's <code>construction-war-room.html</code> reads <code>TSM_CONSTRUCTION_WAR_RELAY</code> back on load). None of the five College Command pages — nor the Strategist — read that key. The page opens correctly and the button routes to the right sub-domain, but the document's classified fields never appear on screen; the reviewer has to re-enter them manually from the source document. If a reviewer reports "the doc-search button opened the right page but it's empty," this is why — it isn't a fluke.
+        </div>
+
+        <div class="callout">
+          <span class="callout-label">Each of the 5 sub-domains only relays as far as College Strategist</span>
+          <code>college-finaid-command.html</code>, <code>-bursar-</code>, <code>-endowment-</code>, <code>-research-fa-</code>, and <code>-accred-command.html</code> each have their own "Relay to College Strategist" button (click-required — nothing auto-fires), writing only their own domain's relay key (e.g. <code>TSM_COLLEGE_BURSAR_RELAY</code>). Strategist reads all five domain keys and displays every one with live data at once — unlike some other verticals' Strategist pages, it does not discard older entries in favor of a single "latest" domain. Getting a case from Strategist to the Executive Portal requires a second, separate click of Strategist's own "Relay to Executive Portal" button, which bundles whichever domains currently have live data into one combined payload under <code>TSM_COLLEGE_EXEC_RELAY</code>.
+        </div>
+
+        <div class="callout scope">
+          <span class="callout-label">Sentinel Scope Note</span>
+          Of the five College Command sub-domains, only Financial Aid pushes to Sentinel Center today (registered there as <code>college_finaid</code>, not <code>college</code>, since Sentinel keys 1:1 off a single <code>TSM_&lt;ID&gt;_STRATEGIST_RELAY</code> per vertical). Bursar, Endowment, Research/F&amp;A, and Accreditation have no Sentinel push yet and won't surface on the Sentinel board regardless of case volume — this is a scoped, documented gap in the code's own comments, not an oversight in this manual. There's also no <code>SAMPLE.college_finaid</code> placeholder dataset in <code>sentinel-center.html</code> (every other vertical has one) — until Financial Aid's own "Relay to College Strategist" button is clicked at least once, the Sentinel row shows zero anomalies rather than clearly-labeled sample data like the rest of the board.
+        </div>
+
+        <div class="callout recovery">
+          <span class="callout-label">Recovery Note</span>
+          R2T4 (Return of Title IV Funds) exposure is the highest-stakes item across the five domains — it carries a hard federal 45-day deadline, and severity is computed directly off how many open cases are already past it (<code>crit</code> at ≥30% of open cases breached, <code>high</code> at ≥15%, in <code>college-finaid-financial.js</code>). Prioritize aged R2T4 cases before verification backlog or cohort-default flags.
+        </div>
+      </div>
     </section>
 
     <section class="doc-section" id="s6">
@@ -923,7 +978,7 @@
 
     <section class="doc-section" id="appA">
       <h2>Appendix A: Registered but Not Classifier-Routed</h2>
-      <p>RCM-OS and Property Accounting — Revenue Cycle are registered in the shared document-search index (<code>tsm-doc-search-multi.html</code>) for manual browsing, but — per that file's own code comments, verified on a fresh clone — neither has a doc-search relay receiver on its target page, and neither is in <code>server.js</code>'s classifier vertical list. A user can still open a document into these pages manually from the doc-search index; it just won't auto-land there the way it does for the nine Section 5 verticals.</p>
+      <p>RCM-OS and Property Accounting — Revenue Cycle are registered in the shared document-search index (<code>tsm-doc-search-multi.html</code>) for manual browsing, but — per that file's own code comments, verified on a fresh clone — neither has a doc-search relay receiver on its target page, and neither is in <code>server.js</code>'s classifier vertical list. A user can still open a document into these pages manually from the doc-search index; it just won't auto-land there the way it does for the ten Section 5 verticals.</p>
 
       <h4>RCM-OS (RCM Operating System)</h4>
       <p>Target page: <code>html/finops-suite/tsm-rcm-os.html</code></p>
@@ -936,7 +991,7 @@
 
     <section class="doc-section" id="appB">
       <h2>Appendix B: Verticals Outside This Pipeline</h2>
-      <p>The nine verticals in Section 5 are the ones that run through TSM's shared document-router classifier (<code>tsm-doc-search-multi.html</code>). The verticals below have their own relay chains but are not wired into that shared intake pipeline at all (not even for manual indexing, unlike Appendix A), so document-processing guidance for them isn't covered by this manual — listed here for reference only.</p>
+      <p>The ten verticals in Section 5 are the ones that run through TSM's shared document-router classifier (<code>tsm-doc-search-multi.html</code>). The verticals below have their own relay chains but are not wired into that shared intake pipeline at all (not even for manual indexing, unlike Appendix A), so document-processing guidance for them isn't covered by this manual — listed here for reference only.</p>
       <ul class="plain">
         <li>Mortgage — <code>html/war-rooms/mortgage/mortgage-war-room.html</code></li>
         <li>Schools — <code>html/war-rooms/schools-command/schools-command.html</code></li>
