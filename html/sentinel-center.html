@@ -582,6 +582,16 @@ const VERTICALS = [
   // get their own ids here once built, rather than overloading this one.
   { id:'college_finaid', name:'College — Financial Aid', color:'#fb923c' },
   { id:'noc',         name:'NOC',          color:'#f59e0b' },
+  // 2026-09-06: Insurance Command suite — 4 domains with real backend
+  // wiring (routes/insurance-*-financial.js), each pushing its own
+  // anomalies independently via TSMSentinelPush.push() rather than
+  // sharing one id (avoids the overwrite-on-push problem a shared key
+  // would have across 4 independent war rooms). Distinct from the
+  // pre-existing 'insurance' vertical above (ins-war-room pipeline).
+  { id:'insurance_claims',     name:'Insurance — Claims & Appeals',  color:'#38bdf8' },
+  { id:'insurance_pc',         name:'Insurance — Property & Casualty', color:'#0ea5e9' },
+  { id:'insurance_compliance', name:'Insurance — Compliance & Legal', color:'#818cf8' },
+  { id:'insurance_licensing',  name:'Insurance — Licensing & CE',    color:'#60a5fa' },
 ];
 
 // ── EXECUTIVE PORTAL LINKS ───────────────────────────────────────────────
@@ -673,6 +683,14 @@ const EXEC_PORTAL_PATHS = {
   // read-only convention as the other portals here, just multi-domain.
   college_finaid: '/html/war-rooms/college-command/college-executive-portal.html',
   noc:          '/html/l1-copilot/noc/noc-executive-portal.html',
+  // 2026-09-06: all 4 Insurance Command domains point at the same shared
+  // combined-relay portal (same convention as college_finaid above) —
+  // insurance-command-executive-portal.html renders whichever domains
+  // currently have live data via TSM_INSURANCE_COMMAND_EXEC_RELAY.
+  insurance_claims:     '/html/war-rooms/insurance-command/insurance-command-executive-portal.html',
+  insurance_pc:         '/html/war-rooms/insurance-command/insurance-command-executive-portal.html',
+  insurance_compliance: '/html/war-rooms/insurance-command/insurance-command-executive-portal.html',
+  insurance_licensing:  '/html/war-rooms/insurance-command/insurance-command-executive-portal.html',
 };
 
 /**
