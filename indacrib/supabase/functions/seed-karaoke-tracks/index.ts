@@ -47,7 +47,18 @@ Deno.serve(async () => {
           `https://api.spotify.com/v1/search?q=${encodeURIComponent(`genre:"${genre}"`)}&type=track&market=US&limit=30`,
           { headers: { Authorization: `Bearer ${spotifyToken}` } }
         );
-        const searchData = await searchRes.json();
+        const rawText = await searchRes.text();
+        let searchData: any;
+        try {
+          searchData = JSON.parse(rawText);
+        } catch {
+          results[genre] = {
+            error: `Non-JSON response (status ${searchRes.status})`,
+            rawBodySnippet: rawText.slice(0, 300),
+            contentType: searchRes.headers.get('content-type'),
+          };
+          continue;
+        }
 
         if (!searchRes.ok || !searchData.tracks?.items) {
           results[genre] = { error: searchData?.error?.message ?? `HTTP ${searchRes.status}` };
