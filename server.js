@@ -3069,6 +3069,8 @@ app.use('/api/schools', requireAnyAuth, require('./routes/schools-financial'));
 // College Financial Aid (Title IV) war room — same private-rate-card-server-side
 // pattern as Schools above. See routes/college-finaid-financial.js header.
 app.use('/api/college/finaid', requireAnyAuth, require('./routes/college-finaid-financial'));
+app.use('/api/college/bursar', requireAnyAuth, require('./routes/college-bursar-financial'));
+app.use('/api/college/endowment', requireAnyAuth, require('./routes/college-endowment-financial'));
 
 // ── INPHUSIONSYS (multi-vertical demo data: employees, anomalies, IT tickets) ──
 // See server/routes/inphusionsys.js header for the full endpoint contract.

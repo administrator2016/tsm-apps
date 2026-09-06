@@ -1,0 +1,10 @@
+{
+  "currency": "USD",
+  "note": "Estimate model for planning/reporting only — configure these rates to match your institution's real spending policy rate and donor-restriction violation exposure history before using externally.",
+  "annual_spending_rate": 0.045,
+  "donor_restriction_exposure_by_severity": {
+    "HIGH": 250000,
+    "MEDIUM": 50000,
+    "LOW": 10000
+  }
+}

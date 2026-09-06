@@ -29,7 +29,7 @@
   .sev-LOW { color: var(--low); font-weight: 600; }
   .exposure-box { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 20px; }
   .exposure-total { font-size: 28px; font-weight: 700; color: var(--high); }
-  .exposure-note { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .exposure-note { color: var(--muted); font-size: 12px; margin-top: 6px; line-height: 1.5; }
   .actions { display: flex; gap: 10px; margin-top: 20px; }
   button { background: var(--accent); border: none; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
   button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
@@ -41,7 +41,7 @@
 <header>
   <div>
     <h1>College Endowment (FASB) — War Room</h1>
-    <div class="sub">Underwater funds · Spending policy variance · Donor restriction flags — lighter war room, own relay key, sample data</div>
+    <div class="sub">Underwater funds · Spending policy variance · Donor restriction flags — server-computed fund exposure, own relay key</div>
   </div>
   <div class="sub" id="clock"></div>
 </header>
@@ -61,14 +61,10 @@
   </section>
 
   <section id="aiSection">
-    <h2>
-      AI Fund Compliance Intelligence
-      <span id="aiStatus" style="float:right;font-size:11px;font-weight:400;color:var(--muted)">AI: SERVER</span>
-    </h2>
+    <h2>AI Fund Compliance Intelligence</h2>
     <div style="padding:16px;">
       <div class="actions" style="margin-top:0;">
         <button id="runAiBtn">Run AI Analysis</button>
-        <button class="secondary" id="aiKeyBtn">⚙ AI Settings</button>
       </div>
       <div id="aiEngineGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:16px;">
         <div>
@@ -90,40 +86,19 @@
 </main>
 <div id="toast"></div>
 
-<div id="aiKeyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;align-items:center;justify-content:center;">
-  <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px;width:90%;max-width:380px;">
-    <div style="font-size:13px;font-weight:700;margin-bottom:10px;">AI Settings</div>
-    <div style="color:var(--muted);font-size:11.5px;line-height:1.5;margin-bottom:12px;">
-      This page talks to the server proxy at <code>/api/chat</code> first — no key needed. The field below is only an in-memory, same-tab fallback for environments where that proxy isn't reachable; nothing is saved to disk.
-    </div>
-    <input id="aiKeyInput" type="password" placeholder="Groq API key (session only)" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;margin-bottom:12px;">
-    <div class="actions" style="margin-top:0;">
-      <button id="aiKeySaveBtn">Save for This Tab</button>
-      <button class="secondary" id="aiKeyCancelBtn">Cancel</button>
-    </div>
-  </div>
-</div>
-
 <script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
+<script src="/html/war-rooms/college-command/services/college-endowment-engine.js"></script>
 <script>
 (function () {
-  // Lighter war room — writes only to its own registered relay key
-  // (TSM_COLLEGE_ENDOWMENT_RELAY via relay.core.js). No shared-key writes,
-  // no Sentinel/CanonicalCore wiring — matches the plant/cyber/supplier
-  // pattern, not the Financial Aid priority-domain treatment.
+  // Now backed by a real server endpoint (routes/college-endowment-financial.js)
+  // instead of client-computed sample totals — see college-endowment-engine.js.
+  // Still writes only to its own registered relay key
+  // (TSM_COLLEGE_ENDOWMENT_RELAY via relay.core.js).
   const DOMAIN = 'COLLEGE_ENDOWMENT';
   const RELAY_KEY_FALLBACK = 'TSM_' + DOMAIN + '_RELAY';
 
-  // Sample data only — no backend endpoint for this domain.
-  const underwaterFunds = [
-    { fund_id: 'END-0231', purpose: 'STEM Scholarship Fund', severity: 'HIGH', corpus_deficit: 184000, trend: 'Worsening' },
-    { fund_id: 'END-0298', purpose: 'Library Acquisitions Fund', severity: 'MEDIUM', corpus_deficit: 42000, trend: 'Stable' },
-    { fund_id: 'END-0355', purpose: 'Faculty Chair — Economics', severity: 'LOW', corpus_deficit: 6100, trend: 'Improving' }
-  ];
-  const restrictionFlags = [
-    { flag_id: 'DR-1102', fund: 'END-0231', issue: 'Spending exceeds donor-restricted purpose scope', severity: 'HIGH' },
-    { flag_id: 'DR-1119', fund: 'END-0410', issue: 'Missing annual donor reporting letter', severity: 'MEDIUM' }
-  ];
+  let engine = null;
+  let lastAi = { risk: null, actions: null };
 
   function tick() { document.getElementById('clock').textContent = new Date().toLocaleTimeString(); }
   setInterval(tick, 1000); tick();
@@ -139,16 +114,6 @@
 
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
-
-  function computeKpis() {
-    const totalDeficit = underwaterFunds.reduce((sum, f) => sum + f.corpus_deficit, 0);
-    return {
-      total_funds_tracked: underwaterFunds.length + 62, // sample healthy-fund baseline
-      underwater_funds: underwaterFunds.length,
-      total_corpus_deficit: totalDeficit,
-      donor_restriction_flags_open: restrictionFlags.length
-    };
   }
 
   function renderKpis(kpis) {
@@ -168,7 +133,7 @@
 
   function renderUnderwater() {
     const tbody = document.querySelector('#underwaterTable tbody');
-    tbody.innerHTML = underwaterFunds.map(f => `
+    tbody.innerHTML = engine.data.underwater_funds.map(f => `
       <tr>
         <td>${escapeHtml(f.fund_id)}</td>
         <td>${escapeHtml(f.purpose)}</td>
@@ -181,7 +146,7 @@
 
   function renderRestrictions() {
     const tbody = document.querySelector('#restrictionTable tbody');
-    tbody.innerHTML = restrictionFlags.map(r => `
+    tbody.innerHTML = engine.data.restriction_flags.map(r => `
       <tr>
         <td>${escapeHtml(r.flag_id)}</td>
         <td>${escapeHtml(r.fund)}</td>
@@ -191,84 +156,32 @@
     `).join('');
   }
 
-  function renderExposure() {
+  // Real breakdown from the server: annual income foregone on underwater
+  // funds (spending-policy rate × corpus deficit) and donor-restriction
+  // exposure banded by severity — see routes/college-endowment-financial.js.
+  // Replaces the old "corpus deficit alone" placeholder number.
+  async function renderExposure() {
     const box = document.getElementById('exposureBox');
-    const kpis = computeKpis();
-    box.innerHTML = `
-      <div class="exposure-total">$${Number(kpis.total_corpus_deficit).toLocaleString()} total corpus deficit</div>
-      <div class="exposure-note">
-        ${kpis.underwater_funds} of ${kpis.total_funds_tracked} funds underwater under FASB ASU 2016-14 ·
-        ${kpis.donor_restriction_flags_open} donor restriction flag(s) open
-      </div>
-    `;
-  }
-
-  // ── AI — ported from finops-accounting.html's proxy-first/direct-key
-  // pattern (same as college-bursar-command.html's port). Tries /api/chat
-  // first (server-managed key), falls back to a session-only key entered
-  // via the AI Settings modal (never persisted).
-  let sessionAiKey = '';
-  let sessionAiModel = 'openai/gpt-oss-120b';
-
-  function updateAiStatus(mode) {
-    const el = document.getElementById('aiStatus');
-    if (!el) return;
-    if (mode === 'server') { el.textContent = 'AI: CONNECTED'; el.style.color = 'var(--low)'; }
-    else if (mode === 'fallback') { el.textContent = 'AI: FALLBACK KEY'; el.style.color = 'var(--med)'; }
-    else if (mode === 'unavailable') { el.textContent = 'AI: UNAVAILABLE'; el.style.color = 'var(--high)'; }
-    else { el.textContent = 'AI: SERVER'; el.style.color = 'var(--muted)'; }
-  }
-
-  async function callGroqDirect(system, userMsg, maxTokens) {
-    if (!sessionAiKey) throw new Error('No Groq key set — open AI Settings and add one');
-    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionAiKey },
-      body: JSON.stringify({
-        model: sessionAiModel,
-        messages: [{ role: 'system', content: system }, { role: 'user', content: userMsg }],
-        max_tokens: maxTokens,
-        temperature: 0.3
-      })
-    });
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error?.message || ('Groq API ' + resp.status));
-    }
-    const data = await resp.json();
-    updateAiStatus('fallback');
-    return data.choices?.[0]?.message?.content || '';
-  }
-
-  async function callEndowmentAI(system, userMsg, maxTokens) {
+    box.textContent = 'Loading fund exposure…';
     try {
-      const resp = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `${system}\n\n${userMsg}`, conversationHistory: [] })
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data.answer && !data.degraded) { updateAiStatus('server'); return data.answer; }
-      }
-    } catch (e) { /* fall through to direct key */ }
-
-    if (!sessionAiKey) { updateAiStatus('unavailable'); throw new Error('Server AI proxy is not reachable here. Click ⚙ AI Settings to add a fallback key for this tab and try again.'); }
-    return callGroqDirect(system, userMsg, maxTokens);
-  }
-
-  function serializeEndowmentCase() {
-    const fundLines = underwaterFunds.map(f =>
-      `${f.fund_id} · ${f.purpose} · severity ${f.severity} · corpus deficit $${f.corpus_deficit.toLocaleString()} · trend ${f.trend}`
-    ).join('\n');
-    const restrictionLines = restrictionFlags.map(r =>
-      `${r.flag_id} · fund ${r.fund} · issue: ${r.issue} · severity ${r.severity}`
-    ).join('\n');
-    const kpis = computeKpis();
-    return `ENDOWMENT SNAPSHOT\nTotal funds tracked: ${kpis.total_funds_tracked}\nUnderwater funds (FASB ASU 2016-14): ${kpis.underwater_funds}\nTotal corpus deficit: $${kpis.total_corpus_deficit.toLocaleString()}\nDonor restriction flags open: ${kpis.donor_restriction_flags_open}\n\nUNDERWATER FUNDS\n${fundLines || 'None'}\n\nDONOR RESTRICTION FLAGS\n${restrictionLines || 'None'}`;
+      const summary = await engine.getFinancialSummary();
+      box.innerHTML = `
+        <div class="exposure-total">$${Number(summary.total_exposure || 0).toLocaleString()} total annual exposure</div>
+        <div class="exposure-note">
+          Total corpus deficit: $${Number(summary.total_corpus_deficit || 0).toLocaleString()} ·
+          Income foregone (spending policy rate): $${Number(summary.income_foregone_exposure_total || 0).toLocaleString()} ·
+          Donor restriction exposure: $${Number(summary.donor_restriction_exposure_total || 0).toLocaleString()}
+          ${summary.note ? '<br>' + escapeHtml(summary.note) : ''}
+        </div>
+      `;
+    } catch (e) {
+      box.textContent = 'Exposure computation failed — see console.';
+      console.warn('renderExposure failed', e);
+    }
   }
 
   async function runAiAnalysis() {
+    if (!engine) return;
     const btn = document.getElementById('runAiBtn');
     const riskOut = document.getElementById('aiRiskOut');
     const actionOut = document.getElementById('aiActionOut');
@@ -277,47 +190,38 @@
     riskOut.textContent = 'Generating…';
     actionOut.textContent = 'Generating…';
 
-    const caseText = serializeEndowmentCase();
-    const SYSTEMS = [
-      'You are a fund compliance and risk AI for a college endowment office. Given underwater funds (FASB ASU 2016-14) and donor restriction flags, quantify compliance risk, flag funds most at risk of breaching donor-restricted purpose or reporting obligations, and note which underwater funds require board or investment-committee attention first. Be specific to the funds provided.',
-      'You are an endowment operations AI. Generate a concise action plan for this batch of underwater funds and donor restriction flags: recommended next step per item (spending policy adjustment, donor communication/reporting, investment committee review, etc.), owner, and target timeframe. Be specific and actionable.'
-    ];
-
     try {
-      const riskText = await callEndowmentAI(SYSTEMS[0], caseText, 500);
-      riskOut.textContent = riskText;
+      const { answer, degraded } = await engine.getAiAnalysis(
+        'Focus this response entirely on fund compliance risk: quantify risk, flag funds most at risk of breaching donor-restricted purpose or reporting obligations, and note which underwater funds require board or investment-committee attention first. Do not include an action plan section.'
+      );
+      lastAi.risk = degraded ? null : answer;
+      riskOut.textContent = answer;
     } catch (e) {
       riskOut.textContent = 'Error: ' + e.message;
+      lastAi.risk = null;
     }
 
     try {
-      const actionText = await callEndowmentAI(SYSTEMS[1], caseText, 500);
-      actionOut.textContent = actionText;
+      const { answer, degraded } = await engine.getAiAnalysis(
+        'Focus this response entirely on a concise action plan: recommended next step per underwater fund and restriction flag (spending policy adjustment, donor communication/reporting, investment committee review, legal review), owner, and target timeframe. Do not include a risk analysis section.'
+      );
+      lastAi.actions = degraded ? null : answer;
+      actionOut.textContent = answer;
     } catch (e) {
       actionOut.textContent = 'Error: ' + e.message;
+      lastAi.actions = null;
     }
 
     btn.disabled = false;
     btn.textContent = 'Run AI Analysis';
   }
 
-  function buildRelayPayload() {
-    const riskEl = document.getElementById('aiRiskOut');
-    const actionEl = document.getElementById('aiActionOut');
-    const aiRan = riskEl && !/^(Not run yet|Generating…|Error:)/.test(riskEl.textContent);
-    return {
-      domain: DOMAIN,
-      timestamp: Date.now(),
-      kpis: computeKpis(),
-      financials: { total_exposure: computeKpis().total_corpus_deficit },
-      cases: { underwater_funds: underwaterFunds, restriction_flags: restrictionFlags },
-      ai_analysis: aiRan ? { risk_prioritization: riskEl.textContent, action_plan: actionEl.textContent } : null
-    };
-  }
-
-  function relayToStrategist() {
+  async function relayToStrategist() {
     try {
-      const payload = buildRelayPayload();
+      const aiText = (lastAi.risk || lastAi.actions)
+        ? `FUND RISK & COMPLIANCE\n${lastAi.risk || 'n/a'}\n\nRECOMMENDED ACTIONS\n${lastAi.actions || 'n/a'}`
+        : null;
+      const payload = await engine.buildRelayPayload(aiText);
       const json = JSON.stringify(payload);
       try { sessionStorage.setItem(RELAY_KEY_FALLBACK, json); } catch (e) { /* noop */ }
       try { localStorage.setItem(RELAY_KEY_FALLBACK, json); } catch (e) { /* noop */ }
@@ -332,28 +236,18 @@
     }
   }
 
-  function init() {
-    renderKpis(computeKpis());
+  async function init() {
+    engine = new window.TSMCollegeEndowmentEngine();
+    engine.loadSampleData();
+    renderKpis(engine.computeKpis());
     renderUnderwater();
     renderRestrictions();
-    renderExposure();
+    await renderExposure();
   }
 
   document.getElementById('relayBtn').addEventListener('click', relayToStrategist);
   document.getElementById('refreshBtn').addEventListener('click', renderExposure);
   document.getElementById('runAiBtn').addEventListener('click', runAiAnalysis);
-  document.getElementById('aiKeyBtn').addEventListener('click', () => {
-    document.getElementById('aiKeyInput').value = sessionAiKey;
-    document.getElementById('aiKeyModal').style.display = 'flex';
-  });
-  document.getElementById('aiKeyCancelBtn').addEventListener('click', () => {
-    document.getElementById('aiKeyModal').style.display = 'none';
-  });
-  document.getElementById('aiKeySaveBtn').addEventListener('click', () => {
-    sessionAiKey = document.getElementById('aiKeyInput').value.trim();
-    document.getElementById('aiKeyModal').style.display = 'none';
-    showToast(sessionAiKey ? 'Fallback key saved for this tab.' : 'Fallback key cleared.');
-  });
 
   init();
 })();
