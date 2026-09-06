@@ -155,9 +155,12 @@ An earlier pass today flagged `401 (Unauthorized)` responses firing on page load
 - Nav / decision-card **STRATEGIST** — `nav('insurance-strategist.html')`.
 - **⬇ EXPORT CLIENT PACKAGE** — `exportClientPackage()`.
 - **OPEN STRATEGIST** — `nav('insurance-strategist.html')`.
+- **Decision Center (Approve/Hold/Reject)** — loads the shared `tsm-exec-portal-upgrade.js`, same as Healthcare/Legal/Construction/RE/FinOps/BPO. An **Approve** here auto-relays into the BPO Case Engine and shows up in that client's Client Portal rollup — see §14.5 below.
 
 **Talk points:**
 - "RUN STRATEGIST CHAIN is the phrase to watch — it's not one call, it's a chained sequence: claims triage → coverage analysis → reserve recommendation, in order, each step feeding the next."
+
+**Engagement-model note (client-facing, not a demo talk point):** Insurance is queue-only, not full exception+correction like Healthcare/FinOps/Construction/Mortgage — pitch it as a bounded pilot (claims/document indexing, compliance research, licensing/CE admin), not a full-workload BPO commitment, until the correction layer's proven on real client volume. The upside to lead with: even at pilot scope, an Approved case here reaches the client's own portal automatically, same as it would for a mature vertical — that's real evidence to show a prospect, not a promise.
 
 ---
 
@@ -464,6 +467,32 @@ This is a separate hop from the internal War Room → Strategist → Executive P
 
 ---
 
+## 14.5 The Closing Loop — Executive Decision → BPO Case Engine → Client Portal
+
+Every section above stops at the Executive Portal — the internal employee-facing screen. This is the step after that: what actually reaches the client. Verified against `server.js` (`POST /api/exec-portal/:vertical/decide`), not assumed from naming conventions.
+
+**The mechanism:** every Executive Portal with a Decision Center (Approve / Hold / Reject) posts to `/api/exec-portal/:vertical/decide`. On **Approve**, the server auto-creates/updates a real BPO work item (`bpoUpsertWorkItem`) tagged to the case's resolved client — no analyst re-keys anything from an exported Client Package by hand. BPO itself is excluded from the relay only because it already writes work items directly through its own endpoint.
+
+**Where it lands:** `bpo_cases` → `bpoBuildClientRollup()` → `GET /api/bpo/reports/client-rollup` (live) and `GET /api/bpo/reports/client-monthly` (snapshot) → `client-portal.html`, the one page a real client logs into (via `login.html`, role-routed).
+
+**Coverage — confirmed wired vs. not:**
+
+| Vertical | Decision Center? | Reaches Client Portal on Approve? |
+|---|---|---|
+| Healthcare | Yes (shared script) **+** a second, independent sync at the War Room stage (`syncStructuredCaseToEngine()`, fires every pipeline run) | Yes — twice over |
+| Legal, Construction, Real Estate, Insurance, FinOps | Yes (shared `tsm-exec-portal-upgrade.js`) | Yes |
+| Mortgage, PM Copilot, Schools, HotelOps, Honeywell | Yes (direct inline call to the same endpoint) | Yes |
+| BPO | Yes — own dedicated endpoint, not this relay | Yes — direct |
+| **Concierge** | **No — not a registered exec-portal vertical at all** | **No** |
+| **College Command** | **No — registered server-side, but no page calls the endpoint** | **No** |
+| L1 Ticket Copilot | No — internal IT tooling, not client-facing | N/A |
+
+**Talk point / training note:** For every "Yes" row, **Approve is the action that makes a case visible to the client** — not the export button. Concierge and College Command are the two real gaps: an approved case there does not reach the client automatically today; it has to be entered into BPO manually via `bpo-clients-admin.html` if a client needs to see it. That's a platform gap, not an employee-training gap — don't tell someone they did it wrong if a Concierge or College case doesn't show up in a client's portal.
+
+**Recovery note:** A case sitting on Hold, or never opened, never reaches the client — regardless of vertical. An idle Executive Portal queue is client-invisible revenue-recovery work, not just an internal backlog.
+
+---
+
 ## RCM-OS (standalone — not part of the War Room chain)
 
 **Path:** `html/finops-suite/tsm-rcm-os.html` (single self-contained page), with `tsm-rcm-os-howto.html` and `rcm-os-presentation.html` as companion docs/demo.
@@ -480,6 +509,7 @@ RCM-OS ("Reconciliation Command Center") does not follow the War Room → Strate
 4. **ACKNOWLEDGE / ESCALATE with logged messages** (Mortgage, Schools, PM Copilot, HotelOps, Honeywell's AUTHORIZE/BOARD_NOTIFIED) is the most audit-trail-forward pattern — worth showing to a compliance-sensitive buyer.
 5. **Legal is the only three-tier vertical chain** (case strategist → chief strategist → executive) — call this out explicitly since every other chained vertical is a flat three-screen chain. **Honeywell is structurally unique in the other direction** — one strategist/exec-portal pair fed by three separate scenario-specific war rooms (plant / supplier / cyber-OT), rather than one war room per chain.
 6. **RCM-OS sits outside this pattern entirely** — a standalone reconciliation tool with no War Room / Strategist / Executive Portal chain. Don't describe it in three-tier-chain language in a demo.
+7. **The Decision Center's Approve action, not the export button, is what reaches the client** — see §14.5. Confirmed wired for 12 of 14 exec-portal verticals; Concierge and College Command are real gaps, not training gaps.
 
 ---
 

@@ -401,6 +401,7 @@
       <li><a href="#appA">Appendix A: Not Classifier-Routed</a></li>
       <li><a href="#appB">Appendix B: Outside This Pipeline</a></li>
       <li><a href="#appC">Appendix C: Sweet Music OS</a></li>
+      <li><a href="#appD">Appendix D: The Closing Loop (Decision → Client Portal)</a></li>
     </ol>
   </nav>
 
@@ -439,13 +440,14 @@
 
     <section class="doc-section" id="s2">
       <h2><span class="num">2</span> The Universal Intake Pipeline</h2>
-      <p>Every document follows the same four-stage path, regardless of vertical:</p>
+      <p>Every document follows the same five-stage path, regardless of vertical — the first four end with a screen a TSM employee is looking at; the fifth is what actually reaches the client:</p>
       <table>
         <tr><th>Stage</th><th>File Path</th></tr>
         <tr><td>1. Upload / Intake</td><td><code>html/tsm-doc-search-multi.html</code></td></tr>
         <tr><td>2. AI Classification</td><td><code>server.js</code> — POST route using <code>DOC_ROUTER_PROMPT</code> / <code>DOC_ROUTER_NODES</code></td></tr>
         <tr><td>3. Vertical War Room</td><td>one page per vertical, e.g. <code>html/war-rooms/re-war/re-war-room.html</code></td></tr>
         <tr><td>4. Strategist → Executive Portal</td><td>the vertical's own relay chain (see Section 5)</td></tr>
+        <tr><td>5. Executive Decision → BPO Case Engine → Client Portal</td><td>see <a href="#appD">Appendix D</a> — this is the step that makes the work visible to the actual client, and it isn't wired the same way for every vertical</td></tr>
       </table>
       <p style="margin-top:14px;">The classifier's job is narrow and specific: given a filename and document content, return which vertical(s) a document belongs to, a document type, and a small set of structured fields (see Section 3). It does not decide what to do with the document — that's the War Room reviewer's job, informed by the fields the classifier extracted.</p>
     </section>
@@ -571,6 +573,11 @@
         <div class="callout recovery">
           <span class="callout-label">Recovery Note</span>
           Coverage-exclusion codes (E&amp;O, CO-series) are the recovery signal here — a claim or policy that carries one and stalls in the War Room is money sitting on the table until someone actions it.
+        </div>
+
+        <div class="callout">
+          <span class="callout-label">Client Engagement Model (current)</span>
+          Insurance is queue-only, not yet full exception+correction like Healthcare/FinOps/Construction/Mortgage — treat this vertical as a <strong>pilot</strong>, not a full-workload BPO commitment, until the correction layer is proven on real client volume. Scope new Insurance clients to a bounded pilot (claims/document indexing, compliance research, or licensing/CE admin — see the BPO GTM playbook) rather than promising end-to-end "we do it all" delivery. Every pilot case still closes the loop to the client for real: Insurance's Executive Portal has the Decision Center wired (<code>tsm-exec-portal-upgrade.js</code>), so an Approve on a case here auto-creates/updates a real BPO work item and shows up in that client's Client Portal rollup — see <a href="#appD">Appendix D</a>. Use that as pilot evidence: the client sees real, live status on a small scope before any larger commitment is discussed.
         </div>
       </div>
 
@@ -1117,6 +1124,47 @@
           <tr><td><code>#verdict</code> stays at "—" after clicking Check Readiness</td><td>LUFS/Peak fields likely contain non-numeric input, or one was left blank — the check needs both values</td></tr>
           <tr><td>Client confused why their track "sounds different" after this tool</td><td>It doesn't touch the audio at all — re-confirm they understand this is a numbers-in, verdict-out readiness check, not a mastering engine</td></tr>
         </table>
+      </div>
+    </section>
+
+    <section class="doc-section" id="appD">
+      <h2>Appendix D: The Closing Loop — Executive Decision → BPO Case Engine → Client Portal</h2>
+      <p>Sections 2–5 stop at the Executive Portal — the screen a TSM employee is looking at. This appendix covers the step that actually happens next: what turns a reviewed case into something the client sees. This is real, verified wiring (<code>server.js</code>, <code>POST /api/exec-portal/:vertical/decide</code>), not a proposed design.</p>
+
+      <h4>The mechanism</h4>
+      <p>Every Executive Portal with a Decision Center (Approve / Hold / Reject buttons) posts a decision to <code>/api/exec-portal/:vertical/decide</code>. On <strong>Approve</strong>, the server automatically creates or updates a real BPO work item (<code>bpoUpsertWorkItem</code>) — the same record type the BPO vertical itself manages — tagged to that case's resolved client, if one is linked. No analyst has to re-key anything from an exported Client Package into the BPO system by hand; the relay does it at the moment of approval. BPO's own vertical is excluded from this auto-relay only because it already writes its work items directly.</p>
+
+      <h4>Where it ends up</h4>
+      <p>Once a case lands in the BPO ledger (<code>bpo_cases</code>), it's picked up by <code>bpoBuildClientRollup()</code>, which backs both <code>GET /api/bpo/reports/client-rollup</code> (live, on-demand) and the generated monthly snapshot (<code>GET /api/bpo/reports/client-monthly</code>). The client's own login — via <code>login.html</code> → <code>html/client-portal.html</code>, the only page a real client sees — reads from that same rollup. A case that closes the loop shows up there; a case that doesn't, doesn't.</p>
+
+      <h4>Which verticals are actually wired to it</h4>
+      <table>
+        <tr><th>Vertical</th><th>Decision Center present?</th><th>Reaches Client Portal on Approve?</th></tr>
+        <tr><td>Healthcare</td><td>Yes (shared script) — <strong>plus</strong> a second, independent auto-sync at the War Room stage (<code>syncStructuredCaseToEngine()</code>, fires on every pipeline run, not just on Approve)</td><td>Yes — twice over</td></tr>
+        <tr><td>Legal</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Construction</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Real Estate</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Insurance</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>FinOps</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Mortgage</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>PM Copilot</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Schools</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>HotelOps</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Honeywell</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>BPO</td><td>Yes (own dedicated endpoint, not this relay)</td><td>Yes — direct, not via auto-relay</td></tr>
+        <tr><td>Concierge</td><td><strong>No</strong> — not registered as an exec-portal vertical at all</td><td><strong>No</strong> — a Concierge case never reaches the client portal automatically</td></tr>
+        <tr><td>College Command</td><td><strong>No</strong> — registered server-side but no page actually calls the endpoint</td><td><strong>No</strong></td></tr>
+        <tr><td>L1 Ticket Copilot</td><td><strong>No</strong> — internal IT tooling, not a client-facing vertical</td><td>N/A — not applicable</td></tr>
+      </table>
+
+      <div class="callout">
+        <span class="callout-label">What this means for training</span>
+        Tell employees plainly: for every vertical above marked "Yes," clicking <strong>Approve</strong> on a reviewed case is the action that makes it visible to the client — not the export button, not a separate report-generation step. For Concierge and College Command specifically, an approved case currently does <em>not</em> reach the client automatically; if a client needs to see that work, it has to be entered into BPO manually via <code>bpo-clients-admin.html</code> / the BPO Executive Portal today. That's a real platform gap, not a training gap — don't tell an employee they're doing something wrong if a Concierge or College case doesn't show up in a client's portal.
+      </div>
+
+      <div class="callout recovery">
+        <span class="callout-label">Recovery Note</span>
+        A case that never gets an Approve/Reject decision in the Executive Portal — left sitting on Hold, or never opened at all — never reaches the client either, regardless of vertical. An idle Executive Portal queue isn't just a review backlog; it's revenue-recovery work the client can't see yet.
       </div>
     </section>
 
