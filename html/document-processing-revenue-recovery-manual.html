@@ -391,6 +391,7 @@
           <li><a href="#v-pm">PM Copilot</a></li>
           <li><a href="#v-noc">Network Operations Center</a></li>
           <li><a href="#v-college">College Command</a></li>
+          <li><a href="#v-mortgage">Mortgage</a></li>
         </ul>
       </li>
       <li><a href="#s6">6. Document Card Controls</a></li>
@@ -431,7 +432,7 @@
     <section class="doc-section" id="s1">
       <h2><span class="num">1</span> Purpose &amp; the Big Picture</h2>
       <p>This manual explains how a document — an invoice, a claim, a permit, a title report, anything — moves through TSM's shared intake pipeline from the moment it's uploaded to the moment it becomes a routed, actionable, dollars-and-cents next step.</p>
-      <p>The pipeline is a single shared entry point (<code>html/tsm-doc-search-multi.html</code>) that every one of the ten verticals in Section 5 feeds through. A document doesn't get a different upload experience per client vertical — it gets classified once, against a shared AI router, and then handed to the vertical's own War Room → Strategist → Executive Portal relay chain.</p>
+      <p>The pipeline is a single shared entry point (<code>html/tsm-doc-search-multi.html</code>) that every one of the eleven verticals in Section 5 feeds through. A document doesn't get a different upload experience per client vertical — it gets classified once, against a shared AI router, and then handed to the vertical's own War Room → Strategist → Executive Portal relay chain.</p>
       <p>Two other groups of verticals exist outside that chain, and this manual is explicit about the difference rather than blurring it: Appendix A covers verticals that are indexed in the shared search UI but not yet wired into the AI classifier, and Appendix B covers verticals with their own real relay chains that don't touch this shared pipeline at all.</p>
       <p>A parallel, read-only view sits above all of this: <code>html/sentinel-center.html</code> polls the same <code>TSM_&lt;VERTICAL&gt;_STRATEGIST_RELAY</code> keys each vertical's Strategist stage writes and rolls them into a single cross-vertical risk board. It doesn't change how a document is processed — it's downstream of the relay chain, not part of it — but Section 5's per-vertical relay tables note which Sentinel key each Strategist stage feeds, since that's the same write a Strategist reviewer is already producing.</p>
     </section>
@@ -484,6 +485,7 @@
         <a href="#v-bpo">BPO Internal</a><a href="#v-re">Real Estate</a><a href="#v-legal">Legal</a>
         <a href="#v-hc">Healthcare</a><a href="#v-pm">PM Copilot</a><a href="#v-noc">NOC</a>
         <a href="#v-college">College Command</a>
+        <a href="#v-mortgage">Mortgage</a>
       </div>
 
       <!-- FinOps -->
@@ -924,6 +926,39 @@
           R2T4 (Return of Title IV Funds) exposure is the highest-stakes item across the five domains — it carries a hard federal 45-day deadline, and severity is computed directly off how many open cases are already past it (<code>crit</code> at ≥30% of open cases breached, <code>high</code> at ≥15%, in <code>college-finaid-financial.js</code>). Prioritize aged R2T4 cases before verification backlog or cohort-default flags.
         </div>
       </div>
+
+      <!-- Mortgage -->
+      <div class="vertical" id="v-mortgage">
+        <h3>Mortgage</h3>
+        <div class="covers">Loan file/underwriting status documents, outstanding conditions blocking closing, and compliance exceptions (TRID tolerance, RESPA/AfBA, HMDA/LAR data, fraud review).</div>
+        <div class="node-line">Primary node: <code>mortgage-war-room</code> — <code>html/war-rooms/mortgage/mortgage-war-room.html</code></div>
+
+        <h4>Document types you'll see</h4>
+        <table>
+          <tr><th>Type</th><th>Example Filename</th><th>What It Typically Is</th></tr>
+          <tr><td>DOCUMENT REPORT</td><td><code>TRID_Tolerance_Cure_DK-022.record</code></td><td>A compliance exception carrying its own exclusion code</td></tr>
+          <tr><td>DOCUMENT REPORT</td><td><code>UW_Condition_GiftFund_JUMBO-010.record</code></td><td>An outstanding underwriting condition on a loan file</td></tr>
+          <tr><td>ESCALATION</td><td><code>BNCA_DSCR-011_ClosingDelay.report</code></td><td>A loan item escalated to BNCA for an SLA breach</td></tr>
+        </table>
+
+        <h4>How this vertical is actioned today</h4>
+        <p>Single-intake-node vertical (same shape as HC/PM/NOC — one real war-room node, no sub-desks). A routed document lands in the War Room's Routed Document Intake panel for manual review against the live loan pipeline. Unlike PM/HC, receiving a document does <em>not</em> auto-run AI analysis or auto-relay to Strategist — Mortgage's engine scores the whole loan_files/conditions/exceptions portfolio (<code>mortgage-model.json</code>), not a single document, so auto-running it against one routed doc would present portfolio-wide findings as if they were about that doc specifically. The reviewer runs analysis and relays manually once they've cross-checked the document.</p>
+
+        <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
+        <table>
+          <tr><th>Stage</th><th>File Path</th></tr>
+          <tr><td>War Room</td><td><code>html/war-rooms/mortgage/mortgage-war-room.html</code></td></tr>
+          <tr><td>Strategist</td><td><code>html/war-rooms/mortgage/mortgage-strategist.html</code></td></tr>
+          <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/war-rooms/mortgage/mortgage-executive-portal.html</code></td></tr>
+          <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_MORTGAGE_STRATEGIST_RELAY</code></td></tr>
+        </table>
+
+        <h4>Troubleshooting</h4>
+        <div class="callout">
+          <span class="callout-label">"I routed a document but nothing shows up in the KPI grid or loan table"</span>
+          Not a bug — by design. The Routed Document Intake panel (above the KPI grid) is where a routed document lands for manual review; it is never auto-converted into a <code>loan_files</code>/<code>conditions</code>/<code>exceptions</code> record, since the classifier's generic extraction schema (fileName, client, ref, amount) doesn't carry the fields (loan_id, borrower, stage, owner, program) those records actually need — inventing them would be worse than not doing it.
+        </div>
+      </div>
     </section>
 
     <section class="doc-section" id="s6">
@@ -956,8 +991,8 @@
         <li>A populated <code>defectFlags</code> array (Real Estate, Healthcare) is a hold, not informational text.</li>
         <li>BPO's Strategist stage is a real, built page (<code>bpo-strategist.html</code>) — a BPO item does get a Strategist hop, same as other verticals; see <code>BPO_Client_Chain_Manual.docx</code> for the full stage-by-stage steps.</li>
         <li>RCM-OS and Property Accounting — Revenue Cycle are searchable but not classifier-routed — a document won't land there automatically (Appendix A).</li>
-        <li>Mortgage, Schools, HotelOps/Concierge, Honeywell, L1 Ticket, Logistics, and Supplier/Vendor sit entirely outside this pipeline (Appendix B) — don't look for them in doc-search.</li>
-        <li>Sentinel Center (<code>html/sentinel-center.html</code>) rolls up 8 of the 9 pipeline verticals — every one but NOC — plus Mortgage, Schools, HotelOps, and Concierge from Appendix B; check Section 5's Sentinel Center Feed rows for the exact relay key.</li>
+        <li>Schools, HotelOps/Concierge, Honeywell, L1 Ticket, Logistics, and Supplier/Vendor sit entirely outside this pipeline (Appendix B) — don't look for them in doc-search. Mortgage moved into Section 5 as of 2026-09-05; it's classifier-routed now, not in Appendix B.</li>
+        <li>Sentinel Center (<code>html/sentinel-center.html</code>) rolls up 9 of the 10 pipeline verticals — every one but NOC — plus Schools, HotelOps, and Concierge from Appendix B; check Section 5's Sentinel Center Feed rows for the exact relay key.</li>
       </ul>
     </section>
 
@@ -991,9 +1026,8 @@
 
     <section class="doc-section" id="appB">
       <h2>Appendix B: Verticals Outside This Pipeline</h2>
-      <p>The ten verticals in Section 5 are the ones that run through TSM's shared document-router classifier (<code>tsm-doc-search-multi.html</code>). The verticals below have their own relay chains but are not wired into that shared intake pipeline at all (not even for manual indexing, unlike Appendix A), so document-processing guidance for them isn't covered by this manual — listed here for reference only.</p>
+      <p>The verticals below have their own relay chains but are not wired into the shared document-router classifier (<code>tsm-doc-search-multi.html</code> / <code>server.js</code>'s <code>DOC_ROUTER_NODES</code>/<code>DOC_ROUTER_PROMPT</code>), so document-processing guidance for them isn't covered by Section 5 — listed here for reference only.</p>
       <ul class="plain">
-        <li>Mortgage — <code>html/war-rooms/mortgage/mortgage-war-room.html</code></li>
         <li>Schools — <code>html/war-rooms/schools-command/schools-command.html</code></li>
         <li>HotelOps / Concierge — <code>html/hotelops/hotelops-war-room.html</code></li>
         <li>Honeywell Industrial — <code>html/plant-incident.html</code></li>
@@ -1001,9 +1035,14 @@
         <li>Logistics — <code>html/logistics/logistics-situation-room.html</code> (Situation Room only — no Strategist/Executive Portal built yet)</li>
         <li>Supplier/Vendor Management — <code>html/supplier-vendor/supplier-vendor-situation-room.html</code> (Situation Room only — no Strategist/Executive Portal built yet)</li>
       </ul>
+      <div class="callout recovery">
+        <span class="callout-label">Mortgage moved to Section 5 (2026-09-05)</span>
+        Mortgage previously sat here — it had a fully-registered <code>VERTICALS.mortgage</code> entry, a real <code>tsm_mortgage_docsearch_relay</code> key in <code>WAR_ROOM_ROUTES</code>, and real routes to all three of its relay-chain pages, but was simply missing from <code>server.js</code>'s <code>DOC_ROUTER_NODES</code>/<code>DOC_ROUTER_PROMPT</code> vertical list, so the classifier could never actually return it, and <code>mortgage-war-room.html</code> had no receiver to read the key even if it had. Both gaps are now closed: <code>mortgage</code> is a valid classifier vertical (single intake node, same shape as hc/pm/noc), the war room now has a Routed Document Intake panel that displays what lands there, and 3 seed documents were added to the doc-search index so the vertical is actually searchable. See Section 5 below for detail.
+      </div>
     </section>
 
     <section class="doc-section" id="appC">
+
       <h2>Appendix C: Sweet Music OS — Creation Flow (Outside This Pipeline)</h2>
 
       <div class="callout scope">

@@ -237,6 +237,13 @@ tr:hover td{background:rgba(212,175,55,.03)}
       </div>
     </div>
 
+    <div class="section" id="docIntakeSection" style="display:none">
+      <div class="section-head"><span>ROUTED DOCUMENT INTAKE</span><span id="docIntakeMeta"></span></div>
+      <div class="section-body">
+        <div class="ai-output" id="docIntakeOutput"></div>
+      </div>
+    </div>
+
     <div class="section">
       <div class="section-head"><span>AI PIPELINE &amp; RISK ANALYSIS</span></div>
       <div class="section-body">
@@ -308,6 +315,35 @@ tr:hover td{background:rgba(212,175,55,.03)}
 
   const howtoBtn = document.getElementById('mtgHowtoBtn');
   if (howtoBtn) howtoBtn.addEventListener('click', () => document.getElementById('mtgHowtoOverlay').classList.add('active'));
+
+  // Doc-search relay receiver — tsm_mortgage_docsearch_relay. Written by
+  // html/tsm-doc-search-multi.html's launchWarRoom()/launchWarRoomDirect()
+  // when a document is classified (or manually redispatched) into Mortgage;
+  // this key already existed in that file's WAR_ROOM_ROUTES before Mortgage
+  // had a receiver here to read it. Unlike PM/HC, this deliberately does
+  // NOT auto-run analysis or auto-relay to Strategist: runAnalysis() here
+  // scores the whole loan_files/conditions/exceptions portfolio, not a
+  // single document, so auto-running it against one routed doc would
+  // present portfolio-wide findings as if they were about that doc. This
+  // only surfaces the routed document for manual review against the
+  // pipeline above.
+  (function () {
+    try {
+      const raw = localStorage.getItem('tsm_mortgage_docsearch_relay');
+      if (!raw) return;
+      const relay = JSON.parse(raw);
+      if (!relay.docText) return;
+      localStorage.removeItem('tsm_mortgage_docsearch_relay');
+      const section = document.getElementById('docIntakeSection');
+      const meta = document.getElementById('docIntakeMeta');
+      const out = document.getElementById('docIntakeOutput');
+      if (section && out) {
+        section.style.display = '';
+        if (meta) meta.textContent = relay.fileName || '';
+        out.textContent = relay.docText;
+      }
+    } catch (e) { console.warn('[Mortgage War Room] doc search relay error:', e); }
+  })();
 
   async function loadModel() {
     const res = await fetch('/html/war-rooms/mortgage/data/mortgage-model.json');

@@ -1383,7 +1383,11 @@ const VERTICALS = {
       "strategist":        { label:"Strategist",       route:"/html/war-rooms/mortgage/mortgage-strategist.html" },
       "bnca-engine":       { label:"BNCA Escalated",   route:"/html/war-rooms/mortgage/mortgage-executive-portal.html" },
     },
-    seed: []
+    seed: [
+      { fileName:"TRID_Tolerance_Cure_DK-022.record",  documentType:"DOCUMENT REPORT", vendor:"",  invoiceNo:"TRID-014",  exclusionCode:"TRID-CURE", amount:445000, sourceNode:"mortgage-war-room", routing:["mortgage-war-room","strategist"],             timestamp:Date.now()-2*3600000, _ext:{client:"DK-022", ref:"TRID-014", defectFlags:["TRID Tolerance"]} },
+      { fileName:"UW_Condition_GiftFund_JUMBO-010.record", documentType:"DOCUMENT REPORT", vendor:"", invoiceNo:"JUMBO-010", exclusionCode:"", amount:1250000, sourceNode:"mortgage-war-room", routing:["mortgage-war-room","strategist"],         timestamp:Date.now()-5*3600000, _ext:{client:"JUMBO-010", ref:"COND-JUMBO-010", defectFlags:["Condition Pending"]} },
+      { fileName:"BNCA_DSCR-011_ClosingDelay.report",  documentType:"ESCALATION",      vendor:"",  invoiceNo:"DSCR-011",  exclusionCode:"SLA-BREACH", amount:0,      sourceNode:"mortgage-war-room", routing:["mortgage-war-room","strategist","bnca-engine"], timestamp:Date.now()-6*3600000, _ext:{client:"DSCR-011", ref:"ESC-DSCR011", defectFlags:["Closing Delay"]} },
+    ]
   },
   pm: {
     label: "PM Copilot",

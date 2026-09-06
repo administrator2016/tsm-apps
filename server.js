@@ -5825,6 +5825,14 @@ const DOC_ROUTER_NODES = {
   // "not strategist unless nothing else fits" rule below).
   pm: ['pm-war-room', 'strategist'],
   noc: ['noc-war-room', 'strategist'],
+  // Mortgage: same single-intake-node shape as hc/pm/noc above. The
+  // client-side plumbing for this (VERTICALS.mortgage + WAR_ROOM_ROUTES
+  // 'mortgage-war-room' entry in tsm-doc-search-multi.html, both with a
+  // real tsm_mortgage_docsearch_relay key) already existed before this was
+  // added here — this vertical id was simply missing from the classifier's
+  // own valid-vertical list, so the AI classifier could never actually
+  // return "mortgage", even though every other wire was already in place.
+  mortgage: ['mortgage-war-room', 'strategist'],
   // College vertical: five sub-domain nodes (Financial Aid, Bursar,
   // Endowment, Research/F&A, Accreditation) mirroring 're''s multi-node
   // shape above. findWarRoomsForClassification() (tsm-war-room-registry.js)
@@ -5847,7 +5855,7 @@ const DOC_ROUTER_PROMPT = `You are TSM's document routing classifier. Analyze th
 Return JSON matching exactly this schema:
 {
   "documentType": one of ${JSON.stringify(DOC_ROUTER_DOC_TYPES)},
-  "verticals": array, subset of ["fo","ins","con","bpo","re","leg","hc","pm","noc","college"] — "pm" is property management (leases, work orders, vendor certificates, unit turnovers, occupancy); "noc" is network operations (incident reports, outages, asset/ticket data, uptime SLAs); "college" is higher-education back-office operations — financial aid (FAFSA, Pell, R2T4 return-of-funds, verification, cohort default rate), bursar/tuition billing (payment plans, registration holds), endowment fund compliance (FASB ASU 2016-14 underwater funds, donor restrictions), research administration (grant awards, indirect cost/F&A recovery, effort reporting), and accreditation (findings, standards, site visits). Include MULTIPLE verticals if the content is genuinely relevant to more than one (e.g. a vendor invoice tied to a construction project may be relevant to both "con" and "fo"; a property sale with a legal dispute may be relevant to both "re" and "leg"; a claim denial with financial exposure may be relevant to both "hc" and "fo"; a PM vendor invoice may be relevant to both "pm" and "fo"; a college research grant invoice may be relevant to both "college" and "fo"),
+  "verticals": array, subset of ["fo","ins","con","bpo","re","leg","hc","pm","noc","college","mortgage"] — "pm" is property management (leases, work orders, vendor certificates, unit turnovers, occupancy); "noc" is network operations (incident reports, outages, asset/ticket data, uptime SLAs); "college" is higher-education back-office operations — financial aid (FAFSA, Pell, R2T4 return-of-funds, verification, cohort default rate), bursar/tuition billing (payment plans, registration holds), endowment fund compliance (FASB ASU 2016-14 underwater funds, donor restrictions), research administration (grant awards, indirect cost/F&A recovery, effort reporting), and accreditation (findings, standards, site visits); "mortgage" is residential mortgage loan operations — loan file/underwriting status, outstanding conditions blocking closing, and compliance exceptions (TRID tolerance, RESPA/AfBA, HMDA/LAR data, fraud review). Include MULTIPLE verticals if the content is genuinely relevant to more than one (e.g. a vendor invoice tied to a construction project may be relevant to both "con" and "fo"; a property sale with a legal dispute may be relevant to both "re" and "leg"; a claim denial with financial exposure may be relevant to both "hc" and "fo"; a PM vendor invoice may be relevant to both "pm" and "fo"; a college research grant invoice may be relevant to both "college" and "fo"; a mortgage compliance exception with reportable financial exposure may be relevant to both "mortgage" and "fo"),
   "primaryVertical": one value from "verticals",
   "routing": {
     "<vertical>": { "sourceNode": "<one valid node id for that vertical>", "nodes": ["<valid node ids...>"] }
@@ -5884,6 +5892,7 @@ hc:  ${DOC_ROUTER_NODES.hc.join(', ')}
 pm:  ${DOC_ROUTER_NODES.pm.join(', ')}
 noc: ${DOC_ROUTER_NODES.noc.join(', ')}
 college: ${DOC_ROUTER_NODES.college.join(', ')}  — FAFSA/Pell/R2T4/verification/cohort-default->college-finaid, tuition/payment-plan/registration-hold->college-bursar, endowment/donor-fund/FASB->college-endowment, grant/award/indirect-cost/F&A/effort-report->college-research-fa, accreditation-finding/standard/site-visit->college-accred
+mortgage: ${DOC_ROUTER_NODES.mortgage.join(', ')}  — single intake node, same shape as hc/pm/noc: sourceNode is always mortgage-war-room unless the doc is itself an escalation report
 
 Rules:
 - Always include "strategist" in routing.<vertical>.nodes for every vertical listed.
