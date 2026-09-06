@@ -16,35 +16,45 @@ Deno.serve(async (req) => {
   if (error || !tracks?.length) {
     return new Response(JSON.stringify({ error: error?.message ?? 'No tracks found for that genre' }), {
       status: error ? 500 : 404,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
   const track = tracks[Math.floor(Math.random() * tracks.length)];
 
-  // Fetch the live 30s preview URL from Spotify using the stored track ID
-  const spotifyToken = await getSpotifyToken();
-  const res = await fetch(`https://api.spotify.com/v1/tracks/${track.spotify_track_id}`, {
-    headers: { Authorization: `Bearer ${spotifyToken}` },
-  });
-  const spotifyData = await res.json();
+  // Fetch the live 30s preview URL from the free, unauthenticated iTunes
+  // Search API lookup endpoint using the stored track ID. Previews can
+  // occasionally be re-encoded or briefly removed from Apple's CDN, so we
+  // still fall back gracefully instead of throwing if the lookup fails.
+  try {
+    const lookupRes = await fetch(`https://itunes.apple.com/lookup?id=${encodeURIComponent(track.itunes_track_id)}`);
+    const rawText = await lookupRes.text();
 
-  return new Response(
-    JSON.stringify({ ...track, preview_url: spotifyData.preview_url }),
-    { headers: { 'Content-Type': 'application/json' } }
-  );
+    let lookupData: any;
+    try {
+      lookupData = JSON.parse(rawText);
+    } catch {
+      return new Response(
+        JSON.stringify({
+          ...track,
+          preview_url: null,
+          previewError: `Non-JSON response from iTunes lookup (status ${lookupRes.status})`,
+          rawBodySnippet: rawText.slice(0, 300),
+        }),
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const previewUrl = lookupData?.results?.[0]?.previewUrl ?? null;
+
+    return new Response(
+      JSON.stringify({ ...track, preview_url: previewUrl }),
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ ...track, preview_url: null, previewError: String(err) }),
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+  }
 });
-
-async function getSpotifyToken() {
-  const clientId = Deno.env.get('SPOTIFY_CLIENT_ID')!;
-  const clientSecret = Deno.env.get('SPOTIFY_CLIENT_SECRET')!;
-  const res = await fetch('https://accounts.spotify.com/api/token', {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: 'grant_type=client_credentials',
-  });
-  const data = await res.json();
-  return data.access_token;
-}

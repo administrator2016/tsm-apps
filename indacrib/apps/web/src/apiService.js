@@ -21,7 +21,7 @@ export async function fetchKaraokeTrack(genre) {
     console.error('Error fetching karaoke track:', error);
     return null;
   }
-  return data; // { spotify_track_id, title, artist, preview_url, genre }
+  return data; // { itunes_track_id, title, artist, preview_url, genre }
 }
 
 export async function fetchCharadesWord(category) {
