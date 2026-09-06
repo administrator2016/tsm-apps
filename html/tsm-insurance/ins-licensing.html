@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSM Insurance · Licensing &amp; CE Command</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #060d0a;
+  --panel:    #0a1510;
+  --border:   #1a2e1f;
+  --ins:      #60a5fa;
+  --ins-dim:  #60a5fa22;
+  --green:    #1ee8b6;
+  --danger:   #f87171;
+  --med:      #ffb547;
+  --dim:      #445544;
+  --text:     #c8e6c9;
+  --mono:     'Share Tech Mono', monospace;
+  --head:     'Rajdhani', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--mono); min-height: 100vh; }
+
+/* NAV */
+.nav { display:flex; align-items:center; gap:6px; padding:0 20px; height:48px; background:#060f09; border-bottom:1px solid var(--border); }
+.nav-brand { font-family:var(--head); font-weight:700; font-size:15px; color:var(--ins); letter-spacing:.1em; margin-right:12px; }
+.nav-btn { background:none; border:1px solid transparent; color:#668866; font-family:var(--mono); font-size:11px; padding:5px 12px; border-radius:2px; cursor:pointer; letter-spacing:.06em; transition:all .2s; }
+.nav-btn:hover { border-color:var(--ins); color:var(--ins); }
+.nav-btn.active { border-color:var(--ins); color:var(--ins); background:var(--ins-dim); }
+.nav-right { margin-left:auto; display:flex; align-items:center; gap:12px; }
+.nav-clock { font-size:11px; color:var(--dim); }
+
+/* ALERT BAR */
+.alert-bar { background:#0a1a10; border-bottom:1px solid #60a5fa44; padding:7px 20px; display:flex; align-items:center; gap:10px; font-size:11px; color:var(--ins); letter-spacing:.07em; }
+.a-dot { width:7px; height:7px; border-radius:50%; background:var(--ins); animation:pulse 1.4s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+/* MAIN */
+.main { max-width:1200px; margin:0 auto; padding:24px 20px; }
+
+/* HEADER */
+.page-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; }
+.page-title { font-family:var(--head); font-size:28px; font-weight:700; color:#e2ffe8; letter-spacing:.05em; }
+.page-title span { color:var(--ins); }
+.page-sub { font-size:11px; color:var(--dim); margin-top:4px; letter-spacing:.06em; }
+.status-pill { display:flex; align-items:center; gap:8px; background:var(--ins-dim); border:1px solid var(--ins); padding:6px 14px; border-radius:3px; font-size:11px; color:var(--ins); letter-spacing:.07em; }
+.status-dot { width:6px; height:6px; border-radius:50%; background:var(--ins); animation:pulse 1.4s infinite; }
+
+/* STAT GRID */
+.stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+.stat-card { background:var(--panel); border:1px solid var(--border); border-radius:4px; padding:16px; }
+.stat-label { font-size:10px; color:var(--dim); letter-spacing:.08em; text-transform:uppercase; margin-bottom:6px; }
+.stat-value { font-family:var(--head); font-size:26px; font-weight:700; color:var(--ins); }
+.stat-value.danger { color:var(--danger); }
+.stat-value.med { color:var(--med); }
+.stat-value.green { color:var(--green); }
+
+.reg-badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;}
+.reg-badge{background:#60a5fa11;border:1px solid #60a5fa33;color:var(--ins);font-size:10px;padding:4px 10px;border-radius:3px;letter-spacing:.06em;}
+.reg-badge.warn{background:#f8717111;border-color:#f8717133;color:var(--danger);}
+
+/* TWO COL */
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+.full-col { margin-bottom:20px; }
+
+/* PANEL */
+.panel { background:var(--panel); border:1px solid var(--border); border-radius:4px; padding:18px; }
+.panel-title { font-family:var(--head); font-size:13px; font-weight:700; color:#88aa88; letter-spacing:.1em; text-transform:uppercase; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
+.panel-title span { font-size:10px; color:var(--ins); border:1px solid var(--ins); padding:2px 8px; border-radius:2px; }
+
+/* INTAKE FORM */
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.form-group { display:flex; flex-direction:column; gap:5px; }
+.form-group.full { grid-column:1/-1; }
+.form-label { font-size:10px; color:var(--dim); letter-spacing:.07em; text-transform:uppercase; }
+.form-input, .form-select, .form-textarea { background:#060d0a; border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:12px; padding:8px 10px; border-radius:3px; outline:none; transition:border-color .2s; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--ins); }
+.form-select option { background:#0a1510; }
+.btn-run { width:100%; margin-top:12px; background:var(--ins-dim); border:1px solid var(--ins); color:var(--ins); font-family:var(--mono); font-size:12px; letter-spacing:.08em; padding:10px; border-radius:3px; cursor:pointer; transition:all .2s; }
+.btn-run:hover { background:#60a5fa33; }
+
+/* STEP PROMPTS */
+.step-list { display:flex; flex-direction:column; gap:8px; }
+.step-item { background:#060d0a; border:1px solid var(--border); border-radius:3px; padding:10px 12px; cursor:pointer; transition:border-color .2s; display:flex; align-items:flex-start; gap:10px; }
+.step-item:hover { border-color:var(--ins); }
+.step-num { color:var(--ins); font-size:11px; min-width:20px; }
+.step-text { font-size:11px; color:#99bb99; line-height:1.5; }
+
+/* OUTPUT */
+.output-box { background:#040c07; border:1px solid var(--border); border-radius:3px; padding:14px; min-height:180px; font-size:12px; color:#a9b7a6; line-height:1.7; white-space:pre-wrap; }
+.thinking { color:var(--ins); animation:pulse 1s infinite; }
+
+/* ROSTER TABLE */
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:11px; }
+th { background:#060d0a; color:var(--dim); text-transform:uppercase; letter-spacing:.07em; padding:8px 10px; text-align:left; border-bottom:1px solid var(--border); font-weight:400; }
+td { padding:9px 10px; border-bottom:1px solid #0d1a10; color:#99bb99; }
+tr:hover td { background:#0a1510; }
+.badge { font-size:10px; padding:2px 7px; border-radius:2px; font-family:var(--mono); }
+.badge.ok { background:#1ee8b611; color:var(--green); border:1px solid #1ee8b644; }
+.badge.soon { background:#ffb54711; color:var(--med); border:1px solid #ffb54744; }
+.badge.deficient { background:#f8717111; color:var(--danger); border:1px solid #f8717144; }
+</style>
+</head>
+<body data-vertical="insurance" data-page-role="warroom">
+
+<nav class="nav">
+  <div class="nav-brand">⚜ TSM INSURANCE</div>
+  <button class="nav-btn" onclick="location.href='insurance-portal.html'">WAR ROOM</button>
+  <button class="nav-btn" onclick="location.href='/html/war-rooms/insure-war/insurance-strategist.html'">STRATEGIST</button>
+  <button class="nav-btn" onclick="location.href='/html/war-rooms/insurance-command/insurance-command-executive-portal.html'">EXECUTIVE</button>
+  <button class="nav-btn" onclick="location.href='ins-hub1.html'">HUB</button>
+  <button class="nav-btn" onclick="location.href='ins-claims.html'">CLAIMS</button>
+  <button class="nav-btn" onclick="location.href='pc-command.html'">P&amp;C</button>
+  <button class="nav-btn" onclick="location.href='ins-compliance.html'">COMPLIANCE</button>
+  <button class="nav-btn active">LICENSING &amp; CE</button>
+  <div class="nav-right">
+    <span class="nav-clock" id="navClock">--:--:--</span>
+  </div>
+</nav>
+
+<div class="alert-bar">
+  <div class="a-dot"></div>
+  <span>LICENSING &amp; CE COMMAND ACTIVE — AGENCY-WIDE ROSTER — RENEWAL &amp; CE TRACKING</span>
+</div>
+
+<div class="main">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Licensing &amp; CE <span>Command</span></div>
+      <div class="page-sub">tsm-insurance · agency-wide producer roster · state licensing · continuing education</div>
+    </div>
+    <div class="status-pill"><span class="status-dot"></span>LICENSING ENGINE ACTIVE</div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-label">Tracked Licenses</div><div class="stat-value" id="s-tracked">0</div></div>
+    <div class="stat-card"><div class="stat-label">Expiring ≤30 Days</div><div class="stat-value med" id="s-expiring">0</div></div>
+    <div class="stat-card"><div class="stat-label">Open CE Requirements</div><div class="stat-value" id="s-ce-open">0</div></div>
+    <div class="stat-card"><div class="stat-label">CE Deficient</div><div class="stat-value danger" id="s-ce-deficient">0</div></div>
+  </div>
+
+  <div class="reg-badges">
+    <span class="reg-badge">NIPR / NPN</span>
+    <span class="reg-badge">RESIDENT LICENSE</span>
+    <span class="reg-badge">NON-RESIDENT LICENSE</span>
+    <span class="reg-badge warn">RENEWAL WINDOW</span>
+    <span class="reg-badge">CARRIER APPOINTMENTS</span>
+    <span class="reg-badge warn">CE DEFICIENCY</span>
+    <span class="reg-badge">STATE CE HOURS</span>
+    <span class="reg-badge">E&amp;O COVERAGE</span>
+  </div>
+
+  <div class="full-col">
+    <div class="panel">
+      <div class="panel-title">Portfolio Exposure <span id="exposure-badge">TSM_INSURANCE_LICENSING_ENGINE</span></div>
+      <div class="stat-grid" style="margin-bottom:12px;">
+        <div class="stat-card"><div class="stat-label">Lapsed License Revenue At Risk</div><div class="stat-value danger" id="exp-license">$0</div></div>
+        <div class="stat-card"><div class="stat-label">CE Noncompliance Fine Exposure</div><div class="stat-value danger" id="exp-ce">$0</div></div>
+        <div class="stat-card"><div class="stat-label">Total Modeled Exposure</div><div class="stat-value danger" id="exp-total">$0</div></div>
+        <div class="stat-card"><div class="stat-label">Agents On Roster</div><div class="stat-value" id="exp-roster">0</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--dim);margin-bottom:12px;" id="exp-note"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="nav-btn" onclick="renderExposure()">↻ REFRESH EXPOSURE</button>
+        <button class="nav-btn" onclick="relayToStrategist()">⇢ RELAY TO STRATEGIST</button>
+        <button class="nav-btn" onclick="pushToSentinel()">⚑ PUSH TO SENTINEL</button>
+        <span id="relay-status" style="font-size:11px;color:var(--green);align-self:center;"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title">License Intake <span>ENGINE 01</span></div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Agent / NPN</label><input class="form-input" id="lic-agent" placeholder="NPN-XXXXXX"></div>
+        <div class="form-group"><label class="form-label">State</label><input class="form-input" id="lic-state" placeholder="e.g. AZ"></div>
+        <div class="form-group"><label class="form-label">License Type</label>
+          <select class="form-select" id="lic-type">
+            <option>Life &amp; Health</option>
+            <option>P&amp;C</option>
+            <option>Personal Lines</option>
+            <option>Surplus Lines</option>
+            <option>Adjuster</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Expires In (days)</label><input class="form-input" id="lic-expires" type="number" placeholder="e.g. 30"></div>
+      </div>
+      <button class="btn-run" onclick="addLicense()">+ ADD TO ROSTER</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">CE Requirement Intake <span>ENGINE 02</span></div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Agent / NPN</label><input class="form-input" id="ce-agent" placeholder="NPN-XXXXXX"></div>
+        <div class="form-group"><label class="form-label">Course</label><input class="form-input" id="ce-course" placeholder="e.g. Ethics — AZ Statute Update"></div>
+        <div class="form-group"><label class="form-label">Hours Required</label><input class="form-input" id="ce-req" type="number" placeholder="e.g. 3"></div>
+        <div class="form-group"><label class="form-label">Hours Completed</label><input class="form-input" id="ce-done" type="number" placeholder="e.g. 0"></div>
+        <div class="form-group full"><label class="form-label">Deadline (days)</label><input class="form-input" id="ce-deadline" type="number" placeholder="e.g. 12"></div>
+      </div>
+      <button class="btn-run" onclick="addCe()">+ ADD CE REQUIREMENT</button>
+    </div>
+  </div>
+
+  <div class="full-col">
+    <div class="panel">
+      <div class="panel-title">Agency-Wide Producer Roster <span id="roster-count">0 TRACKED</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Agent / NPN</th><th>State</th><th>License Type</th><th>Expires In</th><th>Status</th></tr></thead>
+          <tbody id="roster-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title">Licensing Steps <span>SELECT PROMPT</span></div>
+      <div class="step-list">
+        <div class="step-item" onclick="runStep(this)" data-prompt="Analyze the current producer roster and CE data. Identify which agents are at highest risk of a lapsed license or CE non-compliance, prioritized by days-to-expiry and dollar exposure.">
+          <span class="step-num">01</span><span class="step-text">Roster-Wide Renewal &amp; CE Risk Assessment</span>
+        </div>
+        <div class="step-item" onclick="runStep(this)" data-prompt="Draft a remediation plan for agents with CE deficiencies, including the specific courses/hours still owed and a completion timeline before their deadline.">
+          <span class="step-num">02</span><span class="step-text">CE Deficiency Remediation Plan</span>
+        </div>
+        <div class="step-item" onclick="runStep(this)" data-prompt="Generate a state-by-state non-resident licensing checklist for expanding a producer's book into new states, including NIPR/NIPR-fee steps and reciprocity notes.">
+          <span class="step-num">03</span><span class="step-text">Non-Resident Licensing Expansion Guide</span>
+        </div>
+        <div class="step-item" onclick="runStep(this)" data-prompt="Provide a new-producer onboarding checklist covering NPN registration, resident licensing, carrier appointments, and first-year CE requirements.">
+          <span class="step-num">04</span><span class="step-text">New Producer Onboarding Checklist</span>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">TSM Neural Core Output <span id="engine-label">AWAITING INPUT</span></div>
+      <div class="output-box" id="output"><span style="color:var(--dim);font-size:11px;">&gt; Add roster/CE data and select a step prompt above...</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
+<script src="/html/shared/tsm-sentinel-push.js"></script>
+<script src="/html/war-rooms/insurance-command/services/insurance-licensing-engine.js"></script>
+<script>
+// Real backend-wired engine for this domain (routes/insurance-licensing-financial.js).
+const licensingEngine = new TSMInsuranceLicensingEngine();
+licensingEngine.loadSampleData();
+let lastLicensingAiText = null;
+
+setInterval(()=>{document.getElementById('navClock').textContent=new Date().toLocaleTimeString();},1000);
+
+function statusFor(l) {
+  const d = l.expires_in_days || 0;
+  if (d <= 30) return { cls: 'soon', label: 'EXPIRING SOON' };
+  return { cls: 'ok', label: 'CURRENT' };
+}
+
+function renderRoster() {
+  const tbody = document.getElementById('roster-body');
+  const rows = [...licensingEngine.data.producer_licenses].sort((a, b) => (a.expires_in_days || 0) - (b.expires_in_days || 0));
+  tbody.innerHTML = rows.map(l => {
+    const st = statusFor(l);
+    return `<tr>
+      <td>${l.agent_ref || '—'}</td>
+      <td>${l.state || '—'}</td>
+      <td>${l.license_type || '—'}</td>
+      <td>${l.expires_in_days != null ? l.expires_in_days + 'd' : '—'}</td>
+      <td><span class="badge ${st.cls}">${st.label}</span></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" style="color:var(--dim)">No licenses on roster yet.</td></tr>';
+  document.getElementById('roster-count').textContent = rows.length + ' TRACKED';
+  document.getElementById('exp-roster').textContent = rows.length;
+}
+
+function addLicense() {
+  const rec = {
+    agent_ref: document.getElementById('lic-agent').value || 'NPN-' + Math.floor(Math.random()*900000+100000),
+    state: (document.getElementById('lic-state').value || '').toUpperCase() || 'N/A',
+    license_type: document.getElementById('lic-type').value,
+    expires_in_days: parseInt(document.getElementById('lic-expires').value, 10) || 0
+  };
+  licensingEngine.loadRecords('producer_licenses', [rec]);
+  document.getElementById('lic-agent').value = '';
+  document.getElementById('lic-state').value = '';
+  document.getElementById('lic-expires').value = '';
+  renderRoster();
+  renderExposure();
+}
+
+function addCe() {
+  const rec = {
+    agent_ref: document.getElementById('ce-agent').value || 'NPN-' + Math.floor(Math.random()*900000+100000),
+    course: document.getElementById('ce-course').value || 'Untitled Course',
+    hours_required: parseFloat(document.getElementById('ce-req').value) || 0,
+    hours_completed: parseFloat(document.getElementById('ce-done').value) || 0,
+    deadline_days: parseInt(document.getElementById('ce-deadline').value, 10) || 0
+  };
+  licensingEngine.loadRecords('ce_requirements', [rec]);
+  document.getElementById('ce-agent').value = '';
+  document.getElementById('ce-course').value = '';
+  document.getElementById('ce-req').value = '';
+  document.getElementById('ce-done').value = '';
+  document.getElementById('ce-deadline').value = '';
+  renderExposure();
+}
+
+function getContext() {
+  const kpis = licensingEngine.computeKpis();
+  return `Tracked Licenses: ${kpis.tracked_licenses}
+Expiring ≤30 Days: ${kpis.licenses_expiring_soon}
+Open CE Requirements: ${kpis.open_ce_requirements}
+CE Deficient: ${kpis.ce_deficient_requirements}`;
+}
+
+async function callAI(prompt) {
+  const out = document.getElementById('output');
+  out.innerHTML = '<span class="thinking">&gt; TSM Neural Core processing...</span>';
+  document.getElementById('engine-label').textContent = 'RUNNING';
+  try {
+    // Routed through the real Licensing & CE backend (routes/insurance-
+    // licensing-financial.js's /analysis endpoint).
+    const { answer, degraded } = await licensingEngine.getAiAnalysis(prompt);
+    lastLicensingAiText = degraded ? null : answer;
+    out.innerHTML = '<span style="color:#c8e6c9">' + String(answer).replace(/</g, '&lt;') + '</span>';
+    document.getElementById('engine-label').textContent = degraded ? 'DEGRADED' : 'COMPLETE';
+  } catch (e) {
+    out.innerHTML = '<span style="color:var(--danger)">&gt; Engine error: ' + e.message + '</span>';
+    document.getElementById('engine-label').textContent = 'ERROR';
+    lastLicensingAiText = null;
+  }
+}
+function runStep(el) {
+  callAI(`You are a TSM Insurance Licensing & CE Compliance Officer. ${el.dataset.prompt}\n\nRoster Context:\n${getContext()}`);
+}
+
+// ── PORTFOLIO EXPOSURE (real backend, routes/insurance-licensing-financial.js) ──
+async function renderExposure() {
+  try {
+    const fin = await licensingEngine.getFinancialSummary();
+    document.getElementById('exp-license').textContent = '$' + Number(fin.lapsed_license_revenue_at_risk_total || 0).toLocaleString();
+    document.getElementById('exp-ce').textContent = '$' + Number(fin.ce_noncompliance_fine_total || 0).toLocaleString();
+    document.getElementById('exp-total').textContent = '$' + Number(fin.total_exposure || 0).toLocaleString();
+    document.getElementById('exp-note').textContent = fin.note || '';
+    const kpis = licensingEngine.computeKpis();
+    document.getElementById('s-tracked').textContent = kpis.tracked_licenses;
+    document.getElementById('s-expiring').textContent = kpis.licenses_expiring_soon;
+    document.getElementById('s-ce-open').textContent = kpis.open_ce_requirements;
+    document.getElementById('s-ce-deficient').textContent = kpis.ce_deficient_requirements;
+    renderRoster();
+  } catch (e) {
+    document.getElementById('exp-note').textContent = 'Exposure unavailable — ' + e.message;
+  }
+}
+
+// ── SENTINEL PUSH ─────────────────────────────────────────────────────
+async function pushToSentinel() {
+  try {
+    const fin = await licensingEngine.getFinancialSummary();
+    const kpis = licensingEngine.computeKpis();
+    const anomalies = [];
+    if ((fin.lapsed_license_revenue_at_risk_total || 0) > 0) {
+      anomalies.push({
+        id: 'insurance-licensing-lapse-risk',
+        title: 'Lapsed License Revenue At Risk',
+        severity: kpis.licenses_expiring_soon > 0 ? 'HIGH' : 'LOW',
+        exposure: fin.lapsed_license_revenue_at_risk_total || 0,
+        confidence: (fin.license_confidence || {}).confidence || 0,
+        rootCause: `${kpis.licenses_expiring_soon || 0} of ${kpis.tracked_licenses || 0} tracked licenses expire within 30 days.${(fin.license_confidence || {}).note || ''}`,
+        recommendedAction: 'Prioritize renewal filings for agents nearest their expiration date before commission revenue is affected.',
+        impacts: {}
+      });
+    }
+    if ((fin.ce_noncompliance_fine_total || 0) > 0) {
+      anomalies.push({
+        id: 'insurance-licensing-ce-deficiency',
+        title: 'CE Non-Compliance Fine Exposure',
+        severity: kpis.ce_deficient_requirements > 0 ? 'MED' : 'LOW',
+        exposure: fin.ce_noncompliance_fine_total || 0,
+        confidence: (fin.ce_confidence || {}).confidence || 0,
+        rootCause: `${kpis.ce_deficient_requirements || 0} of ${kpis.open_ce_requirements || 0} open CE requirements are deficient.${(fin.ce_confidence || {}).note || ''}`,
+        recommendedAction: 'Notify deficient agents of remaining CE hours and deadline before the state renewal window closes.',
+        impacts: {}
+      });
+    }
+    if (window.TSMSentinelPush && window.TSMSentinelPush.push) {
+      window.TSMSentinelPush.push('INSURANCE_LICENSING', anomalies);
+    } else {
+      localStorage.setItem('TSM_INSURANCE_LICENSING_STRATEGIST_RELAY', JSON.stringify({ generatedAt: new Date().toISOString(), anomalies }));
+      window.dispatchEvent(new CustomEvent('TSM_SENTINEL_REFRESH'));
+    }
+  } catch (e) {
+    console.warn('Insurance Licensing: sentinel push failed', e);
+  }
+}
+
+async function relayToStrategist() {
+  const status = document.getElementById('relay-status');
+  try {
+    const payload = await licensingEngine.buildRelayPayload(lastLicensingAiText);
+    if (window.TSM && window.TSM.relay && window.TSM.relay.write) {
+      window.TSM.relay.write('INSURANCE_LICENSING', payload);
+    } else {
+      localStorage.setItem('TSM_INSURANCE_LICENSING_RELAY', JSON.stringify(payload));
+    }
+    await pushToSentinel();
+    status.textContent = 'Relayed ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    status.style.color = 'var(--danger)';
+    status.textContent = 'Relay failed — ' + e.message;
+  }
+}
+
+renderExposure();
+</script>
+  <script src="/core/tsm-kernel.js"></script>
+  <script src="/js/core/tsm-kernel-upgrade.js"></script>
+  <script src="../../js/tsm-guide-engine.js" defer></script>
+</body>
+<script>
+// ===== TSM_AUTONOMY_STANDARDIZED =====
+window.TSM_AUTONOMY_STANDARDIZED = true;
+</script><script>
+// ===== TSM WAR ROOM SCOPED RELAY FIX =====
+window.tsmMission = window.tsmMission || {
+  id: "TSM-INSURANCE-" + Date.now().toString(36),
+  vertical: "tsm-insurance",
+};
+function tsmWriteRelay(payload){
+  TSM_KERNEL.setRelay("tsm-insurance", JSON.stringify(payload));
+}
+</script>
+</html>
