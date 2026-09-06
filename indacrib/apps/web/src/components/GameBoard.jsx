@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { subscribeToRoom } from '../realtime.js';
-import { startRound } from '../gameLogic.js';
-import { speakPhrase } from '../voice.js';
+import { fetchTopics } from '../apiService.js';
+import CatchPhraseGame from './CatchPhraseGame.jsx';
+import KaraokeGame from './KaraokeGame.jsx';
+import CharadesGame from './CharadesGame.jsx';
 
 export default function GameBoard({ gameId, roomCode }) {
-  const [prompt, setPrompt] = useState(null);
+  const [mode, setMode] = useState(null);
+  const [topics, setTopics] = useState({ catchphrase: [], karaoke: [], charades: [] });
 
   useEffect(() => {
     const unsubscribe = subscribeToRoom(roomCode, {
@@ -17,30 +20,34 @@ export default function GameBoard({ gameId, roomCode }) {
     return unsubscribe;
   }, [roomCode]);
 
-  async function handleNewPrompt(gameMode) {
-    const result = await startRound(gameMode);
-    setPrompt(result);
-    if (result.phrase) speakPhrase(result.phrase);
+  useEffect(() => {
+    fetchTopics().then(setTopics);
+  }, []);
+
+  if (mode === 'catchphrase') {
+    return <CatchPhraseGame topics={topics.catchphrase} onBack={() => setMode(null)} />;
+  }
+  if (mode === 'karaoke') {
+    return <KaraokeGame topics={topics.karaoke} onBack={() => setMode(null)} />;
+  }
+  if (mode === 'charades') {
+    return <CharadesGame topics={topics.charades} onBack={() => setMode(null)} />;
   }
 
   return (
     <div className="idc-canvas">
       <div className="idc-card">
         <h1 className="idc-wordmark">InDaCrib</h1>
-        <p className="idc-subtitle">Room {roomCode}</p>
+        <p className="idc-subtitle">Room {roomCode} — pick a game</p>
 
-        <div id="game-display" className={prompt ? 'idc-prompt' : 'idc-prompt idc-prompt-empty'}>
-          {prompt ? JSON.stringify(prompt) : 'Pick a game mode to start the round'}
-        </div>
-
-        <button className="idc-btn idc-btn-mode" onClick={() => handleNewPrompt('catchphrase')}>
-          New CatchPhrase
+        <button className="idc-btn idc-btn-mode" onClick={() => setMode('catchphrase')}>
+          CatchPhrase
         </button>
-        <button className="idc-btn idc-btn-mode" onClick={() => handleNewPrompt('karaoke')}>
-          New Karaoke Track
+        <button className="idc-btn idc-btn-mode" onClick={() => setMode('karaoke')}>
+          Karaoke
         </button>
-        <button className="idc-btn idc-btn-mode" onClick={() => handleNewPrompt('charades')}>
-          New Charades Word
+        <button className="idc-btn idc-btn-mode" onClick={() => setMode('charades')}>
+          Charades
         </button>
       </div>
     </div>

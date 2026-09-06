@@ -154,6 +154,47 @@ body {
   background: rgba(255, 255, 255, 0.11);
 }
 
+/* ---------- Topic select (reuses idc-input's box, adds a custom arrow) ---------- */
+select.idc-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(135deg, var(--text-dim) 50%, transparent 50%);
+  background-position: calc(100% - 22px) center, calc(100% - 16px) center;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 40px;
+}
+select.idc-input option {
+  background: var(--canvas);
+  color: var(--text);
+}
+
+/* ---------- Per-mode game screens ---------- */
+.idc-mode-title {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.4rem;
+  margin: 0 0 4px;
+}
+
+.idc-badge {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-border);
+  color: var(--text-dim);
+}
+
+.idc-audio {
+  width: 100%;
+  margin: 4px 0 4px;
+}
+
 /* ---------- Buttons ---------- */
 .idc-btn {
   display: inline-flex;

@@ -1,14 +1,15 @@
 import { fetchCatchPhrase, fetchKaraokeTrack, fetchCharadesWord } from './apiService.js';
 
 // Starts the round for whichever mode the game is in; returns the prompt to display.
-export async function startRound(gameMode) {
+// `topic` is optional — each fetcher treats an empty/undefined topic as "any".
+export async function startRound(gameMode, topic) {
   switch (gameMode) {
     case 'catchphrase':
-      return fetchCatchPhrase();
+      return fetchCatchPhrase(topic);
     case 'karaoke':
-      return fetchKaraokeTrack();
+      return fetchKaraokeTrack(topic);
     case 'charades':
-      return fetchCharadesWord();
+      return fetchCharadesWord(topic);
     default:
       throw new Error(`Unknown game mode: ${gameMode}`);
   }

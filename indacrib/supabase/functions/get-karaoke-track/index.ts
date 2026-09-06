@@ -1,12 +1,24 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  const { genre } = await req.json().catch(() => ({}));
+
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   );
 
-  const { data: tracks } = await supabase.from('karaoke_tracks').select('*');
+  let query = supabase.from('karaoke_tracks').select('*');
+  if (genre) query = query.eq('genre', genre);
+
+  const { data: tracks, error } = await query;
+
+  if (error || !tracks?.length) {
+    return new Response(JSON.stringify({ error: error?.message ?? 'No tracks found for that genre' }), {
+      status: error ? 500 : 404,
+    });
+  }
+
   const track = tracks[Math.floor(Math.random() * tracks.length)];
 
   // Fetch the live 30s preview URL from Spotify using the stored track ID
