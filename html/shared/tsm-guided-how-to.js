@@ -71,6 +71,27 @@
           { selector: '.qtabs' }
         ]
       ]
+    },
+    // COLLEGE FINANCIAL AID — TITLE IV WAR ROOM — this page has no "load
+    // sample" button; init() fetches the finaid model + a financial-summary
+    // POST automatically on load, so the tour starts straight at the KPI
+    // row instead of an INPUT step. All 9 selectors below were read
+    // directly out of college-finaid-command.html, not guessed.
+    college: {
+      title: 'How To Run College Financial Aid',
+      subtitle:
+        'R2T4, Verification, and Cohort Default cases load automatically \u2014 walk the exposure, analyze, then relay to the Strategist.',
+      steps: [
+        ['START', 'Cases load automatically on page open \u2014 no sample button needed here.', { selector: '#kpiRow' }],
+        ['EXPOSURE', 'Check total dollar exposure across all open Title IV cases.', { selector: '#exposureBox' }],
+        ['REVIEW R2T4', 'Scan Return to Title IV cases by severity and days late.', { selector: '#r2t4Table' }],
+        ['REVIEW VERIFICATION', 'Scan Verification cases and see which have Pell held.', { selector: '#verTable' }],
+        ['REVIEW CDR', 'Check Cohort Default Rate flags and trend by program.', { selector: '#cdrTable' }],
+        ['ANALYZE', 'Run AI Analysis for a compliance read on the current caseload.', { selector: '#runAiBtn' }],
+        ['READ ANALYSIS', 'Read the AI-generated compliance summary.', { selector: '#aiOut' }],
+        ['ESCALATE', 'Relay this snapshot to the College Strategist for triage.', { selector: '#relayBtn' }],
+        ['REFRESH', 'Pull the latest exposure numbers any time new cases come in.', { selector: '#refreshBtn' }]
+      ]
     }
   };
 
