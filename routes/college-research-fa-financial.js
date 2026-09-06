@@ -96,6 +96,16 @@ async function callGroq(systemPrompt, message, maxTokens = 900) {
 // stricter option — if callers can spoof `severity`, consider deriving it
 // server-side from the variance % instead, the way agingBandFor() derives
 // Bursar's band from days_past_due rather than trusting a caller field).
+// Guards against a caller sending a non-array for a field that's normally
+// an array (e.g. a malformed upload or upstream parser bug) — without this,
+// (x || []).map(...)/.filter(...) still throws when x is truthy but not an
+// array (a string, object, or number), crashing the request with an
+// unhandled 500 instead of the graceful, always-200 behavior these routes
+// intend.
+function asArray(x) {
+  return Array.isArray(x) ? x : [];
+}
+
 function overburnExposure(awards) {
   if (!RATE_CARD || !RATE_CARD.overburn_exposure_rate_by_severity) {
     return { total: 0, currency: RATE_CARD ? RATE_CARD.currency : 'USD', items: [] };
@@ -147,8 +157,8 @@ router.post('/financial-summary', (req, res) => {
   }
   const { awards, effort_reports, fa_recovery_shortfall } = req.body || {};
 
-  const overburn = overburnExposure(awards);
-  const effort = effortNoncomplianceExposure(effort_reports);
+  const overburn = overburnExposure(asArray(awards));
+  const effort = effortNoncomplianceExposure(asArray(effort_reports));
   const shortfall = Math.round(fa_recovery_shortfall || 0);
 
   res.json({

@@ -140,6 +140,16 @@ function agingBandFor(daysPastDue) {
   return '90_DAY_PLUS';
 }
 
+// Guards against a caller sending a non-array for a field that's normally
+// an array (e.g. a malformed upload or upstream parser bug) — without this,
+// (x || []).filter(...)/.map(...) still throws when x is truthy but not an
+// array (a string, object, or number), crashing the request with an
+// unhandled 500 instead of the graceful, always-200 behavior these routes
+// intend.
+function asArray(x) {
+  return Array.isArray(x) ? x : [];
+}
+
 function lateFeeExposure(plans) {
   if (!RATE_CARD || RATE_CARD.late_fee_accrual_per_day_past_due == null) {
     return { total: 0, currency: RATE_CARD ? RATE_CARD.currency : 'USD', items: [] };
@@ -198,11 +208,13 @@ router.post('/financial-summary', (req, res) => {
     return res.status(500).json({ error: 'bursar financial model unavailable' });
   }
   const { payment_plans, registration_holds } = req.body || {};
+  const plans = asArray(payment_plans);
+  const holds = asArray(registration_holds);
 
-  const lateFee = lateFeeExposure(payment_plans);
-  const writeoffRisk = writeoffRiskExposure(payment_plans);
-  const holdRevenue = holdRevenueAtRisk(registration_holds);
-  const totalArBalance = (payment_plans || []).reduce((sum, p) => sum + (p.balance || 0), 0);
+  const lateFee = lateFeeExposure(plans);
+  const writeoffRisk = writeoffRiskExposure(plans);
+  const holdRevenue = holdRevenueAtRisk(holds);
+  const totalArBalance = plans.reduce((sum, p) => sum + (p.balance || 0), 0);
 
   res.json({
     currency: lateFee.currency || writeoffRisk.currency || holdRevenue.currency || 'USD',

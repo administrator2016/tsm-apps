@@ -23,7 +23,7 @@
 
   class TSMCollegeAccredEngine {
     constructor() {
-      this.data = { findings: [], standards_at_risk: [], days_to_site_visit: 0 };
+      this.data = { findings: [], standards_at_risk: [], days_to_site_visit: null };
     }
 
     loadSampleData() {
@@ -57,7 +57,9 @@
         const parsed = JSON.parse(raw);
         this.data.findings = Array.isArray(parsed.findings) ? parsed.findings : [];
         this.data.standards_at_risk = Array.isArray(parsed.standards_at_risk) ? parsed.standards_at_risk : [];
-        this.data.days_to_site_visit = Number(parsed.days_to_site_visit) || 0;
+        this.data.days_to_site_visit = parsed.days_to_site_visit != null
+          ? Number(parsed.days_to_site_visit)
+          : null;
         return true;
       } catch (e) {
         console.warn('TSMCollegeAccredEngine: loadFromStorage failed', e);

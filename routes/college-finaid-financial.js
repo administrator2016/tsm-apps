@@ -115,6 +115,15 @@ async function callGroq(systemPrompt, message, maxTokens = 900) {
   }
 }
 
+// Guards against a caller sending a non-array for a field that's normally
+// an array (e.g. a malformed upload or upstream parser bug) — without this,
+// (x || []).map(...) still throws when x is truthy but not an array
+// (a string, object, or number), crashing the request with an unhandled
+// 500 instead of the graceful, always-200 behavior these routes intend.
+function asArray(x) {
+  return Array.isArray(x) ? x : [];
+}
+
 function r2t4Exposure(breaches) {
   if (!RATE_CARD || RATE_CARD.r2t4_late_return_penalty_per_day == null) {
     return { total: 0, currency: RATE_CARD ? RATE_CARD.currency : 'USD', items: [] };
@@ -191,14 +200,15 @@ router.post('/financial-summary', (req, res) => {
     return res.status(500).json({ error: 'financial model unavailable' });
   }
   const { kpis, r2t4_breaches, verification_backlog, cohort_default_flags } = req.body || {};
+  const flags = asArray(cohort_default_flags);
 
-  const r2t4 = r2t4Exposure(r2t4_breaches);
-  const verification = verificationExposure(verification_backlog);
+  const r2t4 = r2t4Exposure(asArray(r2t4_breaches));
+  const verification = verificationExposure(asArray(verification_backlog));
 
   const bands = RATE_CARD.cohort_default_exposure_by_band || {};
-  const seenBands = [...new Set((cohort_default_flags || []).map(f => f.band).filter(Boolean))];
+  const seenBands = [...new Set(flags.map(f => f.band).filter(Boolean))];
   const missingBands = seenBands.filter(b => rateForBand(bands, b) == null);
-  const cohortDefault = cohortDefaultExposure(cohort_default_flags);
+  const cohortDefault = cohortDefaultExposure(flags);
 
   res.json({
     currency: r2t4.currency || verification.currency || cohortDefault.currency || 'USD',

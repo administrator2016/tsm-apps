@@ -100,6 +100,15 @@ async function callGroq(systemPrompt, message, maxTokens = 900) {
   }
 }
 
+// Guards against a caller sending a non-array for a field that's normally
+// an array (e.g. a malformed upload or upstream parser bug) — without this,
+// (x || []).map(...) still throws when x is truthy but not an array
+// (a string, object, or number), crashing the request with an unhandled
+// 500 instead of the graceful, always-200 behavior these routes intend.
+function asArray(x) {
+  return Array.isArray(x) ? x : [];
+}
+
 function findingsRisk(findings) {
   if (!RATE_CARD || !RATE_CARD.finding_severity_points) {
     return { total: 0, items: [] };
@@ -134,6 +143,11 @@ function standardsRisk(standards) {
 
 function siteVisitProximityBonus(daysToSiteVisit) {
   if (!RATE_CARD || RATE_CARD.site_visit_proximity_bonus_days_threshold == null) return 0;
+  // An unset/unknown site-visit date (null or undefined) must NOT be
+  // treated as "0 days away" — Number(null) === 0 would otherwise silently
+  // award the maximum proximity bonus to every case where no site-visit
+  // date has actually been entered yet. Require an explicit numeric value.
+  if (daysToSiteVisit == null) return 0;
   const days = Number(daysToSiteVisit);
   if (!Number.isFinite(days)) return 0;
   return days <= RATE_CARD.site_visit_proximity_bonus_days_threshold
@@ -155,8 +169,8 @@ router.post('/readiness-summary', (req, res) => {
   }
   const { findings, standards_at_risk, days_to_site_visit } = req.body || {};
 
-  const findingsScore = findingsRisk(findings);
-  const standardsScore = standardsRisk(standards_at_risk);
+  const findingsScore = findingsRisk(asArray(findings));
+  const standardsScore = standardsRisk(asArray(standards_at_risk));
   const proximityBonus = siteVisitProximityBonus(days_to_site_visit);
 
   res.json({

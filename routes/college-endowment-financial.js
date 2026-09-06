@@ -124,6 +124,15 @@ async function callGroq(systemPrompt, message, maxTokens = 900) {
   }
 }
 
+// Guards against a caller sending a non-array for a field that's normally
+// an array (e.g. a malformed upload or upstream parser bug) — without this,
+// (x || []).map(...) still throws when x is truthy but not an array
+// (a string, object, or number), crashing the request with an unhandled
+// 500 instead of the graceful, always-200 behavior these routes intend.
+function asArray(x) {
+  return Array.isArray(x) ? x : [];
+}
+
 function incomeForegoneExposure(funds) {
   if (!RATE_CARD || RATE_CARD.annual_spending_rate == null) {
     return { total: 0, currency: RATE_CARD ? RATE_CARD.currency : 'USD', items: [] };
@@ -177,15 +186,17 @@ router.post('/financial-summary', (req, res) => {
     return res.status(500).json({ error: 'endowment financial model unavailable' });
   }
   const { underwater_funds, restriction_flags } = req.body || {};
+  const funds = asArray(underwater_funds);
+  const flags = asArray(restriction_flags);
 
-  const incomeForegone = incomeForegoneExposure(underwater_funds);
+  const incomeForegone = incomeForegoneExposure(funds);
 
   const bands = RATE_CARD.donor_restriction_exposure_by_severity || {};
-  const seenSeverities = [...new Set((restriction_flags || []).map(fl => fl.severity).filter(Boolean))];
+  const seenSeverities = [...new Set(flags.map(fl => fl.severity).filter(Boolean))];
   const missingSeverities = seenSeverities.filter(s => rateForSeverity(bands, s) == null);
-  const donorRestriction = donorRestrictionExposure(restriction_flags);
+  const donorRestriction = donorRestrictionExposure(flags);
 
-  const totalCorpusDeficit = (underwater_funds || []).reduce((sum, f) => sum + (f.corpus_deficit || 0), 0);
+  const totalCorpusDeficit = funds.reduce((sum, f) => sum + (f.corpus_deficit || 0), 0);
 
   res.json({
     currency: incomeForegone.currency || donorRestriction.currency || 'USD',
