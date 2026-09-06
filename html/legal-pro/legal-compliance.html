@@ -166,6 +166,12 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'), 2400);
 }
 
+// Dedicated relay key read live by case-strategist.html's Compliance node card.
+// (The TSM_KERNEL.setRelay('legal-pro', ...) channel below has no reader
+// anywhere in the repo — kept as-is for compatibility, but this key is what
+// actually reaches the strategist now.)
+const COMPLIANCE_RELAY_KEY = 'TSM_LEGAL_COMPLIANCE_RELAY';
+
 function relayToStrategist(){
   const payload = {
     domain: 'LEGAL_COMPLIANCE',
@@ -174,8 +180,13 @@ function relayToStrategist(){
     filingsDue: document.getElementById('kpiDue').textContent,
     trustRisk: document.getElementById('kpiTrust').textContent,
     analysis: document.getElementById('aiAnalysis').textContent.trim(),
-    ts: Date.now()
+    ts: Date.now(),
+    timestamp: Date.now()
   };
+  try{
+    localStorage.setItem(COMPLIANCE_RELAY_KEY, JSON.stringify(payload));
+    sessionStorage.setItem(COMPLIANCE_RELAY_KEY, JSON.stringify(payload));
+  }catch(e){ /* storage unavailable in this context */ }
   try{
     if(window.TSM_KERNEL && typeof TSM_KERNEL.setRelay === 'function'){
       TSM_KERNEL.setRelay('legal-pro', JSON.stringify(payload));

@@ -149,6 +149,8 @@ header{
 .node-card:hover::after{opacity:1}
 .node-card.active{border-color:var(--node-color,var(--a));background:rgba(0,255,198,.05)}
 .node-card.active::after{opacity:1}
+.node-card.live-relay{border-color:#00ffc6}
+.node-card.live-relay .node-status{color:#00ffc6}
 .node-name{font-size:11px;font-weight:700;color:var(--t);letter-spacing:.1em;margin-bottom:4px}
 .node-status{font-size:10px;color:var(--m);margin-bottom:8px}
 .node-score{
@@ -1284,12 +1286,52 @@ function setTimeline(step) {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ============================================================
+// LIVE COMPLIANCE RELAY (real data from legal-compliance.html)
+// ------------------------------------------------------------
+// Every other node card (billing/matter/contracts/trust/discovery)
+// is still demo-scored via the SCENARIOS picker above — those nodes
+// were never built, so they stay honestly labeled as scenario data.
+// Compliance is the one node with a real upstream page and a
+// working relay button, so it gets a live override here.
+// ============================================================
+const COMPLIANCE_RELAY_KEY = 'TSM_LEGAL_COMPLIANCE_RELAY';
+
+function loadComplianceRelay() {
+  let raw = null;
+  try {
+    raw = localStorage.getItem(COMPLIANCE_RELAY_KEY) || sessionStorage.getItem(COMPLIANCE_RELAY_KEY);
+  } catch(e) { return; }
+  if (!raw) return;
+  let data;
+  try { data = JSON.parse(raw); } catch(e) { return; }
+  if (!data) return;
+
+  const scoreNum = parseInt(data.complianceScore, 10);
+  const el = document.getElementById('ns-compliance');
+  if (el && !isNaN(scoreNum)) {
+    el.textContent = scoreNum;
+    el.style.color = scoreNum >= 80 ? '#ff4d6a' : scoreNum >= 60 ? '#f5a623' : '#00ffc6';
+  }
+  const card = document.querySelector(`[onclick="pingNode('compliance')"]`);
+  if (card) {
+    card.classList.add('live-relay');
+    const statusEl = card.querySelector('.node-status');
+    if (statusEl) statusEl.textContent = 'LIVE — relay received';
+  }
+}
+
+// ============================================================
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
   updateNodeScores();
+  loadComplianceRelay();
   setTimeline(2);
   document.getElementById('thinking-indicator').textContent = 'READY · AWAITING INTAKE';
+});
+// Re-check when legal-compliance.html (open in another tab) writes a fresh relay
+window.addEventListener('storage', (e) => {
+  if (e.key === COMPLIANCE_RELAY_KEY) loadComplianceRelay();
 });
 </script>
   <script src="/js/core/tsm-kernel-upgrade.js"></script>
