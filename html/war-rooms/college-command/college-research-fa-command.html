@@ -41,7 +41,7 @@
 <header>
   <div>
     <h1>College Research / F&amp;A — War Room</h1>
-    <div class="sub">Award burn rate · Indirect cost (F&amp;A) recovery · Effort reporting — lighter war room, own relay key, sample data</div>
+    <div class="sub">Award burn rate · Indirect cost (F&amp;A) recovery · Effort reporting — real backend, private rate card</div>
   </div>
   <div class="sub" id="clock"></div>
 </header>
@@ -52,12 +52,12 @@
 
   <section>
     <h2>Award Burn Rate Flags</h2>
-    <table id="awardTable"><thead><tr><th>Award</th><th>PI</th><th>Sponsor</th><th>Severity</th><th>Burn vs Plan</th></tr></thead><tbody></tbody></table>
+    <table id="awardTable"><thead><tr><th>Award</th><th>PI</th><th>Sponsor</th><th>Severity</th><th>Planned Budget</th><th>Actual Spend</th></tr></thead><tbody></tbody></table>
   </section>
 
   <section>
     <h2>Effort Reports Overdue</h2>
-    <table id="effortTable"><thead><tr><th>Report</th><th>PI</th><th>Award</th><th>Severity</th><th>Days Overdue</th></tr></thead><tbody></tbody></table>
+    <table id="effortTable"><thead><tr><th>Report</th><th>PI</th><th>Award</th><th>Days Overdue</th></tr></thead><tbody></tbody></table>
   </section>
 
   <section id="aiSection">
@@ -68,16 +68,11 @@
     <div style="padding:16px;">
       <div class="actions" style="margin-top:0;">
         <button id="runAiBtn">Run AI Analysis</button>
-        <button class="secondary" id="aiKeyBtn">⚙ AI Settings</button>
       </div>
       <div id="aiEngineGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:16px;">
         <div>
           <div style="color:var(--muted);font-size:11px;text-transform:uppercase;font-weight:600;margin-bottom:6px;">Burn &amp; Effort Risk</div>
           <div id="aiRiskOut" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12.5px;line-height:1.6;white-space:pre-wrap;min-height:60px;">Not run yet — click "Run AI Analysis".</div>
-        </div>
-        <div>
-          <div style="color:var(--muted);font-size:11px;text-transform:uppercase;font-weight:600;margin-bottom:6px;">Recommended Actions</div>
-          <div id="aiActionOut" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12.5px;line-height:1.6;white-space:pre-wrap;min-height:60px;">Not run yet — click "Run AI Analysis".</div>
         </div>
       </div>
     </div>
@@ -90,41 +85,19 @@
 </main>
 <div id="toast"></div>
 
-<div id="aiKeyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;align-items:center;justify-content:center;">
-  <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px;width:90%;max-width:380px;">
-    <div style="font-size:13px;font-weight:700;margin-bottom:10px;">AI Settings</div>
-    <div style="color:var(--muted);font-size:11.5px;line-height:1.5;margin-bottom:12px;">
-      This page talks to the server proxy at <code>/api/chat</code> first — no key needed. The field below is only an in-memory, same-tab fallback for environments where that proxy isn't reachable; nothing is saved to disk.
-    </div>
-    <input id="aiKeyInput" type="password" placeholder="Groq API key (session only)" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;margin-bottom:12px;">
-    <div class="actions" style="margin-top:0;">
-      <button id="aiKeySaveBtn">Save for This Tab</button>
-      <button class="secondary" id="aiKeyCancelBtn">Cancel</button>
-    </div>
-  </div>
-</div>
-
 <script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
+<script src="/html/war-rooms/college-command/services/college-research-fa-engine.js"></script>
 <script>
 (function () {
   // Lighter war room — writes only to its own registered relay key
-  // (TSM_COLLEGE_RESEARCH_FA_RELAY via relay.core.js). No shared-key writes,
-  // no Sentinel/CanonicalCore wiring — matches the plant/cyber/supplier
-  // pattern, not the Financial Aid priority-domain treatment.
+  // (TSM_COLLEGE_RESEARCH_FA_RELAY via relay.core.js).
   const DOMAIN = 'COLLEGE_RESEARCH_FA';
   const RELAY_KEY_FALLBACK = 'TSM_' + DOMAIN + '_RELAY';
 
-  // Sample data only — no backend endpoint for this domain.
-  const awardFlags = [
-    { award_id: 'AWD-7710', pi: 'Dr. Alvarez', sponsor: 'NSF', severity: 'HIGH', burn_variance: '+38% vs plan' },
-    { award_id: 'AWD-7742', pi: 'Dr. Okafor', sponsor: 'NIH', severity: 'MEDIUM', burn_variance: '+14% vs plan' },
-    { award_id: 'AWD-7799', pi: 'Dr. Lindqvist', sponsor: 'DOE', severity: 'LOW', burn_variance: '-4% vs plan' }
-  ];
-  const effortReports = [
-    { report_id: 'EFF-3301', pi: 'Dr. Alvarez', award: 'AWD-7710', severity: 'HIGH', days_overdue: 22 },
-    { report_id: 'EFF-3318', pi: 'Dr. Chen', award: 'AWD-7688', severity: 'MEDIUM', days_overdue: 9 }
-  ];
-  const faRecoveryShortfall = 61500; // sample — indirect cost recovery shortfall vs negotiated rate
+  const engine = new TSMCollegeResearchFaEngine();
+  if (!engine.loadFromStorage()) {
+    engine.loadSampleData();
+  }
 
   function tick() { document.getElementById('clock').textContent = new Date().toLocaleTimeString(); }
   setInterval(tick, 1000); tick();
@@ -140,16 +113,6 @@
 
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
-
-  function computeKpis() {
-    const overBurn = awardFlags.filter(a => a.severity === 'HIGH' || a.severity === 'MEDIUM');
-    return {
-      open_awards: awardFlags.length + 41, // sample healthy-award baseline
-      awards_over_burn_rate: overBurn.length,
-      fa_recovery_shortfall: faRecoveryShortfall,
-      effort_reports_overdue: effortReports.length
-    };
   }
 
   function renderKpis(kpis) {
@@ -169,157 +132,74 @@
 
   function renderAwards() {
     const tbody = document.querySelector('#awardTable tbody');
-    tbody.innerHTML = awardFlags.map(a => `
+    tbody.innerHTML = engine.data.awards.map(a => `
       <tr>
         <td>${escapeHtml(a.award_id)}</td>
         <td>${escapeHtml(a.pi)}</td>
         <td>${escapeHtml(a.sponsor)}</td>
         <td class="sev-${escapeHtml(a.severity)}">${escapeHtml(a.severity)}</td>
-        <td>${escapeHtml(a.burn_variance)}</td>
+        <td>$${Number(a.planned_budget || 0).toLocaleString()}</td>
+        <td>$${Number(a.actual_spend || 0).toLocaleString()}</td>
       </tr>
     `).join('');
   }
 
   function renderEffort() {
     const tbody = document.querySelector('#effortTable tbody');
-    tbody.innerHTML = effortReports.map(e => `
+    tbody.innerHTML = engine.data.effort_reports.map(e => `
       <tr>
         <td>${escapeHtml(e.report_id)}</td>
         <td>${escapeHtml(e.pi)}</td>
         <td>${escapeHtml(e.award)}</td>
-        <td class="sev-${escapeHtml(e.severity)}">${escapeHtml(e.severity)}</td>
         <td>${e.days_overdue}</td>
       </tr>
     `).join('');
   }
 
-  function renderExposure() {
+  // Real server-computed exposure — see routes/college-research-fa-financial.js
+  async function renderExposure() {
     const box = document.getElementById('exposureBox');
-    const kpis = computeKpis();
+    box.textContent = 'Loading recovery exposure…';
+    const summary = await engine.getFinancialSummary();
     box.innerHTML = `
-      <div class="exposure-total">$${Number(kpis.fa_recovery_shortfall).toLocaleString()} F&amp;A recovery shortfall</div>
+      <div class="exposure-total">$${Number(summary.total_exposure || 0).toLocaleString()} total recovery exposure</div>
       <div class="exposure-note">
-        ${kpis.awards_over_burn_rate} of ${kpis.open_awards} open awards over planned burn rate ·
-        ${kpis.effort_reports_overdue} effort report(s) overdue
+        Over-burn exposure: $${Number(summary.overburn_exposure_total || 0).toLocaleString()} ·
+        Effort noncompliance: $${Number(summary.effort_noncompliance_exposure_total || 0).toLocaleString()} ·
+        F&amp;A recovery shortfall: $${Number(summary.fa_recovery_shortfall || 0).toLocaleString()}
+        ${summary.note ? '<br>' + escapeHtml(summary.note) : ''}
       </div>
     `;
   }
 
-  // ── AI — ported from finops-accounting.html's proxy-first/direct-key
-  // pattern (same as college-bursar-command.html's port). Tries /api/chat
-  // first (server-managed key), falls back to a session-only key entered
-  // via the AI Settings modal (never persisted).
-  let sessionAiKey = '';
-  let sessionAiModel = 'openai/gpt-oss-120b';
-
   function updateAiStatus(mode) {
     const el = document.getElementById('aiStatus');
     if (!el) return;
-    if (mode === 'server') { el.textContent = 'AI: CONNECTED'; el.style.color = 'var(--low)'; }
-    else if (mode === 'fallback') { el.textContent = 'AI: FALLBACK KEY'; el.style.color = 'var(--med)'; }
-    else if (mode === 'unavailable') { el.textContent = 'AI: UNAVAILABLE'; el.style.color = 'var(--high)'; }
+    if (mode === 'ok') { el.textContent = 'AI: CONNECTED'; el.style.color = 'var(--low)'; }
+    else if (mode === 'degraded') { el.textContent = 'AI: DEGRADED'; el.style.color = 'var(--med)'; }
     else { el.textContent = 'AI: SERVER'; el.style.color = 'var(--muted)'; }
-  }
-
-  async function callGroqDirect(system, userMsg, maxTokens) {
-    if (!sessionAiKey) throw new Error('No Groq key set — open AI Settings and add one');
-    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionAiKey },
-      body: JSON.stringify({
-        model: sessionAiModel,
-        messages: [{ role: 'system', content: system }, { role: 'user', content: userMsg }],
-        max_tokens: maxTokens,
-        temperature: 0.3
-      })
-    });
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error?.message || ('Groq API ' + resp.status));
-    }
-    const data = await resp.json();
-    updateAiStatus('fallback');
-    return data.choices?.[0]?.message?.content || '';
-  }
-
-  async function callResearchFaAI(system, userMsg, maxTokens) {
-    try {
-      const resp = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `${system}\n\n${userMsg}`, conversationHistory: [] })
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data.answer && !data.degraded) { updateAiStatus('server'); return data.answer; }
-      }
-    } catch (e) { /* fall through to direct key */ }
-
-    if (!sessionAiKey) { updateAiStatus('unavailable'); throw new Error('Server AI proxy is not reachable here. Click ⚙ AI Settings to add a fallback key for this tab and try again.'); }
-    return callGroqDirect(system, userMsg, maxTokens);
-  }
-
-  function serializeResearchFaCase() {
-    const awardLines = awardFlags.map(a =>
-      `${a.award_id} · PI ${a.pi} · sponsor ${a.sponsor} · severity ${a.severity} · burn ${a.burn_variance}`
-    ).join('\n');
-    const effortLines = effortReports.map(e =>
-      `${e.report_id} · PI ${e.pi} · award ${e.award} · severity ${e.severity} · ${e.days_overdue} days overdue`
-    ).join('\n');
-    const kpis = computeKpis();
-    return `RESEARCH / F&A SNAPSHOT\nOpen awards: ${kpis.open_awards}\nAwards over planned burn rate: ${kpis.awards_over_burn_rate}\nF&A recovery shortfall vs negotiated rate: $${kpis.fa_recovery_shortfall.toLocaleString()}\nEffort reports overdue: ${kpis.effort_reports_overdue}\n\nAWARD BURN RATE FLAGS\n${awardLines || 'None'}\n\nEFFORT REPORTS OVERDUE\n${effortLines || 'None'}`;
   }
 
   async function runAiAnalysis() {
     const btn = document.getElementById('runAiBtn');
     const riskOut = document.getElementById('aiRiskOut');
-    const actionOut = document.getElementById('aiActionOut');
     btn.disabled = true;
     btn.textContent = 'Running…';
     riskOut.textContent = 'Generating…';
-    actionOut.textContent = 'Generating…';
 
-    const caseText = serializeResearchFaCase();
-    const SYSTEMS = [
-      'You are a sponsored-research compliance and risk AI for a college research office. Given award burn-rate flags and overdue effort reports, quantify risk of sponsor findings or cost disallowance, flag the awards/PIs most at risk of an audit finding (over-burn, uncertified effort, cost-transfer exposure), and note which items are most time-sensitive relative to award end dates or reporting deadlines. Be specific to the awards provided.',
-      'You are a research administration operations AI. Generate a concise action plan for this batch of over-burn awards and overdue effort reports: recommended next step per item (PI check-in, budget reforecast, effort certification follow-up, sponsor notification, etc.), owner, and target timeframe. Be specific and actionable.'
-    ];
-
-    try {
-      const riskText = await callResearchFaAI(SYSTEMS[0], caseText, 500);
-      riskOut.textContent = riskText;
-    } catch (e) {
-      riskOut.textContent = 'Error: ' + e.message;
-    }
-
-    try {
-      const actionText = await callResearchFaAI(SYSTEMS[1], caseText, 500);
-      actionOut.textContent = actionText;
-    } catch (e) {
-      actionOut.textContent = 'Error: ' + e.message;
-    }
+    const { answer, degraded } = await engine.getAiAnalysis();
+    riskOut.textContent = answer;
+    updateAiStatus(degraded ? 'degraded' : 'ok');
 
     btn.disabled = false;
     btn.textContent = 'Run AI Analysis';
   }
 
-  function buildRelayPayload() {
-    const riskEl = document.getElementById('aiRiskOut');
-    const actionEl = document.getElementById('aiActionOut');
-    const aiRan = riskEl && !/^(Not run yet|Generating…|Error:)/.test(riskEl.textContent);
-    return {
-      domain: DOMAIN,
-      timestamp: Date.now(),
-      kpis: computeKpis(),
-      financials: { total_exposure: computeKpis().fa_recovery_shortfall },
-      cases: { award_flags: awardFlags, effort_reports: effortReports },
-      ai_analysis: aiRan ? { risk_prioritization: riskEl.textContent, action_plan: actionEl.textContent } : null
-    };
-  }
-
-  function relayToStrategist() {
+  async function relayToStrategist() {
     try {
-      const payload = buildRelayPayload();
+      const riskEl = document.getElementById('aiRiskOut');
+      const aiRan = riskEl && !/^(Not run yet|Generating…)/.test(riskEl.textContent);
+      const payload = await engine.buildRelayPayload(aiRan ? riskEl.textContent : null);
       const json = JSON.stringify(payload);
       try { sessionStorage.setItem(RELAY_KEY_FALLBACK, json); } catch (e) { /* noop */ }
       try { localStorage.setItem(RELAY_KEY_FALLBACK, json); } catch (e) { /* noop */ }
@@ -335,7 +215,7 @@
   }
 
   function init() {
-    renderKpis(computeKpis());
+    renderKpis(engine.computeKpis());
     renderAwards();
     renderEffort();
     renderExposure();
@@ -344,18 +224,6 @@
   document.getElementById('relayBtn').addEventListener('click', relayToStrategist);
   document.getElementById('refreshBtn').addEventListener('click', renderExposure);
   document.getElementById('runAiBtn').addEventListener('click', runAiAnalysis);
-  document.getElementById('aiKeyBtn').addEventListener('click', () => {
-    document.getElementById('aiKeyInput').value = sessionAiKey;
-    document.getElementById('aiKeyModal').style.display = 'flex';
-  });
-  document.getElementById('aiKeyCancelBtn').addEventListener('click', () => {
-    document.getElementById('aiKeyModal').style.display = 'none';
-  });
-  document.getElementById('aiKeySaveBtn').addEventListener('click', () => {
-    sessionAiKey = document.getElementById('aiKeyInput').value.trim();
-    document.getElementById('aiKeyModal').style.display = 'none';
-    showToast(sessionAiKey ? 'Fallback key saved for this tab.' : 'Fallback key cleared.');
-  });
 
   init();
 })();

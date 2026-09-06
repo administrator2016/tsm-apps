@@ -1,0 +1,9 @@
+{
+  "currency": null,
+  "note": "Accreditation risk model — a points-based readiness risk score, not a dollar-exposure model. Accreditation risk isn't a financial-penalty domain the way R2T4/cohort-default/write-off risk are, so no dollar figure is fabricated here. Calibrate these weights to your accreditor's actual sanction-escalation pattern before using externally.",
+  "finding_severity_points": { "HIGH": 25, "MEDIUM": 12, "LOW": 4 },
+  "finding_days_open_multiplier_per_day_past_45": 0.5,
+  "standard_severity_points": { "HIGH": 20, "MEDIUM": 10, "LOW": 3 },
+  "site_visit_proximity_bonus_days_threshold": 60,
+  "site_visit_proximity_bonus_points": 15
+}

@@ -3071,6 +3071,8 @@ app.use('/api/schools', requireAnyAuth, require('./routes/schools-financial'));
 app.use('/api/college/finaid', requireAnyAuth, require('./routes/college-finaid-financial'));
 app.use('/api/college/bursar', requireAnyAuth, require('./routes/college-bursar-financial'));
 app.use('/api/college/endowment', requireAnyAuth, require('./routes/college-endowment-financial'));
+app.use('/api/college/research-fa', requireAnyAuth, require('./routes/college-research-fa-financial'));
+app.use('/api/college/accred', requireAnyAuth, require('./routes/college-accred-financial'));
 
 // ── INPHUSIONSYS (multi-vertical demo data: employees, anomalies, IT tickets) ──
 // See server/routes/inphusionsys.js header for the full endpoint contract.

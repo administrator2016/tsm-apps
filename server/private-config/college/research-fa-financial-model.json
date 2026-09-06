@@ -1,0 +1,10 @@
+{
+  "currency": "USD",
+  "note": "Estimate model for planning/reporting only — calibrate overburn severity rates and effort noncompliance cost to your institution's actual sponsor disallowance history before using externally.",
+  "overburn_exposure_rate_by_severity": {
+    "HIGH": 0.15,
+    "MEDIUM": 0.08,
+    "LOW": 0.02
+  },
+  "effort_noncompliance_cost_per_day_overdue": 250
+}
