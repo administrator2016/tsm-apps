@@ -1041,6 +1041,7 @@
         <li>L1 Ticket Copilot — <code>html/l1-copilot/l1-ticket-copilot.html</code></li>
         <li>Logistics — <code>html/logistics/logistics-situation-room.html</code> (Situation Room only — no Strategist/Executive Portal built yet)</li>
         <li>Supplier/Vendor Management — <code>html/supplier-vendor/supplier-vendor-situation-room.html</code> (Situation Room only — no Strategist/Executive Portal built yet)</li>
+        <li>A/R Recovery War Room — <code>html/war-rooms/ar-recovery/index.html</code> (vertical-agnostic, <code>?vertical=</code> param). Not registered in <code>server.js</code>'s <code>DOC_ROUTER_NODES</code> and not in <code>tsm-doc-search-multi.html</code>'s vertical list either — unlike RCM-OS (Appendix A), it isn't even indexed for manual doc-search browsing. Its intake is a pasted/loaded A/R-aging text block (<code>parseARText()</code>), not a document upload, so it sits outside this pipeline's document-based intake model entirely rather than being a routing gap.</li>
       </ul>
       <div class="callout recovery">
         <span class="callout-label">Mortgage moved to Section 5 (2026-09-05)</span>

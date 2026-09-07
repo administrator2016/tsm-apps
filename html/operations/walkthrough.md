@@ -316,17 +316,24 @@ Do **not** troubleshoot this as if it were a War Room → Strategist → Exec Po
 
 ## A/R Recovery War Room (standalone — not a chain)
 
-**Path:** `ar-recovery-war-room.html` (repo root, single self-contained page — not under `html/`)
+**Real path:** `html/war-rooms/ar-recovery/index.html` — vertical-agnostic (`?vertical=` param, e.g. `?vertical=healthcare`), cross-linked from `hc-denial-war-room.html`'s HC-suite nav and listed in `suite-builder.html`'s own app registry.
 
-Like RCM-OS, this is standalone: no escalation chain, no `RELAY` key, no `exportClientPackage()`. Core flow is a pasted/loaded A/R aging text block → parsed into a queue → ranked/prioritized:
+**Known duplicate — don't confuse the two:** `ar-recovery-war-room.html` also exists at the repo root. It's an earlier standalone prototype with the same core parsing/ranking logic (`parseARText`, `bucketFor`, `rankQueue`) but **no career-engine wiring** and no `?vertical=` support. Nothing else in the app links to it. Prior version of this doc and `suite-hub.html` mistakenly pointed here — both now corrected to the real integrated path above.
+
+Like RCM-OS, no escalation chain, no `RELAY` key, no `exportClientPackage()`. Core flow: paste/load A/R aging text → parse into a queue → rank/prioritize:
 
 | Step | Action | Function | Notes |
 |---|---|---|---|
 | 1 | Load sample or paste real A/R aging text | `loadSample(type)` / `parseARText(text)` | — |
 | 2 | Queue renders with aging buckets | `bucketFor(age)` → `renderQueue()` | Each row tagged with a recommended action via `recommendedAction(status, bucket)` |
 | 3 | Rank/prioritize the queue | `rankQueue()` | — |
-| 4 | Run AI pipeline over top accounts | `runPipeline()` → `summarizeTopAccounts(n)` → `groqStreamModel(...)` | Same client-side Groq fallback pattern as `finops-operations.html` (§ see FinOps AI proxy notes) — if this errors, check for the same missing-fallback-key / 401 condition before assuming a new bug |
+| 4 | Run AI pipeline over top accounts | `runPipeline()` → `summarizeTopAccounts(n)` → `groqStreamModel(...)` | Same client-side Groq fallback pattern as `finops-operations.html` — if this errors, check for the same missing-fallback-key / 401 condition before assuming a new bug |
 | 5 | Copy output | `copyOut(id)` | — |
+
+**Career-engine integration (new):** a self-contained IIFE lower in the file adapts A/R actions into career-training evidence — explicitly documented in its own comment as *not* replacing the ranking engine, HC AI pipeline, CRCR state, or the Career Engine, only translating A/R work into evidence for it. Key pieces:
+- `careerEngine()` looks for `window.TSMRCMEngine` (set by `html/js/career/tsm-rcm-career-engine.js`, which self-registers as `global.TSMRCMEngine` if not already present — load-order matters, and a missing include on this page is the first thing to check if the career panel doesn't populate)
+- `html/js/career/tsm-ar-recovery-career-adapter.js` (loaded separately, sets `window.TSMARRecoveryCareer`) exposes `discoverAccounts()`, `scoreRecoveryAction()`/`scoreSelection()`/`scoreReasoning()`, and `recordActionResult()`/`recordResult()` — covered by `scripts/test-rcm-career-browser.sh` and `scripts/test-rcm-career-ar-action-browser.sh`, which assert `window.TSMARRecoveryCareer` exists with those functions before doing anything else. If a career-related bug report comes in on this page, run the same checks those scripts do (`!!window.TSMARRecoveryCareer`, then the specific function) before digging further.
+- Numerous `.bak` / `.bak-<timestamp>` files sit alongside the live adapters in `html/js/career/` from iterative repair passes (e.g. `tsm-rcm-career-engine.js.pre-v3.bak`) — don't mistake a `.bak` file for the live one when tracing a bug; confirm the actual `<script src>` path on the page first.
 
 ---
 
