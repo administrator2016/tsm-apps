@@ -21,9 +21,19 @@ const GENRES = [
   'Electronic', 'Latin', 'Jazz', 'Reggae', 'Metal', 'Folk',
 ];
 
-// Stay comfortably under iTunes' ~20 req/min-per-IP limit even though we
-// only make one request per genre per run.
-const DELAY_BETWEEN_GENRES_MS = 3500;
+// A bare `term=Pop` search returns iTunes' current top-chart matches for
+// that word, which skews hard toward whichever handful of artists are
+// popular right now (this is the root cause of runs like 8 Beyoncé tracks
+// in a row — she's simply overrepresented in "Pop" results). Querying the
+// genre alongside a few different decade/descriptor qualifiers pulls from
+// different slices of the catalog per genre, so the seeded pool ends up
+// spanning far more distinct artists instead of one search's chart-toppers.
+const QUALIFIERS = ['', '90s', '2000s', 'classics'];
+
+// Stay comfortably under iTunes' ~20 req/min-per-IP limit. We now make up
+// to 4 requests per genre instead of 1, so the delay applies between every
+// request, not just between genres.
+const DELAY_BETWEEN_REQUESTS_MS = 3500;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -45,11 +55,15 @@ Deno.serve(async () => {
     const alreadySeeded = new Set((existingTracks ?? []).map((row) => row.itunes_track_id));
 
     const results: Record<string, unknown> = {};
+    const requestPlan = GENRES.flatMap((genre) => QUALIFIERS.map((qualifier) => ({ genre, qualifier })));
 
-    for (let i = 0; i < GENRES.length; i++) {
-      const genre = GENRES[i];
+    for (let i = 0; i < requestPlan.length; i++) {
+      const { genre, qualifier } = requestPlan[i];
+      const term = qualifier ? `${genre} ${qualifier}` : genre;
+      const genreStats = (results[genre] ??= { fetched: 0, inserted: 0, skipped: 0, artists: new Set<string>() });
+
       try {
-        const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(genre)}&media=music&entity=song&limit=30`;
+        const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&entity=song&limit=30`;
         const searchRes = await fetch(searchUrl);
         const rawText = await searchRes.text();
 
@@ -57,35 +71,30 @@ Deno.serve(async () => {
         try {
           searchData = JSON.parse(rawText);
         } catch {
-          results[genre] = {
-            error: `Non-JSON response (status ${searchRes.status})`,
-            rawBodySnippet: rawText.slice(0, 300),
-            contentType: searchRes.headers.get('content-type'),
-          };
+          genreStats.errors ??= [];
+          genreStats.errors.push(`"${term}": non-JSON response (status ${searchRes.status})`);
           continue;
         }
 
         if (searchRes.status === 429) {
-          results[genre] = {
-            error: 'Rate limited by iTunes Search API',
-            retryAfter: searchRes.headers.get('retry-after'),
-          };
+          genreStats.errors ??= [];
+          genreStats.errors.push(`"${term}": rate limited by iTunes Search API`);
           continue;
         }
 
         if (!searchRes.ok || !Array.isArray(searchData.results)) {
-          results[genre] = { error: searchData?.errorMessage ?? `HTTP ${searchRes.status}` };
+          genreStats.errors ??= [];
+          genreStats.errors.push(`"${term}": ${searchData?.errorMessage ?? `HTTP ${searchRes.status}`}`);
           continue;
         }
 
         const items = searchData.results;
-        let inserted = 0;
-        let skipped = 0;
+        genreStats.fetched += items.length;
 
         for (const track of items) {
           const trackId = track?.trackId != null ? String(track.trackId) : null;
           if (!trackId || !track.previewUrl || alreadySeeded.has(trackId)) {
-            skipped++;
+            genreStats.skipped++;
             continue;
           }
           const { error } = await supabase.from('karaoke_tracks').insert({
@@ -98,19 +107,27 @@ Deno.serve(async () => {
             console.error(`Karaoke track insert failed for "${track.trackName}":`, JSON.stringify(error));
           } else {
             alreadySeeded.add(trackId);
-            inserted++;
+            genreStats.inserted++;
+            if (track.artistName) genreStats.artists.add(track.artistName);
           }
         }
-
-        results[genre] = { fetched: items.length, inserted, skipped };
       } catch (err) {
-        // A single genre's network failure shouldn't abort the whole seed run.
-        results[genre] = { error: String(err) };
+        // A single request's network failure shouldn't abort the whole seed run.
+        genreStats.errors ??= [];
+        genreStats.errors.push(`"${term}": ${String(err)}`);
       }
 
-      if (i < GENRES.length - 1) {
-        await sleep(DELAY_BETWEEN_GENRES_MS);
+      if (i < requestPlan.length - 1) {
+        await sleep(DELAY_BETWEEN_REQUESTS_MS);
       }
+    }
+
+    // Sets don't serialize to JSON — surface distinct-artist counts instead
+    // of the raw set so the response actually shows the diversity win.
+    for (const genre of Object.keys(results)) {
+      const stats = results[genre] as any;
+      stats.distinctArtists = stats.artists.size;
+      delete stats.artists;
     }
 
     return new Response(JSON.stringify({ results }), {

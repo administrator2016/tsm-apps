@@ -8,13 +8,17 @@ export default function App() {
   const [view, setView] = useState('join');
   const [gameId, setGameId] = useState(null);
   const [roomCode, setRoomCode] = useState(null);
+  const [playerId, setPlayerId] = useState(null);
+  const [isHost, setIsHost] = useState(false);
 
   if (view === 'join') {
     return (
       <JoinScreen
-        onJoined={({ gameId, roomCode }) => {
+        onJoined={({ gameId, roomCode, playerId, isHost }) => {
           setGameId(gameId);
           setRoomCode(roomCode);
+          setPlayerId(playerId);
+          setIsHost(isHost);
           setView('lobby');
         }}
       />
@@ -26,10 +30,11 @@ export default function App() {
       <Lobby
         gameId={gameId}
         roomCode={roomCode}
+        isHost={isHost}
         onStart={() => setView('game')}
       />
     );
   }
 
-  return <GameBoard gameId={gameId} roomCode={roomCode} />;
+  return <GameBoard gameId={gameId} roomCode={roomCode} playerId={playerId} isHost={isHost} />;
 }

@@ -2,12 +2,14 @@ import { fetchCatchPhrase, fetchKaraokeTrack, fetchCharadesWord } from './apiSer
 
 // Starts the round for whichever mode the game is in; returns the prompt to display.
 // `topic` is optional — each fetcher treats an empty/undefined topic as "any".
-export async function startRound(gameMode, topic) {
+// `recentArtists` only applies to karaoke — steers the next track away from
+// artists that just came up.
+export async function startRound(gameMode, topic, recentArtists) {
   switch (gameMode) {
     case 'catchphrase':
       return fetchCatchPhrase(topic);
     case 'karaoke':
-      return fetchKaraokeTrack(topic);
+      return fetchKaraokeTrack(topic, recentArtists);
     case 'charades':
       return fetchCharadesWord(topic);
     default:

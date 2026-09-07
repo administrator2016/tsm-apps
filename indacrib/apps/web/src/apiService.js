@@ -13,9 +13,9 @@ export async function fetchCatchPhrase(genre) {
   return data; // { phrase, source, genre }
 }
 
-export async function fetchKaraokeTrack(genre) {
+export async function fetchKaraokeTrack(genre, excludeArtists) {
   const { data, error } = await supabase.functions.invoke('get-karaoke-track', {
-    body: { genre },
+    body: { genre, excludeArtists },
   });
   if (error) {
     console.error('Error fetching karaoke track:', error);

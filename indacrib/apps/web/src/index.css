@@ -328,3 +328,133 @@ select.idc-input option {
   font-weight: 400;
   font-size: 0.95rem;
 }
+
+/* Cycling genre/category label shown in the prompt box while a round loads */
+.idc-roulette {
+  color: var(--text-dim);
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- Lobby player list ---------- */
+.idc-player-list {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.idc-player-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-border);
+  font-size: 0.85rem;
+}
+
+.idc-badge-host {
+  margin: 0;
+  padding: 2px 8px;
+  font-size: 0.65rem;
+  background: linear-gradient(120deg, var(--amber), var(--pink));
+  color: var(--canvas);
+  border: none;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- Turn indicator + live scoreboard ---------- */
+.idc-turn-score {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-border);
+}
+
+.idc-turn-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.idc-turn-bar strong {
+  color: var(--amber);
+}
+
+.idc-btn-inline {
+  width: auto;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+}
+
+.idc-scoreboard {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.idc-score-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 2px;
+  border-radius: 8px;
+}
+
+.idc-score-row-active {
+  background: rgba(255, 200, 87, 0.12);
+}
+
+.idc-score-name {
+  flex: 1;
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.idc-score-points {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  min-width: 22px;
+  text-align: right;
+  color: var(--sky);
+}
+
+.idc-score-award {
+  border: 1px solid var(--glass-border);
+  background: var(--glass-fill-strong);
+  color: var(--text);
+  border-radius: 8px;
+  width: 30px;
+  height: 26px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.idc-score-award:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.idc-score-award:active {
+  transform: scale(0.92);
+}

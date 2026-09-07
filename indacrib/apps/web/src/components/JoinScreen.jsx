@@ -49,7 +49,7 @@ export default function JoinScreen({ onJoined }) {
       return;
     }
 
-    onJoined({ gameId: game.id, roomCode: trimmedCode, playerId: player.id });
+    onJoined({ gameId: game.id, roomCode: trimmedCode, playerId: player.id, isHost: false });
   }
 
   async function handleCreate() {
@@ -100,7 +100,7 @@ export default function JoinScreen({ onJoined }) {
       return;
     }
 
-    onJoined({ gameId: game.id, roomCode: game.room_code, playerId: player.id });
+    onJoined({ gameId: game.id, roomCode: game.room_code, playerId: player.id, isHost: true });
   }
 
   return (

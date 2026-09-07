@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { startRound } from '../gameLogic.js';
 import { speakPhrase } from '../voice.js';
+import { useGenreRoulette } from '../useGenreRoulette.js';
 
-export default function CatchPhraseGame({ topics, onBack }) {
+export default function CatchPhraseGame({ topics, onBack, turnScorePanel }) {
   const [topic, setTopic] = useState('');
   const [prompt, setPrompt] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const spinningGenre = useGenreRoulette(loading, topics);
 
   async function handleNewPrompt() {
     setLoading(true);
@@ -21,6 +24,8 @@ export default function CatchPhraseGame({ topics, onBack }) {
         <h2 className="idc-mode-title">CatchPhrase</h2>
         <p className="idc-subtitle">Guess the movie from the famous line</p>
 
+        {turnScorePanel}
+
         <div className="idc-field">
           <label htmlFor="cp-genre">Genre</label>
           <select
@@ -28,6 +33,7 @@ export default function CatchPhraseGame({ topics, onBack }) {
             className="idc-input"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
+            disabled={loading}
           >
             <option value="">Any genre</option>
             {topics.map((g) => (
@@ -37,9 +43,15 @@ export default function CatchPhraseGame({ topics, onBack }) {
         </div>
 
         <div className={prompt ? 'idc-prompt' : 'idc-prompt idc-prompt-empty'}>
-          {prompt ? prompt.phrase : 'Hit New CatchPhrase to start'}
+          {loading && spinningGenre ? (
+            <span className="idc-roulette">{spinningGenre}</span>
+          ) : prompt ? (
+            prompt.phrase
+          ) : (
+            'Hit New CatchPhrase to start'
+          )}
         </div>
-        {prompt?.source && <p className="idc-badge">{prompt.source}</p>}
+        {!loading && prompt?.source && <p className="idc-badge">{prompt.source}</p>}
 
         <button className="idc-btn idc-btn-primary" onClick={handleNewPrompt} disabled={loading} style={{ marginTop: 16 }}>
           {loading ? 'Loading…' : 'New CatchPhrase'}
