@@ -1934,7 +1934,7 @@ sections.forEach(s => observer.observe(s));
       <h3 style="margin:8px 0 6px">Unlock the full Music Command system</h3>
       <p style="margin:0 0 12px;color:#9ca3af;font-size:13px;line-height:1.45">${reason || 'You have seen the live engine. Module Active or book a walkthrough to continue.'}</p>
       <div style="display:flex;gap:8px">
-        <a href="/html/music-command/marketing.html?demo_token=${encodeURIComponent(token || '')}" style="flex:1;text-align:center;background:#ffd230;color:#050505;text-decoration:none;border-radius:999px;padding:10px;font-weight:800">View Plans</a>
+        <a href="/html/war-rooms/music-war/marketing.html?demo_token=${encodeURIComponent(token || '')}" style="flex:1;text-align:center;background:#ffd230;color:#050505;text-decoration:none;border-radius:999px;padding:10px;font-weight:800">View Plans</a>
         <button onclick="document.getElementById('tsm-demo-upgrade-prompt').remove()" style="border:1px solid rgba(255,255,255,.12);background:transparent;color:#fff;border-radius:999px;padding:10px 12px">Later</button>
       </div>
     `;
@@ -2003,7 +2003,7 @@ sections.forEach(s => observer.observe(s));
 
   // Preserve token across internal Music Command links.
   if(token){
-    document.querySelectorAll('a[href*="/html/music-command/"]').forEach(a => {
+    document.querySelectorAll('a[href*="/html/war-rooms/music-war/"]').forEach(a => {
       try{
         const u = new URL(a.getAttribute('href'), location.origin);
         if(!u.searchParams.get('demo_token')){

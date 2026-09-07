@@ -109,7 +109,7 @@ const MUSIC_PAGES = [
   'demo-conductor.html',
 ];
 for (const p of MUSIC_PAGES) {
-  addPage('music-command', `/html/music-command/${p}`);
+  addPage('music-command', `/html/war-rooms/music-war/${p}`);
 }
 
 function safeName(urlPath) {

@@ -109,8 +109,8 @@ console.log("TSM_UI: Direct Neural Link Established.");
 </div>
  Generate options, score directions, pick the strongest path, rerun, learn, and track hit trajectory.</p>
   <div style="display:flex;gap:12px;margin-top:28px;flex-wrap:wrap">
-    <a class="btn primary" href="/html/music-command/index.html">Open App</a>
-    <a class="btn purple" href="/html/music-command/release/marketing.html">Marketing Page</a>
+    <a class="btn primary" href="/html/war-rooms/music-war/index.html">Open App</a>
+    <a class="btn purple" href="/html/war-rooms/music-war/release/marketing.html">Marketing Page</a>
     <button class="btn" data-tsm-action="refreshAll" data-tsm-args="">Refresh Live Data</button>
   </div>
   <div class="footer">Use ↑ / ↓ arrows to navigate</div>
@@ -216,7 +216,7 @@ Every day a battle every night a new light</textarea>
   <div class="kicker">Close</div>
   <h1>This is not a lyric generator.<br><span>It is a decision system for music.</span></h1>
   <p>For artists: better songs faster. For producers: faster sessions. For songwriters: clearer creative direction. For labels: catalog-scale decision intelligence.</p>
-  <a class="btn primary" href="/html/music-command/index.html">Open Live App</a>
+  <a class="btn primary" href="/html/war-rooms/music-war/index.html">Open Live App</a>
 </section>
 <script>
 let idx=0; const slides=[...document.querySelectorAll('.slide')];
@@ -471,7 +471,7 @@ refreshAll();
       <h3 style="margin:8px 0 6px">Unlock the full Music Command system</h3>
       <p style="margin:0 0 12px;color:#9ca3af;font-size:13px;line-height:1.45">${reason || 'You have seen the live engine. Module Active or book a walkthrough to continue.'}</p>
       <div style="display:flex;gap:8px">
-        <a href="/html/music-command/release/marketing.html?demo_token=${encodeURIComponent(token || '')}" style="flex:1;text-align:center;background:#ffd230;color:#050505;text-decoration:none;border-radius:999px;padding:10px;font-weight:800">View Plans</a>
+        <a href="/html/war-rooms/music-war/release/marketing.html?demo_token=${encodeURIComponent(token || '')}" style="flex:1;text-align:center;background:#ffd230;color:#050505;text-decoration:none;border-radius:999px;padding:10px;font-weight:800">View Plans</a>
         <button onclick="document.getElementById('tsm-demo-upgrade-prompt').remove()" style="border:1px solid rgba(255,255,255,.12);background:transparent;color:#fff;border-radius:999px;padding:10px 12px">Later</button>
       </div>
     `;
@@ -530,7 +530,7 @@ function getToken(){
 }
 
 function startGuidedDemo(){
-  window.location.href = "/html/music-command/index.html?demo_token=" + getToken();
+  window.location.href = "/html/war-rooms/music-war/index.html?demo_token=" + getToken();
 }
 
 async function runDemo(){

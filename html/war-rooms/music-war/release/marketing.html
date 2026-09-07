@@ -117,8 +117,8 @@ Your song doesn't stop at generation. It improves itself until it's ready.
     <div><h3>Music Command Center</h3><span>AI Songwriting Decision Engine</span></div>
   </div>
   <div class="navlinks">
-    <a class="btn purple" href="/html/music-command/academy/daw-academy.html">How It Works</a>
-    <a class="btn" href="/html/music-command/index.html">Open App</a>
+    <a class="btn purple" href="/html/war-rooms/music-war/academy/daw-academy.html">How It Works</a>
+    <a class="btn" href="/html/war-rooms/music-war/index.html">Open App</a>
     <a class="btn primary" href="#pricing">Start Free</a>
   </div>
 </nav>
@@ -129,8 +129,8 @@ Your song doesn't stop at generation. It improves itself until it's ready.
     <h1>Stop guessing if the song is <span>actually good.</span></h1>
     <p class="sub">ZY Music Command is a multi-agent AI songwriting system that helps you generate options, compare directions, score versions, pick the strongest path, and evolve your Artist DNA over time.</p>
     <div class="cta">
-      <a class="btn primary" href="/html/music-command/index.html">Try the Music Command Center</a>
-      <a class="btn purple" href="/html/music-command/academy/daw-academy.html">See the Workflow</a>
+      <a class="btn primary" href="/html/war-rooms/music-war/index.html">Try the Music Command Center</a>
+      <a class="btn purple" href="/html/war-rooms/music-war/academy/daw-academy.html">See the Workflow</a>
     </div>
     <div class="metrics">
       <div class="metric"><b>3</b><span>Specialized Agents</span></div>
@@ -202,7 +202,7 @@ Your song doesn't stop at generation. It improves itself until it's ready.
 <section class="final">
   <h2>Build better songs faster — with confidence.</h2>
   <p class="sub" style="margin:0 auto 28px;">ZY Music Command gives artists, producers, and writers a repeatable system for improving songs, not just generating lyrics.</p>
-  <a class="btn primary" href="/html/music-command/index.html">Open Music Command</a>
+  <a class="btn primary" href="/html/war-rooms/music-war/index.html">Open Music Command</a>
 </section>
 
 
@@ -398,7 +398,7 @@ Your song doesn't stop at generation. It improves itself until it's ready.
       <h3 style="margin:8px 0 6px">Unlock the full Music Command system</h3>
       <p style="margin:0 0 12px;color:#9ca3af;font-size:13px;line-height:1.45">${reason || 'You have seen the live engine. Module Active or book a walkthrough to continue.'}</p>
       <div style="display:flex;gap:8px">
-        <a href="/html/music-command/release/marketing.html?demo_token=${encodeURIComponent(token || '')}" style="flex:1;text-align:center;background:#ffd230;color:#050505;text-decoration:none;border-radius:999px;padding:10px;font-weight:800">View Plans</a>
+        <a href="/html/war-rooms/music-war/release/marketing.html?demo_token=${encodeURIComponent(token || '')}" style="flex:1;text-align:center;background:#ffd230;color:#050505;text-decoration:none;border-radius:999px;padding:10px;font-weight:800">View Plans</a>
         <button onclick="document.getElementById('tsm-demo-upgrade-prompt').remove()" style="border:1px solid rgba(255,255,255,.12);background:transparent;color:#fff;border-radius:999px;padding:10px 12px">Later</button>
       </div>
     `;
@@ -467,7 +467,7 @@ Your song doesn't stop at generation. It improves itself until it's ready.
 
   // Preserve token across internal Music Command links.
   if(token){
-    document.querySelectorAll('a[href*="/html/music-command/"]').forEach(a => {
+    document.querySelectorAll('a[href*="/html/war-rooms/music-war/"]').forEach(a => {
       try{
         const u = new URL(a.getAttribute('href'), location.origin);
         if(!u.searchParams.get('demo_token')){
