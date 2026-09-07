@@ -27,7 +27,65 @@ const ICONIC_MOVIES = [
   'Casablanca', 'The Terminator', 'Finding Nemo',
 ];
 
-Deno.serve(async () => {
+// TMDB TV genre ids differ from the movie list above — a separate official
+// reference table (https://developer.themoviedb.org/reference/genre-tv-list).
+const TMDB_TV_GENRES: Record<number, string> = {
+  10759: 'Action & Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
+  99: 'Documentary', 18: 'Drama', 10751: 'Family', 10762: 'Kids',
+  9648: 'Mystery', 10763: 'News', 10764: 'Reality', 10765: 'Sci-Fi & Fantasy',
+  10766: 'Soap', 10767: 'Talk', 10768: 'War & Politics', 37: 'Western',
+};
+
+// Sitcoms and cartoons — widely-known, heavily-quoted shows. `kind` feeds
+// the genre fallback label if TMDB's lookup misses, so a show still gets a
+// meaningful bucket instead of the movie list's generic "Classic".
+//
+// The prompt below asks for character catchphrases/taglines rather than
+// verbatim scene quotes (unlike ICONIC_MOVIES) — a sitcom or cartoon has
+// far more dialogue than a movie, so "the exact line from episode X" is
+// exactly the kind of thing a model will confidently misremember instead
+// of correctly declining. A catchphrase repeated dozens of times across a
+// series ("D'oh!", "How you doin'?") is something the model is far more
+// reliably right about, and it fits a game called CatchPhrase better too.
+const ICONIC_SHOWS = [
+  { title: 'Friends', kind: 'sitcom' },
+  { title: 'The Office', kind: 'sitcom' },
+  { title: 'Seinfeld', kind: 'sitcom' },
+  { title: 'Parks and Recreation', kind: 'sitcom' },
+  { title: 'Brooklyn Nine-Nine', kind: 'sitcom' },
+  { title: 'How I Met Your Mother', kind: 'sitcom' },
+  { title: 'The Big Bang Theory', kind: 'sitcom' },
+  { title: 'Cheers', kind: 'sitcom' },
+  { title: 'The Simpsons', kind: 'cartoon' },
+  { title: 'SpongeBob SquarePants', kind: 'cartoon' },
+  { title: 'Rick and Morty', kind: 'cartoon' },
+  { title: 'Family Guy', kind: 'cartoon' },
+  { title: 'Tom and Jerry', kind: 'cartoon' },
+  { title: 'Looney Tunes', kind: 'cartoon' },
+  { title: 'South Park', kind: 'cartoon' },
+  { title: 'Scooby-Doo', kind: 'cartoon' },
+];
+
+Deno.serve(async (req) => {
+  // Optional { "target": "movies" | "shows" | "charades" } scopes this run
+  // to one section. Running all of it (20 movies + 16 shows + a charades
+  // batch, each with an OpenAI round-trip) in one invocation runs close to
+  // the same edge-function execution ceiling that tripped up
+  // seed-karaoke-tracks (WORKER_RESOURCE_LIMIT around ~150s) — scoping
+  // keeps each call comfortably under it. Falls back to running
+  // everything if omitted, for backward compatibility.
+  const body = await req.json().catch(() => ({}));
+  const target = typeof body?.target === 'string' ? body.target : null;
+  if (target && !['movies', 'shows', 'charades'].includes(target)) {
+    return new Response(
+      JSON.stringify({ error: 'Unknown target', detail: `"${target}" must be one of: movies, shows, charades` }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+  const runMovies = !target || target === 'movies';
+  const runShows = !target || target === 'shows';
+  const runCharades = !target || target === 'charades';
+
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -35,13 +93,14 @@ Deno.serve(async () => {
   const openaiKey = Deno.env.get('OPENAI_API_KEY')!;
   const tmdbKey = Deno.env.get('TMDB_API_KEY')!;
 
-  // ---------- CATCHPHRASES ----------
+  // ---------- CATCHPHRASES: MOVIES ----------
   const { data: existingPhrases } = await supabase.from('catchphrases').select('source');
   const alreadySeededMovies = new Set((existingPhrases ?? []).map((row) => row.source));
 
   let phrasesProcessed = 0;
   let phrasesSkipped = 0;
 
+  if (runMovies) {
   for (const title of ICONIC_MOVIES) {
     if (alreadySeededMovies.has(title)) {
       console.log(`Skipping catchphrases for "${title}" — already seeded`);
@@ -109,11 +168,86 @@ Deno.serve(async () => {
 
     phrasesProcessed++;
   }
+  }
+
+  // ---------- TV SITCOMS & CARTOONS ----------
+  let showsProcessed = 0;
+  let showsSkipped = 0;
+
+  if (runShows) {
+  for (const { title, kind } of ICONIC_SHOWS) {
+    if (alreadySeededMovies.has(title)) {
+      console.log(`Skipping catchphrases for "${title}" — already seeded`);
+      showsSkipped++;
+      continue;
+    }
+
+    console.log(`Processing catchphrases: ${title}`);
+
+    // Genre metadata only, same as the movie loop above — /search/tv
+    // instead of /search/movie, TMDB_TV_GENRES instead of TMDB_GENRES.
+    const tmdbRes = await fetch(
+      `https://api.themoviedb.org/3/search/tv?api_key=${tmdbKey}&query=${encodeURIComponent(title)}`
+    );
+    const tmdbData = await tmdbRes.json();
+    const match = tmdbData?.results?.[0];
+    const genre = TMDB_TV_GENRES[match?.genre_ids?.[0]] ?? (kind === 'cartoon' ? 'Cartoon' : 'Sitcom');
+
+    const gptRes = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'user',
+            content:
+              `Give 2 short, iconic catchphrases or taglines from the ${kind} "${title}" — ` +
+              'lines said repeatedly across the show that a random group of friends would instantly ' +
+              'recognize out of context (a character\'s signature catchphrase, not a one-off line from ' +
+              'a specific episode). One per line, no numbering, no quotation marks, no extra text. ' +
+              'If you are not confident a line is a genuine, well-known catchphrase from this specific ' +
+              'show, respond with exactly NONE instead of guessing.',
+          },
+        ],
+      }),
+    });
+    const gptData = await gptRes.json();
+
+    if (!gptRes.ok || !gptData.choices) {
+      console.error(`OpenAI request failed for "${title}":`, JSON.stringify(gptData));
+      continue;
+    }
+
+    const rawContent = gptData.choices[0].message.content.trim();
+    if (rawContent === 'NONE') {
+      console.log(`Model declined to guess a catchphrase for "${title}" — skipping`);
+      showsSkipped++;
+      continue;
+    }
+
+    const lines = rawContent.split('\n').filter(Boolean);
+
+    for (const phrase of lines) {
+      const { error } = await supabase.from('catchphrases').insert({ phrase, source: title, genre });
+      if (error) console.error(`Catchphrase insert failed for "${title}":`, JSON.stringify(error));
+    }
+
+    showsProcessed++;
+  }
+  }
 
   // ---------- CHARADES WORDS ----------
   const { data: existingWords } = await supabase.from('charades_words').select('word');
   const alreadySeededWords = new Set((existingWords ?? []).map((row) => row.word.toLowerCase()));
 
+  let wordsInserted = 0;
+  let wordsSkipped = 0;
+
+  if (runCharades) {
   console.log('Requesting charades words batch from OpenAI');
 
   const charadesRes = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -135,9 +269,6 @@ Deno.serve(async () => {
     }),
   });
   const charadesData = await charadesRes.json();
-
-  let wordsInserted = 0;
-  let wordsSkipped = 0;
 
   if (!charadesRes.ok || !charadesData.choices) {
     console.error('OpenAI request failed for charades words:', JSON.stringify(charadesData));
@@ -171,7 +302,10 @@ Deno.serve(async () => {
 
   return new Response(
     JSON.stringify({
-      catchphrases: { totalMovies: ICONIC_MOVIES.length, processed: phrasesProcessed, skipped: phrasesSkipped },
+      catchphrases: {
+        movies: { total: ICONIC_MOVIES.length, processed: phrasesProcessed, skipped: phrasesSkipped },
+        shows: { total: ICONIC_SHOWS.length, processed: showsProcessed, skipped: showsSkipped },
+      },
       charadesWords: { inserted: wordsInserted, skipped: wordsSkipped },
     }),
     { headers: { 'Content-Type': 'application/json' } }
