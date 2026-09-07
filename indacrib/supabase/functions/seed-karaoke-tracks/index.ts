@@ -46,8 +46,21 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
   try {
+    // Optional { "genre": "Pop" } body scopes this run to a single genre.
+    // Running all 11 genres x 4 qualifiers x 3.5s delay in one invocation
+    // took ~150s and tripped the edge function's execution ceiling
+    // (WORKER_RESOURCE_LIMIT) before most genres even ran. Scoping to one
+    // genre keeps a single call to ~14s; call once per genre (or loop the
+    // GENRES list client-side) to seed everything.
+    const body = await req.json().catch(() => ({}));
+    const requestedGenre = typeof body?.genre === 'string' ? body.genre : null;
+    if (requestedGenre && !GENRES.includes(requestedGenre)) {
+      return jsonError('Unknown genre', `"${requestedGenre}" is not one of: ${GENRES.join(', ')}`);
+    }
+    const genresToRun = requestedGenre ? [requestedGenre] : GENRES;
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -72,7 +85,7 @@ Deno.serve(async () => {
     }
 
     const results: Record<string, unknown> = {};
-    const requestPlan = GENRES.flatMap((genre) => QUALIFIERS.map((qualifier) => ({ genre, qualifier })));
+    const requestPlan = genresToRun.flatMap((genre) => QUALIFIERS.map((qualifier) => ({ genre, qualifier })));
 
     for (let i = 0; i < requestPlan.length; i++) {
       const { genre, qualifier } = requestPlan[i];
