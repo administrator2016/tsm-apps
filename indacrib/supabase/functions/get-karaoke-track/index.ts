@@ -1,6 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { corsHeaders } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   const { genre } = await req.json().catch(() => ({}));
 
   const supabase = createClient(
@@ -16,7 +21,7 @@ Deno.serve(async (req) => {
   if (error || !tracks?.length) {
     return new Response(JSON.stringify({ error: error?.message ?? 'No tracks found for that genre' }), {
       status: error ? 500 : 404,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 
@@ -41,7 +46,7 @@ Deno.serve(async (req) => {
           previewError: `Non-JSON response from iTunes lookup (status ${lookupRes.status})`,
           rawBodySnippet: rawText.slice(0, 300),
         }),
-        { headers: { 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -49,12 +54,12 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ ...track, preview_url: previewUrl }),
-      { headers: { 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err) {
     return new Response(
       JSON.stringify({ ...track, preview_url: null, previewError: String(err) }),
-      { headers: { 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

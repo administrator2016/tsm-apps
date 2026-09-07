@@ -6,8 +6,13 @@
 // select + client-side random pick — same approach get-karaoke-track already uses —
 // so genre filtering doesn't depend on an untracked DB function.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { corsHeaders } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   const { genre } = await req.json().catch(() => ({}));
 
   const supabase = createClient(
@@ -21,16 +26,20 @@ Deno.serve(async (req) => {
   const { data, error } = await query.limit(200);
 
   if (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
   if (!data?.length) {
     return new Response(JSON.stringify({ phrase: 'No catchphrases found for that genre' }), {
       status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 
   const phrase = data[Math.floor(Math.random() * data.length)];
   return new Response(JSON.stringify(phrase), {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 });
