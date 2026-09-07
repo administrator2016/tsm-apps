@@ -307,6 +307,39 @@ Do **not** troubleshoot this as if it were a War Room → Strategist → Exec Po
 
 **Historical bug (fixed):** cross-device relay was broken (`ea3e68f42`) because `rcm-relay-client.js`'s fetch calls were missing `credentials: 'include'`. If cross-device state ever silently fails to sync again, check that flag first before assuming a new bug.
 
+**Companion pages (all in `html/finops-suite/`, cross-linked, not part of the escalation-chain pattern):**
+- `rcm-os-simulation.html` ("RCM-OS Simulation Lab") — scenario injection/remediation tool (`injectAnomaly()`, `remediate()`, `loadNormal()`); its **"Send to RCM OS"** action (`sendToRCMOS()`) opens `tsm-rcm-os.html?simulation=1` in a new tab to hand off the generated scenario.
+- `tsm-rcm-os-howto.html` — reference/how-to guide, links back to `tsm-rcm-os.html`. Its walkthrough section notes the four engine outputs are staged server-side with a **localStorage fallback** if the relay endpoint is unreachable, before navigating to `tsm-rcm-os.html` — check that fallback if a "staged" step seems to silently lose data.
+- `rcm-os-presentation.html` — static sales/demo deck, links out to `tsm-rcm-os.html` in two places ("Launch RCM OS" nav CTA and an "RCM OS Executive Tab" link). No app logic to troubleshoot here beyond dead links.
+
+---
+
+## A/R Recovery War Room (standalone — not a chain)
+
+**Path:** `ar-recovery-war-room.html` (repo root, single self-contained page — not under `html/`)
+
+Like RCM-OS, this is standalone: no escalation chain, no `RELAY` key, no `exportClientPackage()`. Core flow is a pasted/loaded A/R aging text block → parsed into a queue → ranked/prioritized:
+
+| Step | Action | Function | Notes |
+|---|---|---|---|
+| 1 | Load sample or paste real A/R aging text | `loadSample(type)` / `parseARText(text)` | — |
+| 2 | Queue renders with aging buckets | `bucketFor(age)` → `renderQueue()` | Each row tagged with a recommended action via `recommendedAction(status, bucket)` |
+| 3 | Rank/prioritize the queue | `rankQueue()` | — |
+| 4 | Run AI pipeline over top accounts | `runPipeline()` → `summarizeTopAccounts(n)` → `groqStreamModel(...)` | Same client-side Groq fallback pattern as `finops-operations.html` (§ see FinOps AI proxy notes) — if this errors, check for the same missing-fallback-key / 401 condition before assuming a new bug |
+| 5 | Copy output | `copyOut(id)` | — |
+
+---
+
+## Career Training Platform (standalone hub — not a chain)
+
+**Path:** `html/tsm-career-training-platform.html` ("Decision Intelligence Academy"), companion guide at `html/tsm-career-os-guide.html`
+
+Not a War Room → Strategist → Exec Portal chain — it's a hub linking out to practice tools across 7 sectors, plus a separate standalone L1/IT-Ops track (`switchTo('l1')` panel), each opening in its own tab/module.
+
+- **L1/IT-Ops track reuses the same relay bus as §14 (L1 Ticket Copilot):** its VMware Copilot card explicitly reads `TSM.relay.read('VMWARE_COPILOT')`. If VMware context isn't pre-filling from this hub, check the same `VMWARE_COPILOT` relay registration in `relay.core.js` noted in §14 — it's a shared failure point, not something specific to career training.
+- **Readiness checklist (`updateReadiness()`) is in-memory only** — it reads `.readiness-check` checkbox states directly off the DOM each time and recomputes a percentage; nothing is written to `localStorage`/`sessionStorage`/a relay. A refresh silently resets all checkmarks to zero — that's expected behavior, not a bug, unless persistence gets added later.
+- Various "export" cards (readiness score export, governance audit export, etc.) are described in the page copy as staffing-firm/enterprise deliverables — confirm which of these actually wire up to a real export function versus being forward-looking copy before promising the behavior in a support conversation.
+
 ---
 
 ## Platform-wide gotchas worth knowing before you dig into vertical-specific code
