@@ -42,8 +42,24 @@ export function broadcastReaction(roomCode, emoji) {
 
 // Marks the room "active" so every player's Lobby — not just the host who
 // clicked the button — moves on together (see subscribeToGameStatus below).
+//
+// supabase-js v2's PostgREST query builders are lazy: the actual HTTP
+// request only fires once something calls `.then()` on the builder (which
+// `await` does under the hood). Every call site for this used to be
+// fire-and-forget (`onClick={() => startGame(gameId)}`, no await) — so the
+// builder was constructed and immediately discarded, and the request never
+// left the browser. Chaining `.then()` right here forces the fetch to fire
+// the moment this function runs, regardless of whether the caller awaits
+// the returned promise, and logs a real error if the update is rejected
+// (e.g. by RLS) instead of failing silently.
 export function startGame(gameId) {
-  return supabase.from('games').update({ status: 'active' }).eq('id', gameId);
+  return supabase
+    .from('games')
+    .update({ status: 'active' })
+    .eq('id', gameId)
+    .then(({ error }) => {
+      if (error) console.error('startGame failed:', error);
+    });
 }
 
 // Fires `onActive` once the room's status flips to "active", including on
@@ -75,14 +91,27 @@ export function subscribeToGameStatus(gameId, onActive) {
 // Hands the turn to a specific player. Persisted on `games` (not just
 // broadcast) so anyone who refreshes or joins mid-round still sees whose
 // turn it is, via the postgres_changes subscription above.
+//
+// Same lazy-builder issue as startGame above — force execution here.
 export function advanceTurn(gameId, playerId) {
-  return supabase.from('games').update({ current_player_id: playerId }).eq('id', gameId);
+  return supabase
+    .from('games')
+    .update({ current_player_id: playerId })
+    .eq('id', gameId)
+    .then(({ error }) => {
+      if (error) console.error('advanceTurn failed:', error);
+    });
 }
 
 // Atomic +delta via the increment_score() RPC — see migration 0005 for why
-// this isn't a plain client-side read-then-write update.
+// this isn't a plain client-side read-then-write update. Same lazy-builder
+// issue as startGame above — force execution here.
 export function awardPoint(gameId, playerId, delta = 1) {
-  return supabase.rpc('increment_score', { p_game_id: gameId, p_player_id: playerId, p_delta: delta });
+  return supabase
+    .rpc('increment_score', { p_game_id: gameId, p_player_id: playerId, p_delta: delta })
+    .then(({ error }) => {
+      if (error) console.error('awardPoint failed:', error);
+    });
 }
 
 // One-time fetch of a room's players + scores, for initial render before
