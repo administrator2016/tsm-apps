@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TSM · Concierge Command</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050a0f;--bg2:#0a1020;--bg3:#0d1528;
+  --cyan:#00d4d4;--amber:#f5a623;--green:#22c55e;
+  --red:#ef4444;--border:#1e293b;--text:#e2e8f0;--muted:#64748b;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;}
+body{display:flex;flex-direction:column;}
+
+.topbar{height:44px;background:#020810;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex:0 0 auto;}
+.tb-brand{font-family:'Orbitron',sans-serif;font-size:.72rem;color:var(--cyan);letter-spacing:.18em;display:flex;align-items:center;gap:8px;}
+.tb-brand-pulse{width:8px;height:8px;border-radius:50%;background:var(--cyan);animation:pulse 1.2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+.tb-time{font-family:'Orbitron',sans-serif;font-size:.78rem;color:var(--amber);}
+
+/* Consolidated tab bar — same chain-nav look as each individual page's
+   nav, but this is the ONE nav that switches which stage's content is
+   visible, rather than three separate pages each navigating to the next. */
+.combo-nav{height:38px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;flex:0 0 auto;}
+.combo-tab{font-family:'Orbitron',sans-serif;font-size:.6rem;padding:0 18px;height:100%;display:flex;align-items:center;letter-spacing:.08em;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.15s;white-space:nowrap;}
+.combo-tab:hover{color:var(--text);}
+.combo-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+.combo-right{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);}
+
+.frame-stack{position:relative;flex:1 1 auto;min-height:0;}
+.frame-stack iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:var(--bg);}
+.frame-stack iframe.active{display:block;}
+.frame-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-brand"><div class="tb-brand-pulse"></div>◈ CONCIERGE COMMAND — CONSOLIDATED VIEW</div>
+  <div class="tb-time" id="tbTime">--:--:--</div>
+</div>
+
+<div class="combo-nav">
+  <div class="combo-tab active" data-stage="war-room">01 · WAR ROOM</div>
+  <div class="combo-tab" data-stage="strategist">02 · STRATEGIST</div>
+  <div class="combo-tab" data-stage="executive">03 · EXEC PORTAL</div>
+  <div class="combo-right" id="comboStatus">War Room loaded</div>
+</div>
+
+<div class="frame-stack" id="frameStack">
+  <div class="frame-placeholder" id="framePlaceholder">Loading…</div>
+</div>
+
+<script>
+// One page, three stages of the same Concierge pipeline (War Room ->
+// Strategist -> Exec Portal), consolidated per the ask: "restructure
+// concierge to be a more consolidated view of concierge war room,
+// strategist and executive combined." Rather than re-implementing three
+// pages' worth of live, working JS (missions, quotes, TSM_CONCIERGE_RELAY
+// reads/writes, /api/concierge/* calls) inline and risking new relay bugs
+// of exactly the kind this session just fixed for College, each stage's
+// existing page is embedded as an iframe. Same origin -> the iframes share
+// one localStorage/TSM_CONCIERGE_RELAY, so switching tabs here behaves
+// like the chain-nav clicks each page already has, just without a full
+// page navigation. Lazy-loaded: an iframe's src is only set the first time
+// its tab is opened, so opening this view doesn't pay the cost of loading
+// all three pages up front.
+const STAGES = {
+  'war-room':   { url: '/html/concierge/concierge-war-room.html',        label: 'War Room' },
+  'strategist': { url: '/html/concierge/concierge-strategist.html',      label: 'Strategist' },
+  'executive':  { url: '/html/concierge/concierge-executive-portal.html',label: 'Exec Portal' },
+};
+
+const stack = document.getElementById('frameStack');
+const placeholder = document.getElementById('framePlaceholder');
+const status = document.getElementById('comboStatus');
+const frames = {};
+
+function ensureFrame(stage) {
+  if (frames[stage]) return frames[stage];
+  const iframe = document.createElement('iframe');
+  iframe.dataset.stage = stage;
+  iframe.title = 'Concierge ' + STAGES[stage].label;
+  iframe.src = STAGES[stage].url;
+  stack.appendChild(iframe);
+  frames[stage] = iframe;
+  return iframe;
+}
+
+function showStage(stage) {
+  if (!STAGES[stage]) return;
+  placeholder.style.display = frames[stage] ? 'none' : 'flex';
+  const iframe = ensureFrame(stage);
+  Object.values(frames).forEach(f => f.classList.remove('active'));
+  iframe.classList.add('active');
+  iframe.addEventListener('load', () => { placeholder.style.display = 'none'; }, { once: true });
+  document.querySelectorAll('.combo-tab').forEach(t => t.classList.toggle('active', t.dataset.stage === stage));
+  status.textContent = STAGES[stage].label + ' loaded';
+}
+
+document.querySelectorAll('.combo-tab').forEach(tab => {
+  tab.addEventListener('click', () => showStage(tab.dataset.stage));
+});
+
+setInterval(() => { document.getElementById('tbTime').textContent = new Date().toLocaleTimeString('en-US', { hour12: false }); }, 1000);
+
+showStage('war-room');
+</script>
+</body>
+</html>

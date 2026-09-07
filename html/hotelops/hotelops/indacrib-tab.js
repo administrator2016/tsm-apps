@@ -56,21 +56,25 @@ function renderIndaCribTab() {
   draw(savedUrl);
 }
 
-// Concierge Transport — shell link into the existing Concierge portal while
-// the deeper functional merge (shared nav/engine) is scoped out separately.
+// Concierge Transport — now embeds the consolidated Concierge Command view
+// (War Room + Strategist + Exec Portal combined, html/concierge/concierge-command.html)
+// directly in this tab via iframe, rather than only linking out to a
+// separate portal page. Same origin, so it shares HotelOps' session and
+// TSM_CONCIERGE_RELAY localStorage exactly as if the reviewer had navigated
+// there directly. A "open full screen" link is kept for when the embedded
+// height is too tight for a given task.
 function renderConciergeTransportTab() {
   const panel = document.getElementById('panel-concierge-transport-body');
   if (!panel) return;
 
   panel.innerHTML = `
-    <div style="padding:20px;max-width:520px;">
-      <p style="font-family:var(--mono);font-size:.65rem;color:var(--muted);margin-bottom:16px;">
-        Concierge Transport is being folded into HotelOps. For now this opens the existing
-        Concierge portal in a new tab; a fully embedded version (shared sidebar, shared data)
-        is the next step once this shell is confirmed.
-      </p>
-      <a href="/html/concierge/concierge-executive-portal.html" target="_blank" rel="noopener"
-        class="btn" style="text-decoration:none;display:inline-block;">OPEN CONCIERGE TRANSPORT PORTAL</a>
+    <div style="display:flex;flex-direction:column;height:78vh;min-height:520px;">
+      <div style="padding:10px 20px;display:flex;justify-content:flex-end;">
+        <a href="/html/concierge/concierge-command.html" target="_blank" rel="noopener"
+          class="btn ghost" style="text-decoration:none;font-size:.55rem;">OPEN FULL SCREEN ↗</a>
+      </div>
+      <iframe src="/html/concierge/concierge-command.html" title="Concierge Command"
+        style="flex:1;width:100%;border:0;background:var(--bg2, #0a1020);"></iframe>
     </div>
   `;
 }
