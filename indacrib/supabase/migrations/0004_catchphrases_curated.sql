@@ -1,0 +1,11 @@
+-- seed-content previously sourced catchphrases from TMDB's "popular"
+-- (trending-right-now) endpoint and let gpt-4o-mini invent quotes for
+-- whatever came back, with no genre fallback. That produced unrecognizable
+-- lines (from brand-new/niche releases) and rows with no genre at all,
+-- which is why the genre filter dropdown showed nothing but "Any genre".
+--
+-- seed-content now sources from a fixed list of genuinely well-known
+-- movies instead. Clear the old rows so the re-seed isn't blocked by its
+-- own "already seeded" dedupe-by-title check, which only matches titles
+-- that overlap with the new curated list.
+truncate table catchphrases;

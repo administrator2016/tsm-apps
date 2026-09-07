@@ -11,6 +11,22 @@ const TMDB_GENRES: Record<number, string> = {
   878: 'Science Fiction', 10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western',
 };
 
+// A fixed set of movies picked for being genuinely widely-known and
+// quotable — a party game needs "everyone's seen this" hits, not whatever
+// TMDB says is trending this week. TMDB's `popular` endpoint is "trending
+// right now" (new releases, awards-season titles, anime, foreign films —
+// not necessarily anything a random group of friends has actually seen),
+// which is how a line from a brand-new 2026 release like "The Odyssey"
+// ended up in the game. We still hit TMDB per title, just for genre
+// metadata (via search-by-title) rather than as the discovery source.
+const ICONIC_MOVIES = [
+  'The Godfather', 'Star Wars', 'The Dark Knight', 'Jurassic Park', 'Titanic',
+  'Forrest Gump', 'The Lion King', 'Jaws', 'E.T. the Extra-Terrestrial',
+  'The Shawshank Redemption', 'Pulp Fiction', 'The Matrix', 'Toy Story',
+  'Back to the Future', 'Gladiator', 'The Wizard of Oz', 'Rocky',
+  'Casablanca', 'The Terminator', 'Finding Nemo',
+];
+
 Deno.serve(async () => {
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -20,25 +36,34 @@ Deno.serve(async () => {
   const tmdbKey = Deno.env.get('TMDB_API_KEY')!;
 
   // ---------- CATCHPHRASES ----------
-  const tmdbRes = await fetch(
-    `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbKey}`
-  );
-  const { results: movies } = await tmdbRes.json();
-
   const { data: existingPhrases } = await supabase.from('catchphrases').select('source');
   const alreadySeededMovies = new Set((existingPhrases ?? []).map((row) => row.source));
 
   let phrasesProcessed = 0;
   let phrasesSkipped = 0;
 
-  for (const movie of movies.slice(0, 10)) {
-    if (alreadySeededMovies.has(movie.title)) {
-      console.log(`Skipping catchphrases for "${movie.title}" — already seeded`);
+  for (const title of ICONIC_MOVIES) {
+    if (alreadySeededMovies.has(title)) {
+      console.log(`Skipping catchphrases for "${title}" — already seeded`);
       phrasesSkipped++;
       continue;
     }
 
-    console.log(`Processing catchphrases: ${movie.title}`);
+    console.log(`Processing catchphrases: ${title}`);
+
+    // Genre metadata only — this is a curated list, not a discovery feed,
+    // so we look each title up individually rather than paging a list.
+    const tmdbRes = await fetch(
+      `https://api.themoviedb.org/3/search/movie?api_key=${tmdbKey}&query=${encodeURIComponent(title)}`
+    );
+    const tmdbData = await tmdbRes.json();
+    const match = tmdbData?.results?.[0];
+    // Every title above is a real, well-known genre movie, so if TMDB's
+    // lookup or genre mapping ever comes back empty, fall back to a
+    // labeled bucket rather than silently storing null — a genre-less row
+    // is invisible to the app's genre filter, which is exactly the bug
+    // that left the dropdown showing only "Any genre".
+    const genre = TMDB_GENRES[match?.genre_ids?.[0]] ?? 'Classic';
 
     const gptRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -49,23 +74,37 @@ Deno.serve(async () => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'user', content: `Give 2 famous catchphrases from "${movie.title}", one per line, no extra text.` },
+          {
+            role: 'user',
+            content:
+              `Give 2 short, verbatim, instantly-recognizable movie quotes from "${title}" — ` +
+              'lines a random group of friends would immediately recognize out of context. ' +
+              'One per line, no numbering, no quotation marks, no extra text. ' +
+              'If you are not confident you know an exact, genuinely famous line from this specific movie, ' +
+              'respond with exactly NONE instead of guessing.',
+          },
         ],
       }),
     });
     const gptData = await gptRes.json();
 
     if (!gptRes.ok || !gptData.choices) {
-      console.error(`OpenAI request failed for "${movie.title}":`, JSON.stringify(gptData));
+      console.error(`OpenAI request failed for "${title}":`, JSON.stringify(gptData));
       continue;
     }
 
-    const lines = gptData.choices[0].message.content.split('\n').filter(Boolean);
-    const genre = TMDB_GENRES[movie.genre_ids?.[0]] ?? null;
+    const rawContent = gptData.choices[0].message.content.trim();
+    if (rawContent === 'NONE') {
+      console.log(`Model declined to guess a quote for "${title}" — skipping`);
+      phrasesSkipped++;
+      continue;
+    }
+
+    const lines = rawContent.split('\n').filter(Boolean);
 
     for (const phrase of lines) {
-      const { error } = await supabase.from('catchphrases').insert({ phrase, source: movie.title, genre });
-      if (error) console.error(`Catchphrase insert failed for "${movie.title}":`, JSON.stringify(error));
+      const { error } = await supabase.from('catchphrases').insert({ phrase, source: title, genre });
+      if (error) console.error(`Catchphrase insert failed for "${title}":`, JSON.stringify(error));
     }
 
     phrasesProcessed++;
@@ -132,7 +171,7 @@ Deno.serve(async () => {
 
   return new Response(
     JSON.stringify({
-      catchphrases: { totalMovies: movies.length, processed: phrasesProcessed, skipped: phrasesSkipped },
+      catchphrases: { totalMovies: ICONIC_MOVIES.length, processed: phrasesProcessed, skipped: phrasesSkipped },
       charadesWords: { inserted: wordsInserted, skipped: wordsSkipped },
     }),
     { headers: { 'Content-Type': 'application/json' } }
