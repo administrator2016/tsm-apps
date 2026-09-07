@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { startRound } from '../gameLogic.js';
 import { useGenreRoulette } from '../useGenreRoulette.js';
+import VoiceMicToggle from './VoiceMicToggle.jsx';
 
 export default function CharadesGame({ topics, onBack, turnScorePanel }) {
   const [topic, setTopic] = useState('');
@@ -10,6 +11,7 @@ export default function CharadesGame({ topics, onBack, turnScorePanel }) {
   const spinningCategory = useGenreRoulette(loading, topics);
 
   async function handleNewPrompt() {
+    if (loading) return; // guards the voice-command path, which has no `disabled` to rely on
     setLoading(true);
     const result = await startRound('charades', topic || undefined);
     setPrompt(result);
@@ -51,9 +53,16 @@ export default function CharadesGame({ topics, onBack, turnScorePanel }) {
         </div>
         {!loading && prompt?.category && <p className="idc-badge">{prompt.category}</p>}
 
-        <button className="idc-btn idc-btn-primary" onClick={handleNewPrompt} disabled={loading} style={{ marginTop: 16 }}>
-          {loading ? 'Loading…' : 'New Charades Word'}
-        </button>
+        <div className="idc-primary-row" style={{ marginTop: 16 }}>
+          <button className="idc-btn idc-btn-primary" onClick={handleNewPrompt} disabled={loading}>
+            {loading ? 'Loading…' : 'New Charades Word'}
+          </button>
+          <VoiceMicToggle
+            triggers={['new word', 'next word']}
+            onCommand={handleNewPrompt}
+            label="Hands-free new word"
+          />
+        </div>
         <button className="idc-btn idc-btn-secondary" onClick={onBack} style={{ marginTop: 10 }}>
           Back to games
         </button>

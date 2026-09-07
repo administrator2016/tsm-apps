@@ -1,4 +1,5 @@
 import { advanceTurn, awardPoint, broadcastTurnEvent } from '../realtime.js';
+import VoiceMicToggle from './VoiceMicToggle.jsx';
 
 // Shared across the mode-select screen and all three mini-games — this is
 // the "wire the dead onGameUpdate/onBroadcast scaffolding to something
@@ -31,9 +32,16 @@ export default function TurnScorePanel({ gameId, roomCode, players, currentPlaye
           )}
         </span>
         {isHost && (
-          <button className="idc-btn idc-btn-secondary idc-btn-inline" onClick={handleNextTurn}>
-            Next player
-          </button>
+          <div className="idc-turn-actions">
+            <button className="idc-btn idc-btn-secondary idc-btn-inline" onClick={handleNextTurn}>
+              Next player
+            </button>
+            <VoiceMicToggle
+              triggers={['next player', 'next turn']}
+              onCommand={handleNextTurn}
+              label="Hands-free next player"
+            />
+          </div>
         )}
       </div>
 

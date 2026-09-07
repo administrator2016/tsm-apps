@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { startRound } from '../gameLogic.js';
 import { speakPhrase } from '../voice.js';
 import { useGenreRoulette } from '../useGenreRoulette.js';
+import VoiceMicToggle from './VoiceMicToggle.jsx';
 
 export default function CatchPhraseGame({ topics, onBack, turnScorePanel }) {
   const [topic, setTopic] = useState('');
@@ -11,6 +12,7 @@ export default function CatchPhraseGame({ topics, onBack, turnScorePanel }) {
   const spinningGenre = useGenreRoulette(loading, topics);
 
   async function handleNewPrompt() {
+    if (loading) return; // guards the voice-command path, which has no `disabled` to rely on
     setLoading(true);
     const result = await startRound('catchphrase', topic || undefined);
     setPrompt(result);
@@ -53,9 +55,16 @@ export default function CatchPhraseGame({ topics, onBack, turnScorePanel }) {
         </div>
         {!loading && prompt?.source && <p className="idc-badge">{prompt.source}</p>}
 
-        <button className="idc-btn idc-btn-primary" onClick={handleNewPrompt} disabled={loading} style={{ marginTop: 16 }}>
-          {loading ? 'Loading…' : 'New CatchPhrase'}
-        </button>
+        <div className="idc-primary-row" style={{ marginTop: 16 }}>
+          <button className="idc-btn idc-btn-primary" onClick={handleNewPrompt} disabled={loading}>
+            {loading ? 'Loading…' : 'New CatchPhrase'}
+          </button>
+          <VoiceMicToggle
+            triggers={['new phrase', 'new catchphrase', 'next phrase']}
+            onCommand={handleNewPrompt}
+            label="Hands-free new phrase"
+          />
+        </div>
         <button className="idc-btn idc-btn-secondary" onClick={onBack} style={{ marginTop: 10 }}>
           Back to games
         </button>

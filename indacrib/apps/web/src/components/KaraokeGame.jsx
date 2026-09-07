@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { startRound } from '../gameLogic.js';
 import { useGenreRoulette } from '../useGenreRoulette.js';
+import VoiceMicToggle from './VoiceMicToggle.jsx';
 
 // How many recent artists to steer the next pick away from (see
 // get-karaoke-track's excludeArtists handling).
@@ -16,6 +17,7 @@ export default function KaraokeGame({ topics, onBack, turnScorePanel }) {
   const spinningGenre = useGenreRoulette(loading, topics);
 
   async function handleNewPrompt() {
+    if (loading) return; // guards the voice-command path, which has no `disabled` to rely on
     setLoading(true);
     setRevealed(false);
     const result = await startRound('karaoke', topic || undefined, recentArtists);
@@ -69,9 +71,16 @@ export default function KaraokeGame({ topics, onBack, turnScorePanel }) {
           </button>
         )}
 
-        <button className="idc-btn idc-btn-primary" onClick={handleNewPrompt} disabled={loading} style={{ marginTop: 16 }}>
-          {loading ? 'Loading…' : 'New Karaoke Track'}
-        </button>
+        <div className="idc-primary-row" style={{ marginTop: 16 }}>
+          <button className="idc-btn idc-btn-primary" onClick={handleNewPrompt} disabled={loading}>
+            {loading ? 'Loading…' : 'New Karaoke Track'}
+          </button>
+          <VoiceMicToggle
+            triggers={['new song', 'new track', 'next song']}
+            onCommand={handleNewPrompt}
+            label="Hands-free new song"
+          />
+        </div>
         <button className="idc-btn idc-btn-secondary" onClick={onBack} style={{ marginTop: 10 }}>
           Back to games
         </button>

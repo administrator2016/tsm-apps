@@ -35,6 +35,13 @@ const QUALIFIERS = ['', '90s', '2000s', 'classics'];
 // request, not just between genres.
 const DELAY_BETWEEN_REQUESTS_MS = 3500;
 
+// "3 songs per artist" rule — a bare genre search still skews toward
+// whoever's charting, so cap how many of any one artist's tracks we'll
+// seed per genre even before the DB trigger (migration 0006) would reject
+// the insert. Checking here avoids burning iTunes' rate limit on inserts
+// we already know will be turned away.
+const MAX_TRACKS_PER_ARTIST_PER_GENRE = 3;
+
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -48,11 +55,21 @@ Deno.serve(async () => {
 
     const { data: existingTracks, error: existingErr } = await supabase
       .from('karaoke_tracks')
-      .select('itunes_track_id');
+      .select('itunes_track_id, genre, artist');
     if (existingErr) {
       return jsonError('Failed to read existing karaoke_tracks', existingErr.message);
     }
     const alreadySeeded = new Set((existingTracks ?? []).map((row) => row.itunes_track_id));
+
+    // artist-cap counts, keyed `${genre}::${artist}`, seeded from what's
+    // already in the table so a re-run of this function respects tracks
+    // inserted by earlier runs, not just this run's own inserts.
+    const artistCounts = new Map<string, number>();
+    for (const row of existingTracks ?? []) {
+      if (!row.artist) continue;
+      const key = `${row.genre ?? ''}::${row.artist}`;
+      artistCounts.set(key, (artistCounts.get(key) ?? 0) + 1);
+    }
 
     const results: Record<string, unknown> = {};
     const requestPlan = GENRES.flatMap((genre) => QUALIFIERS.map((qualifier) => ({ genre, qualifier })));
@@ -97,6 +114,14 @@ Deno.serve(async () => {
             genreStats.skipped++;
             continue;
           }
+
+          const artistKey = `${genre}::${track.artistName ?? ''}`;
+          if (track.artistName && (artistCounts.get(artistKey) ?? 0) >= MAX_TRACKS_PER_ARTIST_PER_GENRE) {
+            genreStats.skipped++;
+            genreStats.artistCapped = (genreStats.artistCapped ?? 0) + 1;
+            continue;
+          }
+
           const { error } = await supabase.from('karaoke_tracks').insert({
             itunes_track_id: trackId,
             title: track.trackName,
@@ -104,11 +129,16 @@ Deno.serve(async () => {
             genre,
           });
           if (error) {
+            // Also catches the DB-level cap trigger (migration 0006) if two
+            // concurrent runs raced past the in-memory check above.
             console.error(`Karaoke track insert failed for "${track.trackName}":`, JSON.stringify(error));
           } else {
             alreadySeeded.add(trackId);
             genreStats.inserted++;
-            if (track.artistName) genreStats.artists.add(track.artistName);
+            if (track.artistName) {
+              genreStats.artists.add(track.artistName);
+              artistCounts.set(artistKey, (artistCounts.get(artistKey) ?? 0) + 1);
+            }
           }
         }
       } catch (err) {
