@@ -849,12 +849,19 @@ async function tsmAI(s,u,m){try{const r=await fetch('/api/chat',{method:'POST',h
 
 <script>
 // ── STATE ──
-// The AI key lives server-side (/api/chat proxy) — nothing is read from or
-// written to localStorage here. sessionAiKey/sessionAiModel are an
-// in-memory-only fallback for environments where that proxy isn't
-// reachable, cleared on reload, same pattern as finance-index.html.
+// The AI key lives server-side (/api/chat proxy) when available.
+// sessionAiKey/sessionAiModel are a fallback for environments where that
+// proxy isn't reachable. Persisted to localStorage under 'tsm_ai_fallback'
+// so it survives reloads — never hardcoded, only what the user enters below.
 let sessionAiKey = '';
 let sessionAiModel = 'openai/gpt-oss-120b';
+try {
+  const savedFallback = JSON.parse(localStorage.getItem('tsm_ai_fallback') || 'null');
+  if (savedFallback) {
+    sessionAiKey = savedFallback.key || '';
+    sessionAiModel = savedFallback.model || sessionAiModel;
+  }
+} catch (e) { /* ignore */ }
 let aiHistory = [], aiCtx = 'general', currentMod = 'cashiering';
 
 const CTX_PROMPTS = {
@@ -905,12 +912,15 @@ function toast(msg) {
   setTimeout(() => el.classList.remove('show'), 2800);
 }
 
-// ── MODAL (session-only fallback key, never persisted) ──
+// ── MODAL (fallback key, persisted to localStorage for this browser only) ──
 function openModal() { document.getElementById('modal-overlay').classList.add('open'); document.getElementById('key-input').value = sessionAiKey; document.getElementById('model-select').value = sessionAiModel; }
 function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
 function saveKey() {
   sessionAiKey = document.getElementById('key-input').value.trim();
   sessionAiModel = document.getElementById('model-select').value;
+  try {
+    localStorage.setItem('tsm_ai_fallback', JSON.stringify({ key: sessionAiKey, model: sessionAiModel }));
+  } catch (e) { /* ignore */ }
   closeModal();
   toast(sessionAiKey ? '✓ Fallback key saved for this tab' : 'Fallback key cleared');
 }
@@ -1777,7 +1787,7 @@ window.addEventListener('DOMContentLoaded', () => {
           <div class="wc-eyebrow">WORKPAPER NO. WC-1</div>
           <div class="wc-title">Adjusted Working Capital Worksheet</div>
         </div>
-        <div class="wc-prep">PREPARED BY: CAO<br/>REVIEWED BY: —</div>
+        <div class="wc-prep">PREPARED BY: CAO<br/>REVIEWED BY: <input type="text" id="wc-reviewedBy" class="wc-reviewer-input" placeholder="name / initials" style="font-family:var(--wc-mono);font-size:10px;color:var(--wc-ink-soft);background:transparent;border:none;border-bottom:1px solid var(--wc-ink-soft);width:100px;text-align:right"></div>
       </div>
 
       <!-- 1. Unadjusted balances -->
@@ -1874,7 +1884,7 @@ window.addEventListener('DOMContentLoaded', () => {
           <div class="wc-eyebrow">WORKPAPER NO. AC-1</div>
           <div class="wc-title">Month-End Accrual Workflow</div>
         </div>
-        <div class="wc-prep">PREPARED BY: CAO<br/>REVIEWED BY: —</div>
+        <div class="wc-prep">PREPARED BY: CAO<br/>REVIEWED BY: <input type="text" id="ac-reviewedBy" class="wc-reviewer-input" placeholder="name / initials" style="font-family:var(--wc-mono);font-size:10px;color:var(--wc-ink-soft);background:transparent;border:none;border-bottom:1px solid var(--wc-ink-soft);width:100px;text-align:right"></div>
       </div>
 
       <!-- New accrual -->
@@ -2581,12 +2591,34 @@ function wcUpdate(field, value) {
   wcRender();
 }
 
+// Shared: pushes a workpaper to the real ledger DB (server/tsm-ledger-service.js)
+// via POST /api/finops/workpaper-push, so a preparer and reviewer on different
+// browsers/devices actually see the same synced record — not just whichever
+// device's localStorage happens to have it. Best-effort: if the request
+// fails (offline, server down), the local relay writes below still happen
+// so in-page/same-device consumers (Sentinel, RCM-OS launcher) keep working.
+async function tsmPushWorkpaper(workpaperId, workpaperType, preparedBy, reviewedBy, summary, payload) {
+  try {
+    const resp = await fetch('/api/finops/workpaper-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workpaperId, workpaperType, preparedBy, reviewedBy, summary, payload, ts: Date.now() })
+    });
+    const data = await resp.json().catch(() => ({}));
+    return !!(resp.ok && data.ok);
+  } catch (e) {
+    return false;
+  }
+}
+
 function wcPushToRcmOs() {
   const c = wcCalc();
+  const reviewedBy = (document.getElementById('wc-reviewedBy') || {}).value || '';
   const payload = {
     source: 'finops-operations.html',
     module: 'Working Capital Worksheet',
     generatedAt: new Date().toISOString(),
+    reviewedBy,
     currentAssets: c.currentAssets,
     currentLiabilities: c.currentLiabilities,
     workingCapital: c.workingCapital,
@@ -2606,18 +2638,43 @@ function wcPushToRcmOs() {
     localStorage.setItem('TSM_FINOPS_WC_RELAY', JSON.stringify(payload));
   } catch (e) { /* localStorage unavailable — relay skipped */ }
 
-  if (typeof tsmWriteRelay === 'function') {
-    try { tsmWriteRelay({ vertical:'finops-suite', kind:'working-capital-worksheet', ...payload }); } catch (e) {}
-  }
-  if (window.TSM && TSM.launcher && TSM.launcher.run) {
-    try { TSM.launcher.run('pushToCollectiveSignal', JSON.stringify({ vertical:'finops', metric:'working_capital', value: c.rounded, severity: c.workingCapital < 0 ? 'CRITICAL' : 'INFO' })); } catch (e) {}
+  // TSM FIX: the two calls that used to be here (tsmWriteRelay(...) and
+  // TSM.launcher.run('pushToCollectiveSignal', ...)) referenced functions
+  // that don't exist anywhere in this codebase — both silently no-op'd
+  // behind their own guard checks, so this "push to RCM-OS" never actually
+  // reached anything. window.TSMMemory (loaded above via
+  // /shared/tsm-memory-engine.js) is the real cross-sector bus other pages
+  // already read from — write into that instead so this data is genuinely
+  // reusable by any app that shares the finops sector or reads cross-sector.
+  if (window.TSMMemory) {
+    try {
+      TSMMemory.rememberField({
+        entityType: 'workingCapital', entityId: 'current', field: 'summary',
+        value: payload, source: 'finops-operations', confidence: 1,
+        meta: { module: 'Working Capital Worksheet' }
+      });
+      if (c.workingCapital < 0) {
+        TSMMemory.registerAnomaly({
+          entityType: 'workingCapital', entityId: 'current',
+          anomalyCode: 'NEGATIVE_WORKING_CAPITAL',
+          title: 'Negative adjusted working capital (' + wcMoney(c.rounded) + ')',
+          severity: 'CRITICAL', source: 'finops-operations',
+          meta: { workingCapital: c.rounded }
+        });
+      }
+      TSMMemory.timeline('Working Capital pushed to RCM-OS: ' + wcMoney(c.rounded));
+    } catch (e) { /* memory engine write failed — non-fatal, relay above still recorded */ }
   }
 
   const statusEl = document.getElementById('wc-sync-status');
-  statusEl.textContent = 'Synced to RCM-OS · ' + new Date().toLocaleTimeString();
+  statusEl.textContent = 'Syncing to RCM-OS…';
   statusEl.style.color = 'var(--wc-ink-soft)';
-  statusEl.dataset.synced = '1';
-  if (window.toast) toast('✓ Adjusted working capital (' + wcMoney(c.rounded) + ') pushed to RCM-OS');
+  tsmPushWorkpaper('WC-1', 'working-capital', 'CAO', reviewedBy, 'Adjusted working capital ' + wcMoney(c.rounded), payload)
+    .then(ledgerOk => {
+      statusEl.textContent = (ledgerOk ? 'Synced to RCM-OS (shared) · ' : 'Synced locally (ledger unreachable) · ') + new Date().toLocaleTimeString();
+      statusEl.dataset.synced = '1';
+      if (window.toast) toast('✓ Adjusted working capital (' + wcMoney(c.rounded) + ') pushed to RCM-OS');
+    });
 }
 
 wcRender();
@@ -2814,8 +2871,22 @@ function acPushToRcmOs() {
   if (typeof tsmWriteRelay === 'function') {
     try { tsmWriteRelay({ vertical: 'finops-suite', kind: 'month-end-accrual', ...payload }); } catch (e) {}
   }
-  if (window.TSM && TSM.launcher && TSM.launcher.run) {
-    try { TSM.launcher.run('pushToCollectiveSignal', JSON.stringify({ vertical: 'finops', metric: 'accrual_exposure', value: openTotal, severity: openTotal > 0 && !allClosed ? 'INFO' : 'CRITICAL' })); } catch (e) {}
+  // TSM FIX: TSM.launcher.run/pushToCollectiveSignal never existed anywhere
+  // in this codebase — dead call, silently no-op'd. tsmWriteRelay (above)
+  // is legitimate now (bridges to TSM_KERNEL.setRelay), so that call stays.
+  // This replaces only the launcher half, routing into the same TSMMemory
+  // cross-sector bus used by Working Capital's push.
+  if (window.TSMMemory) {
+    try {
+      TSMMemory.registerAnomaly({
+        entityType: 'accrual', entityId: 'month-end',
+        anomalyCode: 'ACCRUAL_EXPOSURE_OPEN',
+        title: 'Open month-end accrual exposure (' + openTotal + ')',
+        severity: (openTotal > 0 && !allClosed) ? 'INFO' : 'CRITICAL',
+        source: 'finops-operations',
+        meta: { openTotal, allClosed }
+      });
+    } catch (e) {}
   }
 
   const statusEl = document.getElementById('ac-sync-status');

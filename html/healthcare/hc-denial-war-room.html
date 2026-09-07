@@ -450,7 +450,7 @@ window.runInphusionWarRoomScenario = function() {
 .tsm-hc-crossnav a:hover{border-color:#00ff88;background:#003322}
 .tsm-hc-crossnav span.tsm-hc-crossnav-active{color:#0a0f0a;background:#00ff88;padding:3px 9px;border-radius:10px;font-weight:700;white-space:nowrap}
 </style>
-<div class="tsm-hc-crossnav"><span class="tsm-hc-crossnav-lbl">HC suite:</span><span class="tsm-hc-crossnav-active">Denial War Room</span><a href="/html/healthcare/hc-main-strategist.html">Strategist</a><a href="/html/healthcare/hc-office-manager-doc-intake.html">Doc Intake</a><a href="/html/healthcare/executive-portal.html">Executive Portal</a><a href="/html/healthcare/hc-om-portal.html">OM Portal</a><a href="/html/healthcare/hc-strategist/index.html">Neural Intake Strategist</a></div>
+<div class="tsm-hc-crossnav"><span class="tsm-hc-crossnav-lbl">HC suite:</span><span class="tsm-hc-crossnav-active">Denial War Room</span><a href="/html/war-rooms/ar-recovery/index.html?vertical=healthcare">A/R Recovery</a><a href="/html/healthcare/hc-main-strategist.html">Strategist</a><a href="/html/healthcare/hc-office-manager-doc-intake.html">Doc Intake</a><a href="/html/healthcare/executive-portal.html">Executive Portal</a><a href="/html/healthcare/hc-om-portal.html">OM Portal</a><a href="/html/healthcare/hc-strategist/index.html">Neural Intake Strategist</a></div>
 
 <section
   id="tsm-guided-how-to-root"
@@ -2269,6 +2269,14 @@ function buildHCStructuredCase(outputs, docText, claimDollar) {
   };
 }
 
+// TSM RCM CAREER BRIDGE — read-only access to the canonical structured case.
+// The Career Adapter must consume the existing 13-field denial contract rather
+// than scrape the defect manifest or create a second denial dataset.
+window.TSMDenialWarRoom = window.TSMDenialWarRoom || {};
+window.TSMDenialWarRoom.getStructuredCase = function () {
+  return lastStructuredCase || null;
+};
+
 function buildWarRoomPayload() {
   const engineOutputs = {};
   const engineLabels = {
@@ -2653,5 +2661,7 @@ function tsmWriteRelay(payload){
 <script src="/html/core/tsm-kernel.js"></script>
   <script src="/js/tsm-guide-engine.js" defer></script>
   <script src="/shared/tsm-guided-how-to.js" defer></script>
+    <script src="/html/js/career/tsm-rcm-career-engine.js"></script>
+  <script src="/html/js/career/tsm-denial-recovery-career-adapter.js"></script>
 </body>
 </html>

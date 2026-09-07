@@ -10,7 +10,15 @@
 
   const path = location.pathname.toLowerCase();
 
+  // Pages that live outside a vertical-named folder (e.g. shared war rooms
+  // under /html/war-rooms/<tool>/ used by multiple verticals) can't be
+  // path-sniffed reliably. Let them declare their sector explicitly via
+  // ?vertical=<key>, checked before path matching. Falls through to path
+  // matching if absent or not a recognized sector key.
   function detectSector(){
+    const qp = new URLSearchParams(location.search).get("vertical");
+    const KNOWN_SECTORS = ["construction","healthcare","insurance","finops","legal","tax","bpo","reo","rrd","music","mortgage","schools","honeywell","executive"];
+    if(qp && KNOWN_SECTORS.includes(qp)) return qp;
     if(path.includes("construction")) return "construction";
     if(path.includes("healthcare") || path.includes("hc-")) return "healthcare";
     if(path.includes("insurance") || path.includes("az-ins")) return "insurance";

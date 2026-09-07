@@ -21,6 +21,7 @@
  */
 
 const VERSION = 'hc-portfolio-intelligence-v1';
+const { buildRevenueLeakageOpportunities, buildRevenueLeakageSummary } = require('./revenue-leakage-contract');
 
 function num(value, fallback = 0) {
   const n = Number(value);
@@ -36,7 +37,7 @@ function first(...values) {
 }
 
 function normalizeEntity(item = {}, type) {
-  return {
+  const normalized = {
     id: String(first(
       item.id,
       item.claimId,
@@ -65,6 +66,112 @@ function normalizeEntity(item = {}, type) {
     severity: String(first(item.severity, item.priority) || 'normal').toLowerCase(),
 
     source: first(item.source, item.sources?.[0]) || VERSION
+  };
+
+  /*
+   * Canonical Healthcare Revenue Leakage projection fields.
+   *
+   * Portfolio Intelligence is an intake/normalization boundary.
+   * Preserve explicit runtime values so the canonical leakage
+   * contract can classify them without scraping UI/demo artifacts.
+   */
+  const leakageFields = {
+    claimId: first(
+      item.claimId,
+      item.claim_id,
+      item.claim,
+      normalized.claimId,
+      normalized.claim_id
+    ),
+
+    accountId: first(
+      item.accountId,
+      item.account_id,
+      normalized.accountId,
+      normalized.account_id
+    ),
+
+    payer: first(
+      item.payer,
+      item.payerName,
+      item.payer_name,
+      normalized.payer
+    ),
+
+    exposure: num(first(
+      item.exposure,
+      item.financialExposure,
+      item.financial_exposure,
+      item.amount,
+      item.balance,
+      normalized.exposure
+    ), null),
+
+    ageDays: num(
+      item.ageDays,
+      item.age_days,
+      normalized.ageDays,
+      normalized.age_days
+    ),
+
+    denialReasonCode: first(
+      item.denialReasonCode,
+      item.denial_reason_code,
+      normalized.denialReasonCode,
+      normalized.denial_reason_code
+    ),
+
+    denialCategory: first(
+      item.denialCategory,
+      item.denial_category,
+      normalized.denialCategory,
+      normalized.denial_category
+    ),
+
+    rootCause: first(
+      item.rootCause,
+      item.root_cause,
+      item.rootCauseHypothesis,
+      item.root_cause_hypothesis,
+      normalized.rootCause,
+      normalized.root_cause
+    ),
+
+    appealable:
+      item.appealable !== undefined
+        ? item.appealable
+        : normalized.appealable,
+
+    appealDeadline: first(
+      item.appealDeadline,
+      item.appeal_deadline,
+      normalized.appealDeadline,
+      normalized.appeal_deadline
+    ),
+
+    recoveryLikelihood: first(
+      item.recoveryLikelihood,
+      item.recovery_likelihood,
+      normalized.recoveryLikelihood,
+      normalized.recovery_likelihood
+    ),
+
+    confidence: num(first(
+      item.confidence,
+      normalized.confidence
+    ), null),
+
+    evidenceProvenance: first(
+      item.evidenceProvenance,
+      item.evidence_provenance,
+      normalized.evidenceProvenance,
+      normalized.evidence_provenance
+    ) || []
+  };
+
+  return {
+    ...normalized,
+    ...leakageFields
   };
 }
 
@@ -120,7 +227,15 @@ function buildPortfolioTwin(payload = {}, nodeReports = []) {
     ...findings
   ];
 
-  return {
+    const leakageOpportunities =
+    buildRevenueLeakageOpportunities({
+      claims,
+      denials,
+      appeals,
+      agedAccounts
+    });
+
+return {
     version: VERSION,
     generatedAt: new Date().toISOString(),
 
@@ -139,6 +254,15 @@ function buildPortfolioTwin(payload = {}, nodeReports = []) {
     findings,
 
     exposure: all.reduce((sum, entity) => sum + num(entity.exposure), 0)
+  ,
+
+    leakageOpportunities,
+
+
+    leakageSummary:
+
+
+      buildRevenueLeakageSummary(leakageOpportunities)
   };
 }
 

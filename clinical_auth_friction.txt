@@ -1,7 +1,0 @@
-PATIENT: DOE, JOHN | DOB: 05/12/1978
-PROCEDURE: CPT 63047 (Laminectomy)
-STATUS: DENIED - Lack of Conservative Therapy Evidence
-NARRATIVE: Patient presents with acute radiculopathy. Failed 3 weeks of PT. 
-MRI shows L4-L5 herniation. Insurer claims 6 weeks of PT required. 
-CLINICAL RISK: Delay in surgery poses risk of permanent nerve damage. 
-REVENUE IMPACT: $18,400 facility fee + $4,200 surgeon fee at risk.

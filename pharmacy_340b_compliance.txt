@@ -1,6 +1,0 @@
-340B DRUG PRICING PROGRAM - MONTHLY AUDIT
-FACILITY: Metro Health Central
-FINDINGS: 12 instances of 'Duplicate Discount' identified.
-RISK: Medicaid rebates requested on 340B-purchased drugs (Double Dipping).
-REVENUE IMPACT: Potential $45,000 in HRSA fines and repayment.
-LANE: Pharmacy / Compliance

@@ -401,6 +401,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 const APP_CTX = {
   "/html/executive-portal-live.html": "Executive Portal Live — leadership command center with live metrics and strategic overview.",
   "/html/hc-denial-war-room.html": "HC Denial War Room — 5-engine denial recovery pipeline for prior auth, EOB, and claims analysis.",
+  "/html/war-rooms/ar-recovery/index.html": "A/R Recovery War Room — deterministic aging/priority queue + 3-engine recovery pipeline. Vertical-agnostic (?vertical= param); paired with HC Denial War Room for healthcare.",
   "/html/tsm-doc-search-multi.html": "TSM Document Search — multi-vertical AI document router classifying and routing across all 7 verticals.",
   "/html/finops-suite/finops-war-room.html": "FinOps War Room — 6-engine financial document analysis for GL, AP, AR, invoices, and compliance.",
   "/html/finops-suite/finops-main-strategist.html": "FinOps Strategist — BNCA synthesis layer generating executive financial intelligence from war room data.",
@@ -471,6 +472,7 @@ const APP_CTX = {
   "/html/war-rooms/bpo/tsm-staffing-intelligence.html":"Staffing Intelligence — AI-powered staffing analytics and workforce optimization.",
   "/html/war-rooms/bpo/tsm-bpo-personal-manual.html":"Healthcare Suite — personal daily BPO workflow and operations manual.",
   "/html/healthcare/hc-denial-war-room.html": "HC Denial War Room — 5-engine denial recovery pipeline for prior auth, EOB, and claims analysis.",
+  "/html/war-rooms/ar-recovery/index.html?vertical=healthcare": "A/R Recovery War Room — deterministic aging/priority queue + 3-engine recovery pipeline. Vertical-agnostic; healthcare view shown here.",
   "/html/healthcare/hc-main-strategist.html": "HC Main Strategist — chief strategist synthesizing all HC node intelligence into executive briefs.",
   "/html/healthcare/executive-portal.html": "HC Executive Portal — healthcare leadership command center with live KPIs and decision tools.",
   "/html/healthcare/hc-nodes.html": "HC Nodes Hub — central launcher for all 9 healthcare specialty nodes.",
@@ -618,6 +620,7 @@ const SECTORS = [
   ]},
   { label:"War Rooms", apps:[
     {name:"HC Denial War Room",url:"/html/healthcare/hc-denial-war-room.html"},
+    {name:"A/R Recovery War Room",url:"/html/war-rooms/ar-recovery/index.html"},
     {name:"FinOps War Room",url:"/html/finops-suite/finops-war-room.html"},
     {name:"Insurance War Room",url:"/html/war-rooms/insure-war/insurance-war-room.html"},
     {name:"Legal War Room",url:"/html/war-rooms/legal-war/legal-war-room.html"},
@@ -699,6 +702,7 @@ const SECTORS = [
   ]},
   { label:"HC War Room & Strategy", apps:[
     {name:"HC Denial War Room",url:"/html/healthcare/hc-denial-war-room.html"},
+    {name:"A/R Recovery War Room",url:"/html/war-rooms/ar-recovery/index.html?vertical=healthcare"},
     {name:"HC Main Strategist",url:"/html/healthcare/hc-main-strategist.html"},
     {name:"HC Executive Portal",url:"/html/healthcare/executive-portal.html"},
     {name:"HC Demo Executive Portal",url:"/html/healthcare/demo-executive-portal.html"},

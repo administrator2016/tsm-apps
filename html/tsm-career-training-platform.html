@@ -2104,7 +2104,7 @@ nav {
     </div>
   </div>
 
-  
+
   <div class="section-head amber" style="margin-top:1.5rem;">TSM PLATFORM TOOLS · MLO</div>
   <div class="apps-grid">
     <a class="app-card" href="/html/reo-pro/pack-engine.html" target="_blank">
@@ -2678,7 +2678,203 @@ nav {
 ══════════════════════════════════════════════════════════ -->
 <div class="panel" id="panel-career">
   <div class="panel-eyebrow">CROSS-SECTOR · CAREER COMMAND</div>
-  <div class="panel-title">Career OS &amp; Enterprise Readiness Suite</div>
+
+<!-- TSM_RCM_CAREER_PATH -->
+<section id="tsm-rcm-career-path"
+  style="
+    margin:1.5rem 0;
+    border:1px solid var(--border);
+    background:var(--surface);
+  ">
+
+  <div style="
+    padding:1rem 1.1rem;
+    border-bottom:1px solid var(--border);
+  ">
+    <div style="
+      font-size:10px;
+      letter-spacing:.12em;
+      color:var(--amber);
+      font-weight:700;
+    ">
+      RCM CAREER PATH
+    </div>
+
+    <div style="
+      margin-top:.35rem;
+      font-size:20px;
+      font-weight:700;
+      color:var(--text);
+    ">
+      Revenue Cycle Recovery Specialist
+    </div>
+
+    <div style="
+      margin-top:.4rem;
+      max-width:850px;
+      font-size:11px;
+      line-height:1.6;
+      color:var(--text2);
+    ">
+      TRAIN → PRACTICE → RECOVER. Build CRCR knowledge, prove
+      A/R recovery decisions, resolve denials, identify revenue
+      leakage, and earn a job-ready evidence profile.
+    </div>
+  </div>
+
+  <div id="tsm-rcm-career-stages"
+    style="
+      display:grid;
+      grid-template-columns:repeat(6,minmax(0,1fr));
+      gap:1px;
+      background:var(--border);
+    ">
+  </div>
+
+  <div id="tsm-rcm-career-readiness"
+    style="
+      padding:1rem 1.1rem;
+      border-top:1px solid var(--border);
+      background:var(--surface2);
+    ">
+    <div style="
+      font-size:10px;
+      letter-spacing:.1em;
+      color:var(--cyan);
+      font-weight:700;
+      margin-bottom:.45rem;
+    ">
+      RCM CAREER READINESS
+    </div>
+
+    <div id="tsm-rcm-career-readiness-body"
+      style="
+        font-size:11px;
+        color:var(--text2);
+      ">
+      Loading canonical career mastery…
+    </div>
+  </div>
+
+</section>
+
+<script>
+(function () {
+  'use strict';
+
+  function bootRCMCareerPath() {
+    var progression = window.TSMRCMCareerProgression;
+
+    if (!progression ||
+        typeof progression.getReadiness !== 'function') {
+      return;
+    }
+
+    var stageHost =
+      document.getElementById('tsm-rcm-career-stages');
+
+    var readinessHost =
+      document.getElementById('tsm-rcm-career-readiness-body');
+
+    if (!stageHost || !readinessHost) {
+      return;
+    }
+
+    var result = progression.getReadiness();
+    var stages = result.stages || [];
+
+    stageHost.innerHTML = '';
+
+    stages.forEach(function (stage, index) {
+      var cell = document.createElement('div');
+
+      cell.style.cssText =
+        'padding:1rem;background:var(--surface);' +
+        'min-height:120px;';
+
+      var number = document.createElement('div');
+
+      number.textContent =
+        String(index + 1).padStart(2, '0');
+
+      number.style.cssText =
+        'font-size:9px;color:var(--text3);' +
+        'margin-bottom:.55rem;';
+
+      var title = document.createElement('div');
+
+      title.textContent = stage.title;
+
+      title.style.cssText =
+        'font-size:11px;font-weight:700;' +
+        'color:var(--text);line-height:1.4;';
+
+      var id = document.createElement('div');
+
+      id.textContent = stage.id;
+
+      id.style.cssText =
+        'margin-top:.5rem;font-size:9px;' +
+        'color:var(--cyan);font-family:monospace;';
+
+      cell.appendChild(number);
+      cell.appendChild(title);
+      cell.appendChild(id);
+
+      stageHost.appendChild(cell);
+    });
+
+    if (!result.available) {
+      readinessHost.textContent =
+        'Career mastery engine is not currently available. ' +
+        'The progression contract is loaded, but no readiness ' +
+        'score will be fabricated.';
+      return;
+    }
+
+    var mastery = result.mastery || {};
+
+    var score = null;
+
+    if (typeof mastery.overallScore === 'number') {
+      score = mastery.overallScore;
+    } else if (typeof mastery.readinessScore === 'number') {
+      score = mastery.readinessScore;
+    }
+
+    if (score == null) {
+      readinessHost.textContent =
+        'Canonical RCM mastery is connected. Complete training ' +
+        'scenarios to populate the job-readiness evidence profile.';
+      return;
+    }
+
+    if (score <= 1) {
+      score = score * 100;
+    }
+
+    score = Math.max(0, Math.min(100, score));
+
+    readinessHost.innerHTML =
+      '<strong style="color:var(--text)">' +
+      Math.round(score) +
+      '%</strong> canonical RCM mastery readiness';
+
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener(
+      'DOMContentLoaded',
+      bootRCMCareerPath
+    );
+  } else {
+    bootRCMCareerPath();
+  }
+})();
+</script>
+<!-- /TSM_RCM_CAREER_PATH -->
+
+<div class="panel-title">Career OS &amp; Enterprise Readiness Suite</div>
   <div class="panel-sub">Three cross-sector tools that work for any candidate, regardless of sector. Job Prep covers universal interview skills. Enterprise OS covers AI workflow fundamentals. Staffing Readiness Demo gives firms a live scoring presentation they can show clients.</div>
 
   <div class="app-grid">
@@ -3849,7 +4045,7 @@ function logProgression() {
   entry.style.cssText = 'padding:4px 0;border-bottom:1px solid var(--border2);color:' + color;
   entry.textContent = ts + ' · ' + status;
   el.insertBefore(entry, el.firstChild);
-  try { 
+  try {
     const log = JSON.parse(localStorage.getItem('tsm_prog_log') || '[]');
     log.unshift({ ts, overall: d.overall, status });
     localStorage.setItem('tsm_prog_log', JSON.stringify(log.slice(0,20)));
@@ -3906,5 +4102,17 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
   <script src="/html/core/tsm-runtime.js"></script>
+
+
+
+
+  <!-- TSM_RCM_CAREER_STACK -->
+<script src="/html/js/career/tsm-rcm-career-engine.js"></script>
+<script src="/html/js/career/tsm-denial-recovery-career-adapter.js"></script>
+<script src="/html/js/career/tsm-revenue-leakage-career-adapter.js"></script>
+<script src="/html/js/career/tsm-hc-portfolio-career-bridge.js"></script>
+<script src="/html/js/career/tsm-servicenow-career-adapter.js"></script>
+<script src="/html/js/career/tsm-rcm-career-progression.js"></script>
+  <!-- /TSM_RCM_CAREER_STACK -->
 </body>
 </html>
