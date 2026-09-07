@@ -1,16 +1,19 @@
 import { supabase } from './supabaseClient.js';
 
 // One realtime channel per room: postgres_changes for persisted state,
-// broadcast for ephemeral events (turn pings, countdowns, etc).
-export function subscribeToRoom(roomCode, { onGameUpdate, onBroadcast }) {
+// broadcast for ephemeral events (turn pings, reactions, etc). Reactions
+// use `self: true` at the client-send level (see broadcastReaction) so the
+// sender also sees their own emoji float up, same as everyone else.
+export function subscribeToRoom(roomCode, { onGameUpdate, onBroadcast, onReaction }) {
   const channel = supabase
-    .channel(`room-${roomCode}`, { config: { broadcast: { self: false } } })
+    .channel(`room-${roomCode}`, { config: { broadcast: { self: true } } })
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'games', filter: `room_code=eq.${roomCode}` },
       (payload) => onGameUpdate?.(payload.new)
     )
     .on('broadcast', { event: 'turn-event' }, (payload) => onBroadcast?.(payload.payload))
+    .on('broadcast', { event: 'reaction' }, (payload) => onReaction?.(payload.payload))
     .subscribe();
 
   return () => supabase.removeChannel(channel);
@@ -21,6 +24,19 @@ export function broadcastTurnEvent(roomCode, payload) {
     type: 'broadcast',
     event: 'turn-event',
     payload,
+  });
+}
+
+// Quick reactions — the AWS WebSocket "live interaction" idea without any
+// infrastructure: rides the same realtime channel every client already has
+// open for turn-events (see the `reaction` listener in subscribeToRoom
+// above), just a different broadcast event name. No new table, no new
+// service, purely ephemeral — nothing persisted.
+export function broadcastReaction(roomCode, emoji) {
+  return supabase.channel(`room-${roomCode}`).send({
+    type: 'broadcast',
+    event: 'reaction',
+    payload: { emoji, id: `${Date.now()}-${Math.random().toString(36).slice(2)}` },
   });
 }
 
