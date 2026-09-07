@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSM · A/R Recovery War Room</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#03050b;--bg2:#070a12;--bg3:#0b1019;--bg4:#0f1522;
+--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);
+--text:#cdd5e0;--muted:#5e6e85;--faint:#2e3a4a;
+--cyan:#00e5ff;--cyan2:rgba(0,229,255,0.08);--cyan3:rgba(0,229,255,0.18);
+--green:#00e676;--green2:rgba(0,230,118,0.08);
+--amber:#ffb300;--amber2:rgba(255,179,0,0.10);
+--red:#ff3d57;--red2:rgba(255,61,87,0.10);
+--purple:#b060ff;--purple2:rgba(176,96,255,0.10);
+--gold:#ffd700;--gold2:rgba(255,215,0,0.08);
+--teal:#00ffd5;--teal2:rgba(0,255,213,0.08);
+--mono:'Courier New',monospace;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:1000}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,230,118,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,230,118,0.015) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+
+/* HEADER */
+.hdr{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:12px 28px;border-bottom:1px solid var(--border2);background:linear-gradient(180deg,rgba(0,230,118,0.05) 0%,transparent 100%)}
+.hdr-left{display:flex;align-items:center;gap:14px}
+.hdr-logo{display:flex;align-items:center;gap:8px}
+.logo-hex{width:28px;height:28px;border:1px solid var(--green);display:flex;align-items:center;justify-content:center;transform:rotate(45deg)}
+.logo-hex-inner{width:10px;height:10px;background:var(--green);transform:rotate(-45deg)}
+.hdr-text .t1{font-size:14px;font-weight:700;letter-spacing:3px;color:var(--green)}
+.hdr-text .t2{font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-top:2px}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.pill{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;padding:4px 12px;border:1px solid}
+.pill-green{color:var(--green);border-color:var(--green);background:var(--green2)}
+.pill-amber{color:var(--amber);border-color:var(--amber);background:var(--amber2)}
+.clock{font-size:9px;color:var(--muted);letter-spacing:1px}
+.crossnav{display:flex;gap:6px;margin-left:16px;flex-wrap:wrap}
+.crossnav a{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border:1px solid var(--border2);padding:4px 10px;text-decoration:none;transition:all .15s}
+.crossnav a:hover{color:var(--green);border-color:var(--green)}
+
+/* MAIN */
+.main{position:relative;z-index:10;padding:20px 28px 60px;max-width:1640px;margin:0 auto}
+
+/* SCENARIO BANNER */
+.scenario-banner{border:1px solid var(--green);background:linear-gradient(135deg,rgba(0,230,118,0.06) 0%,var(--bg2) 100%);padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.sb-left{display:flex;align-items:center;gap:14px}
+.sb-icon{font-size:22px}
+.sb-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--green);margin-bottom:3px}
+.sb-title{font-size:14px;font-weight:700;letter-spacing:2px;color:var(--text)}
+.sb-sub{font-size:9px;color:var(--muted);margin-top:2px}
+
+/* SECTION HEADER */
+.sec{display:flex;align-items:center;gap:10px;margin-bottom:14px;margin-top:24px}
+.sec::before{content:'';width:6px;height:6px;background:var(--green);transform:rotate(45deg);flex-shrink:0}
+.sec span{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--green)}
+.sec::after{content:'';flex:1;height:1px;background:var(--border)}
+.sec.amber-sec::before{background:var(--amber)}
+.sec.amber-sec span{color:var(--amber)}
+
+/* INPUT ZONE */
+.input-zone{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media (max-width:900px){.input-zone{grid-template-columns:1fr}}
+.paste-panel{border:1px solid var(--border2);background:var(--bg2);padding:20px;display:flex;flex-direction:column;gap:8px}
+.paste-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--faint)}
+textarea{flex:1;min-height:180px;background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:10px;padding:10px;resize:vertical;outline:none;line-height:1.6}
+textarea:focus{border-color:var(--green)}
+textarea::placeholder{color:var(--faint)}
+.format-hint{font-size:8px;color:var(--faint);line-height:1.7;border:1px solid var(--border);padding:10px;background:var(--bg)}
+.format-hint b{color:var(--muted)}
+
+.sample-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn{padding:8px 18px;font-size:8px;letter-spacing:2px;text-transform:uppercase;border:1px solid;cursor:pointer;font-family:var(--mono);transition:all 0.15s;background:transparent;white-space:nowrap}
+.btn-fire{color:#fff;border-color:var(--green);background:var(--green);color:#032;font-size:10px;padding:10px 28px;letter-spacing:2px;font-weight:700}
+.btn-fire:hover{background:#00c766}
+.btn-fire:disabled{opacity:0.35;cursor:not-allowed}
+.btn-sample{color:var(--amber);border-color:var(--amber);background:var(--amber2);font-size:8px;padding:6px 12px}
+.btn-sample:hover{background:rgba(255,179,0,0.2)}
+.btn-ghost{color:var(--muted);border-color:var(--border2);font-size:8px;padding:6px 12px}
+.btn-ghost:hover{color:var(--text);background:var(--bg3)}
+.process-info{font-size:9px;color:var(--faint);letter-spacing:1px;margin-left:auto}
+
+/* QUEUE SUMMARY BAR */
+.queue-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border2);margin-bottom:16px}
+@media (max-width:900px){.queue-summary{grid-template-columns:repeat(2,1fr)}}
+.qs-cell{background:var(--bg2);padding:14px 16px}
+.qs-lbl{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+.qs-val{font-size:18px;font-weight:700}
+.qs-sub{font-size:8px;color:var(--muted);margin-top:3px}
+
+/* PRIORITY QUEUE TABLE */
+.queue-wrap{border:1px solid var(--border2);background:var(--bg2);overflow-x:auto;margin-bottom:16px}
+table.queue{width:100%;border-collapse:collapse;font-size:10px;min-width:720px}
+table.queue thead th{text-align:left;font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);padding:10px 12px;border-bottom:1px solid var(--border2);background:var(--bg3);white-space:nowrap}
+table.queue tbody td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+table.queue tbody tr:hover{background:var(--bg3)}
+.rank-badge{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:3px;font-size:9px;font-weight:700;background:var(--bg);border:1px solid var(--border2)}
+.rank-1{border-color:var(--red);color:var(--red)}
+.rank-2{border-color:var(--amber);color:var(--amber)}
+.rank-3{border-color:var(--amber);color:var(--amber)}
+.bucket-tag{font-size:7px;letter-spacing:1px;padding:2px 6px;border:1px solid;text-transform:uppercase;white-space:nowrap}
+.b-0-30{color:var(--green);border-color:var(--green)}
+.b-31-60{color:var(--cyan);border-color:var(--cyan)}
+.b-61-90{color:var(--amber);border-color:var(--amber)}
+.b-91-120{color:var(--amber);border-color:var(--amber)}
+.b-120plus{color:var(--red);border-color:var(--red)}
+.dollar{color:var(--green);font-weight:700}
+.action-tag{font-size:9px;color:var(--muted)}
+.empty-state{padding:40px 20px;text-align:center;color:var(--faint);font-size:10px;letter-spacing:1px}
+
+/* PIPELINE */
+.pipeline{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:20px;padding:14px 0;border:1px solid var(--border);background:var(--bg2);overflow-x:auto}
+.pipe-node{display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 10px;flex-shrink:0}
+.pipe-box{width:150px;padding:10px 12px;border:1px solid var(--border2);text-align:center}
+.pipe-num{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;opacity:0.7;color:var(--faint)}
+.pipe-name{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.pipe-status{font-size:7px;letter-spacing:1px;margin-top:4px;text-transform:uppercase;color:var(--faint)}
+.pipe-arrow{width:24px;height:1px;background:var(--border2);position:relative;flex-shrink:0}
+.pipe-arrow::after{content:'▶';position:absolute;right:-7px;top:-6px;font-size:9px;color:var(--faint)}
+
+/* ENGINE PANELS */
+.eng-grid{display:grid;grid-template-columns:1fr;gap:14px}
+.eng-panel{border:1px solid var(--border2);background:var(--bg2)}
+.eng-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--bg3)}
+.eng-name{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text)}
+.eng-badge{font-size:8px;letter-spacing:1px;color:var(--faint)}
+.eng-body{padding:14px 16px;font-size:11px;line-height:1.7;white-space:pre-wrap;min-height:60px}
+.eng-idle{color:var(--faint);font-size:9px;letter-spacing:1px;text-transform:uppercase}
+.eng-footer{display:flex;gap:8px;padding:8px 16px;border-top:1px solid var(--border)}
+.foot-btn{font-size:7px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);background:transparent;border:1px solid var(--border2);padding:4px 10px;cursor:pointer;font-family:var(--mono)}
+.foot-btn:hover{color:var(--text);border-color:var(--green)}
+
+footer.pagefoot{text-align:center;padding:24px 0 4px;font-size:8px;color:var(--faint);letter-spacing:1px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo">
+      <div class="logo-hex"><div class="logo-hex-inner"></div></div>
+      <div class="hdr-text"><div class="t1">A/R RECOVERY</div><div class="t2">War Room · TSM Healthcare</div></div>
+    </div>
+    <div class="crossnav">
+      <a href="/html/healthcare/hc-denial-war-room.html">Denial War Room</a>
+      <a href="/html/healthcare/hc-financial/index.html">HC Financial</a>
+      <a href="/html/healthcare/executive-portal.html">Executive Portal</a>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span class="pill pill-green">LIVE</span>
+    <span class="pill pill-amber" id="engine-pill">3-ENGINE PIPELINE</span>
+    <span class="clock" id="clock"></span>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="scenario-banner">
+    <div class="sb-left">
+      <div class="sb-icon">💰</div>
+      <div>
+        <div class="sb-label">A/R Recovery Command</div>
+        <div class="sb-title">Prioritized Recovery Queue + AI Recovery Action Plan</div>
+        <div class="sb-sub">Paste or drop an AR aging extract. TSM ranks every open account by recovery urgency — dollar exposure × aging risk — then builds the appeal / follow-up plan for the top accounts.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec"><span>Step 1 · Load AR Aging Data</span></div>
+  <div class="input-zone">
+    <div class="paste-panel">
+      <div class="paste-label">Paste AR Aging Extract</div>
+      <textarea id="ar-input" placeholder="ACCOUNT: 100234-B | PAYER: Aetna PPO | BALANCE: $12,400 | AGE: 97 days | STATUS: No response since resubmission"></textarea>
+      <div class="sample-row">
+        <button class="btn btn-sample" onclick="loadSample('outpatient')">⚡ Outpatient Clinic Sample</button>
+        <button class="btn btn-sample" onclick="loadSample('hospital')">🏥 Hospital System Sample</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('ar-input').value='';renderQueue();">Clear</button>
+      </div>
+    </div>
+    <div class="paste-panel">
+      <div class="paste-label">Expected Format (one account per line)</div>
+      <div class="format-hint">
+        <b>ACCOUNT:</b> id or MRN &nbsp;|&nbsp; <b>PAYER:</b> insurer name &nbsp;|&nbsp; <b>BALANCE:</b> $ amount &nbsp;|&nbsp; <b>AGE:</b> days outstanding &nbsp;|&nbsp; <b>STATUS:</b> free text (denial, no response, underpayment, COB, etc.)<br><br>
+        Any line matching this shape is parsed deterministically into the priority queue below — no AI call required for ranking. The AI engines then analyze only the highest-priority accounts to build root-cause + recovery plans.<br><br>
+        <b>Priority score</b> = balance × aging-risk multiplier (0–30d: 1.0x · 31–60d: 1.3x · 61–90d: 1.7x · 91–120d: 2.2x · 120d+: 3.0x, reflecting rising write-off / timely-filing risk).
+      </div>
+      <button class="btn btn-fire" style="align-self:flex-start" onclick="rankQueue()">⚡ RANK RECOVERY QUEUE</button>
+    </div>
+  </div>
+
+  <div class="sec"><span>Step 2 · Recovery Priority Queue</span></div>
+  <div class="queue-summary" id="queue-summary" style="display:none">
+    <div class="qs-cell"><div class="qs-lbl">Total AR Loaded</div><div class="qs-val" id="qs-total">$0</div><div class="qs-sub" id="qs-count">0 accounts</div></div>
+    <div class="qs-cell"><div class="qs-lbl">0–30 Days</div><div class="qs-val" style="color:var(--green)" id="qs-b1">$0</div></div>
+    <div class="qs-cell"><div class="qs-lbl">31–90 Days</div><div class="qs-val" style="color:var(--cyan)" id="qs-b2">$0</div></div>
+    <div class="qs-cell"><div class="qs-lbl">91–120 Days</div><div class="qs-val" style="color:var(--amber)" id="qs-b3">$0</div></div>
+    <div class="qs-cell"><div class="qs-lbl">120+ Days · Write-off Risk</div><div class="qs-val" style="color:var(--red)" id="qs-b4">$0</div></div>
+  </div>
+  <div class="queue-wrap">
+    <table class="queue">
+      <thead><tr><th>Rank</th><th>Account</th><th>Payer</th><th>Balance</th><th>Aging</th><th>Status</th><th>Recommended Action</th></tr></thead>
+      <tbody id="queue-body"><tr><td colspan="7"><div class="empty-state">Load a sample or paste AR data, then click RANK RECOVERY QUEUE.</div></td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="sec amber-sec"><span>Step 3 · AI Recovery Pipeline — Top Priority Accounts</span></div>
+  <div class="pipeline">
+    <div class="pipe-node"><div class="pipe-box" id="pn1"><div class="pipe-num">Engine 01</div><div class="pipe-name">Root Cause Triage</div><div class="pipe-status" id="pstat1">IDLE</div></div></div>
+    <div class="pipe-arrow"></div>
+    <div class="pipe-node"><div class="pipe-box" id="pn2"><div class="pipe-num">Engine 02</div><div class="pipe-name">Financial Exposure</div><div class="pipe-status" id="pstat2">IDLE</div></div></div>
+    <div class="pipe-arrow"></div>
+    <div class="pipe-node"><div class="pipe-box" id="pn3"><div class="pipe-num">Engine 03</div><div class="pipe-name">Recovery Action Plan</div><div class="pipe-status" id="pstat3">IDLE</div></div></div>
+  </div>
+
+  <div class="sample-row" style="margin-bottom:16px">
+    <button class="btn btn-fire" id="fire-btn" onclick="runPipeline()" disabled>⚡ RUN AI RECOVERY PIPELINE</button>
+    <span class="process-info" id="process-info">Rank the queue first — engines analyze the top 5 priority accounts.</span>
+  </div>
+
+  <div class="eng-grid">
+    <div class="eng-panel">
+      <div class="eng-hdr"><span class="eng-name">E1 · Root Cause Triage</span><span class="eng-badge" id="badge1">IDLE</span></div>
+      <div class="eng-body" id="out1"><span class="eng-idle">Awaiting pipeline run…</span></div>
+      <div class="eng-footer"><button class="foot-btn" onclick="copyOut('out1')">Copy</button></div>
+    </div>
+    <div class="eng-panel">
+      <div class="eng-hdr"><span class="eng-name">E2 · Financial Exposure</span><span class="eng-badge" id="badge2">IDLE</span></div>
+      <div class="eng-body" id="out2"><span class="eng-idle">Awaiting pipeline run…</span></div>
+      <div class="eng-footer"><button class="foot-btn" onclick="copyOut('out2')">Copy</button></div>
+    </div>
+    <div class="eng-panel">
+      <div class="eng-hdr"><span class="eng-name">E3 · Recovery Action Plan</span><span class="eng-badge" id="badge3">IDLE</span></div>
+      <div class="eng-body" id="out3"><span class="eng-idle">Awaiting pipeline run…</span></div>
+      <div class="eng-footer"><button class="foot-btn" onclick="copyOut('out3')">Copy</button></div>
+    </div>
+  </div>
+
+  <footer class="pagefoot">TSM Consultz · A/R Recovery War Room · deterministic priority ranking + AI recovery planning</footer>
+</div>
+
+<script>
+// ── CLOCK ─────────────────────────────────────────────────────────────
+function tickClock(){
+  document.getElementById('clock').textContent = new Date().toLocaleString('en-US', { hour:'2-digit', minute:'2-digit', second:'2-digit', month:'short', day:'numeric' });
+}
+tickClock(); setInterval(tickClock, 1000);
+
+// ── SAMPLES ───────────────────────────────────────────────────────────
+const SAMPLES = {
+outpatient: `ACCOUNT: 100234-B | PAYER: Aetna PPO | BALANCE: $12,400 | AGE: 97 days | STATUS: Denied CO-197 timely filing, appeal not yet filed
+ACCOUNT: 100511-C | PAYER: UnitedHealthcare | BALANCE: $4,850 | AGE: 34 days | STATUS: In process, no denial yet
+ACCOUNT: 100612-A | PAYER: Cigna | BALANCE: $21,600 | AGE: 128 days | STATUS: No response after two follow-up calls, nearing write-off
+ACCOUNT: 100788-D | PAYER: Medicare | BALANCE: $3,200 | AGE: 18 days | STATUS: Clean claim, awaiting standard processing
+ACCOUNT: 100901-E | PAYER: Blue Cross Blue Shield | BALANCE: $9,150 | AGE: 61 days | STATUS: Underpaid, contracted rate variance identified
+ACCOUNT: 101044-F | PAYER: Humana | BALANCE: $6,300 | AGE: 45 days | STATUS: Coordination of benefits dispute, secondary payer unclear
+ACCOUNT: 101177-G | PAYER: Aetna PPO | BALANCE: $17,900 | AGE: 112 days | STATUS: Denied CO-50 medical necessity, appeal deadline approaching
+ACCOUNT: 101302-H | PAYER: Self-Pay | BALANCE: $2,100 | AGE: 75 days | STATUS: Patient statement sent, no payment plan established`,
+hospital: `ACCOUNT: MRN-88213 | PAYER: Medicare | BALANCE: $38,400 | AGE: 143 days | STATUS: DRG downcoded on review, appeal not filed
+ACCOUNT: MRN-88450 | PAYER: Blue Cross Blue Shield | BALANCE: $54,200 | AGE: 88 days | STATUS: Prior auth denial, peer-to-peer not scheduled
+ACCOUNT: MRN-88601 | PAYER: Aetna PPO | BALANCE: $11,750 | AGE: 22 days | STATUS: Clean claim, in normal processing window
+ACCOUNT: MRN-88732 | PAYER: UnitedHealthcare | BALANCE: $29,900 | AGE: 105 days | STATUS: Underpaid against contracted DRG rate, variance unresolved
+ACCOUNT: MRN-88855 | PAYER: Cigna | BALANCE: $16,300 | AGE: 51 days | STATUS: Duplicate claim rejection, needs corrected resubmission
+ACCOUNT: MRN-89012 | PAYER: Medicaid | BALANCE: $8,700 | AGE: 39 days | STATUS: Eligibility mismatch at time of service, verification pending
+ACCOUNT: MRN-89144 | PAYER: Humana | BALANCE: $63,500 | AGE: 132 days | STATUS: No response, timely filing appeal window closes in under 30 days
+ACCOUNT: MRN-89277 | PAYER: Aetna PPO | BALANCE: $5,400 | AGE: 15 days | STATUS: Clean claim, in process`
+};
+function loadSample(type){
+  document.getElementById('ar-input').value = SAMPLES[type] || SAMPLES.outpatient;
+  rankQueue();
+}
+
+// ── DETERMINISTIC PARSER + PRIORITY RANKING ─────────────────────────
+// No AI call needed for this step — pure regex extraction + scoring,
+// so the priority queue is instant, reproducible, and works even
+// without an API key configured.
+let currentQueue = [];
+
+function bucketFor(age){
+  if (age <= 30) return { key:'0-30', cls:'b-0-30', mult:1.0 };
+  if (age <= 60) return { key:'31-60', cls:'b-31-60', mult:1.3 };
+  if (age <= 90) return { key:'61-90', cls:'b-61-90', mult:1.7 };
+  if (age <= 120) return { key:'91-120', cls:'b-91-120', mult:2.2 };
+  return { key:'120+', cls:'b-120plus', mult:3.0 };
+}
+
+function recommendedAction(status, bucket){
+  const s = (status || '').toLowerCase();
+  if (s.includes('timely filing') || s.includes('appeal') && s.includes('deadline')) return 'File appeal now — deadline risk';
+  if (s.includes('denied') || s.includes('denial')) return 'Root-cause + appeal packet';
+  if (s.includes('underpaid') || s.includes('variance')) return 'Payer variance dispute';
+  if (s.includes('no response') || s.includes('write-off')) return 'Escalate — payer call + written follow-up';
+  if (s.includes('duplicate')) return 'Submit corrected claim';
+  if (s.includes('coordination of benefits') || s.includes('cob')) return 'Resolve COB, rebill correct primary';
+  if (s.includes('eligibility')) return 'Re-verify eligibility, rebill';
+  if (bucket.key === '120+') return 'Escalate before write-off';
+  if (bucket.key === '91-120') return 'Priority follow-up this week';
+  return 'Standard follow-up cadence';
+}
+
+function parseARText(text){
+  const rows = [];
+  const lineRe = /ACCOUNT:\s*([^|]+)\|\s*PAYER:\s*([^|]+)\|\s*BALANCE:\s*\$?\s*([\d,]+(?:\.\d{2})?)\s*\|\s*AGE:\s*(\d+)\s*days?\s*\|\s*STATUS:\s*(.+)/gi;
+  let m;
+  while ((m = lineRe.exec(text)) !== null) {
+    const balance = parseFloat(m[3].replace(/,/g, ''));
+    const age = parseInt(m[4], 10);
+    if (isNaN(balance) || isNaN(age)) continue;
+    const bucket = bucketFor(age);
+    rows.push({
+      account: m[1].trim(),
+      payer: m[2].trim(),
+      balance,
+      age,
+      status: m[5].trim(),
+      bucket,
+      score: balance * bucket.mult
+    });
+  }
+  return rows;
+}
+
+function fmtMoney(n){
+  return '$' + n.toLocaleString('en-US', { maximumFractionDigits:0 });
+}
+
+function renderQueue(){
+  const body = document.getElementById('queue-body');
+  const summary = document.getElementById('queue-summary');
+  if (!currentQueue.length) {
+    body.innerHTML = '<tr><td colspan="7"><div class="empty-state">Load a sample or paste AR data, then click RANK RECOVERY QUEUE.</div></td></tr>';
+    summary.style.display = 'none';
+    document.getElementById('fire-btn').disabled = true;
+    document.getElementById('process-info').textContent = 'Rank the queue first — engines analyze the top 5 priority accounts.';
+    return;
+  }
+  const sorted = [...currentQueue].sort((a,b) => b.score - a.score);
+  let rowsHtml = '';
+  sorted.forEach((r, i) => {
+    const rankCls = i === 0 ? 'rank-1' : (i <= 2 ? 'rank-2' : '');
+    rowsHtml += '<tr>' +
+      '<td><span class="rank-badge ' + rankCls + '">' + (i+1) + '</span></td>' +
+      '<td>' + r.account + '</td>' +
+      '<td>' + r.payer + '</td>' +
+      '<td class="dollar">' + fmtMoney(r.balance) + '</td>' +
+      '<td><span class="bucket-tag ' + r.bucket.cls + '">' + r.age + 'd · ' + r.bucket.key + '</span></td>' +
+      '<td style="max-width:220px">' + r.status + '</td>' +
+      '<td class="action-tag">' + recommendedAction(r.status, r.bucket) + '</td>' +
+      '</tr>';
+  });
+  body.innerHTML = rowsHtml;
+
+  const total = sorted.reduce((s,r) => s + r.balance, 0);
+  const b1 = sorted.filter(r => r.age <= 30).reduce((s,r) => s + r.balance, 0);
+  const b2 = sorted.filter(r => r.age > 30 && r.age <= 90).reduce((s,r) => s + r.balance, 0);
+  const b3 = sorted.filter(r => r.age > 90 && r.age <= 120).reduce((s,r) => s + r.balance, 0);
+  const b4 = sorted.filter(r => r.age > 120).reduce((s,r) => s + r.balance, 0);
+  document.getElementById('qs-total').textContent = fmtMoney(total);
+  document.getElementById('qs-count').textContent = sorted.length + ' accounts';
+  document.getElementById('qs-b1').textContent = fmtMoney(b1);
+  document.getElementById('qs-b2').textContent = fmtMoney(b2);
+  document.getElementById('qs-b3').textContent = fmtMoney(b3);
+  document.getElementById('qs-b4').textContent = fmtMoney(b4);
+  summary.style.display = 'grid';
+
+  document.getElementById('fire-btn').disabled = false;
+  document.getElementById('process-info').textContent = 'Ready — will analyze the top ' + Math.min(5, sorted.length) + ' priority accounts.';
+  currentQueue = sorted;
+}
+
+function rankQueue(){
+  const text = document.getElementById('ar-input').value;
+  currentQueue = parseARText(text);
+  renderQueue();
+}
+
+// ── AI PIPELINE (reuses the existing /api/hc/stream backend route) ──
+async function groqStreamModel(model, sys, user, onChunk, onDone, onError, maxTok=700, timeoutMs=30000){
+  const controller = new AbortController();
+  let watchdog;
+  const resetWatchdog = () => { clearTimeout(watchdog); watchdog = setTimeout(() => controller.abort(), timeoutMs); };
+  resetWatchdog();
+  try {
+    const res = await fetch('/api/hc/stream', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ model, sys, user, maxTok }),
+      signal: controller.signal
+    });
+    if(!res.ok){
+      let msg = 'Server error ' + res.status;
+      try { const e = await res.json(); if (typeof e.error === 'string') msg = e.error; else if (e.error?.message) msg = e.error.message; } catch(_) {}
+      onError(new Error(msg)); return;
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let total = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      resetWatchdog();
+      const chunk = decoder.decode(value, { stream:true });
+      chunk.split('\n').forEach(line => {
+        if (!line.startsWith('data: ')) return;
+        const data = line.slice(6);
+        if (data === '[DONE]') return;
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed.choices?.[0]?.delta?.content || '';
+          if (delta) { total += delta.length; onChunk(delta); }
+        } catch(_) {}
+      });
+    }
+    clearTimeout(watchdog);
+    onDone(total);
+  } catch (err) {
+    clearTimeout(watchdog);
+    onError(err);
+  }
+}
+
+function summarizeTopAccounts(n){
+  return currentQueue.slice(0, n).map((r,i) =>
+    (i+1) + '. ' + r.account + ' | ' + r.payer + ' | ' + fmtMoney(r.balance) + ' | ' + r.age + 'd (' + r.bucket.key + ') | ' + r.status
+  ).join('\n');
+}
+
+async function runPipeline(){
+  if (!currentQueue.length) { alert('Rank the queue first.'); return; }
+  document.getElementById('fire-btn').disabled = true;
+  const topN = Math.min(5, currentQueue.length);
+  const topSummary = summarizeTopAccounts(topN);
+  const outputs = ['','',''];
+
+  const SMALL = 'openai/gpt-oss-20b';
+  const LARGE = 'openai/gpt-oss-120b';
+
+  const engines = [
+    { i:0, outId:'out1', badgeId:'badge1', statId:'pstat1', pnId:'pn1', model: SMALL, maxTok: 400,
+      sys: 'You are an AR recovery triage analyst. For each account below, give the most likely non-payment root cause in one line each (denial, underpayment, no-response/stalled, COB issue, eligibility issue, duplicate, timely-filing risk). Be specific per account, not generic. Under 300 words.',
+      user: 'TOP PRIORITY ACCOUNTS:\n' + topSummary },
+    { i:1, outId:'out2', badgeId:'badge2', statId:'pstat2', pnId:'pn2', model: SMALL, maxTok: 350,
+      sys: 'You are a healthcare RCM financial analyst. Given the accounts and root causes below, summarize total dollar exposure, which accounts are closest to write-off or timely-filing loss, and the overall collectability outlook. Under 250 words.',
+      user: 'TOP PRIORITY ACCOUNTS:\n' + topSummary },
+    { i:2, outId:'out3', badgeId:'badge3', statId:'pstat3', pnId:'pn3', model: LARGE, maxTok: 500,
+      sys: 'You are an AR recovery specialist. Build a sequenced recovery action plan for these accounts: who to contact, what documentation to gather, appeal vs. dispute vs. follow-up call, and priority order. Include a line starting exactly with "RECOVERY LIKELIHOOD:" followed by STRONG, MODERATE, or WEAK and a one-sentence justification grounded in the specific accounts given. Under 350 words.',
+      user: 'TOP PRIORITY ACCOUNTS:\n' + topSummary }
+  ];
+
+  for (const eng of engines) {
+    const outEl = document.getElementById(eng.outId);
+    const badgeEl = document.getElementById(eng.badgeId);
+    const statEl = document.getElementById(eng.statId);
+    const pnEl = document.getElementById(eng.pnId);
+    outEl.textContent = '';
+    badgeEl.textContent = 'PROCESSING'; badgeEl.style.color = 'var(--amber)';
+    statEl.textContent = 'PROCESSING'; statEl.style.color = 'var(--amber)';
+    outputs[eng.i] = '';
+    await new Promise((resolve) => {
+      groqStreamModel(
+        eng.model, eng.sys, eng.user,
+        (chunk) => { outputs[eng.i] += chunk; outEl.textContent += chunk; },
+        () => {
+          badgeEl.textContent = 'COMPLETE ✓'; badgeEl.style.color = 'var(--green)';
+          statEl.textContent = 'COMPLETE ✓'; statEl.style.color = 'var(--green)';
+          pnEl.style.border = '1px solid var(--green)';
+          resolve();
+        },
+        (err) => {
+          badgeEl.textContent = 'ERROR'; badgeEl.style.color = 'var(--red)';
+          statEl.textContent = 'ERROR'; statEl.style.color = 'var(--red)';
+          outEl.textContent = 'Engine error: ' + err.message + '\n\n(Backend /api/hc/stream must be running with a configured model key — this is the same endpoint used by the Denial War Room.)';
+          resolve();
+        },
+        eng.maxTok
+      );
+    });
+  }
+  document.getElementById('fire-btn').disabled = false;
+}
+
+function copyOut(id){
+  const text = document.getElementById(id).textContent;
+  if (navigator.clipboard) navigator.clipboard.writeText(text);
+}
+</script>
+</body>
+</html>
