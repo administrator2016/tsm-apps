@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { startRound } from '../gameLogic.js';
+import { useGenreRoulette } from '../useGenreRoulette.js';
 
-export default function CharadesGame({ topics, onBack }) {
+export default function CharadesGame({ topics, onBack, turnScorePanel }) {
   const [topic, setTopic] = useState('');
   const [prompt, setPrompt] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const spinningCategory = useGenreRoulette(loading, topics);
 
   async function handleNewPrompt() {
     setLoading(true);
@@ -19,6 +22,8 @@ export default function CharadesGame({ topics, onBack }) {
         <h2 className="idc-mode-title">Charades</h2>
         <p className="idc-subtitle">Act it out, no talking!</p>
 
+        {turnScorePanel}
+
         <div className="idc-field">
           <label htmlFor="ch-category">Category</label>
           <select
@@ -26,6 +31,7 @@ export default function CharadesGame({ topics, onBack }) {
             className="idc-input"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
+            disabled={loading}
           >
             <option value="">Any category</option>
             {topics.map((c) => (
@@ -35,9 +41,15 @@ export default function CharadesGame({ topics, onBack }) {
         </div>
 
         <div className={prompt ? 'idc-prompt' : 'idc-prompt idc-prompt-empty'}>
-          {prompt ? prompt.word : 'Hit New Charades Word to start'}
+          {loading && spinningCategory ? (
+            <span className="idc-roulette">{spinningCategory}</span>
+          ) : prompt ? (
+            prompt.word
+          ) : (
+            'Hit New Charades Word to start'
+          )}
         </div>
-        {prompt?.category && <p className="idc-badge">{prompt.category}</p>}
+        {!loading && prompt?.category && <p className="idc-badge">{prompt.category}</p>}
 
         <button className="idc-btn idc-btn-primary" onClick={handleNewPrompt} disabled={loading} style={{ marginTop: 16 }}>
           {loading ? 'Loading…' : 'New Charades Word'}
