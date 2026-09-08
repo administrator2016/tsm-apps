@@ -1081,6 +1081,7 @@ function clearAll(){
 
 function fireCapabilitySweep_INS(e) {
   try {
+    if (!/(?:^|;\s*)tsm_session=/.test(document.cookie)) return; // no session — skip, avoid a guaranteed 401
     const e1 = e?.[1] || '';
     const e3 = e?.[3] || '';
     const claimM = e1.match(/CLAIM\/POLICY ID:[\s]*([^\n]+)/i);
