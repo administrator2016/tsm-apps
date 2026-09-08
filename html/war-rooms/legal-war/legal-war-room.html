@@ -697,16 +697,21 @@ main{padding:18px;display:flex;flex-direction:column;gap:14px}
 // ═══════════════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════════════
-function nav(page) {
+function resolveAppUrl(page) {
+  // Already absolute (e.g. '/html/war-rooms/bpo/bpo-legal.html',
+  // '/html/finops-suite/finops-accounting.html') — use as-is.
+  if (page.startsWith('/')) return page;
   // legal-main-strategist.html and legal-war-room.html live alongside this
   // file under /html/war-rooms/legal-war/, not under /legal-pro/ like the
   // rest of this suite (e.g. case-strategist.html). Route those two here
   // explicitly instead of guessing they're all under the same prefix.
   if (page === 'legal-main-strategist.html' || page === 'legal-war-room.html') {
-    window.location.href = '/html/war-rooms/legal-war/' + page;
-    return;
+    return '/html/war-rooms/legal-war/' + page;
   }
-  window.location.href = '/legal-pro/' + page;
+  return '/legal-pro/' + page;
+}
+function nav(page) {
+  window.location.href = resolveAppUrl(page);
 }
 
 // ═══════════════════════════════════════════════════
@@ -933,7 +938,7 @@ FULL 5-ENGINE ANALYSIS: ${prev}
 ENGINE 06 — BEST NEXT COURSE OF ACTION DISPATCH
 Based on the issues identified, recommend exactly 5 legal-pro apps from this list, ranked by relevance to the specific issues in this matter:
 
-Available apps: Legal Nodes, Case Strategist, Contracts Node, Litigation Node, Compliance Node, Discovery Node, Billing Node, Employment Node, Settlement Node, Chief Strategist
+Available apps: Legal Nodes, Case Strategist, Contracts Node, Litigation Node, Compliance Node, Discovery Node, Billing Node, Employment Node, Settlement Node, Chief Strategist, FinOps Accounting, FinOps Operations. Only recommend FinOps Accounting or FinOps Operations when the matter has real accounting exposure — settlement/judgment GL posting, trust or retainer accounting, damages reserve tracking, or billing/AP impact.
 
 For each app, respond in this EXACT format (repeat 5 times):
 
@@ -1200,6 +1205,8 @@ function buildAppDispatch(raw, defectManifest) {
     'settlement node':   null,
     'bpo legal':         '/html/war-rooms/bpo/bpo-legal.html',
     'bpo legal ops':     '/html/war-rooms/bpo/bpo-legal.html',
+    'finops accounting': '/html/finops-suite/finops-accounting.html',
+    'finops operations': '/html/finops-suite/finops-operations.html',
   };
 
   const dotColors = ['#00ff88','#d4af37','#00e5ff','#a855f7','#ff5555'];
@@ -1254,13 +1261,20 @@ function buildAppDispatch(raw, defectManifest) {
 
 function launchApp(href, appMeta) {
   storeSession();
+  // Resolve via the same rules nav() uses BEFORE handing off to the
+  // conductor: TSMCureConductor.launch() ends in a plain window.open(href),
+  // which knows nothing about this vertical's routing (the /legal-pro/
+  // prefix, or the two files that live locally under legal-war/ instead).
+  // Without this, a bare href resolves against this page's own folder and
+  // 404s for anything actually under /legal-pro/.
+  const resolved = resolveAppUrl(href);
   if(appMeta && window.TSMCureConductor){
-    window.TSMCureConductor.launch(href, appMeta, {
+    window.TSMCureConductor.launch(resolved, appMeta, {
       docText: document.getElementById('docPaste')?.value||'',
       vertical: 'Legal'
     });
   } else {
-    nav(href);
+    window.location.href = resolved;
   }
 }
 

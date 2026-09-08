@@ -796,7 +796,7 @@ const PROMPTS = [
 (doc,e)=>`You are a TSM Insurance Financial Exposure Analyst.\nENGINE 01 FACTS: ${e[1].slice(0,400)}\nENGINE 02 RISK: ${e[2]}\n\nENGINE 03 — FINANCIAL EXPOSURE\nTOTAL EXPOSURE: [dollar range]\nRECOVERABLE AMOUNT: [what can be appealed/recovered]\nWRITE-OFF RISK: [amount at permanent loss risk]\nAPPEAL ROI: [cost to appeal vs. recovery potential]\nPREMIUM OPPORTUNITY: [cross-sell/upsell dollar potential if applicable]\nFINANCIAL RISK SCORE: [1-100] — [rationale]\nEXECUTIVE ESCALATION: [Yes/No] — [reason]`,
 (doc,e)=>`You are a TSM Insurance Compliance Officer.\nENGINE 01 FACTS: ${e[1].slice(0,300)}\nENGINE 02 RISK FLAGS: ${e[2]}\n\nENGINE 04 — COMPLIANCE & REGULATORY\nCMS/MEDICARE EXPOSURE: [risk level and reason]\nAZ DOI FLAGS: [state regulatory issues]\nHIPAA RISK: [any PHI/documentation concerns]\nCE/LICENSING FLAGS: [agent renewal issues or "None"]\nOIG EXPOSURE: [fraud/abuse risk level]\nSELF-DISCLOSURE RISK: [Yes/No] — [reason]\nCOMPLIANCE RISK LEVEL: [Low/Medium/High/Critical]\nIMMEDIATE COMPLIANCE ACTIONS:\n1. [action]\n2. [action]\n3. [action]`,
 (doc,e)=>`You are a TSM Insurance Recovery Strategist.\nENGINE 03 IMPACT: ${e[3]}\nENGINE 04 COMPLIANCE: ${e[4]}\n\nENGINE 05 — RECOVERY & APPEAL PLAN\nAPPEAL STRATEGY: [specific approach for each appealable denial]\nPRIORITY ACTIONS (dollar-quantified):\n1. [Action] — $[amount] — [Owner] — [Deadline stated in source document, or "NOT STATED" — never calculated]\n2. [Action] — $[amount] — [Owner] — [Deadline stated in source document, or "NOT STATED" — never calculated]\n3. [Action] — $[amount] — [Owner] — [Deadline stated in source document, or "NOT STATED" — never calculated]\n4. [Action] — $[amount] — [Owner] — [Deadline stated in source document, or "NOT STATED" — never calculated]\nRECOVERY TIMELINE: [days]\nQUICK WINS (48 hrs): [immediate steps]\nDOCUMENTATION NEEDED: [list]\nESCALATE TO PRINCIPAL: [Yes/No] — [reason]`,
-(doc,e)=>`You are the TSM Insurance App Dispatch Engine.\nENGINE 03 RISK: ${e[3].slice(0,300)}\nENGINE 05 ACTIONS: ${e[5]}\n\nENGINE 06 — APP DISPATCH\nRecommend exactly 5 Insurance apps ranked by relevance. Available: Claims Triage, DME Billing Module, P&C Command, CE Study Prep, Agent Onboarding, AZ Insurance Command, Insurance Intel, BNCA Chain, PC Command, DME Benefits Page, AHIP Certification Prep\n\nRepeat 5 times:\nAPP: [name]\nRANK: [#1-5]\nIS_TOP: [YES for #1 only, else NO]\nHOW_TO_USE: [3 sentences — exact tab to open, specific data to enter, specific output to produce for THIS document's issues]\nTAGS: [TAG1], [TAG2], [TAG3]\n\nDISPATCH_INTRO: [1-2 sentences on why these 5 apps address the specific issues found]`
+(doc,e)=>`You are the TSM Insurance App Dispatch Engine.\nENGINE 03 RISK: ${e[3].slice(0,300)}\nENGINE 05 ACTIONS: ${e[5]}\n\nENGINE 06 — APP DISPATCH\nRecommend exactly 5 Insurance apps ranked by relevance. Available: Claims Triage, DME Billing Module, P&C Command, CE Study Prep, Agent Onboarding, AZ Insurance Command, Insurance Intel, BNCA Chain, PC Command, DME Benefits Page, AHIP Certification Prep, FinOps Accounting, FinOps Operations. Only recommend FinOps Accounting or FinOps Operations when the document has real accounting exposure — GL/journal entries, premium reconciliation, reserve or claims-payout variance, or cash/draw impact.\n\nRepeat 5 times:\nAPP: [name]\nRANK: [#1-5]\nIS_TOP: [YES for #1 only, else NO]\nHOW_TO_USE: [3 sentences — exact tab to open, specific data to enter, specific output to produce for THIS document's issues]\nTAGS: [TAG1], [TAG2], [TAG3]\n\nDISPATCH_INTRO: [1-2 sentences on why these 5 apps address the specific issues found]`
 ];
 
 const FALLBACKS = [
@@ -897,23 +897,20 @@ async function fireEngines(){
 }
 
 function launchApp(href, appMeta){
+  // Resolve to an absolute URL FIRST, regardless of which branch below runs.
+  // TSMCureConductor.launch() ultimately does a plain window.open(href) with
+  // whatever we hand it — it does not know about this vertical's own
+  // '/html/tsm-insurance/' base, so a bare relative href (e.g. 'ins-hub1.html')
+  // would resolve against this war room's own folder and 404. Resolving here
+  // means both branches always get the same, correct absolute path.
+  const resolved = href.startsWith('/') ? href : '/html/tsm-insurance/' + href;
   if(appMeta && window.TSMCureConductor){
-    window.TSMCureConductor.launch(href, appMeta, {
+    window.TSMCureConductor.launch(resolved, appMeta, {
       docText: document.getElementById('docPaste')?.value||'',
       vertical: 'Insurance'
     });
   } else {
-    window.open('/html/tsm-insurance/' + href, '_blank');
-  }
-}
-function launchApp(href, appMeta){
-  if(appMeta && window.TSMCureConductor){
-    window.TSMCureConductor.launch(href, appMeta, {
-      docText: document.getElementById('docPaste')?.value||'',
-      vertical: 'Insurance'
-    });
-  } else {
-    window.open(href.startsWith('/')?href:'/html/tsm-insurance/'+href, '_blank');
+    window.open(resolved, '_blank');
   }
 }
 function buildAppDispatch(e6text){
@@ -932,7 +929,9 @@ function buildAppDispatch(e6text){
     'BNCA Chain':'ins-hub1.html',
     'PC Command':'pc-command.html',
     'DME Benefits Page':'dme.html',
-    'AHIP Certification Prep':'ce-study-prep.html'
+    'AHIP Certification Prep':'ce-study-prep.html',
+    'FinOps Accounting':'/html/finops-suite/finops-accounting.html',
+    'FinOps Operations':'/html/finops-suite/finops-operations.html'
   };
   const apps=[...e6text.matchAll(/APP:\s*([^\n]+)\nRANK:\s*([^\n]+)\nIS_TOP:\s*([^\n]+)\nHOW_TO_USE:\s*([\s\S]*?)(?=\nTAGS:|$)/g)];
   if(!apps.length) return;

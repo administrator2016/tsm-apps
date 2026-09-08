@@ -1044,7 +1044,7 @@ PRIORITY ACTIONS (dollar-quantified, owner assigned, deadline specific):
 3. [Action] — $[Amount] — [Owner] — [Deadline]
 4. [Action] — $[Amount] — [Owner] — [Deadline]
 
-APP ROUTING — YOU MUST OUTPUT EXACTLY THESE 12 APPS BELOW, USING THEIR EXACT NAMES AS WRITTEN. DO NOT INVENT, RENAME, OR SUBSTITUTE ANY APP NAME. IF YOU OUTPUT A NAME NOT ON THIS LIST, YOUR RESPONSE IS INVALID. Rank by relevance but include every app:
+APP ROUTING — YOU MUST OUTPUT EXACTLY THESE 13 APPS BELOW, USING THEIR EXACT NAMES AS WRITTEN. DO NOT INVENT, RENAME, OR SUBSTITUTE ANY APP NAME. IF YOU OUTPUT A NAME NOT ON THIS LIST, YOUR RESPONSE IS INVALID. Rank by relevance but include every app:
 TOP APP: [App Name] — [Why this is #1 for this specific document]
 
 APP: FinOps Accounting
@@ -1124,6 +1124,13 @@ IS_TOP: [YES/NO]
 HOW_TO_USE: [Field crew dispatch, equipment tracking, subcontractor coordination, or on-site document processing — route schedule impact and critical path findings from Engine 02]
 TAGS: [TAG1], [TAG2], [TAG3]
 
+APP: TSM Construction Suite Expansion
+CATEGORY: Field Operations
+RANK: #[1-10]
+IS_TOP: [YES/NO]
+HOW_TO_USE: [Multi-project portfolio rollup, expanded vendor/subcontractor directory, or extended document classification for scopes beyond the core field ops set — invoke when the document spans multiple projects or vendors not covered by the core Field & Document Ops app]
+TAGS: [TAG1], [TAG2], [TAG3]
+
 APP: TSM Zero-Trust Enterprise Access Command
 CATEGORY: Access & Security
 RANK: #[1-10]
@@ -1182,6 +1189,7 @@ function buildDispatch(raw, defectManifest){
     {name:'AuditOps Pro Tax Intelligence',how:'Payroll scan, 1099 misclassification, certified payroll reconciliation.',tagsRaw:'PAYROLL, 1099, TAX'},
     {name:'TSM Financial Command',how:'Cash flow reconciliation, draw variance, cost overrun dashboard.',tagsRaw:'CASH FLOW, DRAW, VARIANCE'},
     {name:'TSM Construction Suite Field & Document Ops',how:'Field crew dispatch, equipment tracking, subcontractor coordination.',tagsRaw:'FIELDOPS, CREW, SCHEDULE'},
+    {name:'TSM Construction Suite Expansion',how:'Multi-project portfolio rollup, vendor directory, extended document classification.',tagsRaw:'PORTFOLIO, VENDORS, EXPANSION'},
     {name:'TSM Zero-Trust Enterprise Access Command',how:'Lock down unauthorized access roles, flag credential anomalies.',tagsRaw:'ACCESS, SECURITY, BREACH'},
   ];
   DEFAULTS.forEach((d)=>{
@@ -1202,7 +1210,8 @@ function buildDispatch(raw, defectManifest){
     'auditops': '/html/auditops-pro.html',
     'tsm compliance command': '/html/construction-suite/auditops-tax.html',
     'construction compliance': '/html/construction-suite/auditops-tax.html',
-    'tsm construction suite field & document ops': '/construction-suite/construction-pro.html',
+    'tsm construction suite field & document ops': '/html/construction-suite/construction-pro.html',
+    'tsm construction suite expansion': '/html/construction-suite/construction-suite-expansion.html',
     'tsm financial command': null,
     'tsm zero-trust enterprise access command': null,
   };
