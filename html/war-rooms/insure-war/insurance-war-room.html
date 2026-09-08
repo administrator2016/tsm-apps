@@ -1630,28 +1630,6 @@ endTour = function(){ speechStop(); _etOrig(); };
   </div>
 </div>
 
-<!-- ── DEFECT MANIFEST ───────────────────────────────────────────── -->
-<button class="manifest-btn" onclick="document.getElementById('insManifestOverlay').classList.add('active')">⚠ DEFECT MANIFEST</button>
-<div class="manifest-overlay" id="insManifestOverlay">
-  <div class="manifest-card">
-    <h2>⚠ INSURANCE WAR ROOM — DEFECT MANIFEST</h2>
-    <table class="manifest-table">
-      <thead><tr><th>#</th><th>COMPONENT</th><th>DEFECT</th><th>SEV</th><th>STATUS</th></tr></thead>
-      <tbody>
-        <tr><td>D-01</td><td>ResponsiveVoice</td><td>CDN narration blocked on some corporate networks; no offline fallback</td><td class="sev-crit">CRIT</td><td>OPEN</td></tr>
-        <tr><td>D-02</td><td>File Drop Zone</td><td>Binary PDF/DOCX extraction may silently fail on unsupported browsers</td><td class="sev-crit">CRIT</td><td>OPEN</td></tr>
-        <tr><td>D-03</td><td>App Dispatch</td><td>APP_URLS fallback routes to ins-hub.html for all unrecognized app names</td><td class="sev-med">MED</td><td>OPEN</td></tr>
-        <tr><td>D-04</td><td>Existing Tour</td><td>renderSlide tour uses slide index state — may conflict if called during engine run</td><td class="sev-med">MED</td><td>OPEN</td></tr>
-        <tr><td>D-05</td><td>API Key</td><td>Stored in localStorage plaintext; no expiry or rotation</td><td class="sev-med">MED</td><td>ACCEPTED</td></tr>
-        <tr><td>D-06</td><td>sessionStorage Relay</td><td>Key collisions possible if multiple Insurance tabs open simultaneously</td><td class="sev-med">MED</td><td>OPEN</td></tr>
-        <tr><td>D-07</td><td>Mobile Layout</td><td>Engine output panels overflow on screens &lt;768px</td><td class="sev-low">LOW</td><td>OPEN</td></tr>
-      </tbody>
-    </table>
-    <div style="margin-top:10px;font-size:.75rem;color:#666;">See D-04 in context: <a href="#" onclick="document.getElementById('insManifestOverlay').classList.remove('active');window.insTourOpen();return false;" style="color:var(--cyan);text-decoration:underline;">launch the Guided Tour →</a></div>
-    <button class="manifest-close-btn" onclick="document.getElementById('insManifestOverlay').classList.remove('active')">CLOSE</button>
-  </div>
-</div>
-
 <style>
 .tour-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9000;display:none;align-items:center;justify-content:center}
 .tour-overlay.active{display:flex}
@@ -1678,21 +1656,6 @@ endTour = function(){ speechStop(); _etOrig(); };
 .howto-section ul{padding-left:16px}
 .howto-close-btn{margin-top:20px;padding:8px 22px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:'Orbitron',sans-serif;font-size:.72rem;border-radius:4px;cursor:pointer;letter-spacing:.08em}
 .howto-close-btn:hover{background:var(--cyan);color:#000}
-.manifest-btn{position:fixed;bottom:18px;left:18px;z-index:7000;background:#0d1117;border:1px solid #ef4444;color:#ef4444;font-family:'Orbitron',sans-serif;font-size:.62rem;padding:7px 14px;border-radius:4px;cursor:pointer;letter-spacing:.08em;opacity:.7}
-.manifest-btn:hover{opacity:1}
-.manifest-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9500;display:none;align-items:center;justify-content:center}
-.manifest-overlay.active{display:flex}
-.manifest-card{background:#0d1117;border:1px solid #ef4444;border-radius:8px;padding:28px 32px;max-width:600px;width:92%;max-height:78vh;overflow-y:auto}
-.manifest-card h2{font-family:'Orbitron',sans-serif;font-size:.9rem;color:#ef4444;margin-bottom:16px;letter-spacing:.1em}
-.manifest-table{width:100%;border-collapse:collapse;font-size:.8rem}
-.manifest-table th{text-align:left;color:#555;font-family:'Orbitron',sans-serif;font-size:.65rem;padding:6px 8px;border-bottom:1px solid #222;letter-spacing:.06em}
-.manifest-table td{padding:7px 8px;color:#aaa;border-bottom:1px solid #1a1a1a;vertical-align:top}
-.manifest-table tr:hover td{background:#111}
-.sev-crit{color:#ef4444;font-weight:700}
-.sev-med{color:var(--amber)}
-.sev-low{color:var(--cyan)}
-.manifest-close-btn{margin-top:18px;padding:7px 20px;background:transparent;border:1px solid #ef4444;color:#ef4444;font-family:'Orbitron',sans-serif;font-size:.7rem;border-radius:4px;cursor:pointer;letter-spacing:.08em}
-.manifest-close-btn:hover{background:#ef4444;color:#000}
 </style>
 
 <script>
