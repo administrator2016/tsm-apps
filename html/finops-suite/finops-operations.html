@@ -338,7 +338,11 @@ const VAULT_PROMPTS = {
   ops_inbox: 'You are assisting with the client inbox. Help draft professional, warm, concise client-service responses and flag any SLA-breach risk.',
   ops_clients: 'You are assisting with client records: account details, relationship history, and required documentation. Be precise about which client fields are missing or need verification.',
   ops_portfolio: 'You are assisting with portfolio prep: preparing account and relationship summaries ahead of client or management review. Keep responses structured and reference-ready.',
-  ops_compliance: 'You are assisting with branch compliance: policy exceptions, audit findings, and required remediation. Be precise about compliance status and cite the specific rule or control at issue.'
+  ops_compliance: 'You are assisting with branch compliance: policy exceptions, audit findings, and required remediation. Be precise about compliance status and cite the specific rule or control at issue.',
+  // TSM FIX: these two modules previously had no vault prompt at all, so
+  // CTX_PROMPTS.workingcap/accrual silently fell back to CTX_PROMPTS.general.
+  ops_workingcap: 'You are assisting with the Adjusted Working Capital Worksheet: reconciling unadjusted balances, inventory/AR/prepaid/unearned-revenue adjustments, and the resulting adjusted trial of working capital items. Stay strictly within this worksheet — do not reference unrelated cashiering exceptions, wire transfers, or client transactions unless the user explicitly brings them up. Be precise about which adjustment line each figure comes from.',
+  ops_accrual: 'You are assisting with month-end accrual close: the accrual pipeline, its current state per item (draft/pending/posted), and identifying accruals that are missing, stale, or need reversal. Stay strictly within month-end close topics unless the user explicitly asks about something else.'
 };
 
 async function getVaultPrompt(key) {
@@ -882,6 +886,10 @@ async function loadCtxPrompts(){
   CTX_PROMPTS.clients = await getVaultPrompt('ops_clients');
   CTX_PROMPTS.portfolio = await getVaultPrompt('ops_portfolio');
   CTX_PROMPTS.compliance = await getVaultPrompt('ops_compliance');
+  // TSM FIX: workingcap/accrual previously had no vault prompt registered
+  // at all, so they silently fell back to CTX_PROMPTS.general in sendAI()
+  CTX_PROMPTS.workingcap = await getVaultPrompt('ops_workingcap');
+  CTX_PROMPTS.accrual = await getVaultPrompt('ops_accrual');
 }
 loadCtxPrompts();
 
@@ -900,6 +908,17 @@ function switchMod(name, btn) {
   document.querySelectorAll('.tnav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('mod-' + name).classList.add('active');
   btn.classList.add('active');
+  // TSM FIX: aiHistory/#ai-msgs previously persisted across module
+  // switches unconditionally — the panel title/context label updated
+  // correctly, but the actual conversation (and what got sent as
+  // conversationHistory to /api/chat) stayed whatever was last discussed
+  // in the *previous* module. Only clear when the module actually
+  // changes, so re-clicking the same tab doesn't wipe an active thread.
+  if (name !== currentMod) {
+    aiHistory = [];
+    const msgs = document.getElementById('ai-msgs');
+    if (msgs) msgs.innerHTML = '';
+  }
   currentMod = name; aiCtx = name;
   document.getElementById('ai-ctx').textContent = 'Context: ' + (CTX_LABELS[name] || name);
   document.getElementById('ai-panel-title').textContent = (CTX_LABELS[name] || name) + ' Assistant';
@@ -1065,6 +1084,13 @@ function qp(msg) {
 }
 
 function askAI(msg, ctx) {
+  // TSM FIX: same context-bleed guard as switchMod(), for callers that
+  // change aiCtx without going through switchMod first.
+  if (ctx !== aiCtx) {
+    aiHistory = [];
+    const msgs = document.getElementById('ai-msgs');
+    if (msgs) msgs.innerHTML = '';
+  }
   aiCtx = ctx;
   document.getElementById('ai-panel').classList.add('open');
   document.getElementById('ai-input').value = msg;
