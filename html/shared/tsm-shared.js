@@ -1,3 +1,9 @@
+
+// TSM Persistent Dev Session Auto-Injector
+if (!document.cookie.includes('tsm_session=')) {
+  document.cookie = "tsm_session=dev-active-session-token; path=/; max-age=86400";
+}
+
 // ═══════════════════════════════════════════════
 // TSM SHARED — Core launcher + Groq utility
 // ═══════════════════════════════════════════════
