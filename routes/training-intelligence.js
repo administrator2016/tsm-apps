@@ -21,6 +21,24 @@ const { groqChat } = require('./_shared');
 const PROVIDERS_DIR = path.join(__dirname, '..', 'data', 'training-intelligence', 'providers');
 const ADMIN_ROLES = ['admin', 'manager'];
 
+// Quiz question banks live in the same providers dir as <providerId>-questions.json.
+// Same honesty pattern as the blueprint: hand-authored, starts verified:false,
+// never LLM-generated at request time. The GET route below strips `correct`
+// and `explanation` from choices before sending — those only come back after
+// POST /submit grades the attempt server-side, so a user can't just read the
+// answer out of the network tab before answering.
+function loadQuestionBank(providerId) {
+  const p = providerPath(providerId);
+  if (!p) return null;
+  const qPath = p.replace(/\.json$/, '-questions.json');
+  if (!fs.existsSync(qPath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(qPath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
 // Teach Me content is general domain-knowledge explanation ("what is
 // Platform Implementation and what should I know about it"), not blueprint
 // facts — an LLM explaining a well-known concept is a different honesty risk
@@ -200,6 +218,71 @@ router.get('/api/training-intelligence/teach/:providerId/:domainId', async (req,
   } catch (e) {
     res.status(502).json({ ok: false, error: e.message || 'Teach Me generation failed' });
   }
+});
+
+// GET /api/training-intelligence/quiz/:providerId/:domainId
+// Returns this domain's questions with `correct` and `explanation` stripped
+// from every choice — the client only gets id/text. Grading happens in
+// POST /submit below so answers are never sitting in a GET response.
+router.get('/api/training-intelligence/quiz/:providerId/:domainId', (req, res) => {
+  const bank = loadQuestionBank(req.params.providerId);
+  if (!bank) return res.status(404).json({ ok: false, error: 'No question bank for this provider yet' });
+
+  const questions = (bank.questions || []).filter(q => q.domainId === req.params.domainId);
+  if (!questions.length) return res.status(404).json({ ok: false, error: 'No questions for this domain yet' });
+
+  const stripped = questions.map(q => ({
+    id: q.id,
+    domainId: q.domainId,
+    question: q.question,
+    choices: q.choices.map(c => ({ id: c.id, text: c.text }))
+  }));
+
+  res.json({ ok: true, providerId: req.params.providerId, domainId: req.params.domainId, verified: !!bank.verified, questions: stripped });
+});
+
+// POST /api/training-intelligence/quiz/:providerId/submit
+// Body: { answers: [{ questionId, choiceId }] }. Grades against the server
+// copy of the bank and returns per-question correctness + explanation, plus
+// a domain score. Stateless — no attempt is persisted server-side; the
+// client rolls attempts into its own local readiness/mastery report.
+router.post('/api/training-intelligence/quiz/:providerId/submit', (req, res) => {
+  const bank = loadQuestionBank(req.params.providerId);
+  if (!bank) return res.status(404).json({ ok: false, error: 'No question bank for this provider yet' });
+
+  const answers = Array.isArray(req.body && req.body.answers) ? req.body.answers : null;
+  if (!answers || !answers.length) return res.status(400).json({ ok: false, error: 'answers array is required' });
+
+  const byId = {};
+  (bank.questions || []).forEach(q => { byId[q.id] = q; });
+
+  let correctCount = 0;
+  const results = answers.map(a => {
+    const q = byId[a.questionId];
+    if (!q) return { questionId: a.questionId, error: 'unknown question' };
+    const choice = q.choices.find(c => c.id === a.choiceId);
+    const correctChoice = q.choices.find(c => c.correct === true);
+    const isCorrect = !!choice && choice.correct === true;
+    if (isCorrect) correctCount++;
+    return {
+      questionId: q.id,
+      domainId: q.domainId,
+      correct: isCorrect,
+      pickedChoiceId: a.choiceId || null,
+      correctChoiceId: correctChoice ? correctChoice.id : null,
+      choices: q.choices.map(c => ({ id: c.id, text: c.text, correct: c.correct === true, explanation: c.explanation || null }))
+    };
+  });
+
+  res.json({
+    ok: true,
+    providerId: req.params.providerId,
+    verified: !!bank.verified,
+    score: results.length ? Math.round((correctCount / results.length) * 100) : 0,
+    correctCount,
+    total: results.length,
+    results
+  });
 });
 
 module.exports = router;

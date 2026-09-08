@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ServiceNow CSA / ITIL Study Guide · TSM Career Training</title>
+<style>
+:root {
+  --bg: #0a0c10; --surface: #111318; --surface2: #181b22; --surface3: #1e2230;
+  --border: #1e2230; --border2: #2a2f42;
+  --text: #e8eaf0; --text2: #8890a8; --text3: #4a5068;
+  --green: #00d4aa; --green-dim: rgba(0,212,170,0.08); --green-border: rgba(0,212,170,0.2);
+  --cyan: #00d4d4; --cyan-dim: rgba(0,212,212,0.07); --cyan-border: rgba(0,212,212,0.2);
+  --amber: #f59e0b; --amber-dim: rgba(245,158,11,0.08); --amber-border: rgba(245,158,11,0.2);
+  --red: #ef4444; --red-dim: rgba(239,68,68,0.08);
+  --purple: #a78bfa; --purple-dim: rgba(167,139,250,0.08); --purple-border: rgba(167,139,250,0.2);
+  --mono: 'Courier New', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--mono); min-height: 100vh; }
+header {
+  border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center;
+  justify-content: space-between; height: 56px; position: sticky; top: 0; background: var(--bg); z-index: 200;
+}
+.logo { font-size: 11px; letter-spacing: .18em; color: var(--text2); }
+.logo span { color: var(--green); }
+.back-link { font-size: 10px; letter-spacing: .08em; color: var(--cyan); text-decoration: none; border: 1px solid var(--cyan-border); padding: 6px 12px; }
+.back-link:hover { background: var(--cyan-dim); }
+.wrap { max-width: 980px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+.eyebrow { font-size: 10px; letter-spacing: .14em; color: var(--cyan); margin-bottom: 8px; }
+.title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.sub { font-size: 12.5px; color: var(--text2); max-width: 720px; margin-bottom: 8px; line-height: 1.6; }
+.gen-note { font-size: 10px; color: var(--text3); margin-bottom: 24px; }
+
+.stat-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px; }
+.stat-chip { background: var(--surface); border: 1px solid var(--border); padding: 8px 14px; font-size: 11px; color: var(--text2); }
+.stat-chip b { color: var(--green); }
+
+.toc { background: var(--surface); border: 1px solid var(--border); padding: 1.2rem 1.4rem; margin-bottom: 2rem; }
+.toc-title { font-size: 10px; letter-spacing: .1em; color: var(--amber); margin-bottom: 10px; }
+.toc-link { display: block; font-size: 12.5px; color: var(--cyan); text-decoration: none; padding: 4px 0; }
+.toc-link:hover { text-decoration: underline; }
+
+.module-section { margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+.module-section:last-of-type { border-bottom: none; }
+.module-num { font-size: 10px; letter-spacing: .1em; color: var(--text3); margin-bottom: 6px; }
+.module-section h2 { font-size: 17px; color: var(--cyan); margin-bottom: 14px; }
+.module-body h3 { font-size: 14px; color: var(--text); margin: 14px 0 8px; }
+.module-body p { font-size: 12.5px; color: var(--text2); line-height: 1.7; margin-bottom: 10px; }
+.module-body ul { margin: 0 0 10px 18px; }
+.module-body li { font-size: 12.5px; color: var(--text2); line-height: 1.8; }
+
+.terms-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 16px; }
+.term-chip { font-size: 10.5px; background: var(--purple-dim); border: 1px solid var(--purple-border); color: var(--purple); padding: 4px 9px; }
+
+.checklist { background: var(--surface2); border: 1px solid var(--border); padding: 1rem 1.2rem; margin-bottom: 1rem; }
+.checklist-title { font-size: 10px; letter-spacing: .08em; color: var(--amber); margin-bottom: 10px; }
+.check-row { font-size: 12px; color: var(--text2); padding: 4px 0; }
+
+.applied-block, .quick-check { background: var(--surface); border: 1px solid var(--border); padding: 1rem 1.2rem; margin-bottom: 1rem; }
+.applied-title { font-size: 10px; letter-spacing: .08em; color: var(--green); margin-bottom: 12px; }
+.scenario-mini { margin-bottom: 14px; }
+.scenario-mini:last-child { margin-bottom: 0; }
+.sc-domain { font-size: 9.5px; letter-spacing: .08em; color: var(--text3); margin-bottom: 4px; }
+.sc-text { font-size: 12px; color: var(--text); line-height: 1.6; margin-bottom: 6px; }
+.sc-answer { font-size: 12px; color: var(--green); line-height: 1.6; margin-bottom: 4px; }
+.sc-note { font-size: 11.5px; color: var(--text2); line-height: 1.6; }
+.quick-check ol { margin-left: 18px; }
+.quick-check li { font-size: 12px; color: var(--text2); line-height: 1.9; }
+
+.footer-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
+.footer-links a {
+  font-size: 10px; letter-spacing: .06em; color: var(--text2); text-decoration: none;
+  border: 1px solid var(--border2); padding: 8px 14px;
+}
+.footer-links a:hover { color: var(--cyan); border-color: var(--cyan-border); }
+
+@media print {
+  header, .toc, .footer-links, .back-link { display: none; }
+  body { background: #fff; color: #000; }
+  .module-body p, .module-body li, .sc-text, .sc-note, .check-row { color: #222; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">TSM <span>SHELL</span> · SERVICENOW STUDY GUIDE</div>
+  <a class="back-link" href="/html/tsm-career-training-platform.html">← BACK TO PLATFORM</a>
+</header>
+
+<div class="wrap">
+  <div class="eyebrow">IT · SERVICE DESK · CONSOLIDATED REFERENCE</div>
+  <div class="title">ServiceNow CSA / ITIL Study Guide</div>
+  <div class="sub">One printable reference pulling together all 6 Fundamentals modules, their key terms, concept checklists, and the matching scenario + exam-bank questions — generated directly from the real training modules, scenario engine, and exam bank already in this app. Nothing on this page is separately authored; it's a consolidated view of the same source content.</div>
+  <div class="gen-note">Generated 2026-09-08T16:53:26.533Z from servicenow-fundamentals.html, servicenow-scenarios.html, servicenow-exam-sim.html. Re-run scripts/generate-servicenow-study-guide.js after editing those source pages — do not hand-edit this file.</div>
+
+  <div class="stat-row">
+    <div class="stat-chip"><b>6</b> modules</div>
+    <div class="stat-chip"><b>28</b> key terms</div>
+    <div class="stat-chip"><b>24</b> checklist items</div>
+    <div class="stat-chip"><b>5</b> worked scenarios</div>
+    <div class="stat-chip"><b>24</b> quick-check questions</div>
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">JUMP TO A MODULE</div>
+    <a href="#sec-nav" class="toc-link">1. Platform Navigation</a><a href="#sec-access" class="toc-link">2. Users, Groups &amp; Access</a><a href="#sec-incident" class="toc-link">3. Incident &amp; Problem</a><a href="#sec-change" class="toc-link">4. Change Enablement</a><a href="#sec-cmdb" class="toc-link">5. CMDB &amp; Assets</a><a href="#sec-scripting" class="toc-link">6. Notifications &amp; Basics</a>
+  </div>
+
+  <section class="module-section" id="sec-nav">
+      <div class="module-num">MODULE 1 of 6</div>
+      <h2>Platform Navigation</h2>
+      <div class="module-body"><h3>Finding Your Way Around ServiceNow</h3>
+      <p>Every ServiceNow instance is organized around the <span class="term">Application Navigator</span> — the collapsible left-hand menu listing every module you have access to (Incident, Change, CMDB, Service Catalog, etc.). Use the search bar at the top of it to jump straight to a module without hunting through menus.</p>
+      <p>Most of your day-to-day work happens in <span class="term">list views</span> — sortable, filterable tables of records (tickets, CIs, changes). Learn to build a filter once and save it as a favorite; you'll reuse it daily.</p>
+      <ul>
+        <li><span class="term">Now Experience UI</span> — the modern workspace layout most agents use day to day</li>
+        <li><span class="term">Global search</span> — searches across modules, not just the one you're in</li>
+        <li><span class="term">Favorites</span> — pin frequently used lists and records for one-click access</li>
+      </ul></div>
+      <div class="terms-row"><span class="term-chip">Application Navigator</span><span class="term-chip">list views</span><span class="term-chip">Now Experience UI</span><span class="term-chip">Global search</span><span class="term-chip">Favorites</span></div>
+      <div class="checklist">
+        <div class="checklist-title">CONCEPT CHECKLIST</div>
+        <div class="check-row">☐ Locate and use the Application Navigator search</div><div class="check-row">☐ Build and save a filtered list view</div><div class="check-row">☐ Pin a record or list to Favorites</div><div class="check-row">☐ Explain the difference between a form view and a list view</div>
+      </div>
+      
+      
+    </section>
+<section class="module-section" id="sec-access">
+      <div class="module-num">MODULE 2 of 6</div>
+      <h2>Users, Groups &amp; Access</h2>
+      <div class="module-body"><h3>Who Can See and Do What</h3>
+      <p>Access in ServiceNow is controlled by <span class="term">roles</span>, which are assigned to <span class="term">users</span> or bundled into <span class="term">groups</span>. A role like <span class="term">itil</span> grants baseline access to Incident, Problem, and Change; admin-level roles go further.</p>
+      <p><span class="term">Access Control Lists (ACLs)</span> are the underlying rules that actually enforce who can read, write, create, or delete a given table or field — roles are how you get matched against those rules.</p>
+      <ul>
+        <li><span class="term">Assignment groups</span> — the team a ticket routes to (e.g. "Network Support")</li>
+        <li><span class="term">Approval groups</span> — who signs off on a change or request</li>
+        <li>Delegated admins can manage users/groups without full system admin rights</li>
+      </ul></div>
+      <div class="terms-row"><span class="term-chip">roles</span><span class="term-chip">users</span><span class="term-chip">groups</span><span class="term-chip">itil</span><span class="term-chip">Access Control Lists (ACLs)</span><span class="term-chip">Assignment groups</span><span class="term-chip">Approval groups</span></div>
+      <div class="checklist">
+        <div class="checklist-title">CONCEPT CHECKLIST</div>
+        <div class="check-row">☐ Identify a user's assigned roles and groups</div><div class="check-row">☐ Explain what an ACL controls, in plain language</div><div class="check-row">☐ Route a record to the correct assignment group</div><div class="check-row">☐ Describe the difference between a role and a group</div>
+      </div>
+      <div class="applied-block">
+          <div class="applied-title">APPLY IT — WORKED SCENARIO</div>
+          <div class="scenario-mini">
+              <div class="sc-domain">ACCESS CONTROL</div>
+              <div class="sc-text">A new hire on the network team needs to view and update Incident records but should not be able to approve Changes.</div>
+              <div class="sc-answer"><strong>Correct approach:</strong> Assign the itil role and add them to the appropriate assignment group, without a change-approver role</div>
+              <div class="sc-note">Correct. The itil role covers baseline Incident/Problem/Change visibility and updates; leaving out approver-level roles keeps their access matched to their actual job.</div>
+            </div>
+        </div>
+      <div class="quick-check">
+          <div class="applied-title">QUICK-CHECK QUESTIONS (from the exam bank — try before flipping to the sim)</div>
+          <ol>
+            <li>A new hire needs to view and update Incident records but should not approve Changes. What's the best access setup?</li><li>What actually enforces who can read, write, create, or delete a given table or field?</li><li>What's the difference between a role and a group in ServiceNow?</li><li>What's a common audit finding related to over-provisioned access?</li>
+          </ol>
+        </div>
+    </section>
+<section class="module-section" id="sec-incident">
+      <div class="module-num">MODULE 3 of 6</div>
+      <h2>Incident &amp; Problem</h2>
+      <div class="module-body"><h3>Incident Management</h3>
+      <p>An <span class="term">Incident</span> is an unplanned interruption or reduction in quality of a service. Every incident moves through a state model: <span class="term">New → In Progress → On Hold → Resolved → Closed</span>. Priority is calculated from <span class="term">Impact × Urgency</span> — get comfortable reading that matrix, it drives SLA timers.</p>
+      <h3 style="margin-top:16px">Problem Management</h3>
+      <p>A <span class="term">Problem</span> record captures the underlying root cause behind one or more incidents. The goal is a <span class="term">Known Error</span> — a documented root cause with a workaround — so future incidents referencing it resolve faster.</p>
+      <ul>
+        <li>Major Incident process — a fast-tracked, high-visibility variant of standard incident handling</li>
+        <li>Linking related incidents to a single Problem record avoids duplicated investigation work</li>
+      </ul></div>
+      <div class="terms-row"><span class="term-chip">Incident</span><span class="term-chip">New → In Progress → On Hold → Resolved → Closed</span><span class="term-chip">Impact × Urgency</span><span class="term-chip">Problem</span><span class="term-chip">Known Error</span></div>
+      <div class="checklist">
+        <div class="checklist-title">CONCEPT CHECKLIST</div>
+        <div class="check-row">☐ Walk the Incident state model start to finish</div><div class="check-row">☐ Calculate priority from an Impact/Urgency matrix</div><div class="check-row">☐ Explain the relationship between Incident and Problem records</div><div class="check-row">☐ Define a Known Error in your own words</div>
+      </div>
+      <div class="applied-block">
+          <div class="applied-title">APPLY IT — WORKED SCENARIOS</div>
+          <div class="scenario-mini">
+              <div class="sc-domain">INCIDENT MANAGEMENT</div>
+              <div class="sc-text">A VP reports their email is down. Three other users in the same building report the same issue within minutes. You have one open incident already logged from the first report.</div>
+              <div class="sc-answer"><strong>Correct approach:</strong> Link the new reports to the existing incident and evaluate for Major Incident escalation</div>
+              <div class="sc-note">Correct. Multiple related reports should be linked to one record, and the pattern (same symptom, multiple users, short timeframe) is exactly what the Major Incident process exists to catch early.</div>
+            </div><div class="scenario-mini">
+              <div class="sc-domain">PROBLEM MANAGEMENT</div>
+              <div class="sc-text">The same printer driver issue has caused six separate incidents over two weeks, each resolved with the same manual workaround.</div>
+              <div class="sc-answer"><strong>Correct approach:</strong> Open a Problem record, document the workaround as a Known Error, and link the incidents to it</div>
+              <div class="sc-note">Correct. Six incidents with the same root cause is a textbook Problem record. Documenting a Known Error means future incidents resolve faster and root-cause work gets tracked properly.</div>
+            </div>
+        </div>
+      <div class="quick-check">
+          <div class="applied-title">QUICK-CHECK QUESTIONS (from the exam bank — try before flipping to the sim)</div>
+          <ol>
+            <li>What determines an incident's Priority in ServiceNow's default configuration?</li><li>Three users report the same outage within minutes of each other. What's the best first action?</li><li>Which state comes immediately after "New" in the standard Incident state model?</li><li>An incident is marked "Resolved" but the user hasn't confirmed the fix. What typically happens next?</li><li>The same printer driver issue has caused six incidents over two weeks, each fixed with the same manual workaround. What should happen?</li><li>What is a "Known Error" in ITSM terms?</li><li>What's the main relationship between Incident and Problem records?</li><li>Why link related incidents to a single Problem record instead of investigating each one separately?</li>
+          </ol>
+        </div>
+    </section>
+<section class="module-section" id="sec-change">
+      <div class="module-num">MODULE 4 of 6</div>
+      <h2>Change Enablement</h2>
+      <div class="module-body"><h3>Managing Change Without Breaking Things</h3>
+      <p>ServiceNow classifies changes into three types: <span class="term">Standard</span> (pre-approved, low-risk, repeatable), <span class="term">Normal</span> (requires review and approval, most changes fall here), and <span class="term">Emergency</span> (urgent, expedited approval to fix something actively broken).</p>
+      <p>The <span class="term">Change Advisory Board (CAB)</span> reviews higher-risk normal changes before they're scheduled. Risk is typically assessed on likelihood and impact — a well-written change record makes this review fast instead of a bottleneck.</p>
+      <ul>
+        <li>Change scheduling checks for conflicts against a Change Freeze calendar</li>
+        <li>A rollback/backout plan is expected on any Normal or Emergency change</li>
+      </ul></div>
+      <div class="terms-row"><span class="term-chip">Standard</span><span class="term-chip">Normal</span><span class="term-chip">Emergency</span><span class="term-chip">Change Advisory Board (CAB)</span></div>
+      <div class="checklist">
+        <div class="checklist-title">CONCEPT CHECKLIST</div>
+        <div class="check-row">☐ Distinguish Standard vs. Normal vs. Emergency change</div><div class="check-row">☐ Explain what the CAB reviews and why</div><div class="check-row">☐ Identify what a risk assessment should include</div><div class="check-row">☐ Explain why a backout plan is required</div>
+      </div>
+      <div class="applied-block">
+          <div class="applied-title">APPLY IT — WORKED SCENARIO</div>
+          <div class="scenario-mini">
+              <div class="sc-domain">CHANGE ENABLEMENT</div>
+              <div class="sc-text">A junior admin wants to apply a routine, pre-approved firewall rule update that's been performed the same way 40 times before with no incidents.</div>
+              <div class="sc-answer"><strong>Correct approach:</strong> Submit as a Standard change using the pre-approved template</div>
+              <div class="sc-note">Correct. Standard changes exist for exactly this case: low-risk, repeatable, pre-approved. No need to route it through CAB.</div>
+            </div>
+        </div>
+      <div class="quick-check">
+          <div class="applied-title">QUICK-CHECK QUESTIONS (from the exam bank — try before flipping to the sim)</div>
+          <ol>
+            <li>A routine, pre-approved firewall update has been done the same way 40 times with no incidents. How should it be submitted?</li><li>Which change type is used to urgently fix something actively broken in production?</li><li>What does the Change Advisory Board (CAB) primarily review?</li><li>What should be included on any Normal or Emergency change record?</li>
+          </ol>
+        </div>
+    </section>
+<section class="module-section" id="sec-cmdb">
+      <div class="module-num">MODULE 5 of 6</div>
+      <h2>CMDB &amp; Assets</h2>
+      <div class="module-body"><h3>Configuration Management Database</h3>
+      <p>The CMDB stores <span class="term">Configuration Items (CIs)</span> — servers, applications, network devices, anything you track and manage. CIs are linked together through <span class="term">relationships</span> (e.g. "runs on," "depends on"), which is what lets you see downstream impact before you approve a change.</p>
+      <p><span class="term">Asset Management</span> is related but distinct — it tracks the lifecycle of a purchased item (procurement → in use → retired), while the CMDB tracks how that item fits into your service topology.</p>
+      <ul>
+        <li>Discovery tools populate and keep CI data accurate automatically</li>
+        <li>Bad CMDB data quality is the #1 reason change risk assessments go wrong</li>
+      </ul></div>
+      <div class="terms-row"><span class="term-chip">Configuration Items (CIs)</span><span class="term-chip">relationships</span><span class="term-chip">Asset Management</span></div>
+      <div class="checklist">
+        <div class="checklist-title">CONCEPT CHECKLIST</div>
+        <div class="check-row">☐ Explain what a Configuration Item is, with an example</div><div class="check-row">☐ Trace a CI relationship to find downstream impact</div><div class="check-row">☐ Distinguish CMDB from Asset Management</div><div class="check-row">☐ Explain why data integrity in the CMDB matters</div>
+      </div>
+      <div class="applied-block">
+          <div class="applied-title">APPLY IT — WORKED SCENARIO</div>
+          <div class="scenario-mini">
+              <div class="sc-domain">CMDB &amp; ASSETS</div>
+              <div class="sc-text">You're about to approve a change to a database server. Before approving, you want to know what else might break.</div>
+              <div class="sc-answer"><strong>Correct approach:</strong> Check the CI's relationships in the CMDB to trace downstream dependencies</div>
+              <div class="sc-note">Correct. This is the core value of CMDB relationship mapping — trace "depends on" / "runs on" links to see real downstream impact before approving.</div>
+            </div>
+        </div>
+      <div class="quick-check">
+          <div class="applied-title">QUICK-CHECK QUESTIONS (from the exam bank — try before flipping to the sim)</div>
+          <ol>
+            <li>Before approving a change to a database server, how do you find out what else might break?</li><li>What's the key difference between the CMDB and Asset Management?</li><li>What commonly keeps CI data in the CMDB accurate and up to date?</li><li>Why does data quality in the CMDB matter so much for change risk assessment?</li>
+          </ol>
+        </div>
+    </section>
+<section class="module-section" id="sec-scripting">
+      <div class="module-num">MODULE 6 of 6</div>
+      <h2>Notifications &amp; Basics</h2>
+      <div class="module-body"><h3>Automation Without Writing Code First</h3>
+      <p><span class="term">Notifications</span> fire automatically off record changes (e.g. "email the assignee when priority is raised"). <span class="term">UI Policies</span> control what a user sees on a form in real time (show/hide/require fields); <span class="term">Business Rules</span> run server-side logic when a record is inserted, updated, or deleted — the key distinction is UI Policies are client-facing, Business Rules run regardless of who's looking.</p>
+      <p><span class="term">Flow Designer</span> is ServiceNow's no-code automation builder — most day-2 admin work (approvals, routing, notifications) can be built here without scripting.</p>
+      <ul>
+        <li>Client Scripts run in the browser for immediate form behavior</li>
+        <li>Start with Flow Designer before reaching for a script</li>
+      </ul></div>
+      <div class="terms-row"><span class="term-chip">Notifications</span><span class="term-chip">UI Policies</span><span class="term-chip">Business Rules</span><span class="term-chip">Flow Designer</span></div>
+      <div class="checklist">
+        <div class="checklist-title">CONCEPT CHECKLIST</div>
+        <div class="check-row">☐ Explain the difference between a UI Policy and a Business Rule</div><div class="check-row">☐ Describe when a notification would fire on a record</div><div class="check-row">☐ Explain what Flow Designer is used for</div><div class="check-row">☐ Identify when a Client Script vs. server-side logic is appropriate</div>
+      </div>
+      
+      <div class="quick-check">
+          <div class="applied-title">QUICK-CHECK QUESTIONS (from the exam bank — try before flipping to the sim)</div>
+          <ol>
+            <li>What's the key distinction between a UI Policy and a Business Rule?</li><li>What is Flow Designer primarily used for?</li><li>Where do Client Scripts run, and when are they appropriate?</li><li>What does Global Search do that a single list-view filter does not?</li>
+          </ol>
+        </div>
+    </section>
+
+  <div class="footer-links">
+    <a href="/html/l1-copilot/servicenow-fundamentals.html">← FUNDAMENTALS WALKTHROUGH</a>
+    <a href="/html/l1-copilot/servicenow-scenarios.html">SCENARIO ENGINE →</a>
+    <a href="/html/l1-copilot/servicenow-exam-sim.html">TIMED EXAM SIM →</a>
+    <a href="/html/l1-copilot/l1-ticket-copilot.html">L1 TICKET COPILOT →</a>
+  </div>
+</div>
+</body>
+</html>
