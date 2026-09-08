@@ -16,9 +16,32 @@ const fs = require('fs');
 const path = require('path');
 
 const { requireRole } = require('../middleware/require-auth');
+const { groqChat } = require('./_shared');
 
 const PROVIDERS_DIR = path.join(__dirname, '..', 'data', 'training-intelligence', 'providers');
 const ADMIN_ROLES = ['admin', 'manager'];
+
+// Teach Me content is general domain-knowledge explanation ("what is
+// Platform Implementation and what should I know about it"), not blueprint
+// facts — an LLM explaining a well-known concept is a different honesty risk
+// than an LLM guessing an exam's domain weight. The system prompt still
+// explicitly forbids stating exam weights/item counts/pass scores, since
+// those belong to the verified blueprint config, not a free-generated
+// explanation. Cached in memory per (providerId, domainId) since the content
+// doesn't change request to request and Groq calls aren't free.
+global.TSM_TEACH_ME_CACHE = global.TSM_TEACH_ME_CACHE || {};
+
+function teachMeSystemPrompt(providerDisplayName) {
+  return `You are a certification study tutor for ${providerDisplayName}. ` +
+    'Given one exam domain, write a clear study-guide explanation: the core ' +
+    'concepts in that domain, key terminology a test-taker needs to know, and ' +
+    'what to focus study time on. Structure it with short headers or bullets. ' +
+    'Do NOT state or imply any specific exam weight percentage, question count, ' +
+    'passing score, or blueprint structure for this certification — those come ' +
+    'from a separately verified source, not from you. If the user seems to want ' +
+    'that kind of number, tell them to check the verified blueprint in this app ' +
+    'instead of stating one yourself. No preamble, get straight into the content.';
+}
 
 function providerPath(providerId) {
   // providerId comes straight from the URL; keep it to a safe slug so this
@@ -148,17 +171,35 @@ router.get('/api/training-intelligence/roadmap/:providerId', (req, res) => {
 });
 
 // GET /api/training-intelligence/teach/:providerId/:domainId
-// Teach Me content layer — intentionally not built yet. Per the build order
-// this is the third phase (after blueprint config + roadmap), and the
-// auto-detect/any-URL provider generator is explicitly deferred further
-// still since it's the piece most likely to fabricate confident domain
-// weights for unverified providers. Returning an honest 501 here rather than
-// a stubbed-out fake explanation.
-router.get('/api/training-intelligence/teach/:providerId/:domainId', (_req, res) => {
-  res.status(501).json({
-    ok: false,
-    error: 'Teach Me content generation is not implemented yet — next build phase after blueprint + roadmap.'
-  });
+// Teach Me content layer. Generates a general study explanation of one
+// blueprint domain via the shared Groq helper. The auto-detect/any-URL
+// provider generator is still explicitly deferred — this only teaches
+// domains that already exist in a hand-authored provider config, so there's
+// no path for the LLM to invent a domain that isn't real.
+router.get('/api/training-intelligence/teach/:providerId/:domainId', async (req, res) => {
+  const data = loadProvider(req.params.providerId);
+  if (!data) return res.status(404).json({ ok: false, error: 'Unknown provider' });
+
+  const domain = (data.domains || []).find(d => d.id === req.params.domainId);
+  if (!domain) return res.status(404).json({ ok: false, error: 'Unknown domain for this provider' });
+
+  const cacheKey = `${req.params.providerId}:${req.params.domainId}`;
+  const cached = global.TSM_TEACH_ME_CACHE[cacheKey];
+  if (cached) {
+    return res.json({ ok: true, providerId: data.providerId, domainId: domain.id, label: domain.label, verified: !!data.verified, content: cached, cached: true });
+  }
+
+  try {
+    const content = await groqChat(
+      teachMeSystemPrompt(data.displayName),
+      `Teach me the "${domain.label}" domain.`,
+      1200
+    );
+    global.TSM_TEACH_ME_CACHE[cacheKey] = content;
+    res.json({ ok: true, providerId: data.providerId, domainId: domain.id, label: domain.label, verified: !!data.verified, content, cached: false });
+  } catch (e) {
+    res.status(502).json({ ok: false, error: e.message || 'Teach Me generation failed' });
+  }
 });
 
 module.exports = router;

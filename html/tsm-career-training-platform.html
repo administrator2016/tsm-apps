@@ -2836,8 +2836,28 @@ nav {
     var domainsEl = document.getElementById('ti-domains');
     var roadmapEl = document.getElementById('ti-roadmap');
     var roadmapBodyEl = document.getElementById('ti-roadmap-body');
+    var teachEl = document.getElementById('ti-teach');
+    var teachBodyEl = document.getElementById('ti-teach-body');
 
     if (!loadingEl || !domainsEl) return;
+
+    function loadTeachMe(domainId, labelText) {
+      teachEl.style.display = 'block';
+      teachBodyEl.textContent = 'Loading "' + labelText + '"…';
+      fetch('/api/training-intelligence/teach/' + providerId + '/' + domainId)
+        .then(function (r) { return r.json().then(function (body) { return { status: r.status, body: body }; }); })
+        .then(function (res) {
+          if (res.status === 501) {
+            teachBodyEl.textContent = res.body.error || 'Teach Me is not available yet for this domain.';
+            return;
+          }
+          if (!res.body || res.body.ok === false) throw new Error(res.body && res.body.error || 'unknown error');
+          teachBodyEl.textContent = res.body.content;
+        })
+        .catch(function (err) {
+          teachBodyEl.textContent = 'Could not load Teach Me content (' + err.message + ').';
+        });
+    }
 
     fetch('/api/training-intelligence/roadmap/' + providerId)
       .then(function (r) {
@@ -2860,9 +2880,16 @@ nav {
           var weightLabel = data.verified
             ? (typeof d.weight === 'number' ? d.weight + '%' : '—')
             : ('~' + d.estimatedWeight + '% (est.)');
-          return '<div style="display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--text2);">' +
-            '<span>' + d.label + '</span><span>' + weightLabel + '</span></div>';
+          return '<div class="ti-domain-row" data-domain-id="' + d.id + '" data-domain-label="' + d.label + '" ' +
+            'style="display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--text2);cursor:pointer;">' +
+            '<span>' + d.label + ' <span style="color:var(--text3);font-size:10px;">(Teach Me)</span></span><span>' + weightLabel + '</span></div>';
         }).join('');
+
+        Array.prototype.forEach.call(domainsEl.querySelectorAll('.ti-domain-row'), function (row) {
+          row.addEventListener('click', function () {
+            loadTeachMe(row.getAttribute('data-domain-id'), row.getAttribute('data-domain-label'));
+          });
+        });
 
         roadmapEl.style.display = 'block';
         roadmapBodyEl.textContent = data.verified
