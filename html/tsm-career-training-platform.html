@@ -2824,6 +2824,68 @@ nav {
 (function () {
   'use strict';
 
+  // TRAINING INTELLIGENCE panel wiring. Fetches the blueprint + roadmap for
+  // one hardcoded provider (servicenow-csa) — the "any URL, auto-detect
+  // provider" generalization is intentionally not built yet per the
+  // honesty-pattern build order. Never hide the unverified banner while
+  // verified is false; that's the whole point of the backend shape.
+  function bootTrainingIntelligence() {
+    var providerId = 'servicenow-csa';
+    var loadingEl = document.getElementById('ti-loading');
+    var bannerEl = document.getElementById('ti-unverified-banner');
+    var domainsEl = document.getElementById('ti-domains');
+    var roadmapEl = document.getElementById('ti-roadmap');
+    var roadmapBodyEl = document.getElementById('ti-roadmap-body');
+
+    if (!loadingEl || !domainsEl) return;
+
+    fetch('/api/training-intelligence/roadmap/' + providerId)
+      .then(function (r) {
+        if (!r.ok) throw new Error('roadmap fetch failed: ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data || data.ok === false) throw new Error(data && data.error || 'unknown error');
+        loadingEl.style.display = 'none';
+
+        if (!data.verified) {
+          bannerEl.style.display = 'block';
+          bannerEl.textContent = 'Unverified — these domain weights are an even-split estimate, not the real ServiceNow CSA blueprint. Confirm against your Now Learning account before treating this as authoritative.';
+        } else {
+          bannerEl.style.display = 'none';
+        }
+
+        domainsEl.style.display = 'block';
+        domainsEl.innerHTML = (data.roadmap || []).map(function (d) {
+          var weightLabel = data.verified
+            ? (typeof d.weight === 'number' ? d.weight + '%' : '—')
+            : ('~' + d.estimatedWeight + '% (est.)');
+          return '<div style="display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--text2);">' +
+            '<span>' + d.label + '</span><span>' + weightLabel + '</span></div>';
+        }).join('');
+
+        roadmapEl.style.display = 'block';
+        roadmapBodyEl.textContent = data.verified
+          ? 'Ordered above by real blueprint weight — start with the highest-weighted domain.'
+          : 'Ordered as loaded (no verified weights yet), so this isn\'t a real priority order — an admin needs to confirm the blueprint first.';
+      })
+      .catch(function (err) {
+        loadingEl.textContent = 'Could not load blueprint (' + err.message + ').';
+      });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootTrainingIntelligence);
+  } else {
+    bootTrainingIntelligence();
+  }
+})();
+</script>
+
+<script>
+(function () {
+  'use strict';
+
   function bootRCMCareerPath() {
     var progression = window.TSMRCMCareerProgression;
 

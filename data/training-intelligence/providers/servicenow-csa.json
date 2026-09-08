@@ -1,0 +1,20 @@
+{
+  "providerId": "servicenow-csa",
+  "displayName": "ServiceNow Certified System Administrator (CSA)",
+  "verified": false,
+  "sourceUrl": null,
+  "lastVerified": null,
+  "verifiedBy": null,
+  "note": "Domain weights below are unverified placeholders. The CSA blueprint re-weights with every ServiceNow release train and third-party estimates disagree with each other, so nothing here should be treated as authoritative until an admin confirms it against the real Now Learning CSA blueprint page (or a Learning Credits admin export) and sets verified:true.",
+  "domains": [
+    { "id": "platform-implementation",   "label": "Platform Implementation",        "weight": null },
+    { "id": "ui-ux",                     "label": "UI/UX",                          "weight": null },
+    { "id": "notifications",             "label": "Notifications",                  "weight": null },
+    { "id": "reporting-performance",     "label": "Reporting & Performance Analytics", "weight": null },
+    { "id": "data-management",           "label": "Data Management",                "weight": null },
+    { "id": "service-management",        "label": "Service Management",             "weight": null },
+    { "id": "system-security",           "label": "System Security",                "weight": null },
+    { "id": "integrations",              "label": "Integrations",                   "weight": null }
+  ],
+  "schemaVersion": 1
+}

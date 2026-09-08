@@ -2974,6 +2974,7 @@ app.post('/api/music/song/learn', async (req, res) => {
 // mounted. Mounted AFTER the routes above so those (already real, Groq-backed)
 // inline handlers keep precedence for any overlapping paths.
 app.use(require('./routes/music'));
+app.use(require('./routes/training-intelligence'));
 
 // ── ENTERPRISE CAPABILITY BRIDGE ───────────────────────────────────────────────
 // Session-persisted stores for O2C/CRM/CPQ/Catalog/Approval (previously
