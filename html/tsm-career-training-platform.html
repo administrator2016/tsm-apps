@@ -2758,6 +2758,68 @@ nav {
 
 </section>
 
+<!-- TRAINING INTELLIGENCE — scaffold. See routes/training-intelligence.js
+     and data/training-intelligence/providers/*.json for the honesty-pattern
+     rationale: blueprint weights only render/compute once an admin sets
+     verified:true on the backend. This panel must never hide the warning
+     banner when blueprintVerified is false. -->
+<section id="tsm-training-intel"
+  style="
+    border:1px solid var(--border);
+    background:var(--surface1);
+    margin-top:1.2rem;
+  ">
+  <div style="
+    padding:1rem 1.1rem;
+    border-bottom:1px solid var(--border);
+  ">
+    <div style="
+      font-size:10px;
+      letter-spacing:.1em;
+      color:var(--purple);
+      font-weight:700;
+      margin-bottom:.35rem;
+    ">
+      TRAINING INTELLIGENCE
+    </div>
+    <div style="font-size:11px;line-height:1.6;color:var(--text2);">
+      Certification blueprint tracking, a gap-driven study roadmap, and Teach Me content — scoped to one domain at a time.
+    </div>
+  </div>
+
+  <div id="ti-unverified-banner"
+    style="
+      display:none;
+      padding:.7rem 1.1rem;
+      background:rgba(230,160,30,.12);
+      border-bottom:1px solid rgba(230,160,30,.4);
+      color:#e6a01e;
+      font-size:10.5px;
+      line-height:1.6;
+      font-weight:600;
+    ">
+  </div>
+
+  <div id="ti-body" style="padding:1rem 1.1rem;">
+    <div id="ti-loading" style="font-size:11px;color:var(--text3);">Loading blueprint…</div>
+    <div id="ti-domains" style="display:none;"></div>
+
+    <div id="ti-roadmap" style="margin-top:1rem;display:none;">
+      <div style="font-size:10px;letter-spacing:.1em;color:var(--cyan);font-weight:700;margin-bottom:.5rem;">
+        STUDY ROADMAP
+      </div>
+      <div id="ti-roadmap-body" style="font-size:11px;color:var(--text2);"></div>
+    </div>
+
+    <div id="ti-teach" style="margin-top:1rem;display:none;">
+      <div style="font-size:10px;letter-spacing:.1em;color:var(--cyan);font-weight:700;margin-bottom:.5rem;">
+        TEACH ME
+      </div>
+      <div id="ti-teach-body" style="font-size:11px;color:var(--text2);line-height:1.7;white-space:pre-wrap;"></div>
+    </div>
+  </div>
+</section>
+
 <script>
 (function () {
   'use strict';
