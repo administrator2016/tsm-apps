@@ -1,0 +1,1398 @@
+{
+  "providerId": "servicenow-csa",
+  "version": "2026-01",
+  "source": "ServiceNow CSA Mainline Exam Blueprint, January 2026",
+  "verified": false,
+  "questions": [
+    {
+      "id": "csa-pon-001",
+      "domainId": "platform-overview-navigation",
+      "question": "Which component provides the primary interface for navigating applications and modules in the modern ServiceNow platform?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Unified Navigation",
+          "correct": true,
+          "explanation": "Unified Navigation provides the primary way users move through applications, modules, and platform functionality in the ServiceNow instance.",
+          "knowledge": [
+            "Used to navigate ServiceNow applications and modules.",
+            "Provides access to platform functionality from a common navigation experience.",
+            "Navigation concepts are part of the CSA Platform Overview and Navigation domain."
+          ]
+        },
+        {
+          "id": "b",
+          "text": "Transform Map",
+          "correct": false,
+          "explanation": "A Transform Map controls how imported source data is mapped and transformed into fields on a target ServiceNow table.",
+          "knowledge": [
+            "Used during data imports.",
+            "Maps source fields to target-table fields.",
+            "Can transform incoming values before they are written to the target table.",
+            "Commonly works with Import Sets during data migration."
+          ]
+        },
+        {
+          "id": "c",
+          "text": "Business Rule",
+          "correct": false,
+          "explanation": "A Business Rule is server-side logic that can run when records are queried, inserted, updated, deleted, or otherwise processed.",
+          "knowledge": [
+            "Runs on the server.",
+            "Can enforce business logic around record operations.",
+            "Can execute before, after, asynchronously, or through display processing depending on configuration.",
+            "Business Rules are different from client-side UI behavior."
+          ]
+        },
+        {
+          "id": "d",
+          "text": "Import Set",
+          "correct": false,
+          "explanation": "An Import Set provides a staging mechanism for bringing external data into ServiceNow before it is transformed and loaded into target tables.",
+          "knowledge": [
+            "Used for importing external data.",
+            "Provides staging tables for incoming data.",
+            "Often works with Transform Maps.",
+            "Important to understand for data migration and integration scenarios."
+          ]
+        }
+      ],
+      "explanation": "Next Experience Unified Navigation provides the primary navigation experience for finding applications, modules, and platform functionality."
+    },
+    {
+      "id": "csa-pon-002",
+      "domainId": "platform-overview-navigation",
+      "question": "What is the primary purpose of a ServiceNow instance?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To provide an isolated environment containing an organization's platform data and configuration",
+          "correct": true,
+          "explanation": "A ServiceNow instance provides an organization's environment for its platform data, configuration, applications, and related services.",
+          "knowledge": [
+            "An instance contains organization-specific data and configuration.",
+            "Instance configuration determines how platform functionality behaves.",
+            "Understanding the instance is foundational CSA knowledge."
+          ]
+        },
+        {
+          "id": "b",
+          "text": "To replace a company's network infrastructure",
+          "correct": false,
+          "explanation": "A ServiceNow instance is not a replacement for an organization's network infrastructure; ServiceNow provides cloud-based platform and workflow capabilities.",
+          "knowledge": [
+            "ServiceNow is a platform rather than a physical network replacement.",
+            "Networking infrastructure and ServiceNow platform services are different technology layers."
+          ]
+        },
+        {
+          "id": "c",
+          "text": "To store only user authentication records",
+          "correct": false,
+          "explanation": "A ServiceNow instance contains much more than authentication records. It can contain application data, configuration, workflows, security settings, and other platform information.",
+          "knowledge": [
+            "ServiceNow instances contain application and configuration data.",
+            "Authentication is only one part of the broader platform environment."
+          ]
+        },
+        {
+          "id": "d",
+          "text": "To host third-party desktop applications",
+          "correct": false,
+          "explanation": "A ServiceNow instance is designed to provide platform applications and workflow capabilities, not to function as a general desktop application host.",
+          "knowledge": [
+            "ServiceNow applications run within the ServiceNow platform.",
+            "The platform is designed around enterprise workflows, data, configuration, and automation."
+          ]
+        }
+      ],
+      "explanation": "A ServiceNow instance is an organization's environment containing its platform configuration, applications, data, users, and related services."
+    },
+    {
+      "id": "csa-pon-003",
+      "domainId": "platform-overview-navigation",
+      "question": "Which statement best describes ServiceNow as a platform?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "It provides configurable services and applications on a common platform",
+          "correct": true,
+          "explanation": "ServiceNow provides a common platform where configurable applications, services, data, automation, and workflows can operate together.",
+          "knowledge": [
+            "ServiceNow is a configurable enterprise platform.",
+            "Multiple applications can share platform capabilities and data structures.",
+            "Platform configuration is a major part of system administration."
+          ]
+        },
+        {
+          "id": "b",
+          "text": "It is exclusively an IT asset inventory database",
+          "correct": false,
+          "explanation": "ServiceNow is broader than asset inventory. It supports many applications, workflows, data structures, services, automation capabilities, and administrative functions.",
+          "knowledge": [
+            "Asset management is only one capability area.",
+            "ServiceNow supports ITSM and many other enterprise workflows.",
+            "The platform is extensible beyond inventory."
+          ]
+        },
+        {
+          "id": "c",
+          "text": "It is only a ticketing application",
+          "correct": false,
+          "explanation": "ServiceNow includes ticketing capabilities, but the platform extends well beyond incident tickets into service management, automation, data management, security, and other applications.",
+          "knowledge": [
+            "Incident management is only one ServiceNow capability.",
+            "The platform supports applications, workflows, automation, analytics, and data management."
+          ]
+        },
+        {
+          "id": "d",
+          "text": "It is a desktop operating system",
+          "correct": false,
+          "explanation": "ServiceNow is an enterprise cloud platform, not a desktop operating system.",
+          "knowledge": [
+            "ServiceNow is accessed through web-based platform experiences.",
+            "It provides enterprise workflow and application capabilities rather than operating-system functions."
+          ]
+        }
+      ],
+      "explanation": "ServiceNow provides a broad platform supporting configurable applications, workflows, data, automation, and services."
+    },
+    {
+      "id": "csa-pon-004",
+      "domainId": "platform-overview-navigation",
+      "question": "A new administrator needs to locate a module without knowing which application contains it. Which platform capability should they use first?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Unified Navigation search",
+          "correct": true,
+          "explanation": "Unified Navigation search helps users locate applications, modules, and available platform functionality from the navigation experience.",
+          "knowledge": [
+            "Supports finding ServiceNow functionality through navigation.",
+            "Helps users locate applications and modules.",
+            "Is a navigation capability rather than a data-import or security mechanism."
+          ]
+        },
+        {
+          "id": "b",
+          "text": "Transform Map",
+          "correct": false,
+          "explanation": "A Transform Map controls how imported source data is mapped and transformed into fields on a target ServiceNow table.",
+          "knowledge": [
+            "Used during data imports.",
+            "Maps source fields to target-table fields.",
+            "Can transform incoming values before they are written to the target table.",
+            "Commonly works with Import Sets during data migration."
+          ]
+        },
+        {
+          "id": "c",
+          "text": "ACL debugger",
+          "correct": false,
+          "explanation": "The ACL debugger is a security troubleshooting capability used to understand access-control decisions; it is not the normal mechanism for finding modules.",
+          "knowledge": [
+            "Useful when troubleshooting Access Control Lists.",
+            "Helps administrators investigate why access is allowed or denied.",
+            "Belongs to the broader platform security knowledge area."
+          ]
+        },
+        {
+          "id": "d",
+          "text": "Import Set table",
+          "correct": false,
+          "explanation": "An Import Set table is a staging location for imported external data before transformation into a target ServiceNow table.",
+          "knowledge": [
+            "Stores imported source data during the import process.",
+            "Works with Transform Maps.",
+            "Helps separate raw incoming data from the final target-table structure."
+          ]
+        }
+      ],
+      "explanation": "Unified Navigation provides search and navigation capabilities for locating platform applications and modules."
+    },
+    {
+      "id": "csa-ic-001",
+      "domainId": "instance-configuration",
+      "question": "What is the primary purpose of installing a ServiceNow application or plugin?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To add packaged functionality to an instance",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To add packaged functionality to an instance",
+            "Related CSA domain: instance-configuration"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "To physically increase server memory",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To physically increase server memory",
+            "Related CSA domain: instance-configuration"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "To replace the database engine",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To replace the database engine",
+            "Related CSA domain: instance-configuration"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "To create an external VPN",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To create an external VPN",
+            "Related CSA domain: instance-configuration"
+          ]
+        }
+      ],
+      "explanation": "Applications and plugins provide packaged capabilities that can be activated in a ServiceNow instance."
+    },
+    {
+      "id": "csa-ic-002",
+      "domainId": "instance-configuration",
+      "question": "Which activity is an example of personalizing the ServiceNow user experience?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Changing user-specific display or navigation preferences",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Changing user-specific display or navigation preferences",
+            "Related CSA domain: instance-configuration"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "Creating a database index directly in SQL",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Creating a database index directly in SQL",
+            "Related CSA domain: instance-configuration"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "Replacing the ServiceNow database server",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Replacing the ServiceNow database server",
+            "Related CSA domain: instance-configuration"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "Changing the operating system kernel",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Changing the operating system kernel",
+            "Related CSA domain: instance-configuration"
+          ]
+        }
+      ],
+      "explanation": "Personalization changes the experience for an individual user without necessarily changing the underlying application configuration."
+    },
+    {
+      "id": "csa-ic-003",
+      "domainId": "instance-configuration",
+      "question": "Why should an administrator distinguish personalization from customization?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Personalization generally affects an individual's experience, while customization changes platform behavior or configuration",
+          "correct": true,
+          "explanation": "Forms provide the interface for viewing and editing an individual ServiceNow record.",
+          "knowledge": [
+            "Forms display fields belonging to a record.",
+            "Administrators can configure form layouts and field presentation.",
+            "Form configuration is distinct from list configuration."
+          ]
+        },
+        {
+          "id": "b",
+          "text": "They are always identical operations",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: They are always identical operations",
+            "Related CSA domain: instance-configuration"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "Customization only changes a user's browser",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Customization only changes a user's browser",
+            "Related CSA domain: instance-configuration"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "Personalization permanently changes every user's instance",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Personalization permanently changes every user's instance",
+            "Related CSA domain: instance-configuration"
+          ]
+        }
+      ],
+      "explanation": "The distinction helps administrators understand the scope and impact of a configuration change."
+    },
+    {
+      "id": "csa-ic-004",
+      "domainId": "instance-configuration",
+      "question": "Which is an example of a common ServiceNow user interface?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A list displaying records from a table",
+          "correct": true,
+          "explanation": "Lists present collections of records and provide tools for viewing, sorting, filtering, and working with those records.",
+          "knowledge": [
+            "Lists display records from ServiceNow tables.",
+            "Users can use list controls and filters to locate records.",
+            "List configuration is part of CSA collaboration and application configuration knowledge."
+          ]
+        },
+        {
+          "id": "b",
+          "text": "A physical network switch",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: A physical network switch",
+            "Related CSA domain: instance-configuration"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "A DNS resolver",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: A DNS resolver",
+            "Related CSA domain: instance-configuration"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "A Windows registry hive",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: A Windows registry hive",
+            "Related CSA domain: instance-configuration"
+          ]
+        }
+      ],
+      "explanation": "Lists and forms are common ServiceNow interfaces for viewing and working with records."
+    },
+    {
+      "id": "csa-cac-001",
+      "domainId": "configuring-applications-collaboration",
+      "question": "What is the primary purpose of a filter on a ServiceNow list?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To restrict the records displayed according to selected conditions",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To restrict the records displayed according to selected conditions",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "To permanently delete records",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To permanently delete records",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "To encrypt the entire table",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To encrypt the entire table",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "To install an application",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To install an application",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        }
+      ],
+      "explanation": "List filters define conditions that determine which records are displayed."
+    },
+    {
+      "id": "csa-cac-002",
+      "domainId": "configuring-applications-collaboration",
+      "question": "What is the main purpose of a form in ServiceNow?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To display and work with an individual record",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To display and work with an individual record",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "To configure a network firewall",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To configure a network firewall",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "To compile JavaScript outside the platform",
+          "correct": false,
+          "explanation": "Forms provide the interface for viewing and editing an individual ServiceNow record.",
+          "knowledge": [
+            "Forms display fields belonging to a record.",
+            "Administrators can configure form layouts and field presentation.",
+            "Form configuration is distinct from list configuration."
+          ]
+        },
+        {
+          "id": "d",
+          "text": "To replace list filtering",
+          "correct": false,
+          "explanation": "Lists present collections of records and provide tools for viewing, sorting, filtering, and working with those records.",
+          "knowledge": [
+            "Lists display records from ServiceNow tables.",
+            "Users can use list controls and filters to locate records.",
+            "List configuration is part of CSA collaboration and application configuration knowledge."
+          ]
+        }
+      ],
+      "explanation": "Forms provide an interface for viewing and editing an individual record."
+    },
+    {
+      "id": "csa-cac-003",
+      "domainId": "configuring-applications-collaboration",
+      "question": "What does form configuration primarily control?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The fields and related elements presented on a form",
+          "correct": true,
+          "explanation": "Forms provide the interface for viewing and editing an individual ServiceNow record.",
+          "knowledge": [
+            "Forms display fields belonging to a record.",
+            "Administrators can configure form layouts and field presentation.",
+            "Form configuration is distinct from list configuration."
+          ]
+        },
+        {
+          "id": "b",
+          "text": "The physical location of ServiceNow servers",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: The physical location of ServiceNow servers",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "The user's internet connection",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: The user's internet connection",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "The database vendor's operating system",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: The database vendor's operating system",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        }
+      ],
+      "explanation": "Form configuration allows administrators to control how fields and other form elements are presented."
+    },
+    {
+      "id": "csa-cac-004",
+      "domainId": "configuring-applications-collaboration",
+      "question": "What is the purpose of a form template?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To predefine values that can be applied when creating records",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To predefine values that can be applied when creating records",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "To permanently lock every field in a table",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To permanently lock every field in a table",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "To replace access controls",
+          "correct": false,
+          "explanation": "Access Controls determine whether users are permitted to access or perform operations on protected ServiceNow data and functionality.",
+          "knowledge": [
+            "ACLs are central to ServiceNow platform security.",
+            "Access can be controlled at different levels.",
+            "Security decisions depend on configured access rules and user context."
+          ]
+        },
+        {
+          "id": "d",
+          "text": "To install plugins",
+          "correct": false,
+          "explanation": "Plugins activate additional ServiceNow functionality and capabilities within an instance.",
+          "knowledge": [
+            "Plugins can add applications or platform capabilities.",
+            "Installing a plugin can introduce additional tables, modules, configuration, or functionality.",
+            "Plugin administration is part of instance configuration."
+          ]
+        }
+      ],
+      "explanation": "Templates can provide predefined field values to speed record creation and promote consistency."
+    },
+    {
+      "id": "csa-cac-005",
+      "domainId": "configuring-applications-collaboration",
+      "question": "Which capability is designed to help teams visually organize and work with task records?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Visual Task Boards",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Visual Task Boards",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "Transform Maps",
+          "correct": false,
+          "explanation": "A Transform Map controls how imported source data is mapped and transformed into fields on a target ServiceNow table.",
+          "knowledge": [
+            "Used during data imports.",
+            "Maps source fields to target-table fields.",
+            "Can transform incoming values before they are written to the target table.",
+            "Commonly works with Import Sets during data migration."
+          ]
+        },
+        {
+          "id": "c",
+          "text": "Access Control Lists",
+          "correct": false,
+          "explanation": "Access Controls determine whether users are permitted to access or perform operations on protected ServiceNow data and functionality.",
+          "knowledge": [
+            "ACLs are central to ServiceNow platform security.",
+            "Access can be controlled at different levels.",
+            "Security decisions depend on configured access rules and user context."
+          ]
+        },
+        {
+          "id": "d",
+          "text": "Import Sets",
+          "correct": false,
+          "explanation": "An Import Set provides a staging mechanism for bringing external data into ServiceNow before it is transformed and loaded into target tables.",
+          "knowledge": [
+            "Used for importing external data.",
+            "Provides staging tables for incoming data.",
+            "Often works with Transform Maps.",
+            "Important to understand for data migration and integration scenarios."
+          ]
+        }
+      ],
+      "explanation": "Visual Task Boards provide a visual way to organize and manage task-oriented work."
+    },
+    {
+      "id": "csa-cac-006",
+      "domainId": "configuring-applications-collaboration",
+      "question": "What is a key purpose of ServiceNow notifications?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To communicate relevant record or workflow events to users",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To communicate relevant record or workflow events to users",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "To create database tables automatically",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To create database tables automatically",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "To replace all access controls",
+          "correct": false,
+          "explanation": "Access Controls determine whether users are permitted to access or perform operations on protected ServiceNow data and functionality.",
+          "knowledge": [
+            "ACLs are central to ServiceNow platform security.",
+            "Access can be controlled at different levels.",
+            "Security decisions depend on configured access rules and user context."
+          ]
+        },
+        {
+          "id": "d",
+          "text": "To migrate an instance database",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To migrate an instance database",
+            "Related CSA domain: configuring-applications-collaboration"
+          ]
+        }
+      ],
+      "explanation": "Notifications can communicate events, changes, and other relevant information to users."
+    },
+    {
+      "id": "csa-ssa-001",
+      "domainId": "self-service-automation",
+      "question": "What is the primary purpose of Knowledge Management?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To organize and provide access to useful knowledge content",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To organize and provide access to useful knowledge content",
+            "Related CSA domain: self-service-automation"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "To replace the ServiceNow database",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To replace the ServiceNow database",
+            "Related CSA domain: self-service-automation"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "To configure network routing",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To configure network routing",
+            "Related CSA domain: self-service-automation"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "To compile server operating systems",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To compile server operating systems",
+            "Related CSA domain: self-service-automation"
+          ]
+        }
+      ],
+      "explanation": "Knowledge Management helps organizations create, organize, publish, and consume knowledge content."
+    },
+    {
+      "id": "csa-ssa-002",
+      "domainId": "self-service-automation",
+      "question": "What is the purpose of a Service Catalog?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To provide users with a structured way to request available goods or services",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To provide users with a structured way to request available goods or services",
+            "Related CSA domain: self-service-automation"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "To store database indexes",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To store database indexes",
+            "Related CSA domain: self-service-automation"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "To configure user passwords at the operating-system level",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To configure user passwords at the operating-system level",
+            "Related CSA domain: self-service-automation"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "To replace the CMDB",
+          "correct": false,
+          "explanation": "The Configuration Management Database stores configuration items and relationships that help organizations understand their technology environment.",
+          "knowledge": [
+            "CMDB contains configuration item information.",
+            "Relationships between configuration items provide contextual information.",
+            "CMDB knowledge is part of the CSA database management domain."
+          ]
+        }
+      ],
+      "explanation": "The Service Catalog presents requestable services and items through a structured self-service experience."
+    },
+    {
+      "id": "csa-ssa-003",
+      "domainId": "self-service-automation",
+      "question": "What is a primary purpose of Workflow Studio?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To design and automate workflows and processes",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To design and automate workflows and processes",
+            "Related CSA domain: self-service-automation"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "To replace the ServiceNow database",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To replace the ServiceNow database",
+            "Related CSA domain: self-service-automation"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "To configure DNS zones",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To configure DNS zones",
+            "Related CSA domain: self-service-automation"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "To manage physical servers",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To manage physical servers",
+            "Related CSA domain: self-service-automation"
+          ]
+        }
+      ],
+      "explanation": "Workflow Studio provides tools for designing and managing automated workflows and processes."
+    },
+    {
+      "id": "csa-ssa-004",
+      "domainId": "self-service-automation",
+      "question": "What is Virtual Agent primarily intended to provide?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Conversational self-service and assistance",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Conversational self-service and assistance",
+            "Related CSA domain: self-service-automation"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "Database backup storage",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Database backup storage",
+            "Related CSA domain: self-service-automation"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "Operating-system patch management",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Operating-system patch management",
+            "Related CSA domain: self-service-automation"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "Network packet inspection",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Network packet inspection",
+            "Related CSA domain: self-service-automation"
+          ]
+        }
+      ],
+      "explanation": "Virtual Agent provides a conversational interface for users to obtain assistance and perform supported self-service activities."
+    },
+    {
+      "id": "csa-dps-001",
+      "domainId": "database-management-platform-security",
+      "question": "What does a ServiceNow data schema describe?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The structure and relationships of tables and fields",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: The structure and relationships of tables and fields",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "The physical location of every ServiceNow server",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: The physical location of every ServiceNow server",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "A user's browser settings",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: A user's browser settings",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "Only email notification rules",
+          "correct": false,
+          "explanation": "Notifications communicate information to users when configured events or conditions occur.",
+          "knowledge": [
+            "Notifications can be triggered by configured conditions or events.",
+            "They support communication around record activity and workflow.",
+            "Notifications are part of application collaboration configuration."
+          ]
+        }
+      ],
+      "explanation": "The data schema represents the structure of tables, fields, and relationships within the platform."
+    },
+    {
+      "id": "csa-dps-002",
+      "domainId": "database-management-platform-security",
+      "question": "What is the primary purpose of an Access Control rule?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To determine whether a user can perform a specified operation on protected data",
+          "correct": true,
+          "explanation": "Forms provide the interface for viewing and editing an individual ServiceNow record.",
+          "knowledge": [
+            "Forms display fields belonging to a record.",
+            "Administrators can configure form layouts and field presentation.",
+            "Form configuration is distinct from list configuration."
+          ]
+        },
+        {
+          "id": "b",
+          "text": "To create a visual dashboard",
+          "correct": false,
+          "explanation": "Dashboards provide visual presentations of information such as reports, metrics, and other analytical content.",
+          "knowledge": [
+            "Dashboards combine visual information for users.",
+            "Reports and analytics can be presented through dashboards.",
+            "Dashboards support operational visibility and decision-making."
+          ]
+        },
+        {
+          "id": "c",
+          "text": "To import spreadsheet data automatically",
+          "correct": false,
+          "explanation": "Importing Data brings information from external sources into ServiceNow using supported import mechanisms and transformation processes.",
+          "knowledge": [
+            "Imports commonly use staging data and transformation.",
+            "Import Sets and Transform Maps are important related concepts.",
+            "Data migration requires attention to source and target structures."
+          ]
+        },
+        {
+          "id": "d",
+          "text": "To configure a notification email template",
+          "correct": false,
+          "explanation": "Notifications communicate information to users when configured events or conditions occur.",
+          "knowledge": [
+            "Notifications can be triggered by configured conditions or events.",
+            "They support communication around record activity and workflow.",
+            "Notifications are part of application collaboration configuration."
+          ]
+        }
+      ],
+      "explanation": "Access Controls enforce authorization rules governing access to tables, records, and fields."
+    },
+    {
+      "id": "csa-dps-003",
+      "domainId": "database-management-platform-security",
+      "question": "What is the purpose of an Import Set?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To stage imported data before it is transformed into target records",
+          "correct": true,
+          "explanation": "Importing Data brings information from external sources into ServiceNow using supported import mechanisms and transformation processes.",
+          "knowledge": [
+            "Imports commonly use staging data and transformation.",
+            "Import Sets and Transform Maps are important related concepts.",
+            "Data migration requires attention to source and target structures."
+          ]
+        },
+        {
+          "id": "b",
+          "text": "To replace all application access controls",
+          "correct": false,
+          "explanation": "Access Controls determine whether users are permitted to access or perform operations on protected ServiceNow data and functionality.",
+          "knowledge": [
+            "ACLs are central to ServiceNow platform security.",
+            "Access can be controlled at different levels.",
+            "Security decisions depend on configured access rules and user context."
+          ]
+        },
+        {
+          "id": "c",
+          "text": "To create dashboards automatically",
+          "correct": false,
+          "explanation": "Dashboards provide visual presentations of information such as reports, metrics, and other analytical content.",
+          "knowledge": [
+            "Dashboards combine visual information for users.",
+            "Reports and analytics can be presented through dashboards.",
+            "Dashboards support operational visibility and decision-making."
+          ]
+        },
+        {
+          "id": "d",
+          "text": "To define user interface themes",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To define user interface themes",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        }
+      ],
+      "explanation": "Import Sets provide a staging mechanism for external data before transformation into target tables."
+    },
+    {
+      "id": "csa-dps-004",
+      "domainId": "database-management-platform-security",
+      "question": "What is a key purpose of the CMDB?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To store and manage configuration items and their relationships",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To store and manage configuration items and their relationships",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "To replace all Service Catalog requests",
+          "correct": false,
+          "explanation": "Service Catalog provides a structured way for users to request services, items, or fulfillment activities.",
+          "knowledge": [
+            "Catalog items can represent requested services or products.",
+            "Catalog requests can initiate fulfillment workflows.",
+            "Service Catalog supports self-service."
+          ]
+        },
+        {
+          "id": "c",
+          "text": "To manage only email templates",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To manage only email templates",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "To provide operating-system user accounts",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To provide operating-system user accounts",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        }
+      ],
+      "explanation": "The Configuration Management Database stores configuration item information and relationships."
+    },
+    {
+      "id": "csa-dps-005",
+      "domainId": "database-management-platform-security",
+      "question": "What is CSDM intended to provide?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A standardized model for organizing and relating service-related data",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: A standardized model for organizing and relating service-related data",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "A replacement for JavaScript",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: A replacement for JavaScript",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "A method for encrypting every ServiceNow record",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: A method for encrypting every ServiceNow record",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "A user-interface theme engine",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: A user-interface theme engine",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        }
+      ],
+      "explanation": "The Common Service Data Model provides a standardized approach to structuring service-related data."
+    },
+    {
+      "id": "csa-dps-006",
+      "domainId": "database-management-platform-security",
+      "question": "Which principle best describes the shared responsibility model?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Security responsibilities are divided between the cloud provider and the customer",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Security responsibilities are divided between the cloud provider and the customer",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "The customer is responsible for every physical data center component",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: The customer is responsible for every physical data center component",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "The provider is responsible for every customer configuration",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: The provider is responsible for every customer configuration",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "Security is handled only by the database administrator",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Security is handled only by the database administrator",
+            "Related CSA domain: database-management-platform-security"
+          ]
+        }
+      ],
+      "explanation": "The shared responsibility model divides security responsibilities between the service provider and customer according to the service and configuration."
+    },
+    {
+      "id": "csa-dmi-001",
+      "domainId": "data-migration-integration",
+      "question": "What is the primary purpose of a UI Policy?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To dynamically control form-field behavior based on conditions",
+          "correct": true,
+          "explanation": "Forms provide the interface for viewing and editing an individual ServiceNow record.",
+          "knowledge": [
+            "Forms display fields belonging to a record.",
+            "Administrators can configure form layouts and field presentation.",
+            "Form configuration is distinct from list configuration."
+          ]
+        },
+        {
+          "id": "b",
+          "text": "To migrate an entire database",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To migrate an entire database",
+            "Related CSA domain: data-migration-integration"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "To create physical servers",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To create physical servers",
+            "Related CSA domain: data-migration-integration"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "To replace Access Controls",
+          "correct": false,
+          "explanation": "Access Controls determine whether users are permitted to access or perform operations on protected ServiceNow data and functionality.",
+          "knowledge": [
+            "ACLs are central to ServiceNow platform security.",
+            "Access can be controlled at different levels.",
+            "Security decisions depend on configured access rules and user context."
+          ]
+        }
+      ],
+      "explanation": "UI Policies can dynamically control form behavior such as field visibility, mandatory status, and read-only state."
+    },
+    {
+      "id": "csa-dmi-002",
+      "domainId": "data-migration-integration",
+      "question": "When does a Business Rule primarily execute?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "When its configured database operation and conditions are met",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: When its configured database operation and conditions are met",
+            "Related CSA domain: data-migration-integration"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "Only when a user opens the ServiceNow homepage",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Only when a user opens the ServiceNow homepage",
+            "Related CSA domain: data-migration-integration"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "Only when a browser is installed",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Only when a browser is installed",
+            "Related CSA domain: data-migration-integration"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "Only when an email is received externally",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Only when an email is received externally",
+            "Related CSA domain: data-migration-integration"
+          ]
+        }
+      ],
+      "explanation": "Business Rules execute server-side when their configured timing, operation, and conditions are satisfied."
+    },
+    {
+      "id": "csa-dmi-003",
+      "domainId": "data-migration-integration",
+      "question": "What is the primary purpose of a system update set?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To capture selected configuration changes for movement between instances",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To capture selected configuration changes for movement between instances",
+            "Related CSA domain: data-migration-integration"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "To store end-user passwords",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To store end-user passwords",
+            "Related CSA domain: data-migration-integration"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "To replace the CMDB",
+          "correct": false,
+          "explanation": "The Configuration Management Database stores configuration items and relationships that help organizations understand their technology environment.",
+          "knowledge": [
+            "CMDB contains configuration item information.",
+            "Relationships between configuration items provide contextual information.",
+            "CMDB knowledge is part of the CSA database management domain."
+          ]
+        },
+        {
+          "id": "d",
+          "text": "To create knowledge articles",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: To create knowledge articles",
+            "Related CSA domain: data-migration-integration"
+          ]
+        }
+      ],
+      "explanation": "Update sets capture supported configuration changes so they can be transferred between ServiceNow instances."
+    },
+    {
+      "id": "csa-dmi-004",
+      "domainId": "data-migration-integration",
+      "question": "Which scripting language is primarily used for server-side scripting in ServiceNow?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "JavaScript",
+          "correct": true,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: JavaScript",
+            "Related CSA domain: data-migration-integration"
+          ]
+        },
+        {
+          "id": "b",
+          "text": "Python",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Python",
+            "Related CSA domain: data-migration-integration"
+          ]
+        },
+        {
+          "id": "c",
+          "text": "C#",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: C#",
+            "Related CSA domain: data-migration-integration"
+          ]
+        },
+        {
+          "id": "d",
+          "text": "Ruby",
+          "correct": false,
+          "explanation": "This option represents a ServiceNow concept that should be understood in the context of the question and its domain.",
+          "knowledge": [
+            "Concept to review: Ruby",
+            "Related CSA domain: data-migration-integration"
+          ]
+        }
+      ],
+      "explanation": "ServiceNow uses JavaScript extensively for platform scripting, including server-side scripting."
+    }
+  ],
+  "trainingContent": {
+    "version": "1.0.0",
+    "mode": "all-options-teach",
+    "description": "Every answer option contains instructional content so correct and incorrect choices become reusable knowledge."
+  }
+}

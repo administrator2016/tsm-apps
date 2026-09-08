@@ -5,6 +5,165 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TSM Career Training Platform · Decision Intelligence Academy</title>
 <style>
+/* TSM Training Intelligence — Teach Me presentation */
+#ti-teach .ti-teach-heading {
+  margin: 1rem 0 .45rem 0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--cyan);
+}
+
+#ti-teach .ti-teach-paragraph {
+  margin: 0 0 .35rem 0;
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--text2);
+}
+
+#ti-teach .ti-teach-list {
+  margin: .25rem 0 .7rem 1.2rem;
+  padding: 0;
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--text2);
+}
+
+#ti-teach .ti-teach-list li {
+  margin-bottom: .25rem;
+  padding-left: .15rem;
+}
+
+#ti-teach .ti-teach-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin: .7rem 0;
+}
+
+#ti-teach .ti-teach-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+#ti-teach .ti-teach-table th,
+#ti-teach .ti-teach-table td {
+  padding: .5rem .55rem;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+#ti-teach .ti-teach-table th {
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+#ti-teach .ti-teach-table td {
+  color: var(--text2);
+}
+
+#ti-teach .ti-teach-rule {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: .8rem 0;
+}
+
+#ti-teach .ti-teach-spacer {
+  height: .35rem;
+}
+
+#ti-teach .ti-teach-incomplete {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  margin-top: 1rem;
+  padding: .7rem .8rem;
+  border: 1px solid var(--amber);
+  border-radius: 5px;
+  background: rgba(255,180,0,.035);
+}
+
+#ti-teach .ti-teach-incomplete strong {
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: var(--amber);
+}
+
+#ti-teach .ti-teach-incomplete span {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text2);
+}
+
+/* TSM Training Intelligence — quiz answer layout */
+#ti-quiz .ti-question {
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 0 1rem 0 !important;
+  padding: 1rem !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  background: rgba(255,255,255,.015) !important;
+}
+
+#ti-quiz .ti-question-choices {
+  display: block !important;
+  width: 100% !important;
+  margin-top: .75rem !important;
+}
+
+#ti-quiz .ti-choice {
+  display: flex !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 0 .5rem 0 !important;
+  padding: .7rem .75rem !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 5px !important;
+  line-height: 1.5 !important;
+  white-space: normal !important;
+  cursor: pointer !important;
+}
+
+#ti-quiz .ti-choice:last-child {
+  margin-bottom: 0 !important;
+}
+
+#ti-quiz .ti-choice:hover {
+  border-color: var(--cyan) !important;
+}
+
+#ti-quiz .ti-choice input[type="radio"] {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  margin: .18rem .6rem 0 0 !important;
+  cursor: pointer !important;
+}
+
+#ti-quiz .ti-choice-text {
+  display: block !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+#ti-quiz .ti-question-number {
+  display: block !important;
+  margin-bottom: .45rem !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: .08em !important;
+  color: var(--cyan) !important;
+  text-transform: uppercase !important;
+}
+
 :root {
   --bg: #0a0c10;
   --surface: #111318;
@@ -2595,73 +2754,29 @@ nav {
   <div class="panel-title">ServiceNow CSA &amp; ITIL v4 Foundation Prep Center</div>
   <div class="panel-sub">Complete ServiceNow ITSM preparation mapped to the 6 core platform domains — the certification vocabulary hiring managers actually screen for on service desk and admin roles. Guided walkthroughs, scenario-based drilling, and a full timed CSA-style exam simulation, all feeding the same readiness checklist below.</div>
 
-  <div class="readiness-grid">
+  <!-- CSA DOMAIN GRID
+       Training Intelligence is now the source of truth for this panel.
+       Domain names come from /api/training-intelligence/roadmap/servicenow-csa.
+       Blueprint weights remain explicitly unverified until admin verification.
+  -->
+  <div id="ti-csa-domain-grid"
+       class="readiness-grid"
+       style="margin-bottom:1rem;">
     <div class="readiness-cell">
-      <div class="rc-phase">DOMAIN 1</div>
-      <div class="rc-title">Platform Navigation</div>
+      <div class="rc-phase">TRAINING INTELLIGENCE</div>
+      <div class="rc-title">Loading CSA domains…</div>
       <div class="rc-items">
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_001" onchange="saveStudyCheck(this)"> Locate and use the Application Navigator search</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_002" onchange="saveStudyCheck(this)"> Build and save a filtered list view</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_003" onchange="saveStudyCheck(this)"> Pin a record or list to Favorites</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_004" onchange="saveStudyCheck(this)"> Explain the difference between a form view and a list view</div>
-      </div>
-    </div>
-    <div class="readiness-cell">
-      <div class="rc-phase">DOMAIN 2</div>
-      <div class="rc-title">Users, Groups &amp; Access</div>
-      <div class="rc-items">
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_005" onchange="saveStudyCheck(this)"> Identify a user's assigned roles and groups</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_006" onchange="saveStudyCheck(this)"> Explain what an ACL controls, in plain language</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_007" onchange="saveStudyCheck(this)"> Route a record to the correct assignment group</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_008" onchange="saveStudyCheck(this)"> Describe the difference between a role and a group</div>
-      </div>
-    </div>
-    <div class="readiness-cell">
-      <div class="rc-phase">DOMAIN 3</div>
-      <div class="rc-title">Incident &amp; Problem</div>
-      <div class="rc-items">
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_009" onchange="saveStudyCheck(this)"> Walk the Incident state model start to finish</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_010" onchange="saveStudyCheck(this)"> Calculate priority from an Impact/Urgency matrix</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_011" onchange="saveStudyCheck(this)"> Explain the relationship between Incident and Problem records</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_012" onchange="saveStudyCheck(this)"> Define a Known Error in your own words</div>
-      </div>
-    </div>
-    <div class="readiness-cell">
-      <div class="rc-phase">DOMAIN 4</div>
-      <div class="rc-title">Change Enablement</div>
-      <div class="rc-items">
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_013" onchange="saveStudyCheck(this)"> Distinguish Standard vs. Normal vs. Emergency change</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_014" onchange="saveStudyCheck(this)"> Explain what the CAB reviews and why</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_015" onchange="saveStudyCheck(this)"> Identify what a risk assessment should include</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_016" onchange="saveStudyCheck(this)"> Explain why a backout plan is required</div>
-      </div>
-    </div>
-    <div class="readiness-cell">
-      <div class="rc-phase">DOMAIN 5</div>
-      <div class="rc-title">CMDB &amp; Assets</div>
-      <div class="rc-items">
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_017" onchange="saveStudyCheck(this)"> Explain what a Configuration Item is, with an example</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_018" onchange="saveStudyCheck(this)"> Trace a CI relationship to find downstream impact</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_019" onchange="saveStudyCheck(this)"> Distinguish CMDB from Asset Management</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_020" onchange="saveStudyCheck(this)"> Explain why data integrity in the CMDB matters</div>
-      </div>
-    </div>
-    <div class="readiness-cell">
-      <div class="rc-phase">DOMAIN 6</div>
-      <div class="rc-title">Notifications &amp; Basics</div>
-      <div class="rc-items">
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_021" onchange="saveStudyCheck(this)"> Explain the difference between a UI Policy and a Business Rule</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_022" onchange="saveStudyCheck(this)"> Describe when a notification would fire on a record</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_023" onchange="saveStudyCheck(this)"> Explain what Flow Designer is used for</div>
-        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sn_024" onchange="saveStudyCheck(this)"> Identify when a Client Script vs. server-side logic is appropriate</div>
+        <div class="rc-item">Loading the current CSA blueprint structure.</div>
       </div>
     </div>
   </div>
+
 
   <div class="cert-actions" style="margin-bottom:1.5rem;">
     <a class="cert-btn primary" href="/html/l1-copilot/servicenow-exam-sim.html" target="_blank">TIMED EXAM SIM</a>
     <a class="cert-btn" href="/html/l1-copilot/servicenow-scenarios.html" target="_blank">SCENARIO ENGINE</a>
     <a class="cert-btn" href="/html/l1-copilot/servicenow-fundamentals.html" target="_blank">FUNDAMENTALS WALKTHROUGH</a>
+    <a class="cert-btn" href="/html/l1-copilot/servicenow-study-guide.html" target="_blank">STUDY GUIDE</a>
   </div>
 
   <div class="pitch-block amber">
@@ -2817,6 +2932,20 @@ nav {
       </div>
       <div id="ti-teach-body" style="font-size:11px;color:var(--text2);line-height:1.7;white-space:pre-wrap;"></div>
     </div>
+
+    <div id="ti-quiz" style="margin-top:1rem;display:none;">
+      <div style="font-size:10px;letter-spacing:.1em;color:var(--cyan);font-weight:700;margin-bottom:.5rem;">
+        DOMAIN PRACTICE
+      </div>
+      <div id="ti-quiz-body"></div>
+    </div>
+
+    <div id="ti-readiness" style="margin-top:1rem;display:none;">
+      <div style="font-size:10px;letter-spacing:.1em;color:var(--cyan);font-weight:700;margin-bottom:.5rem;">
+        CSA READINESS
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:.75rem;">Training Intelligence evidence feeds this Career Readiness view.</div><div id="ti-readiness-body"></div>
+    </div>
   </div>
 </section>
 
@@ -2824,88 +2953,1167 @@ nav {
 (function () {
   'use strict';
 
-  // TRAINING INTELLIGENCE panel wiring. Fetches the blueprint + roadmap for
-  // one hardcoded provider (servicenow-csa) — the "any URL, auto-detect
-  // provider" generalization is intentionally not built yet per the
-  // honesty-pattern build order. Never hide the unverified banner while
-  // verified is false; that's the whole point of the backend shape.
-  function bootTrainingIntelligence() {
-    var providerId = 'servicenow-csa';
-    var loadingEl = document.getElementById('ti-loading');
-    var bannerEl = document.getElementById('ti-unverified-banner');
-    var domainsEl = document.getElementById('ti-domains');
-    var roadmapEl = document.getElementById('ti-roadmap');
-    var roadmapBodyEl = document.getElementById('ti-roadmap-body');
+  /*
+   * TSM TRAINING INTELLIGENCE — CSA CLIENT STATE
+   *
+   * Server owns:
+   *   - blueprint structure
+   *   - answer keys
+   *   - grading
+   *   - verified blueprint weights
+   *
+   * Browser owns:
+   *   - learner attempt history
+   *   - accumulated knowledge exposure
+   *   - UI state
+   *
+   * Mastery and knowledge exposure are intentionally separate.
+   */
+
+  var providerId = 'servicenow-csa';
+
+  var STATE_KEY =
+    'TSM_TRAINING_INTELLIGENCE_' + providerId;
+
+  function getState() {
+    try {
+      var raw = localStorage.getItem(STATE_KEY);
+      if (!raw) {
+        return {
+          attempts: [],
+          exposure: {}
+        };
+      }
+
+      var parsed = JSON.parse(raw);
+
+      return {
+        attempts: Array.isArray(parsed.attempts)
+          ? parsed.attempts
+          : [],
+        exposure: parsed.exposure &&
+                   typeof parsed.exposure === 'object'
+          ? parsed.exposure
+          : {}
+      };
+    } catch (err) {
+      return {
+        attempts: [],
+        exposure: {}
+      };
+    }
+  }
+
+  function saveState(state) {
+    try {
+      localStorage.setItem(
+        STATE_KEY,
+        JSON.stringify(state)
+      );
+    } catch (err) {
+      console.warn(
+        'Training Intelligence state could not be saved:',
+        err
+      );
+    }
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function getAttemptsForDomain(domainId) {
+    return getState().attempts.filter(function (a) {
+      return a.domainId === domainId;
+    });
+  }
+
+  function getDomainMastery(domainId) {
+    var attempts = getAttemptsForDomain(domainId);
+
+    if (!attempts.length) return null;
+
+    var total = attempts.reduce(function (sum, a) {
+      return sum + Number(a.score || 0);
+    }, 0);
+
+    return Math.round(
+      (total / attempts.length) * 10
+    ) / 10;
+  }
+
+  function mergeExposure(exposure) {
+    var state = getState();
+
+    (exposure || []).forEach(function (domainExposure) {
+      if (!domainExposure ||
+          !domainExposure.domainId) {
+        return;
+      }
+
+      var domainId = domainExposure.domainId;
+
+      if (!Array.isArray(state.exposure[domainId])) {
+        state.exposure[domainId] = [];
+      }
+
+      (domainExposure.concepts || []).forEach(function (concept) {
+        if (!concept) return;
+
+        if (!state.exposure[domainId].includes(concept)) {
+          state.exposure[domainId].push(concept);
+        }
+      });
+    });
+
+    saveState(state);
+  }
+
+  function recordAttempt(domainId, score, knowledgeExposure) {
+    var state = getState();
+
+    state.attempts.push({
+      providerId: providerId,
+      domainId: domainId,
+      score: Number(score) || 0,
+      timestamp: new Date().toISOString()
+    });
+
+    /*
+     * Keep a useful local history without allowing the browser storage
+     * to grow forever.
+     */
+    if (state.attempts.length > 100) {
+      state.attempts =
+        state.attempts.slice(-100);
+    }
+
+    saveState(state);
+
+    mergeExposure(knowledgeExposure);
+  }
+
+  function formatTeachMeContent(content) {
+    var source = String(content || '').replace(/\r\n/g, '\n');
+    var safe = escapeHtml(source);
+    var lines = safe.split('\n');
+    var output = [];
+    var i = 0;
+
+    function inlineMarkdown(value) {
+      return value
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/__(.+?)__/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+    }
+
+    function isTableSeparator(line) {
+      return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+    }
+
+    function splitTableRow(line) {
+      var row = line.trim();
+
+      if (row.charAt(0) === '|') {
+        row = row.slice(1);
+      }
+
+      if (row.charAt(row.length - 1) === '|') {
+        row = row.slice(0, -1);
+      }
+
+      return row.split('|').map(function (cell) {
+        return cell.trim();
+      });
+    }
+
+    while (i < lines.length) {
+      var line = lines[i];
+
+      /* Markdown table */
+      if (
+        i + 1 < lines.length &&
+        line.indexOf('|') !== -1 &&
+        isTableSeparator(lines[i + 1])
+      ) {
+        var headers = splitTableRow(line);
+
+        output.push(
+          '<div class="ti-teach-table-wrap">' +
+            '<table class="ti-teach-table">' +
+              '<thead><tr>' +
+                headers.map(function (header) {
+                  return '<th>' + inlineMarkdown(header) + '</th>';
+                }).join('') +
+              '</tr></thead><tbody>'
+        );
+
+        i += 2;
+
+        while (
+          i < lines.length &&
+          lines[i].trim() &&
+          lines[i].indexOf('|') !== -1
+        ) {
+          var cells = splitTableRow(lines[i]);
+
+          output.push(
+            '<tr>' +
+              cells.map(function (cell) {
+                return '<td>' + inlineMarkdown(cell) + '</td>';
+              }).join('') +
+            '</tr>'
+          );
+
+          i++;
+        }
+
+        output.push('</tbody></table></div>');
+        continue;
+      }
+
+      /* Horizontal rule */
+      if (/^\s*([-*_])(?:\s*\1){2,}\s*$/.test(line)) {
+        output.push('<hr class="ti-teach-rule">');
+        i++;
+        continue;
+      }
+
+      /* Markdown heading */
+      var heading = line.match(/^\s*#{1,3}\s+(.+)$/);
+
+      if (heading) {
+        output.push(
+          '<div class="ti-teach-heading">' +
+            inlineMarkdown(heading[1]) +
+          '</div>'
+        );
+
+        i++;
+        continue;
+      }
+
+      /* Bullet list */
+      if (/^\s*[-*]\s+/.test(line)) {
+        output.push('<ul class="ti-teach-list">');
+
+        while (
+          i < lines.length &&
+          /^\s*[-*]\s+/.test(lines[i])
+        ) {
+          output.push(
+            '<li>' +
+              inlineMarkdown(
+                lines[i].replace(/^\s*[-*]\s+/, '')
+              ) +
+            '</li>'
+          );
+
+          i++;
+        }
+
+        output.push('</ul>');
+        continue;
+      }
+
+      /* Numbered list */
+      if (/^\s*\d+\.\s+/.test(line)) {
+        output.push('<ol class="ti-teach-list">');
+
+        while (
+          i < lines.length &&
+          /^\s*\d+\.\s+/.test(lines[i])
+        ) {
+          output.push(
+            '<li>' +
+              inlineMarkdown(
+                lines[i].replace(/^\s*\d+\.\s+/, '')
+              ) +
+            '</li>'
+          );
+
+          i++;
+        }
+
+        output.push('</ol>');
+        continue;
+      }
+
+      /* Blank line */
+      if (!line.trim()) {
+        output.push('<div class="ti-teach-spacer"></div>');
+        i++;
+        continue;
+      }
+
+      /* Normal instructional line */
+      output.push(
+        '<div class="ti-teach-paragraph">' +
+          inlineMarkdown(line) +
+        '</div>'
+      );
+
+      i++;
+    }
+
+    return output.join('');
+  }
+
+  function teachContentAppearsTruncated(content) {
+    var value = String(content || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!value) return false;
+
+    return (
+      /[-–—:]\s*(locate|understand|know|identify|review|recognize|use|configure|learn|interpret)\s*$/i.test(value) ||
+      /,\s*$/i.test(value) ||
+      /:\s*$/i.test(value) ||
+      /\b(and|or|to|with|for|the|a|an|of|in|on|by|from)\s*$/i.test(value)
+    );
+  }
+
+  function loadTeachMe(domainId, labelText) {
     var teachEl = document.getElementById('ti-teach');
     var teachBodyEl = document.getElementById('ti-teach-body');
 
-    if (!loadingEl || !domainsEl) return;
+    if (!teachEl || !teachBodyEl) return;
 
-    function loadTeachMe(domainId, labelText) {
-      teachEl.style.display = 'block';
-      teachBodyEl.textContent = 'Loading "' + labelText + '"…';
-      fetch('/api/training-intelligence/teach/' + providerId + '/' + domainId)
-        .then(function (r) { return r.json().then(function (body) { return { status: r.status, body: body }; }); })
-        .then(function (res) {
-          if (res.status === 501) {
-            teachBodyEl.textContent = res.body.error || 'Teach Me is not available yet for this domain.';
-            return;
-          }
-          if (!res.body || res.body.ok === false) throw new Error(res.body && res.body.error || 'unknown error');
-          teachBodyEl.textContent = res.body.content;
-        })
-        .catch(function (err) {
-          teachBodyEl.textContent = 'Could not load Teach Me content (' + err.message + ').';
+    teachEl.style.display = 'block';
+    teachBodyEl.textContent =
+      'Loading "' + labelText + '"…';
+
+    fetch(
+      '/api/training-intelligence/teach/' +
+      providerId + '/' + domainId
+    )
+      .then(function (r) {
+        return r.json().then(function (body) {
+          return {
+            status: r.status,
+            body: body
+          };
         });
+      })
+      .then(function (res) {
+        if (res.status === 501) {
+          teachBodyEl.textContent =
+            res.body.error ||
+            'Teach Me is not available yet.';
+          return;
+        }
+
+        if (!res.body || res.body.ok === false) {
+          throw new Error(
+            res.body && res.body.error ||
+            'unknown error'
+          );
+        }
+
+        var teachContent =
+          String(res.body.content || '');
+
+        var truncated =
+          teachContentAppearsTruncated(teachContent);
+
+        teachBodyEl.innerHTML =
+          formatTeachMeContent(teachContent) +
+
+          (truncated
+            ? '<div class="ti-teach-incomplete">' +
+                '<strong>LESSON INCOMPLETE</strong>' +
+                '<span>This lesson response appears to end mid-instruction. ' +
+                'Review or reload the lesson before treating it as complete study material.</span>' +
+              '</div>'
+            : '');
+      })
+      .catch(function (err) {
+        teachBodyEl.textContent =
+          'Could not load Teach Me content (' +
+          err.message + ').';
+      });
+  }
+
+
+function renderQuiz(domainId, labelText, questions) {
+    var quizEl = document.getElementById('ti-quiz');
+    var quizBodyEl = document.getElementById('ti-quiz-body');
+
+    if (!quizEl || !quizBodyEl) return;
+
+    quizEl.style.display = 'block';
+
+    if (!Array.isArray(questions) || !questions.length) {
+      quizBodyEl.innerHTML =
+        '<div style="font-size:11px;color:var(--text3);">' +
+        'No practice questions are available for this domain yet.' +
+        '</div>';
+      return;
     }
 
-    fetch('/api/training-intelligence/roadmap/' + providerId)
+    quizBodyEl.innerHTML =
+      '<div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;">' +
+      escapeHtml(labelText) +
+      ' · ' +
+      questions.length +
+      ' questions' +
+      '</div>' +
+
+      questions.map(function (q, index) {
+        return (
+          '<div class="ti-question" ' +
+          'style="padding:.8rem 0;border-bottom:1px solid var(--border);">' +
+
+            '<div class="ti-question-number">' +
+              'QUESTION ' +
+              (index + 1) +
+              ' OF ' +
+              questions.length +
+            '</div>' +
+
+            '<div style="font-size:12px;color:var(--text);font-weight:600;line-height:1.5;margin-bottom:.5rem;">' +
+              escapeHtml(q.question) +
+            '</div>' +
+
+            '<div style="font-size:10px;color:var(--text3);margin-bottom:.35rem;">' +
+              'Select one answer.' +
+            '</div>' +
+
+            '<div class="ti-question-choices">' +
+
+              q.choices.map(function (choice) {
+                return (
+                  '<label class="ti-choice">' +
+                    '<input type="radio" ' +
+                      'name="ti-q-' + escapeHtml(q.id) + '" ' +
+                      'value="' + escapeHtml(choice.id) + '">' +
+                    '<span class="ti-choice-text">' +
+                      escapeHtml(choice.text) +
+                    '</span>' +
+                  '</label>'
+                );
+              }).join('') +
+
+            '</div>' +
+          '</div>'
+        );
+      }).join('') +
+
+      '<div style="margin-top:.8rem;">' +
+        '<button type="button" id="ti-submit-quiz" class="cert-btn primary">' +
+          'SUBMIT DOMAIN QUIZ' +
+        '</button>' +
+        '<span id="ti-quiz-status" style="margin-left:.7rem;font-size:10px;color:var(--text3);"></span>' +
+      '</div>';
+
+    var submitBtn =
+      document.getElementById('ti-submit-quiz');
+
+    if (!submitBtn) return;
+
+    submitBtn.addEventListener('click', function () {
+      var answers = [];
+
+      questions.forEach(function (q) {
+        var selected =
+          quizBodyEl.querySelector(
+            'input[name="ti-q-' +
+            CSS.escape(q.id) +
+            '"]:checked'
+          );
+
+        answers.push({
+          questionId: q.id,
+          choiceId: selected
+            ? selected.value
+            : null
+        });
+      });
+
+      var unanswered = answers.filter(function (a) {
+        return !a.choiceId;
+      }).length;
+
+      if (unanswered) {
+        document.getElementById('ti-quiz-status').textContent =
+          unanswered +
+          ' question(s) still need an answer.';
+        return;
+      }
+
+      submitBtn.disabled = true;
+
+      document.getElementById('ti-quiz-status').textContent =
+        'Grading…';
+
+      fetch(
+        '/api/training-intelligence/quiz/' +
+        providerId +
+        '/submit',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            answers: answers
+          })
+        }
+      )
+        .then(function (r) {
+          return r.json().then(function (body) {
+            return {
+              status: r.status,
+              body: body
+            };
+          });
+        })
+        .then(function (res) {
+          if (res.status >= 400 ||
+              !res.body ||
+              res.body.ok === false) {
+            throw new Error(
+              res.body && res.body.error ||
+              'quiz submission failed'
+            );
+          }
+
+          recordAttempt(
+            domainId,
+            res.body.score,
+            res.body.knowledgeExposure
+          );
+
+          renderQuizResults(
+            domainId,
+            labelText,
+            res.body
+          );
+
+          refreshReadiness();
+        })
+        .catch(function (err) {
+          submitBtn.disabled = false;
+
+          document.getElementById(
+            'ti-quiz-status'
+          ).textContent =
+            'Could not submit quiz: ' +
+            err.message;
+        });
+    });
+  }
+
+  function renderQuizResults(domainId, labelText, data) {
+    var quizBodyEl =
+      document.getElementById('ti-quiz-body');
+
+    if (!quizBodyEl) return;
+
+    var state = getState();
+
+    quizBodyEl.innerHTML =
+      '<div style="padding:.8rem 0;">' +
+
+        '<div style="font-size:15px;font-weight:700;color:var(--text);">' +
+          escapeHtml(String(data.score)) +
+          '% mastery' +
+        '</div>' +
+
+        '<div style="font-size:10.5px;color:var(--text2);margin:.25rem 0 .8rem;">' +
+          escapeHtml(String(data.correctCount)) +
+          ' of ' +
+          escapeHtml(String(data.total)) +
+          ' correct. ' +
+          'Every answer option below is instructional knowledge.' +
+        '</div>' +
+
+        (data.results || []).map(function (result, index) {
+          var picked =
+            result.choices.find(function (c) {
+              return c.id === result.pickedChoiceId;
+            });
+
+          return (
+            '<div style="padding:.75rem 0;border-top:1px solid var(--border);">' +
+
+              '<div style="font-size:10.5px;color:var(--text);font-weight:600;margin-bottom:.5rem;">' +
+                'Question ' +
+                (index + 1) +
+                ': ' +
+                (result.correct
+                  ? 'Correct'
+                  : 'Review') +
+              '</div>' +
+
+              '<div style="font-size:10px;color:var(--text2);margin-bottom:.45rem;">' +
+                'Your answer: ' +
+                escapeHtml(picked ? picked.text : 'No answer') +
+              '</div>' +
+
+              '<div>' +
+
+                result.choices.map(function (choice) {
+                  return (
+                    '<div style="margin:.45rem 0;padding:.45rem;border-left:2px solid ' +
+                    (choice.correct
+                      ? 'var(--cyan)'
+                      : 'var(--border)') +
+                    ';">' +
+
+                      '<div style="font-size:10px;color:var(--text);font-weight:600;">' +
+                        escapeHtml(choice.text) +
+                        (choice.correct
+                          ? ' · CORRECT'
+                          : '') +
+                      '</div>' +
+
+                      '<div style="font-size:10px;line-height:1.55;color:var(--text2);margin-top:.2rem;">' +
+                        escapeHtml(choice.explanation || '') +
+                      '</div>' +
+
+                      (
+                        Array.isArray(choice.knowledge) &&
+                        choice.knowledge.length
+                          ? '<div style="font-size:9.5px;line-height:1.5;color:var(--text3);margin-top:.2rem;">' +
+                              '<strong>Knowledge:</strong> ' +
+                              escapeHtml(choice.knowledge.join(' · ')) +
+                            '</div>'
+                          : ''
+                      ) +
+
+                    '</div>'
+                  );
+                }).join('') +
+
+              '</div>' +
+
+            '</div>'
+          );
+        }).join('') +
+
+        '<div style="margin-top:.8rem;font-size:10px;color:var(--text3);">' +
+          'This attempt is now part of your local CSA mastery history. ' +
+          'Knowledge exposure is tracked separately from mastery.' +
+        '</div>' +
+
+      '</div>';
+  }
+
+  function loadDomainQuiz(domainId, labelText) {
+    var quizBodyEl =
+      document.getElementById('ti-quiz-body');
+
+    if (quizBodyEl) {
+      quizBodyEl.textContent =
+        'Loading practice questions…';
+    }
+
+    fetch(
+      '/api/training-intelligence/quiz/' +
+      providerId + '/' + domainId
+    )
       .then(function (r) {
-        if (!r.ok) throw new Error('roadmap fetch failed: ' + r.status);
+        if (!r.ok) {
+          throw new Error(
+            'quiz fetch failed: ' + r.status
+          );
+        }
+
         return r.json();
       })
       .then(function (data) {
-        if (!data || data.ok === false) throw new Error(data && data.error || 'unknown error');
+        if (!data || data.ok === false) {
+          throw new Error(
+            data && data.error ||
+            'unknown error'
+          );
+        }
+
+        renderQuiz(
+          domainId,
+          labelText,
+          data.questions || []
+        );
+      })
+      .catch(function (err) {
+        if (quizBodyEl) {
+          quizBodyEl.textContent =
+            'Could not load quiz (' +
+            err.message +
+            ').';
+        }
+      });
+  }
+
+  function renderCSAReadiness(data) {
+    /*
+     * Single-renderer rule:
+     * Training Intelligence evidence owns the visible CSA readiness UI.
+     * The legacy readiness API still calls this function, so delegate to
+     * the evidence renderer instead of allowing two functions to compete
+     * for #ti-readiness-body.
+     */
+    renderTrainingIntelligenceEvidence();
+  }
+
+  function renderTrainingIntelligenceEvidence() {
+    var body = document.getElementById('ti-readiness-body');
+    if (!body) return;
+
+    var state = getState();
+
+    var attempts = Array.isArray(state.attempts)
+      ? state.attempts
+      : [];
+
+    var exposure = state.exposure &&
+                   typeof state.exposure === 'object'
+      ? state.exposure
+      : {};
+
+    var practicedDomains = {};
+    var totalScore = 0;
+
+    attempts.forEach(function (attempt) {
+      if (!attempt || !attempt.domainId) return;
+
+      practicedDomains[attempt.domainId] = true;
+      totalScore += Number(attempt.score || 0);
+    });
+
+    var domainCount = Object.keys(practicedDomains).length;
+    var attemptCount = attempts.length;
+
+    var averageMastery = attemptCount
+      ? Math.round((totalScore / attemptCount) * 10) / 10
+      : null;
+
+    var conceptCount = 0;
+
+    Object.keys(exposure).forEach(function (domainId) {
+      if (Array.isArray(exposure[domainId])) {
+        conceptCount += exposure[domainId].length;
+      }
+    });
+
+    fetch(
+      '/api/training-intelligence/blueprint/' +
+      providerId
+    )
+      .then(function (res) {
+        if (!res.ok) {
+          throw new Error('blueprint fetch failed: ' + res.status);
+        }
+
+        return res.json();
+      })
+      .then(function (blueprint) {
+        var verified = blueprint &&
+                       blueprint.verified === true;
+
+        var statusText = verified
+          ? 'Blueprint verified'
+          : 'Blueprint verification pending';
+
+        var statusClass = verified
+          ? 'var(--green)'
+          : 'var(--amber)';
+
+        var domains = Array.isArray(blueprint.domains)
+          ? blueprint.domains
+          : [];
+
+        var domainRows = domains.map(function (domain) {
+          var domainId = domain.id;
+          var attemptsForDomain = attempts.filter(function (attempt) {
+            return attempt.domainId === domainId;
+          });
+
+          var mastery = getDomainMastery(domainId);
+          var concepts = Array.isArray(exposure[domainId])
+            ? exposure[domainId].length
+            : 0;
+
+          var status = mastery === null
+            ? 'Not attempted'
+            : mastery + '% mastery';
+
+          return (
+            '<div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.7rem .8rem;border:1px solid var(--border);border-radius:5px;margin-bottom:.45rem;background:rgba(255,255,255,.012);">' +
+
+              '<div style="min-width:0;flex:1;">' +
+                '<div style="font-size:11px;color:var(--text);font-weight:600;line-height:1.4;">' +
+                  escapeHtml(domain.label) +
+                '</div>' +
+
+                '<div style="font-size:9px;color:var(--text3);margin-top:.2rem;">' +
+                  concepts +
+                  ' concepts exposed' +
+                  (attemptsForDomain.length
+                    ? ' · ' + attemptsForDomain.length + ' quiz attempt' +
+                      (attemptsForDomain.length === 1 ? '' : 's')
+                    : '') +
+                '</div>' +
+              '</div>' +
+
+              '<div style="flex:0 0 auto;text-align:right;font-size:10px;font-weight:700;color:' +
+                (mastery === null ? 'var(--text3)' : 'var(--green)') +
+                ';">' +
+                status +
+              '</div>' +
+
+            '</div>'
+          );
+        }).join('');
+
+        body.innerHTML =
+          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin-bottom:.9rem;">' +
+
+            '<div style="border:1px solid var(--border);border-radius:5px;padding:.7rem;">' +
+              '<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Domains practiced</div>' +
+              '<div style="font-size:20px;font-weight:700;color:var(--cyan);margin-top:.2rem;">' +
+                domainCount +
+                ' / ' +
+                (domains.length || 6) +
+              '</div>' +
+            '</div>' +
+
+            '<div style="border:1px solid var(--border);border-radius:5px;padding:.7rem;">' +
+              '<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Quiz attempts</div>' +
+              '<div style="font-size:20px;font-weight:700;color:var(--text);margin-top:.2rem;">' +
+                attemptCount +
+              '</div>' +
+            '</div>' +
+
+            '<div style="border:1px solid var(--border);border-radius:5px;padding:.7rem;">' +
+              '<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Average mastery</div>' +
+              '<div style="font-size:20px;font-weight:700;color:' +
+                (averageMastery === null ? 'var(--text3)' : 'var(--green)') +
+                ';margin-top:.2rem;">' +
+                (averageMastery === null ? '—' : averageMastery + '%') +
+              '</div>' +
+            '</div>' +
+
+            '<div style="border:1px solid var(--border);border-radius:5px;padding:.7rem;">' +
+              '<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Concepts exposed</div>' +
+              '<div style="font-size:20px;font-weight:700;color:var(--text);margin-top:.2rem;">' +
+                conceptCount +
+              '</div>' +
+            '</div>' +
+
+          '</div>' +
+
+          '<div style="font-size:10px;color:' +
+            statusClass +
+            ';font-weight:700;margin-bottom:.7rem;">' +
+            statusText +
+          '</div>' +
+
+          '<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">' +
+            'DOMAIN EVIDENCE' +
+          '</div>' +
+
+          '<div>' +
+            (domainRows ||
+              '<div style="font-size:10px;color:var(--text3);">No CSA domain evidence available yet.</div>') +
+          '</div>' +
+
+          '<div style="font-size:10px;color:var(--text3);line-height:1.5;margin-top:.75rem;">' +
+            (verified
+              ? 'CSA training evidence may be evaluated against the verified blueprint weights.'
+              : 'Training evidence is tracked, but official weighted CSA readiness remains withheld until the blueprint is verified by TSM.') +
+          '</div>';
+      })
+      .catch(function (err) {
+        console.warn(
+          'Training Intelligence evidence could not refresh:',
+          err
+        );
+
+        body.innerHTML =
+          '<div style="font-size:10px;color:var(--text3);">' +
+          'CSA training evidence is stored locally. Blueprint verification status could not be refreshed.' +
+          '</div>';
+      });
+  }
+
+  function refreshReadiness() {
+    renderTrainingIntelligenceEvidence();
+
+    var state = getState();
+
+    // No readiness calculation exists until at least one domain
+    // practice attempt has been completed. Do not send an empty
+    // attempts array to the API; the backend correctly rejects it.
+    if (!state.attempts || !state.attempts.length) {
+      return;
+    }
+
+    fetch(
+      '/api/training-intelligence/readiness/' +
+      providerId,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          attempts: state.attempts.map(function (a) {
+            return {
+              domainId: a.domainId,
+              score: a.score
+            };
+          })
+        })
+      }
+    )
+      .then(function (r) {
+        if (!r.ok) {
+          throw new Error(
+            'readiness fetch failed: ' + r.status
+          );
+        }
+
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data || data.ok === false) {
+          throw new Error(
+            data && data.error ||
+            'unknown error'
+          );
+        }
+
+        renderCSAReadiness(data);
+      })
+      .catch(function (err) {
+        console.warn(
+          'CSA readiness unavailable:',
+          err
+        );
+      });
+  }
+
+  function renderDomainGrid(roadmapData) {
+    var grid =
+      document.getElementById('ti-csa-domain-grid');
+
+    if (!grid) return;
+
+    grid.innerHTML =
+      (roadmapData.roadmap || []).map(function (d, index) {
+        var mastery =
+          getDomainMastery(d.id);
+
+        var exposure =
+          getState().exposure[d.id] || [];
+
+        var masteryLabel =
+          mastery === null
+            ? 'Not attempted'
+            : mastery + '% mastery';
+
+        var weightLabel =
+          roadmapData.verified
+            ? (
+                typeof d.weight === 'number'
+                  ? d.weight + '%'
+                  : '—'
+              )
+            : (
+                '~' +
+                d.estimatedWeight +
+                '% est.'
+              );
+
+        return (
+          '<div class="readiness-cell" ' +
+            'data-ti-readiness="true" ' +
+            'style="cursor:pointer;" ' +
+            'data-ti-domain="' +
+            escapeHtml(d.id) +
+            '">' +
+
+            '<div class="rc-phase">DOMAIN ' +
+              (index + 1) +
+            '</div>' +
+
+            '<div class="rc-title">' +
+              escapeHtml(d.label) +
+            '</div>' +
+
+            '<div class="rc-items">' +
+
+              '<div class="rc-item">' +
+                '<strong>Mastery:</strong> ' +
+                escapeHtml(masteryLabel) +
+              '</div>' +
+
+              '<div class="rc-item">' +
+                '<strong>Blueprint:</strong> ' +
+                escapeHtml(weightLabel) +
+              '</div>' +
+
+              '<div class="rc-item">' +
+                '<strong>Knowledge exposed:</strong> ' +
+                exposure.length +
+                ' concepts' +
+              '</div>' +
+
+              '<div class="rc-item" style="color:var(--cyan);">' +
+                'Open domain practice →' +
+              '</div>' +
+
+            '</div>' +
+
+          '</div>'
+        );
+      }).join('');
+
+    Array.prototype.forEach.call(
+      grid.querySelectorAll('[data-ti-domain]'),
+      function (cell) {
+        cell.addEventListener('click', function () {
+          // TI domain practice lives inside Career OS. Ensure the
+          // parent Career panel is active before rendering/scrolling.
+          switchTo('career');
+
+          var domainId =
+            cell.getAttribute('data-ti-domain');
+
+          var domain =
+            (roadmapData.roadmap || []).find(function (d) {
+              return d.id === domainId;
+            });
+
+          if (!domain) return;
+
+          loadTeachMe(
+            domainId,
+            domain.label
+          );
+
+          loadDomainQuiz(
+            domainId,
+            domain.label
+          );
+
+          refreshReadiness();
+
+          var practiceEl =
+            document.getElementById('ti-teach');
+
+          if (practiceEl) {
+            practiceEl.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        });
+      }
+    );
+  }
+
+  function bootTrainingIntelligence() {
+    var loadingEl =
+      document.getElementById('ti-loading');
+
+    var bannerEl =
+      document.getElementById('ti-unverified-banner');
+
+    var domainsEl =
+      document.getElementById('ti-domains');
+
+    var roadmapEl =
+      document.getElementById('ti-roadmap');
+
+    var roadmapBodyEl =
+      document.getElementById('ti-roadmap-body');
+
+    if (!loadingEl || !domainsEl) {
+      return;
+    }
+
+    fetch(
+      '/api/training-intelligence/roadmap/' +
+      providerId
+    )
+      .then(function (r) {
+        if (!r.ok) {
+          throw new Error(
+            'roadmap fetch failed: ' +
+            r.status
+          );
+        }
+
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data || data.ok === false) {
+          throw new Error(
+            data && data.error ||
+            'unknown error'
+          );
+        }
+
         loadingEl.style.display = 'none';
 
         if (!data.verified) {
           bannerEl.style.display = 'block';
-          bannerEl.textContent = 'Unverified — these domain weights are an even-split estimate, not the real ServiceNow CSA blueprint. Confirm against your Now Learning account before treating this as authoritative.';
+
+          bannerEl.textContent =
+            'UNVERIFIED — CSA domain weights are not being treated as authoritative. ' +
+            'Domain structure is loaded from the TSM Training Intelligence provider record. ' +
+            'Confirm the January 2026 ServiceNow CSA blueprint against your Now Learning account before treating weights as official.';
         } else {
-          bannerEl.style.display = 'none';
+          bannerEl.style.display = 'block';
+
+          bannerEl.textContent =
+            'VERIFIED — CSA roadmap weights are based on the administratively verified provider blueprint.';
         }
 
         domainsEl.style.display = 'block';
-        domainsEl.innerHTML = (data.roadmap || []).map(function (d) {
-          var weightLabel = data.verified
-            ? (typeof d.weight === 'number' ? d.weight + '%' : '—')
-            : ('~' + d.estimatedWeight + '% (est.)');
-          return '<div class="ti-domain-row" data-domain-id="' + d.id + '" data-domain-label="' + d.label + '" ' +
-            'style="display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--text2);cursor:pointer;">' +
-            '<span>' + d.label + ' <span style="color:var(--text3);font-size:10px;">(Teach Me)</span></span><span>' + weightLabel + '</span></div>';
-        }).join('');
 
-        Array.prototype.forEach.call(domainsEl.querySelectorAll('.ti-domain-row'), function (row) {
-          row.addEventListener('click', function () {
-            loadTeachMe(row.getAttribute('data-domain-id'), row.getAttribute('data-domain-label'));
-          });
-        });
+        domainsEl.innerHTML =
+          '<div style="font-size:10px;color:var(--text3);margin-bottom:.6rem;">' +
+          'Select a domain to teach, practice, review every answer option, and update your readiness.' +
+          '</div>';
+
+        renderDomainGrid(data);
 
         roadmapEl.style.display = 'block';
-        roadmapBodyEl.textContent = data.verified
-          ? 'Ordered above by real blueprint weight — start with the highest-weighted domain.'
-          : 'Ordered as loaded (no verified weights yet), so this isn\'t a real priority order — an admin needs to confirm the blueprint first.';
+
+        roadmapBodyEl.textContent =
+          data.verified
+            ? 'Ordered by verified blueprint weight. Weak mastery should drive the next study action.'
+            : 'Weights are currently estimates only. Domain priority should not be treated as official until the blueprint is verified.';
+
+        refreshReadiness();
       })
       .catch(function (err) {
-        loadingEl.textContent = 'Could not load blueprint (' + err.message + ').';
+        loadingEl.textContent =
+          'Could not load Training Intelligence (' +
+          err.message +
+          ').';
       });
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bootTrainingIntelligence);
+    document.addEventListener(
+      'DOMContentLoaded',
+      bootTrainingIntelligence
+    );
   } else {
     bootTrainingIntelligence();
   }
+
 })();
 </script>
 
@@ -3848,7 +5056,7 @@ function buildManagerData() {
   const now = new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
 
   let sectorRows = '';
-  document.querySelectorAll('.readiness-cell').forEach(cell => {
+  document.querySelectorAll('.readiness-cell:not([data-ti-readiness="true"])').forEach(cell => {
     const phase = cell.querySelector('.rc-phase')?.textContent || '';
     const title = cell.querySelector('.rc-title')?.textContent || '';
     const checks = cell.querySelectorAll('input[type=checkbox]');
@@ -3912,7 +5120,7 @@ function exportManagerReport() {
     'Study Plan Items: ' + d.doneStudy + '/' + d.totalStudy + ' (' + d.studyPct + '%)',
     'Readiness Checks: ' + d.doneRC + '/' + d.totalRC + ' (' + d.rcPct + '%)', ''
   ];
-  document.querySelectorAll('.readiness-cell').forEach(cell => {
+  document.querySelectorAll('.readiness-cell:not([data-ti-readiness="true"])').forEach(cell => {
     const phase = cell.querySelector('.rc-phase')?.textContent || '';
     const title = cell.querySelector('.rc-title')?.textContent || '';
     const checks = cell.querySelectorAll('input[type=checkbox]');
@@ -4212,7 +5420,7 @@ function copyProgressJSON() {
     readinessChecks: { done: d.doneRC, total: d.totalRC, pct: d.rcPct },
     sectors: []
   };
-  document.querySelectorAll('.readiness-cell').forEach(cell => {
+  document.querySelectorAll('.readiness-cell:not([data-ti-readiness="true"])').forEach(cell => {
     const phase = cell.querySelector('.rc-phase')?.textContent || '';
     const title = cell.querySelector('.rc-title')?.textContent || '';
     const checks = cell.querySelectorAll('input[type=checkbox]');

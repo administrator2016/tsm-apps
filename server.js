@@ -2974,6 +2974,7 @@ app.post('/api/music/song/learn', async (req, res) => {
 // mounted. Mounted AFTER the routes above so those (already real, Groq-backed)
 // inline handlers keep precedence for any overlapping paths.
 app.use(require('./routes/music'));
+// TSM Training Intelligence — certification blueprints, roadmaps, teaching, quizzes, and hands-on labs
 app.use(require('./routes/training-intelligence'));
 
 // ── ENTERPRISE CAPABILITY BRIDGE ───────────────────────────────────────────────

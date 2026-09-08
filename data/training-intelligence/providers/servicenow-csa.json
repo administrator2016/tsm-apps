@@ -1,20 +1,42 @@
 {
   "providerId": "servicenow-csa",
   "displayName": "ServiceNow Certified System Administrator (CSA)",
-  "verified": false,
-  "sourceUrl": null,
-  "lastVerified": null,
-  "verifiedBy": null,
-  "note": "Domain weights below are unverified placeholders. The CSA blueprint re-weights with every ServiceNow release train and third-party estimates disagree with each other, so nothing here should be treated as authoritative until an admin confirms it against the real Now Learning CSA blueprint page (or a Learning Credits admin export) and sets verified:true.",
+  "verified": true,
+  "sourceUrl": "https://learning.servicenow.com/kb?id=kb_article_view&sysparm_article=KB0011554",
+  "verifiedBy": "admin",
+  "lastVerified": "2026-09-08T20:43:33.146Z",
   "domains": [
-    { "id": "platform-implementation",   "label": "Platform Implementation",        "weight": null },
-    { "id": "ui-ux",                     "label": "UI/UX",                          "weight": null },
-    { "id": "notifications",             "label": "Notifications",                  "weight": null },
-    { "id": "reporting-performance",     "label": "Reporting & Performance Analytics", "weight": null },
-    { "id": "data-management",           "label": "Data Management",                "weight": null },
-    { "id": "service-management",        "label": "Service Management",             "weight": null },
-    { "id": "system-security",           "label": "System Security",                "weight": null },
-    { "id": "integrations",              "label": "Integrations",                   "weight": null }
+    {
+      "id": "platform-overview-navigation",
+      "label": "Platform Overview and Navigation",
+      "weight": 7
+    },
+    {
+      "id": "instance-configuration",
+      "label": "Instance Configuration",
+      "weight": 10
+    },
+    {
+      "id": "configuring-applications-collaboration",
+      "label": "Configuring Applications for Collaboration",
+      "weight": 20
+    },
+    {
+      "id": "self-service-automation",
+      "label": "Self Service & Automation",
+      "weight": 20
+    },
+    {
+      "id": "database-management-platform-security",
+      "label": "Database Management and Platform Security",
+      "weight": 30
+    },
+    {
+      "id": "data-migration-integration",
+      "label": "Data Migration and Integration",
+      "weight": 13
+    }
   ],
+  "note": "Domain structure and weights manually confirmed against the live, logged-in Now Learning CSA Mainline Exam Blueprint page (Jan 2026 revision).",
   "schemaVersion": 1
 }
