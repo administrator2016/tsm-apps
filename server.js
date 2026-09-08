@@ -4395,6 +4395,50 @@ Do not invent completed troubleshooting.`;
 // logic per ticket, instead of duplicating it. Throws on failure (missing
 // description, LLM/JSON error) — callers decide how to surface that
 // (500 for the single route, a per-record failure entry for the batch route).
+// The model is instructed to emit "confidence" as a plain integer, but
+// occasionally spells it out as a word instead (e.g. "confidence": seventy,)
+// which breaks JSON.parse with a syntax error at that exact token. This is
+// a narrow, targeted repair for that one known failure mode — it does not
+// attempt to fix arbitrary malformed JSON.
+const NUMBER_WORDS_ONES = {
+  zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7,
+  eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13,
+  fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18,
+  nineteen: 19
+};
+const NUMBER_WORDS_TENS = {
+  twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70,
+  eighty: 80, ninety: 90
+};
+
+function wordsToNumber(phrase) {
+  const words = String(phrase).toLowerCase().trim().split(/[\s-]+/).filter(Boolean);
+  if (!words.length) return null;
+  if (words.length === 1 && words[0] === 'hundred') return 100;
+  if (words.length === 2 && words[0] === 'one' && words[1] === 'hundred') return 100;
+  if (words.length === 1 && words[0] in NUMBER_WORDS_ONES) return NUMBER_WORDS_ONES[words[0]];
+  if (words.length === 1 && words[0] in NUMBER_WORDS_TENS) return NUMBER_WORDS_TENS[words[0]];
+  if (
+    words.length === 2 &&
+    words[0] in NUMBER_WORDS_TENS &&
+    words[1] in NUMBER_WORDS_ONES &&
+    NUMBER_WORDS_ONES[words[1]] < 10
+  ) {
+    return NUMBER_WORDS_TENS[words[0]] + NUMBER_WORDS_ONES[words[1]];
+  }
+  return null;
+}
+
+function repairSpelledOutConfidence(text) {
+  return text.replace(
+    /("confidence"\s*:\s*)"?([a-zA-Z][a-zA-Z\s-]*[a-zA-Z])"?/,
+    (match, prefix, wordPhrase) => {
+      const n = wordsToNumber(wordPhrase);
+      return n === null ? match : `${prefix}${n}`;
+    }
+  );
+}
+
 async function analyzeSingleTicket(ticket, maxTokens) {
   if (!ticket || !ticket.description) {
     const err = new Error('ticket.description required');
@@ -4430,7 +4474,7 @@ async function analyzeSingleTicket(ticket, maxTokens) {
     `Ticket description (raw, as pasted by the agent):\n${ticket.description}\n\n` +
     `Do two things and return ONLY valid JSON, no markdown, no backticks, in exactly this shape:\n\n` +
     `1) Analyze the ticket:\n` +
-    `{"issue_summary":"one sentence","likely_causes":["cause 1","cause 2"],"confidence":0-100,` +
+    `{"issue_summary":"one sentence","likely_causes":["cause 1","cause 2"],"confidence":0-100 (a plain integer digit like 85 — never spell the number out as a word),` +
     `"affected_system":"short label","business_impact":"short label","severity":"Low|Medium|High|Critical",` +
     `"recommended_path":"the single next diagnostic or remediation step, and why",` +
     `\n\n2) Extract structured fields mentioned ANYWHERE in the ticket description or metadata above ` +
@@ -4442,7 +4486,18 @@ async function analyzeSingleTicket(ticket, maxTokens) {
     `Return one JSON object with both the analysis keys and the "extracted_fields" key at the same top level.`;
 
   const raw = await groqChat(SP.l1support, prompt, maxTokens || 1000);
-  const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
+  const cleanedRaw = raw.replace(/```json|```/g, '').trim();
+  let analysis;
+  try {
+    analysis = JSON.parse(cleanedRaw);
+  } catch (parseErr) {
+    try {
+      analysis = JSON.parse(repairSpelledOutConfidence(cleanedRaw));
+    } catch (repairErr) {
+      const err = new Error(`Model returned malformed JSON (${parseErr.message}); auto-repair for spelled-out confidence did not fix it.`);
+      throw err;
+    }
+  }
 
   // ── Deterministic severity guardrail ──────────────────────────────────
   // The LLM provides the initial severity assessment, but obvious hard
