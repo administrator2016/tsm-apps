@@ -973,6 +973,10 @@
           <span class="callout-label">Historical bug, now fixed — case-sensitive severity pricing</span>
           <code>rateForSeverity()</code> in <code>routes/schools-financial.js</code> originally matched severity values against the rate card by exact case only; anything not already uppercase (e.g. a lowercase/mixed-case value from an SIS import) silently priced at $0 instead of erroring. Fixed to fall back to an uppercased match (commit <code>975785e9</code>), alongside a confidence-note fallback ("rate card missing entry — priced at $0") for genuinely unmapped severities, so a $0 exposure now means something specific rather than a silent miss.
         </div>
+        <div class="callout risk">
+          <span class="callout-label">Historical gap, now fixed — Schools was missing from the AI classifier's vertical list</span>
+          Schools has had its own full War Room → Strategist → Executive Portal relay chain (above) all along, but <code>server.js</code>'s <code>DOC_ROUTER_NODES</code> and <code>DOC_ROUTER_PROMPT</code> vertical enum never included "schools" — the same gap Mortgage had before its 2026-09-05 fix. The AI classifier could never actually tag a document "schools", so nothing routed here automatically from doc-search even though the destination page was fully built. Fixed (commit <code>7ecc6420</code>) by adding <code>schools: ['schools-war-room', 'strategist']</code> to <code>DOC_ROUTER_NODES</code> and "schools" to the classifier's vertical enum — same single-intake-node shape as hc/pm/noc/mortgage. Schools moved out of Appendix B into this section as of 2026-09-09; it's classifier-routed now.
+        </div>
         <div class="callout recovery">
           <span class="callout-label">Recovery Note</span>
           <code>funding_delay_exposure_total</code> and <code>compliance_exposure_total</code> (both in <code>routes/schools-financial.js</code>) are the recovery signals here — a grant file past its SLA clock or an open compliance exception both carry a dollar exposure computed off the rate card, not a placeholder.
@@ -1043,8 +1047,8 @@
         <li>A populated <code>defectFlags</code> array (Real Estate, Healthcare) is a hold, not informational text.</li>
         <li>BPO's Strategist stage is a real, built page (<code>bpo-strategist.html</code>) — a BPO item does get a Strategist hop, same as other verticals; see <code>BPO_Client_Chain_Manual.docx</code> for the full stage-by-stage steps.</li>
         <li>RCM-OS and Property Accounting — Revenue Cycle are searchable but not classifier-routed — a document won't land there automatically (Appendix A).</li>
-        <li>Schools, HotelOps/Concierge, Honeywell, L1 Ticket, Logistics, and Supplier/Vendor sit entirely outside this pipeline (Appendix B) — don't look for them in doc-search. Mortgage moved into Section 5 as of 2026-09-05; it's classifier-routed now, not in Appendix B.</li>
-        <li>Sentinel Center (<code>html/sentinel-center.html</code>) rolls up 9 of the 10 pipeline verticals — every one but NOC — plus Schools, HotelOps, and Concierge from Appendix B; check Section 5's Sentinel Center Feed rows for the exact relay key.</li>
+        <li>HotelOps/Concierge, Honeywell, L1 Ticket, Logistics, and Supplier/Vendor sit entirely outside this pipeline (Appendix B) — don't look for them in doc-search. Mortgage moved into Section 5 as of 2026-09-05, and Schools as of 2026-09-09; both are classifier-routed now, not in Appendix B.</li>
+        <li>Sentinel Center (<code>html/sentinel-center.html</code>) rolls up 11 of the 12 pipeline verticals — every one but NOC — plus HotelOps and Concierge from Appendix B; check Section 5's Sentinel Center Feed rows for the exact relay key.</li>
       </ul>
     </section>
 
@@ -1080,7 +1084,6 @@
       <h2>Appendix B: Verticals Outside This Pipeline</h2>
       <p>The verticals below have their own relay chains but are not wired into the shared document-router classifier (<code>tsm-doc-search-multi.html</code> / <code>server.js</code>'s <code>DOC_ROUTER_NODES</code>/<code>DOC_ROUTER_PROMPT</code>), so document-processing guidance for them isn't covered by Section 5 — listed here for reference only.</p>
       <ul class="plain">
-        <li>Schools — <code>html/war-rooms/schools-command/schools-command.html</code></li>
         <li>HotelOps / Concierge — <code>html/hotelops/hotelops-war-room.html</code></li>
         <li>Honeywell Industrial — <code>html/plant-incident.html</code></li>
         <li>L1 Ticket Copilot — <code>html/l1-copilot/l1-ticket-copilot.html</code></li>
