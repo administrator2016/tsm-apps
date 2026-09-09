@@ -350,6 +350,7 @@ nav {
 .section-head.cyan { color: var(--cyan); border-color: var(--cyan-border); }
 .section-head.amber { color: var(--amber); border-color: var(--amber-border); }
 .section-head.purple { color: var(--purple); border-color: var(--purple-border); }
+.section-head.orange { color: var(--orange); border-color: var(--orange-dim); }
 
 /* ── HOW-TO / FEATURE GUIDE ── */
 .howto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); margin-bottom: 1.5rem; }
@@ -878,6 +879,10 @@ nav {
   <a class="nav-item" onclick="switchTo('msai')" href="#" data-panel="msai">
     <div class="nav-left"><div class="nav-dot" style="background:#00e5cc"></div>AI · AB-100 Command</div>
     <div class="nav-right"><span class="nav-new">ACTIVE</span></div>
+  </a>
+  <a class="nav-item" onclick="switchTo('honeywell')" href="#" data-panel="honeywell">
+    <div class="nav-left"><div class="nav-dot" style="background:var(--orange)"></div>Honeywell · Advanced Detection</div>
+    <div class="nav-right"><span class="nav-count">4 tools</span></div>
   </a>
   <a class="nav-item" onclick="switchTo('career')" href="#" data-panel="career">
     <div class="nav-left"><div class="nav-dot" style="background:var(--green)"></div>Career · Cross-Sector</div>
@@ -2967,90 +2972,23 @@ nav {
 </div>
 
 <!-- ══════════════════════════════════════════════════════════
-     PANEL: CAREER OS
+     PANEL: HONEYWELL ADVANCED DETECTION
 ══════════════════════════════════════════════════════════ -->
-<div class="panel" id="panel-career">
-  <div class="panel-eyebrow">CROSS-SECTOR · CAREER COMMAND</div>
+<div class="panel" id="panel-honeywell">
+  <div class="panel-eyebrow">HONEYWELL · ADVANCED DETECTION BDM TRACK</div>
+  <div class="panel-title">Advanced Detection</div>
+  <div class="panel-sub">Competency training, AHJ compliance tracking, contract/margin calculators, and a
+    CRM pipeline tracker for Honeywell Advanced Detection business development — fire, smoke, gas, alarm,
+    and monitoring. TSM training competency only; not a Honeywell certification or employment record.</div>
 
-<!-- TSM_RCM_CAREER_PATH -->
-<section id="tsm-rcm-career-path"
-  style="
-    margin:1.5rem 0;
-    border:1px solid var(--border);
-    background:var(--surface);
-  ">
-
-  <div style="
-    padding:1rem 1.1rem;
-    border-bottom:1px solid var(--border);
-  ">
-    <div style="
-      font-size:10px;
-      letter-spacing:.12em;
-      color:var(--amber);
-      font-weight:700;
-    ">
-      RCM CAREER PATH
-    </div>
-
-    <div style="
-      margin-top:.35rem;
-      font-size:20px;
-      font-weight:700;
-      color:var(--text);
-    ">
-      Revenue Cycle Recovery Specialist
-    </div>
-
-    <div style="
-      margin-top:.4rem;
-      max-width:850px;
-      font-size:11px;
-      line-height:1.6;
-      color:var(--text2);
-    ">
-      TRAIN → PRACTICE → RECOVER. Build CRCR knowledge, prove
-      A/R recovery decisions, resolve denials, identify revenue
-      leakage, and earn a job-ready evidence profile.
-    </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin:1.1rem 0 1.3rem;">
+    <button type="button" class="cert-btn primary" data-hw-tab="training" onclick="hwSwitchTab('training',this)">TRAINING</button>
+    <button type="button" class="cert-btn" data-hw-tab="ahj" onclick="hwSwitchTab('ahj',this)">AHJ COMPLIANCE</button>
+    <button type="button" class="cert-btn" data-hw-tab="margin" onclick="hwSwitchTab('margin',this)">MARGIN CALCULATOR</button>
+    <button type="button" class="cert-btn" data-hw-tab="crm" onclick="hwSwitchTab('crm',this)">CRM PIPELINE</button>
   </div>
 
-  <div id="tsm-rcm-career-stages"
-    style="
-      display:grid;
-      grid-template-columns:repeat(6,minmax(0,1fr));
-      gap:1px;
-      background:var(--border);
-    ">
-  </div>
-
-  <div id="tsm-rcm-career-readiness"
-    style="
-      padding:1rem 1.1rem;
-      border-top:1px solid var(--border);
-      background:var(--surface2);
-    ">
-    <div style="
-      font-size:10px;
-      letter-spacing:.1em;
-      color:var(--cyan);
-      font-weight:700;
-      margin-bottom:.45rem;
-    ">
-      RCM CAREER READINESS
-    </div>
-
-    <div id="tsm-rcm-career-readiness-body"
-      style="
-        font-size:11px;
-        color:var(--text2);
-      ">
-      Loading canonical career mastery…
-    </div>
-  </div>
-
-</section>
-
+  <div id="hw-tab-training">
 <!-- TSM ADVANCED DETECTION COMPETENCY
      Reusable competency evidence contract.
      This is NOT a professional certification and does not represent
@@ -3153,7 +3091,9 @@ nav {
         'alarm-systems',
         'monitoring',
         'detection-technologies',
-        'life-safety-ecosystem'
+        'life-safety-ecosystem',
+        'vesda-detection',
+        'li-ion-tamer'
       ],
       accountApplication: {
         provider: 'honeywell',
@@ -3222,6 +3162,16 @@ nav {
           id: 'life-safety-ecosystem',
           label: 'Life-Safety Ecosystem',
           objective: 'Understand how detection, alarms, monitoring, stakeholders, and building systems interact.'
+        },
+        {
+          id: 'vesda-detection',
+          label: 'VESDA Aspirating Smoke Detection',
+          objective: 'Understand very early warning aspirating smoke detection, sampling-pipe design, and where it applies.'
+        },
+        {
+          id: 'li-ion-tamer',
+          label: 'Li-ion Tamer Thermal Runaway Protection',
+          objective: 'Understand off-gas sensing for lithium-ion battery thermal runaway and where early warning applies.'
         }
       ],
 
@@ -3749,6 +3699,52 @@ nav {
             explanation: 'Life-safety outcomes depend on interactions among technology, people, processes, facilities, and response organizations.'
           },
           scenario: 'A large customer has separate detection, monitoring, facility, and security teams. Identify the stakeholders and questions you would use to understand the current ecosystem.'
+        },
+
+        'vesda-detection': {
+          title: 'VESDA Aspirating Smoke Detection',
+          objective: 'Understand very early warning aspirating smoke detection (VESDA), sampling-pipe network design, and where the technology fits.',
+          lessons: [
+            'Aspirating smoke detection actively draws air through a network of sampling pipes into a central detector, rather than waiting for smoke to reach a spot detector.',
+            'This gives very early warning — often before smoke is visible — which is why the technology is used in environments where early intervention prevents major loss.',
+            'Typical applications include data centers, cleanrooms, cold storage, high-ceiling warehouses, and other spaces where airflow, height, or air quality make spot detectors slow or unreliable.',
+            'Pipe network design (sample point spacing, transport time, sensitivity zoning) has to match the airflow and risk profile of the space, not just the square footage.'
+          ],
+          check: {
+            question: 'Why is aspirating smoke detection often specified in data centers and cleanrooms instead of spot detectors?',
+            choices: [
+              {id:'a', text:'It gives very early warning in spaces where airflow or height make spot detectors slow'},
+              {id:'b', text:'It is always the cheapest detection option available'},
+              {id:'c', text:'It eliminates the need for any fire alarm control panel'},
+              {id:'d', text:'It only works in small residential rooms'}
+            ],
+            correct: 'a',
+            explanation: 'Aspirating detection actively samples air, which gives earlier warning than waiting for smoke to passively reach a spot detector — valuable where airflow, height, or air quality delay that transport.'
+          },
+          scenario: 'A data-center customer had a thermal incident that a spot-detector system caught too late to prevent downtime. Describe the questions you would ask about airflow, ceiling height, and risk tolerance before proposing an aspirating detection design.'
+        },
+
+        'li-ion-tamer': {
+          title: 'Li-ion Tamer Thermal Runaway Protection',
+          objective: 'Understand off-gas sensing for lithium-ion battery thermal runaway and where early warning applies in battery-heavy environments.',
+          lessons: [
+            'Lithium-ion batteries can enter thermal runaway, a self-heating chain reaction that releases hazardous off-gases before smoke or flame is visible.',
+            'Off-gas sensing technologies are designed to detect those early gas signatures — well ahead of smoke detection — giving time to isolate a failing cell or battery rack.',
+            'Common applications include EV manufacturing, battery energy storage systems (BESS), data-center UPS battery rooms, and other facilities with dense battery installations.',
+            'Early warning value depends on integration with the facility response process: isolation procedures, ventilation, and notification to responders, not the sensor alone.'
+          ],
+          check: {
+            question: 'What is the main safety advantage of off-gas sensing for lithium-ion battery installations?',
+            choices: [
+              {id:'a', text:'It can detect thermal runaway off-gases before smoke or flame appear'},
+              {id:'b', text:'It replaces the need for any ventilation system'},
+              {id:'c', text:'It only matters for batteries under 5 volts'},
+              {id:'d', text:'It eliminates all fire risk from batteries'}
+            ],
+            correct: 'a',
+            explanation: 'Off-gas sensing catches the early chemical signature of thermal runaway before it progresses to visible smoke or fire, which is what creates the early-warning safety margin.'
+          },
+          scenario: 'An EV manufacturing customer is expanding battery pack assembly and asks how early-warning detection differs from their existing smoke detectors. Describe how you would explain the off-gas detection window and what facility response questions you would ask next.'
         }
       }
     };
@@ -4431,6 +4427,426 @@ function submitKnowledgeCheck(domainId, choiceId) {
   })();
   </script>
 </section>
+  </div>
+
+  <div id="hw-tab-ahj" style="display:none">
+  <div class="section-head" style="color:var(--orange);border-color:var(--orange-dim)">AHJ COMPLIANCE TRACKER</div>
+  <div style="font-size:9px;color:var(--text3);margin-bottom:.9rem;line-height:1.55;">
+    Working checklist for moving a life-safety/detection project through the Authority Having Jurisdiction (AHJ) —
+    the fire marshal, building official, or other code-enforcement authority with sign-off power. This is a
+    process tracker, not legal or code guidance; always confirm current requirements with the local AHJ.
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+
+    <div>
+      <div style="font-size:9px;color:var(--cyan);font-weight:700;letter-spacing:.08em;margin-bottom:.5rem;">CODE RESEARCH</div>
+      <div class="rc-items">
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_076" onchange="saveStudyCheck(this)"> Identify the AHJ(s) with jurisdiction (fire marshal, building dept, insurance underwriter)</div>
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_077" onchange="saveStudyCheck(this)"> Confirm applicable code edition (NFPA 72, IBC/IFC, local amendments)</div>
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_078" onchange="saveStudyCheck(this)"> Determine occupancy classification and hazard-of-contents rating</div>
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_079" onchange="saveStudyCheck(this)"> Check for local amendments or special-hazard requirements</div>
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_080" onchange="saveStudyCheck(this)"> Confirm whether a variance or alternative-means request will be needed</div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:9px;color:var(--amber);font-weight:700;letter-spacing:.08em;margin-bottom:.5rem;">SUBMITTAL &amp; PLAN REVIEW</div>
+      <div class="rc-items">
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_081" onchange="saveStudyCheck(this)"> Assemble shop drawings, battery/voltage-drop calcs, and device schedule</div>
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_082" onchange="saveStudyCheck(this)"> Submit sequence of operations and cause-and-effect matrix</div>
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_083" onchange="saveStudyCheck(this)"> Confirm monitoring/central-station agreement is in place</div>
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_084" onchange="saveStudyCheck(this)"> Track plan-review comments and resubmittal deadlines</div>
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_085" onchange="saveStudyCheck(this)"> Obtain permit prior to installation start</div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:9px;color:var(--purple);font-weight:700;letter-spacing:.08em;margin-bottom:.5rem;">INSPECTION &amp; ACCEPTANCE</div>
+      <div class="rc-items">
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_086" onchange="saveStudyCheck(this)"> Schedule rough-in inspection before wall/ceiling close-up</div>
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_087" onchange="saveStudyCheck(this)"> Complete acceptance testing per NFPA 72 Chapter 14 (100% device test)</div>
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_088" onchange="saveStudyCheck(this)"> Deliver record drawings and completed inspection/test forms to AHJ</div>
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_089" onchange="saveStudyCheck(this)"> Obtain final sign-off / Certificate of Occupancy release</div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:9px;color:var(--green);font-weight:700;letter-spacing:.08em;margin-bottom:.5rem;">ONGOING COMPLIANCE</div>
+      <div class="rc-items">
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_090" onchange="saveStudyCheck(this)"> Schedule recurring inspection/test intervals (NFPA 72 Ch.14 tables)</div>
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_091" onchange="saveStudyCheck(this)"> Maintain impairment/out-of-service notification procedure</div>
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_092" onchange="saveStudyCheck(this)"> Track device/software revisions requiring AHJ re-notification</div>
+        <div class="rc-item"><input type="checkbox" class="study-check" data-key="tsm_sp_093" onchange="saveStudyCheck(this)"> Retain compliance records for the AHJ's required retention period</div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+
+  <div id="hw-tab-margin" style="display:none">
+  <div class="section-head" style="color:var(--orange);border-color:var(--orange-dim)">MARGIN &amp; CONTRACT CALCULATOR</div>
+  <div style="font-size:9px;color:var(--text3);margin-bottom:.9rem;line-height:1.55;">
+    Working estimate only — not a quote. Effective margin is target margin less discount; contract value and
+    gross profit compound the annual escalation across the term. Approval tier is illustrative and should be
+    confirmed against your actual authorization matrix.
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;">
+
+    <div>
+      <div class="hw-field">
+        <label for="hw-mc-value">Annual Contract Value ($)</label>
+        <input type="number" id="hw-mc-value" value="250000" min="0" step="1000" oninput="hwMarginCalc()">
+      </div>
+      <div class="hw-field">
+        <label for="hw-mc-term">Term (years)</label>
+        <input type="number" id="hw-mc-term" value="3" min="1" max="10" step="1" oninput="hwMarginCalc()">
+      </div>
+      <div class="hw-field">
+        <label for="hw-mc-margin">Target Margin (%)</label>
+        <input type="number" id="hw-mc-margin" value="30" min="0" max="95" step="0.5" oninput="hwMarginCalc()">
+      </div>
+      <div class="hw-field">
+        <label for="hw-mc-discount">Discount Applied (%)</label>
+        <input type="number" id="hw-mc-discount" value="5" min="0" max="50" step="0.5" oninput="hwMarginCalc()">
+      </div>
+      <div class="hw-field">
+        <label for="hw-mc-escalation">Annual Escalation (%)</label>
+        <input type="number" id="hw-mc-escalation" value="3" min="0" max="20" step="0.5" oninput="hwMarginCalc()">
+      </div>
+    </div>
+
+    <div id="hw-mc-output"></div>
+
+  </div>
+
+  <style>
+    .hw-field { margin-bottom: .7rem; }
+    .hw-field label { display:block; font-size:9px; color:var(--text3); letter-spacing:.06em; margin-bottom:.25rem; }
+    .hw-field input {
+      width:100%; box-sizing:border-box; padding:.5rem .6rem;
+      background:var(--surface2); border:1px solid var(--border); border-radius:4px;
+      color:var(--text); font-family:var(--mono); font-size:11px;
+    }
+    .hw-field input:focus { outline:none; border-color:var(--cyan); }
+  </style>
+
+  <script>
+    function hwMarginTier(effMargin) {
+      if (effMargin > 30) {
+        return { label: 'REP-LEVEL APPROVAL', color: 'var(--green)', note: 'Within standard authority — no additional sign-off required.' };
+      } else if (effMargin > 25) {
+        return { label: 'MANAGER APPROVAL', color: 'var(--cyan)', note: 'Requires sales manager sign-off before the quote is issued.' };
+      } else if (effMargin > 15) {
+        return { label: 'VP + FINANCE APPROVAL', color: 'var(--amber)', note: 'Requires VP sign-off and a finance margin review before the quote is issued.' };
+      } else {
+        return { label: 'FINANCE / EXECUTIVE HOLD', color: 'var(--red)', note: 'Below floor margin — requires finance and executive approval; do not quote without it.' };
+      }
+    }
+
+    function hwMarginCalc() {
+      var valueEl = document.getElementById('hw-mc-value');
+      var termEl = document.getElementById('hw-mc-term');
+      var marginEl = document.getElementById('hw-mc-margin');
+      var discountEl = document.getElementById('hw-mc-discount');
+      var escEl = document.getElementById('hw-mc-escalation');
+      var out = document.getElementById('hw-mc-output');
+      if (!valueEl || !out) return;
+
+      var baseValue = parseFloat(valueEl.value) || 0;
+      var term = Math.max(1, parseInt(termEl.value, 10) || 1);
+      var margin = parseFloat(marginEl.value) || 0;
+      var discount = parseFloat(discountEl.value) || 0;
+      var escalation = parseFloat(escEl.value) || 0;
+
+      var effMargin = Math.max(0, margin - discount);
+
+      var totalValue = 0;
+      for (var i = 0; i < term; i++) {
+        totalValue += baseValue * Math.pow(1 + escalation / 100, i);
+      }
+      var grossProfit = totalValue * (effMargin / 100);
+      var tier = hwMarginTier(effMargin);
+
+      out.innerHTML =
+        '<div style="border:1px solid var(--border);border-radius:4px;padding:.85rem;">' +
+          '<div style="font-size:9px;color:var(--text3);letter-spacing:.08em;margin-bottom:.5rem;">RESULT</div>' +
+          '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--text2);margin-bottom:.4rem;">' +
+            '<span>Effective Margin</span><span style="color:var(--text);font-weight:700;">' + effMargin.toFixed(1) + '%</span>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--text2);margin-bottom:.4rem;">' +
+            '<span>Total Contract Value (' + term + 'yr)</span><span style="color:var(--text);font-weight:700;">$' + Math.round(totalValue).toLocaleString() + '</span>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--text2);margin-bottom:.7rem;">' +
+            '<span>Gross Profit (' + term + 'yr)</span><span style="color:var(--text);font-weight:700;">$' + Math.round(grossProfit).toLocaleString() + '</span>' +
+          '</div>' +
+          '<div style="padding:.6rem .7rem;border:1px solid var(--border);border-radius:4px;background:var(--surface2);">' +
+            '<div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:' + tier.color + ';">' + tier.label + '</div>' +
+            '<div style="font-size:9.5px;color:var(--text3);margin-top:.3rem;line-height:1.5;">' + tier.note + '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', hwMarginCalc);
+    } else {
+      hwMarginCalc();
+    }
+  </script>
+  </div>
+
+  <div id="hw-tab-crm" style="display:none">
+  <div class="section-head" style="color:var(--orange);border-color:var(--orange-dim)">CRM PIPELINE TRACKER</div>
+  <div style="font-size:9px;color:var(--text3);margin-bottom:.9rem;line-height:1.55;">
+    Sample opportunities for practicing pipeline management. Stakeholder tags show which relationships are
+    mapped for each account: <b>End User</b> (facilities/operations owner), <b>Architect</b> (specifying
+    engineer/consultant), <b>AHJ</b> (fire marshal or code official). Change a stage below to see the
+    weighted pipeline value and win rate recalculate.
+  </div>
+
+  <table style="width:100%;border-collapse:collapse;font-size:10px;">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border);">
+        <th style="text-align:left;padding:6px 8px;color:var(--text3);font-size:9px;letter-spacing:.06em;">ACCOUNT</th>
+        <th style="text-align:left;padding:6px 8px;color:var(--text3);font-size:9px;letter-spacing:.06em;">STAKEHOLDERS</th>
+        <th style="text-align:right;padding:6px 8px;color:var(--text3);font-size:9px;letter-spacing:.06em;">DEAL VALUE</th>
+        <th style="text-align:left;padding:6px 8px;color:var(--text3);font-size:9px;letter-spacing:.06em;">STAGE</th>
+      </tr>
+    </thead>
+    <tbody id="hw-crm-rows"></tbody>
+  </table>
+
+  <div id="hw-crm-summary" style="margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem;"></div>
+
+  <style>
+    .hw-crm-tag {
+      display:inline-block; font-size:8px; letter-spacing:.05em; padding:2px 6px;
+      border-radius:2px; margin-right:4px; margin-bottom:2px;
+      background:var(--surface2); border:1px solid var(--border2); color:var(--text3);
+    }
+    .hw-crm-tag.on { color:var(--cyan); border-color:var(--cyan-border); background:var(--cyan-dim); }
+    .hw-crm-stage-select {
+      background:var(--surface2); border:1px solid var(--border); border-radius:4px;
+      color:var(--text); font-family:var(--mono); font-size:9.5px; padding:.35rem .5rem;
+    }
+  </style>
+
+  <script>
+    var HW_CRM_STAGES = {
+      'discovery':      { label: 'Discovery',      weight: 0.10 },
+      'qualification':  { label: 'Qualification',  weight: 0.25 },
+      'proposal':       { label: 'Proposal',       weight: 0.50 },
+      'negotiation':    { label: 'Negotiation',    weight: 0.75 },
+      'closed-won':     { label: 'Closed Won',     weight: 1.00 },
+      'closed-lost':    { label: 'Closed Lost',    weight: 0.00 }
+    };
+
+    var HW_CRM_ACCOUNTS = [
+      { name: 'Ridgeline Medical Center',   value: 185000, stage: 'proposal',     stakeholders: ['end-user','architect','ahj'] },
+      { name: 'Harbor Point Logistics',     value: 92000,  stage: 'qualification',stakeholders: ['end-user','ahj'] },
+      { name: 'Cobalt Semiconductor Fab',   value: 410000, stage: 'negotiation',  stakeholders: ['end-user','architect'] },
+      { name: 'Westgate Convention Center', value: 260000, stage: 'discovery',    stakeholders: ['end-user','architect','ahj'] },
+      { name: 'Summit Ridge School District', value: 140000, stage: 'closed-won', stakeholders: ['end-user','ahj'] },
+      { name: 'Northfield Cold Storage',    value: 78000,  stage: 'closed-lost',  stakeholders: ['end-user','architect'] }
+    ];
+
+    function hwCrmRenderRows() {
+      var body = document.getElementById('hw-crm-rows');
+      if (!body) return;
+      body.innerHTML = HW_CRM_ACCOUNTS.map(function(acct, idx) {
+        var tags = ['end-user','architect','ahj'].map(function(t) {
+          var on = acct.stakeholders.indexOf(t) !== -1;
+          var label = t === 'end-user' ? 'END USER' : t === 'architect' ? 'ARCHITECT' : 'AHJ';
+          return '<span class="hw-crm-tag' + (on ? ' on' : '') + '">' + label + '</span>';
+        }).join('');
+
+        var options = Object.keys(HW_CRM_STAGES).map(function(key) {
+          var sel = key === acct.stage ? ' selected' : '';
+          return '<option value="' + key + '"' + sel + '>' + HW_CRM_STAGES[key].label + '</option>';
+        }).join('');
+
+        return (
+          '<tr style="border-bottom:1px solid var(--border);" data-idx="' + idx + '">' +
+            '<td style="padding:7px 8px;color:var(--text);font-weight:600;">' + acct.name + '</td>' +
+            '<td style="padding:7px 8px;">' + tags + '</td>' +
+            '<td style="padding:7px 8px;text-align:right;color:var(--text2);">$' + acct.value.toLocaleString() + '</td>' +
+            '<td style="padding:7px 8px;">' +
+              '<select class="hw-crm-stage-select" data-idx="' + idx + '" onchange="hwCrmStageChange(this)">' + options + '</select>' +
+            '</td>' +
+          '</tr>'
+        );
+      }).join('');
+    }
+
+    function hwCrmStageChange(select) {
+      var idx = parseInt(select.getAttribute('data-idx'), 10);
+      if (HW_CRM_ACCOUNTS[idx]) {
+        HW_CRM_ACCOUNTS[idx].stage = select.value;
+      }
+      hwCrmRenderSummary();
+    }
+
+    function hwCrmRenderSummary() {
+      var el = document.getElementById('hw-crm-summary');
+      if (!el) return;
+
+      var weighted = 0;
+      var closedWon = 0, closedLost = 0;
+
+      HW_CRM_ACCOUNTS.forEach(function(acct) {
+        var stage = HW_CRM_STAGES[acct.stage];
+        if (!stage) return;
+        if (acct.stage === 'closed-won') closedWon++;
+        else if (acct.stage === 'closed-lost') closedLost++;
+        else weighted += acct.value * stage.weight;
+      });
+
+      // closed-won deals count at full value in weighted pipeline
+      HW_CRM_ACCOUNTS.forEach(function(acct) {
+        if (acct.stage === 'closed-won') weighted += acct.value;
+      });
+
+      var closedTotal = closedWon + closedLost;
+      var winRate = closedTotal ? Math.round((closedWon / closedTotal) * 100) : null;
+
+      el.innerHTML =
+        '<div style="border:1px solid var(--border);border-radius:4px;padding:.75rem;text-align:center;">' +
+          '<div style="font-size:18px;font-weight:700;color:var(--cyan);">$' + Math.round(weighted).toLocaleString() + '</div>' +
+          '<div style="font-size:9px;color:var(--text3);margin-top:3px;letter-spacing:.06em;">WEIGHTED PIPELINE VALUE</div>' +
+        '</div>' +
+        '<div style="border:1px solid var(--border);border-radius:4px;padding:.75rem;text-align:center;">' +
+          '<div style="font-size:18px;font-weight:700;color:var(--green);">' + (winRate === null ? 'N/A' : winRate + '%') + '</div>' +
+          '<div style="font-size:9px;color:var(--text3);margin-top:3px;letter-spacing:.06em;">WIN RATE (' + closedTotal + ' CLOSED)</div>' +
+        '</div>';
+    }
+
+    function hwCrmInit() {
+      hwCrmRenderRows();
+      hwCrmRenderSummary();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', hwCrmInit);
+    } else {
+      hwCrmInit();
+    }
+  </script>
+  </div>
+
+  <div class="panel-footer">
+    <div class="footer-badge">HONEYWELL · ADVANCED DETECTION</div>
+    <div class="footer-nav"><button class="footer-btn" onclick="switchTo('msai')">← MICROSOFT AI</button><button class="footer-btn" onclick="switchTo('career')">CAREER OS →</button></div>
+  </div>
+</div>
+<script>
+  function hwSwitchTab(tab, btn) {
+    ['training', 'ahj', 'margin', 'crm'].forEach(function(t) {
+      var el = document.getElementById('hw-tab-' + t);
+      if (el) el.style.display = (t === tab) ? 'block' : 'none';
+    });
+    var buttons = document.querySelectorAll('.cert-btn[data-hw-tab]');
+    Array.prototype.forEach.call(buttons, function(b) {
+      b.classList.remove('primary');
+    });
+    if (btn) btn.classList.add('primary');
+  }
+</script>
+
+<!-- ══════════════════════════════════════════════════════════
+     PANEL: CAREER OS
+══════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-career">
+  <div class="panel-eyebrow">CROSS-SECTOR · CAREER COMMAND</div>
+
+<!-- TSM_RCM_CAREER_PATH -->
+<section id="tsm-rcm-career-path"
+  style="
+    margin:1.5rem 0;
+    border:1px solid var(--border);
+    background:var(--surface);
+  ">
+
+  <div style="
+    padding:1rem 1.1rem;
+    border-bottom:1px solid var(--border);
+  ">
+    <div style="
+      font-size:10px;
+      letter-spacing:.12em;
+      color:var(--amber);
+      font-weight:700;
+    ">
+      RCM CAREER PATH
+    </div>
+
+    <div style="
+      margin-top:.35rem;
+      font-size:20px;
+      font-weight:700;
+      color:var(--text);
+    ">
+      Revenue Cycle Recovery Specialist
+    </div>
+
+    <div style="
+      margin-top:.4rem;
+      max-width:850px;
+      font-size:11px;
+      line-height:1.6;
+      color:var(--text2);
+    ">
+      TRAIN → PRACTICE → RECOVER. Build CRCR knowledge, prove
+      A/R recovery decisions, resolve denials, identify revenue
+      leakage, and earn a job-ready evidence profile.
+    </div>
+  </div>
+
+  <div id="tsm-rcm-career-stages"
+    style="
+      display:grid;
+      grid-template-columns:repeat(6,minmax(0,1fr));
+      gap:1px;
+      background:var(--border);
+    ">
+  </div>
+
+  <div id="tsm-rcm-career-readiness"
+    style="
+      padding:1rem 1.1rem;
+      border-top:1px solid var(--border);
+      background:var(--surface2);
+    ">
+    <div style="
+      font-size:10px;
+      letter-spacing:.1em;
+      color:var(--cyan);
+      font-weight:700;
+      margin-bottom:.45rem;
+    ">
+      RCM CAREER READINESS
+    </div>
+
+    <div id="tsm-rcm-career-readiness-body"
+      style="
+        font-size:11px;
+        color:var(--text2);
+      ">
+      Loading canonical career mastery…
+    </div>
+  </div>
+
+</section>
+
+<!-- Advanced Detection Competency training has moved to its own dedicated
+     panel (see PANEL: HONEYWELL ADVANCED DETECTION) so it's reachable from
+     the main nav instead of buried inside Career OS. -->
+<div style="margin:1.5rem 0;padding:1rem 1.1rem;border:1px solid var(--border);background:var(--surface);border-left:3px solid var(--orange);border-radius:4px;">
+  <div style="font-size:10px;letter-spacing:.1em;color:var(--orange);font-weight:700;margin-bottom:.4rem;">HONEYWELL ADVANCED DETECTION</div>
+  <div style="font-size:11px;line-height:1.6;color:var(--text2);">Advanced Detection competency training, domain cheat sheets, AHJ compliance tracking, contract/margin calculators, and CRM pipeline tools now live in their own dedicated track.</div>
+  <button class="footer-btn" style="margin-top:.6rem;" onclick="switchTo('honeywell')">OPEN HONEYWELL ADVANCED DETECTION →</button>
+</div>
+
 
 <!-- TRAINING INTELLIGENCE — scaffold. See routes/training-intelligence.js
      and data/training-intelligence/providers/*.json for the honesty-pattern
@@ -6348,7 +6764,7 @@ function renderQuiz(domainId, labelText, questions) {
     <div class="footer-badge">AI-103 · Jul 3 · AB-100 · Jul 18</div>
     <div class="footer-nav">
       <a href="/html/tsm-ab-study-plan.html" class="footer-btn" target="_blank">OPEN FULL COMMAND CENTER →</a>
-      <button class="footer-btn" onclick="switchTo('career')">CAREER OS →</button>
+      <button class="footer-btn" onclick="switchTo('honeywell')">HONEYWELL ADVANCED DETECTION →</button>
     </div>
   </div>
 </div>
@@ -6616,6 +7032,7 @@ function switchTo(id) {
     itsupport: 'active-red',
     servicenow: 'active-amber',
     msai: 'active-cyan',
+    honeywell: 'active-orange',
     career: 'active',
     interview: 'active-purple',
     readiness: 'active-cyan', hitl: 'active-amber',
