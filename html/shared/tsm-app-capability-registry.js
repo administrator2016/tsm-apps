@@ -30,7 +30,41 @@
 
   var REGISTRY_VERSION = '1.0.0';
 
-  var CAPABILITIES = {
+  var ADVANCED_DETECTION = [
+  {
+    id: 'advanced-detection.competency',
+    label: 'Develop Advanced Detection Competency',
+    description: 'Build demonstrated competency across fire, smoke, gas, alarm, monitoring, detection technologies, and the life-safety ecosystem through study, knowledge checks, scenarios, and applied simulation.',
+    action: 'advanced-detection-competency',
+    route: 'advanced-detection',
+    findingTypes: [
+      'fire-detection',
+      'smoke-detection',
+      'gas-detection',
+      'alarm-system',
+      'monitoring',
+      'detection-technology',
+      'life-safety',
+      'advanced-detection'
+    ]
+  },
+  {
+    id: 'advanced-detection.honeywell-simulation',
+    label: 'Apply Detection Competency to Honeywell Simulation',
+    description: 'Apply demonstrated Advanced Detection learning to a simulated Honeywell account scenario without representing the exercise as professional field or sales experience.',
+    action: 'apply-honeywell-simulation',
+    route: 'honeywell',
+    findingTypes: [
+      'life-safety-opportunity',
+      'detection-opportunity',
+      'alarm-opportunity',
+      'monitoring-opportunity'
+    ]
+  }
+];
+
+var CAPABILITIES = {
+  advanced_detection: ADVANCED_DETECTION,
     insurance: [
       {
         id: 'insurance.bnca.operations',

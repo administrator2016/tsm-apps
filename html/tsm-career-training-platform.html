@@ -2873,6 +2873,1187 @@ nav {
 
 </section>
 
+<!-- TSM ADVANCED DETECTION COMPETENCY
+     Reusable competency evidence contract.
+     This is NOT a professional certification and does not represent
+     field/sales employment experience.
+-->
+<section id="tsm-advanced-detection-competency"
+  data-tsm-competency="advanced-detection"
+  style="display:none">
+
+  <div class="panel-title">Advanced Detection Competency</div>
+
+  <div class="panel-sub">
+    Demonstrated learning across fire detection, smoke detection, gas detection,
+    alarm systems, monitoring, detection technologies, and the life-safety ecosystem.
+  </div>
+
+  <div id="tsm-advanced-detection-evidence"
+       data-evidence-contract="TSM_ADVANCED_DETECTION_EVIDENCE">
+  </div>
+
+  <script>
+    window.TSM_ADVANCED_DETECTION = {
+      version: '1.0.0',
+      competencyId: 'advanced-detection',
+      label: 'Advanced Detection',
+      evidenceStages: [
+        'study',
+        'knowledge-check',
+        'scenario',
+        'account-simulation'
+      ],
+      domains: [
+        'fire-detection',
+        'smoke-detection',
+        'gas-detection',
+        'alarm-systems',
+        'monitoring',
+        'detection-technologies',
+        'life-safety-ecosystem'
+      ],
+      accountApplication: {
+        provider: 'honeywell',
+        mode: 'simulation',
+        channels: ['plant', 'cyber', 'supplier']
+      },
+      honestyBoundary:
+        'Completion demonstrates TSM training competency and simulated account application; it does not represent professional field, sales, or employment experience.'
+    };
+  </script>
+</section>
+
+<!-- TSM ADVANCED DETECTION — TRAINING INTELLIGENCE CONTRACT
+     TSM competency track.
+     Not an external certification provider or professional experience claim.
+-->
+<section id="tsm-advanced-detection-training-intelligence"
+  data-tsm-training="advanced-detection"
+  style="display:none">
+
+  <script>
+    window.TSM_ADVANCED_DETECTION_TRAINING_INTELLIGENCE = {
+      version: '1.0.0',
+      competencyId: 'advanced-detection',
+      displayName: 'Advanced Detection Competency',
+
+      evidenceModel: {
+        study: true,
+        knowledgeCheck: true,
+        scenario: true,
+        accountSimulation: true
+      },
+
+      domains: [
+        {
+          id: 'fire-detection',
+          label: 'Fire Detection',
+          objective: 'Understand core fire detection concepts, devices, and application considerations.'
+        },
+        {
+          id: 'smoke-detection',
+          label: 'Smoke Detection',
+          objective: 'Understand smoke detection technologies, applications, and limitations.'
+        },
+        {
+          id: 'gas-detection',
+          label: 'Gas Detection',
+          objective: 'Understand gas detection fundamentals, monitored hazards, and application context.'
+        },
+        {
+          id: 'alarm-systems',
+          label: 'Alarm Systems',
+          objective: 'Understand alarm system architecture, notification, initiating devices, and system context.'
+        },
+        {
+          id: 'monitoring',
+          label: 'Monitoring',
+          objective: 'Understand monitoring workflows, alarm communication, response, and operational context.'
+        },
+        {
+          id: 'detection-technologies',
+          label: 'Detection Technologies',
+          objective: 'Compare detection technologies and recognize appropriate application scenarios.'
+        },
+        {
+          id: 'life-safety-ecosystem',
+          label: 'Life-Safety Ecosystem',
+          objective: 'Understand how detection, alarms, monitoring, stakeholders, and building systems interact.'
+        }
+      ],
+
+      application: {
+        account: 'honeywell',
+        mode: 'simulation',
+        channels: ['plant', 'cyber', 'supplier']
+      },
+
+      readiness: {
+        evidenceRequired: [
+          'study',
+          'knowledge-check',
+          'scenario'
+        ],
+        accountSimulationRequiredForAppliedReadiness: true
+      },
+
+      honestyBoundary:
+        'This track demonstrates TSM training competency and simulated account application. It is not a Honeywell certification, employment record, field-sales credential, or substitute for professional experience.'
+    };
+  </script>
+</section>
+
+<!-- TSM ADVANCED DETECTION — LEARNER MODULE
+     Separate from official certification-provider Training Intelligence.
+     Evidence is local TSM competency evidence only.
+-->
+<section id="tsm-advanced-detection-learner"
+  data-tsm-training="advanced-detection-learner"
+  style="margin-top:1.2rem;">
+
+  <div style="
+    border:1px solid var(--border);
+    background:var(--surface1);
+    border-radius:6px;
+    overflow:hidden;
+  ">
+
+    <div style="
+      padding:1rem 1.1rem;
+      border-bottom:1px solid var(--border);
+    ">
+      <div style="
+        font-size:10px;
+        letter-spacing:.1em;
+        color:var(--purple);
+        font-weight:700;
+        margin-bottom:.35rem;
+      ">
+        TSM COMPETENCY TRACK
+      </div>
+
+      <div style="
+        font-size:18px;
+        font-weight:700;
+        color:var(--text);
+      ">
+        Advanced Detection
+      </div>
+
+      <div style="
+        font-size:10.5px;
+        line-height:1.6;
+        color:var(--text2);
+        margin-top:.35rem;
+        max-width:850px;
+      ">
+        Build demonstrated knowledge across fire detection, smoke detection,
+        gas detection, alarm systems, monitoring, detection technologies,
+        and the life-safety ecosystem.
+      </div>
+
+      <div style="
+        margin-top:.65rem;
+        padding:.55rem .7rem;
+        border:1px solid var(--border);
+        border-radius:4px;
+        font-size:9.5px;
+        line-height:1.5;
+        color:var(--text3);
+      ">
+        <strong style="color:var(--text2);">Evidence boundary:</strong>
+        This is TSM training competency and simulated account application.
+        It is not a Honeywell certification, employment record, field-sales
+        credential, or substitute for professional experience.
+      </div>
+    </div>
+
+    <div id="tsm-ad-readiness"
+      style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);">
+    </div>
+
+    <div style="padding:1rem 1.1rem;">
+      <div style="
+        font-size:9px;
+        color:var(--text3);
+        text-transform:uppercase;
+        letter-spacing:.08em;
+        margin-bottom:.65rem;
+      ">
+        LEARNING DOMAINS
+      </div>
+
+      <div id="tsm-ad-domains"></div>
+    </div>
+
+    <div id="tsm-ad-study"
+      style="display:none;padding:1rem 1.1rem;border-top:1px solid var(--border);">
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var CONTRACT =
+      window.TSM_ADVANCED_DETECTION_TRAINING_INTELLIGENCE;
+
+    if (!CONTRACT || !Array.isArray(CONTRACT.domains)) {
+      return;
+    }
+
+    var STORAGE_KEY =
+      'TSM_ADVANCED_DETECTION_LEARNER_V1';
+
+    function getState() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        var parsed = raw ? JSON.parse(raw) : null;
+
+        if (parsed && typeof parsed === 'object') {
+          return parsed;
+        }
+      } catch (err) {
+        console.warn(
+          'Advanced Detection state could not be loaded:',
+          err
+        );
+      }
+
+      return {
+        version: '1.0.0',
+        domains: {},
+        updatedAt: null
+      };
+    }
+
+    function saveState(state) {
+      try {
+        state.updatedAt = new Date().toISOString();
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(state)
+        );
+      } catch (err) {
+        console.warn(
+          'Advanced Detection state could not be saved:',
+          err
+        );
+      }
+    }
+
+    function getDomainState(state, domainId) {
+      if (!state.domains[domainId]) {
+        state.domains[domainId] = {
+          study: false,
+          knowledgeCheck: false,
+          scenario: false,
+          mastery: null
+        };
+      }
+
+      return state.domains[domainId];
+    }
+
+    function completedDomainCount(state) {
+      return CONTRACT.domains.filter(function (domain) {
+        var d = getDomainState(state, domain.id);
+
+        return (
+          d.study &&
+          d.knowledgeCheck &&
+          d.scenario
+        );
+      }).length;
+    }
+
+    function appliedDomainCount(state) {
+      return CONTRACT.domains.filter(function (domain) {
+        var d = getDomainState(state, domain.id);
+
+        return (
+          d.study &&
+          d.knowledgeCheck &&
+          d.scenario &&
+          d.accountSimulation
+        );
+      }).length;
+    }
+
+    function renderReadiness() {
+      var el =
+        document.getElementById('tsm-ad-readiness');
+
+      if (!el) return;
+
+      var state = getState();
+      var completed = completedDomainCount(state);
+      var applied = appliedDomainCount(state);
+      var total = CONTRACT.domains.length;
+
+      var percentage = total
+        ? Math.round((completed / total) * 100)
+        : 0;
+
+      el.innerHTML =
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;">' +
+
+          '<div style="border:1px solid var(--border);border-radius:5px;padding:.7rem;">' +
+            '<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Domains complete</div>' +
+            '<div style="font-size:20px;font-weight:700;color:var(--cyan);margin-top:.2rem;">' +
+              completed + ' / ' + total +
+            '</div>' +
+          '</div>' +
+
+          '<div style="border:1px solid var(--border);border-radius:5px;padding:.7rem;">' +
+            '<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Learning readiness</div>' +
+            '<div style="font-size:20px;font-weight:700;color:var(--green);margin-top:.2rem;">' +
+              percentage + '%' +
+            '</div>' +
+          '</div>' +
+
+          '<div style="border:1px solid var(--border);border-radius:5px;padding:.7rem;">' +
+            '<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Applied domains</div>' +
+            '<div style="font-size:20px;font-weight:700;color:var(--text);margin-top:.2rem;">' +
+              applied + ' / ' + total +
+            '</div>' +
+          '</div>' +
+
+        '</div>' +
+
+        '<div style="font-size:9.5px;color:var(--text3);line-height:1.5;margin-top:.65rem;">' +
+          'Readiness reflects demonstrated TSM learning evidence, not an external certification or professional experience claim.' +
+        '</div>';
+    }
+
+    function renderDomains() {
+      var el =
+        document.getElementById('tsm-ad-domains');
+
+      if (!el) return;
+
+      var state = getState();
+
+      el.innerHTML =
+        CONTRACT.domains.map(function (domain) {
+          var d = getDomainState(state, domain.id);
+
+          var stages = [
+            ['study', 'Study'],
+            ['knowledgeCheck', 'Knowledge Check'],
+            ['scenario', 'Scenario']
+          ];
+
+          return (
+            '<div style="' +
+              'border:1px solid var(--border);' +
+              'border-radius:5px;' +
+              'padding:.75rem;' +
+              'margin-bottom:.55rem;' +
+              'background:rgba(255,255,255,.012);' +
+            '">' +
+
+              '<div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;">' +
+
+                '<div style="min-width:0;">' +
+                  '<div style="font-size:11px;font-weight:700;color:var(--text);">' +
+                    escapeHtml(domain.label) +
+                  '</div>' +
+
+                  '<div style="font-size:9.5px;line-height:1.5;color:var(--text3);margin-top:.25rem;">' +
+                    escapeHtml(domain.objective) +
+                  '</div>' +
+                '</div>' +
+
+                '<button type="button" class="cert-btn primary tsm-ad-study-btn" data-domain="' +
+                  escapeHtml(domain.id) +
+                '">' +
+                  'STUDY' +
+                '</button>' +
+
+              '</div>' +
+
+              '<div style="display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.65rem;">' +
+
+                stages.map(function (stage) {
+                  var complete = !!d[stage[0]];
+
+                  return (
+                    '<span style="' +
+                      'font-size:8.5px;' +
+                      'padding:.3rem .45rem;' +
+                      'border:1px solid var(--border);' +
+                      'border-radius:3px;' +
+                      'color:' +
+                        (complete ? 'var(--green)' : 'var(--text3)') +
+                      ';"' +
+                    '>' +
+                      stage[1] +
+                      ': ' +
+                      (complete ? 'COMPLETE' : 'PENDING') +
+                    '</span>'
+                  );
+                }).join('') +
+
+              '</div>' +
+
+            '</div>'
+          );
+        }).join('');
+
+      var buttons =
+        el.querySelectorAll('.tsm-ad-study-btn');
+
+      Array.prototype.forEach.call(
+        buttons,
+        function (button) {
+          button.addEventListener(
+            'click',
+            function () {
+              var domainId = button.getAttribute('data-domain');
+
+              if (window.TSM_ADVANCED_DETECTION_RENDER_STUDY) {
+                window.TSM_ADVANCED_DETECTION_RENDER_STUDY(domainId);
+              }
+            }
+          );
+        }
+      );
+    }
+
+    /*
+     * TSM ADVANCED DETECTION — EVIDENCE GATES
+     *
+     * Local competency evidence only.
+     * No external certification or professional-experience claim.
+     */
+    window.TSM_ADVANCED_DETECTION_EVIDENCE_GATES_V1 = {
+      version: '1.0.0',
+      stages: [
+        'study',
+        'knowledge-check',
+        'scenario',
+        'account-simulation'
+      ],
+      rules: {
+        knowledgeCheckRequiresStudy: true,
+        scenarioRequiresKnowledgeCheck: true,
+        accountSimulationRequiresScenario: true
+      }
+    };
+
+    var CURRICULUM = {
+      version: '1.0.0',
+      competencyId: 'advanced-detection',
+
+      domains: {
+        'fire-detection': {
+          title: 'Fire Detection',
+          objective: 'Understand how fire detection identifies developing fire conditions and how detector selection relates to the environment.',
+          lessons: [
+            'Fire detection systems use initiating devices to identify conditions associated with fire.',
+            'Common detection approaches include heat detection, smoke detection, flame detection, and specialized technologies.',
+            'Detector selection depends on the environment, expected fire characteristics, nuisance conditions, and required response.',
+            'A detection device is one part of a larger life-safety system; installation, testing, notification, monitoring, and response all matter.'
+          ],
+          check: {
+            question: 'What is the most important consideration when selecting a fire detection technology?',
+            choices: [
+              {id:'a', text:'Choosing the least expensive detector available'},
+              {id:'b', text:'Matching the detection technology to the hazard and environment'},
+              {id:'c', text:'Using the same detector in every building'},
+              {id:'d', text:'Selecting the detector with the loudest alarm'}
+            ],
+            correct: 'b',
+            explanation: 'Detection technology should be matched to the hazard, environment, expected fire characteristics, and system requirements.'
+          },
+          scenario: 'A facility has an area where environmental conditions may create nuisance alarms. Explain what information you would gather before recommending a detection approach.'
+        },
+
+        'smoke-detection': {
+          title: 'Smoke Detection',
+          objective: 'Understand smoke detection principles, detector technologies, application considerations, and nuisance-alarm risks.',
+          lessons: [
+            'Smoke detectors identify particles or characteristics associated with smoke rather than directly measuring fire itself.',
+            'Different smoke detection technologies respond differently to smoke characteristics and environmental conditions.',
+            'Air movement, dust, steam, temperature, humidity, and other environmental factors can affect detector performance.',
+            'Good application requires understanding both the expected hazard and the environment in which the detector operates.'
+          ],
+          check: {
+            question: 'Why must environmental conditions be considered when applying smoke detection?',
+            choices: [
+              {id:'a', text:'Environmental conditions can affect detector performance and nuisance alarms'},
+              {id:'b', text:'Smoke detectors only work outdoors'},
+              {id:'c', text:'Environmental conditions determine the building color'},
+              {id:'d', text:'Smoke detectors never respond to environmental conditions'}
+            ],
+            correct: 'a',
+            explanation: 'Dust, steam, airflow, humidity, and other conditions can influence smoke detector behavior and application suitability.'
+          },
+          scenario: 'A production area experiences dust and changing airflow. Identify the environmental questions you would ask before selecting a smoke detection strategy.'
+        },
+
+        'gas-detection': {
+          title: 'Gas Detection',
+          objective: 'Understand gas detection fundamentals, monitored hazards, detector placement considerations, and operational context.',
+          lessons: [
+            'Gas detection is used to identify hazardous or combustible gas conditions before they become a larger safety event.',
+            'The gas being monitored determines the appropriate sensing technology and application strategy.',
+            'Gas properties such as density, dispersion behavior, toxicity, and flammability influence detector placement and coverage.',
+            'Gas detection should be considered within a broader response process that includes notification, monitoring, investigation, and corrective action.'
+          ],
+          check: {
+            question: 'What should drive the selection of a gas detection approach?',
+            choices: [
+              {id:'a', text:'The gas hazard and characteristics of the environment'},
+              {id:'b', text:'The color of the equipment'},
+              {id:'c', text:'The age of the building alone'},
+              {id:'d', text:'The number of office employees only'}
+            ],
+            correct: 'a',
+            explanation: 'The monitored gas, its characteristics, the environment, and the intended safety objective are central to application decisions.'
+          },
+          scenario: 'A facility wants earlier warning of a potential gas release. Describe the information you would gather about the hazard, environment, and response process.'
+        },
+
+        'alarm-systems': {
+          title: 'Alarm Systems',
+          objective: 'Understand alarm-system architecture and the relationship between initiating devices, control functions, notification, and response.',
+          lessons: [
+            'An alarm system connects detection or initiating devices with control functions and notification pathways.',
+            'Initiating devices provide information about a condition; notification appliances communicate an alarm or other required signal.',
+            'The control unit coordinates system behavior and may provide status, supervisory, trouble, and alarm information.',
+            'Alarm systems operate as part of a larger life-safety process that includes testing, maintenance, monitoring, and human response.'
+          ],
+          check: {
+            question: 'What is the primary role of a fire alarm control unit?',
+            choices: [
+              {id:'a', text:'Coordinate system inputs, logic, status, and outputs'},
+              {id:'b', text:'Replace every detector in the building'},
+              {id:'c', text:'Provide building electricity for all equipment'},
+              {id:'d', text:'Eliminate the need for monitoring'}
+            ],
+            correct: 'a',
+            explanation: 'The control unit coordinates inputs and system logic and communicates relevant alarm, supervisory, and trouble conditions.'
+          },
+          scenario: 'An organization has multiple initiating devices and notification zones. Explain what system information you would review before discussing an alarm-system improvement.'
+        },
+
+        'monitoring': {
+          title: 'Monitoring',
+          objective: 'Understand how monitored life-safety signals move from the protected environment into an operational response process.',
+          lessons: [
+            'Monitoring extends awareness beyond the local alarm system by communicating system conditions to a monitoring or response function.',
+            'Signals may represent alarm, supervisory, trouble, or other operational conditions depending on the system.',
+            'Monitoring value depends not only on communication but also on response procedures, escalation, verification, and accountability.',
+            'Monitoring should therefore be evaluated as part of an end-to-end operational workflow rather than as an isolated technology.'
+          ],
+          check: {
+            question: 'Why is response procedure important to the value of monitoring?',
+            choices: [
+              {id:'a', text:'A signal without an appropriate response process may not produce the intended safety outcome'},
+              {id:'b', text:'Monitoring eliminates every possible hazard'},
+              {id:'c', text:'Monitoring only measures building temperature'},
+              {id:'d', text:'Response procedures are unrelated to monitored signals'}
+            ],
+            correct: 'a',
+            explanation: 'Monitoring creates actionable awareness; procedures determine how that awareness becomes investigation, escalation, and response.'
+          },
+          scenario: 'A customer receives frequent monitored alerts but has inconsistent response procedures. Describe the operational questions you would ask.'
+        },
+
+        'detection-technologies': {
+          title: 'Detection Technologies',
+          objective: 'Compare detection technologies and recognize why application context matters when evaluating technology options.',
+          lessons: [
+            'Detection technologies differ in what they sense, how they respond, where they are effective, and what environmental conditions affect them.',
+            'Technology selection should begin with the hazard and desired outcome rather than with a particular product.',
+            'Comparing technologies requires consideration of detection characteristics, environmental conditions, coverage, maintenance, integration, and operational requirements.',
+            'A strong recommendation connects technical characteristics to a clearly defined customer problem.'
+          ],
+          check: {
+            question: 'What is the best starting point when comparing detection technologies?',
+            choices: [
+              {id:'a', text:'The customer problem, hazard, environment, and desired outcome'},
+              {id:'b', text:'The most expensive technology'},
+              {id:'c', text:'The technology with the longest product name'},
+              {id:'d', text:'A technology chosen before understanding the environment'}
+            ],
+            correct: 'a',
+            explanation: 'Technology comparison should begin with the problem and application requirements, then evaluate which technology best fits.'
+          },
+          scenario: 'A customer asks for a newer detection technology without defining the problem. Describe how you would structure the discovery conversation.'
+        },
+
+        'life-safety-ecosystem': {
+          title: 'Life-Safety Ecosystem',
+          objective: 'Understand how detection, alarms, monitoring, stakeholders, buildings, and response processes operate as an interconnected ecosystem.',
+          lessons: [
+            'Life safety is an ecosystem rather than a single device or product category.',
+            'Key stakeholders may include building owners, facility teams, security teams, emergency responders, integrators, architects, engineers, inspectors, and technology providers.',
+            'Detection and alarm systems may interact with monitoring, building systems, emergency procedures, and organizational workflows.',
+            'Effective opportunity discovery requires understanding the customer environment, operational objectives, risk, existing systems, and desired future state.'
+          ],
+          check: {
+            question: 'Why should life-safety systems be evaluated as an ecosystem?',
+            choices: [
+              {id:'a', text:'Because detection, alarms, monitoring, stakeholders, and response processes interact'},
+              {id:'b', text:'Because one device controls every safety decision'},
+              {id:'c', text:'Because technology eliminates the need for people'},
+              {id:'d', text:'Because all buildings have identical safety requirements'}
+            ],
+            correct: 'a',
+            explanation: 'Life-safety outcomes depend on interactions among technology, people, processes, facilities, and response organizations.'
+          },
+          scenario: 'A large customer has separate detection, monitoring, facility, and security teams. Identify the stakeholders and questions you would use to understand the current ecosystem.'
+        }
+      }
+    };
+
+    window.TSM_ADVANCED_DETECTION_CURRICULUM_V1 = CURRICULUM;
+
+    function getCurriculumDomain(domainId) {
+      return CURRICULUM.domains[domainId] || null;
+    }
+
+    function renderStudyContent(domainId) {
+      var domain = getCurriculumDomain(domainId);
+      var el = document.getElementById('tsm-ad-study');
+
+      if (!domain || !el) return;
+
+      var state = getState();
+      var d = getDomainState(state, domainId);
+      var check = domain.check;
+
+      el.style.display = 'block';
+
+      el.innerHTML =
+        '<div style="font-size:9px;color:var(--purple);font-weight:700;letter-spacing:.08em;">STUDY DOMAIN</div>' +
+
+        '<div style="font-size:15px;font-weight:700;color:var(--text);margin-top:.25rem;">' +
+          escapeHtml(domain.title) +
+        '</div>' +
+
+        '<div style="font-size:10.5px;line-height:1.6;color:var(--text2);margin-top:.45rem;">' +
+          escapeHtml(domain.objective) +
+        '</div>' +
+
+        '<div style="margin-top:.8rem;">' +
+          '<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.45rem;">' +
+            'CORE CONCEPTS' +
+          '</div>' +
+
+          '<ul style="margin:.2rem 0 0 1.1rem;padding:0;color:var(--text2);font-size:10px;line-height:1.65;">' +
+            domain.lessons.map(function(item) {
+              return '<li>' + escapeHtml(item) + '</li>';
+            }).join('') +
+          '</ul>' +
+        '</div>' +
+
+        '<div style="margin-top:.9rem;padding:.8rem;border:1px solid var(--border);border-radius:4px;">' +
+          '<div style="font-size:9px;color:var(--cyan);font-weight:700;letter-spacing:.08em;">KNOWLEDGE CHECK</div>' +
+
+          '<div style="font-size:10.5px;color:var(--text);line-height:1.55;margin-top:.4rem;font-weight:600;">' +
+            escapeHtml(check.question) +
+          '</div>' +
+
+          '<div id="tsm-ad-check-choices" style="margin-top:.6rem;">' +
+            check.choices.map(function(choice) {
+              return (
+                '<button type="button" class="tsm-ad-choice" data-choice="' +
+                escapeHtml(choice.id) +
+                '" style="display:block;width:100%;text-align:left;margin-bottom:.4rem;padding:.55rem .65rem;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text2);font-size:9.5px;cursor:pointer;">' +
+                  escapeHtml(choice.text) +
+                '</button>'
+              );
+            }).join('') +
+          '</div>' +
+
+          '<div id="tsm-ad-check-result" style="margin-top:.5rem;"></div>' +
+        '</div>' +
+
+        '<div style="margin-top:.9rem;padding:.8rem;border:1px solid var(--border);border-radius:4px;">' +
+          '<div style="font-size:9px;color:var(--amber);font-weight:700;letter-spacing:.08em;">APPLICATION SCENARIO</div>' +
+          '<div style="font-size:10px;color:var(--text2);line-height:1.6;margin-top:.4rem;">' +
+            escapeHtml(domain.scenario) +
+          '</div>' +
+          '<div style="margin-top:.65rem;">' +
+            '<textarea id="tsm-ad-scenario-response" rows="5" ' +
+              'placeholder="Write your response here..." ' +
+              'style="width:100%;box-sizing:border-box;resize:vertical;padding:.6rem;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text);font-size:10px;line-height:1.5;"></textarea>' +
+          '</div>' +
+
+          '<button type="button" id="tsm-ad-submit-scenario" class="cert-btn primary" style="margin-top:.65rem;">' +
+            'SUBMIT SCENARIO RESPONSE' +
+          '</button>' +
+
+          '<div id="tsm-ad-scenario-result" style="margin-top:.5rem;"></div>' +
+
+          '<div style="font-size:9px;color:var(--text3);line-height:1.5;margin-top:.55rem;">' +
+            'Scenario evidence will be recorded after the learner completes the applied response.' +
+          '</div>' +
+        '</div>' +
+
+        '<button type="button" id="tsm-ad-mark-study" class="cert-btn primary" style="margin-top:.75rem;">' +
+          (d.study ? 'STUDY COMPLETE' : 'MARK STUDY COMPLETE') +
+        '</button>' +
+
+        '<div id="tsm-ad-study-status"></div>';
+
+      var choiceButtons =
+        el.querySelectorAll('.tsm-ad-choice');
+
+      Array.prototype.forEach.call(
+        choiceButtons,
+        function(button) {
+          button.addEventListener('click', function() {
+            submitKnowledgeCheck(
+              domainId,
+              button.getAttribute('data-choice')
+            );
+          });
+        }
+      );
+
+      var mark =
+        document.getElementById('tsm-ad-mark-study');
+
+      if (mark) {
+        mark.addEventListener('click', function() {
+          var current = getState();
+          var currentDomain = getDomainState(current, domainId);
+
+          currentDomain.study = true;
+
+          saveState(current);
+          renderReadiness();
+          renderDomains();
+          renderStudyContent(domainId);
+
+          var status =
+            document.getElementById('tsm-ad-study-status');
+
+          if (status) {
+            status.innerHTML =
+              '<div style="margin-top:.65rem;font-size:9.5px;color:var(--green);font-weight:700;">' +
+              'STUDY EVIDENCE RECORDED' +
+              '</div>';
+          }
+        });
+      }
+    }
+
+      var scenarioSubmit =
+        document.getElementById('tsm-ad-submit-scenario');
+
+      if (scenarioSubmit) {
+        scenarioSubmit.addEventListener('click', function() {
+
+          var state = getState();
+          var d = getDomainState(state, domainId);
+          var response =
+            document.getElementById('tsm-ad-scenario-response');
+
+          var result =
+            document.getElementById('tsm-ad-scenario-result');
+
+          if (!d.knowledgeCheck) {
+            if (result) {
+              result.innerHTML =
+                '<div style="padding:.55rem;border:1px solid var(--border);border-radius:4px;color:var(--amber);font-size:9.5px;">' +
+                  '<strong>Knowledge check required.</strong> Pass the knowledge check before submitting scenario evidence.' +
+                '</div>';
+            }
+
+            return;
+          }
+
+          var answer =
+            response && typeof response.value === 'string'
+              ? response.value.trim()
+              : '';
+
+          if (answer.length < 40) {
+            if (result) {
+              result.innerHTML =
+                '<div style="padding:.55rem;border:1px solid var(--border);border-radius:4px;color:var(--amber);font-size:9.5px;line-height:1.5;">' +
+                  '<strong>Response too short.</strong> Provide a substantive response of at least 40 characters.' +
+                '</div>';
+            }
+
+            return;
+          }
+
+          d.scenario = true;
+          d.scenarioResponse = answer;
+          d.scenarioCompletedAt =
+            new Date().toISOString();
+
+          saveState(state);
+          renderReadiness();
+          renderDomains();
+
+          if (result) {
+            result.innerHTML =
+              '<div style="padding:.55rem;border:1px solid var(--border);border-radius:4px;color:var(--green);font-size:9.5px;line-height:1.5;">' +
+                '<strong>Scenario evidence recorded.</strong> Your applied response is now part of the local Advanced Detection competency record.' +
+              '</div>';
+          }
+        });
+      }
+
+
+    function submitKnowledgeCheck(domainId, choiceId) {
+      var domain = getCurriculumDomain(domainId);
+      var result = document.getElementById('tsm-ad-check-result');
+
+      if (!domain || !result) return;
+
+      var state = getState();
+      var d = getDomainState(state, domainId);
+
+      /*
+       * Gate 1:
+       * Knowledge check cannot be completed until study evidence exists.
+       */
+      if (!d.study) {
+        result.innerHTML =
+          '<div style="padding:.55rem;border:1px solid var(--border);border-radius:4px;color:var(--amber);font-size:9.5px;line-height:1.5;">' +
+            '<strong>Study required.</strong> Mark the domain study evidence complete before taking the knowledge check.' +
+          '</div>';
+        return;
+      }
+
+      var correct =
+        choiceId === domain.check.correct;
+
+      if (!correct) {
+        d.knowledgeCheck = false;
+        d.mastery = null;
+
+        saveState(state);
+        renderReadiness();
+        renderDomains();
+
+        result.innerHTML =
+          '<div style="padding:.55rem;border:1px solid var(--border);border-radius:4px;color:var(--amber);font-size:9.5px;line-height:1.5;">' +
+            '<strong>Not yet.</strong> Review the core concepts and try again.' +
+          '</div>';
+
+        return;
+      }
+
+      d.knowledgeCheck = true;
+      d.mastery = 100;
+
+      saveState(state);
+      renderReadiness();
+      renderDomains();
+      renderStudyContent(domainId);
+
+      var updated =
+        document.getElementById('tsm-ad-check-result');
+
+      if (updated) {
+        updated.innerHTML =
+          '<div style="padding:.55rem;border:1px solid var(--border);border-radius:4px;color:var(--green);font-size:9.5px;line-height:1.5;">' +
+            '<strong>Knowledge check passed.</strong> ' +
+            escapeHtml(domain.check.explanation) +
+          '</div>';
+      }
+    }
+
+    /*
+     * Preserve the original learner API while replacing the temporary
+     * knowledge-check behavior with an evidence-gated implementation.
+     */
+    var originalLearner =
+      window.TSM_ADVANCED_DETECTION_LEARNER;
+
+    if (originalLearner) {
+
+      /*
+       * Knowledge checks must be completed through the actual
+       * question renderer. External callers cannot simply assert
+       * completion.
+       */
+      originalLearner.markKnowledgeCheckComplete =
+        function(domainId) {
+          console.warn(
+            'Knowledge check requires completion through the Advanced Detection study module.'
+          );
+
+          return false;
+        };
+
+      /*
+       * Scenario completion is intentionally gated. The learner
+       * must submit an actual scenario response through the UI.
+       */
+      originalLearner.markScenarioComplete =
+        function(domainId) {
+          console.warn(
+            'Scenario completion requires an actual Advanced Detection scenario response.'
+          );
+
+          return false;
+        };
+
+      /*
+       * Account simulation remains a separate applied stage.
+       * It cannot be asserted until scenario evidence exists.
+       */
+      originalLearner.markAccountSimulationComplete =
+        function(domainId) {
+          var state = getState();
+          var d = getDomainState(state, domainId);
+
+          if (!d.scenario) {
+            console.warn(
+              'Account simulation requires completed scenario evidence.'
+            );
+
+            return false;
+          }
+
+          d.accountSimulation = true;
+
+          saveState(state);
+          renderReadiness();
+          renderDomains();
+
+          return true;
+        };
+
+      originalLearner.getCurriculum =
+        function() {
+          return CURRICULUM;
+        };
+
+      originalLearner.openStudy =
+        function(domainId) {
+          renderStudyContent(domainId);
+        };
+    }
+
+    /*
+     * Replace the temporary placeholder study renderer.
+     */
+    window.TSM_ADVANCED_DETECTION_RENDER_STUDY =
+      renderStudyContent;
+
+    /*
+     * Patch the existing openStudy function behavior by exposing
+     * the real curriculum renderer to the study buttons.
+     */
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    renderReadiness();
+    renderDomains();
+
+
+    /*
+     * PHASE 5 — ADVANCED DETECTION → HONEYWELL SIMULATION BRIDGE
+     *
+     * This is TSM simulation evidence only.
+     * It does not represent Honeywell certification, employment,
+     * professional field experience, or field-sales experience.
+     */
+    window.TSM_ADVANCED_DETECTION_HONEYWELL_BRIDGE_V1 = {
+      version: '1.0.0',
+      competencyId: 'advanced-detection',
+      provider: 'honeywell',
+      mode: 'simulation',
+
+      channels: [
+        'plant',
+        'cyber',
+        'supplier'
+      ],
+
+      createEvidence: function (domainId, channel, response) {
+        var learner = window.TSM_ADVANCED_DETECTION_LEARNER;
+
+        if (!learner || typeof learner.getState !== 'function') {
+          return {
+            ok: false,
+            reason: 'Advanced Detection learner unavailable.'
+          };
+        }
+
+        var state = learner.getState();
+        var domain = state &&
+          state.domains &&
+          state.domains[domainId];
+
+        if (!domain) {
+          return {
+            ok: false,
+            reason: 'Unknown Advanced Detection domain.'
+          };
+        }
+
+        if (!domain.study ||
+            !domain.knowledgeCheck ||
+            !domain.scenario) {
+          return {
+            ok: false,
+            reason:
+              'Study, knowledge check, and scenario evidence are required before Honeywell simulation.'
+          };
+        }
+
+        channel = channel || 'plant';
+
+        if (['plant', 'cyber', 'supplier'].indexOf(channel) === -1) {
+          return {
+            ok: false,
+            reason: 'Invalid Honeywell simulation channel.'
+          };
+        }
+
+        return {
+          ok: true,
+          evidence: {
+            version: '1.0.0',
+            competencyId: 'advanced-detection',
+            provider: 'honeywell',
+            mode: 'simulation',
+            channel: channel,
+            domainId: domainId,
+            scenarioResponse:
+              response || domain.scenarioResponse || '',
+            evidence: {
+              study: true,
+              knowledgeCheck: true,
+              scenario: true,
+              accountSimulation: true
+            },
+            completedAt: new Date().toISOString(),
+            honestyBoundary:
+              'This is simulated account application evidence demonstrating TSM training competency. It is not Honeywell certification, employment, field-sales experience, or professional field experience.'
+          }
+        };
+      }
+    };
+
+    window.TSM_ADVANCED_DETECTION_LEARNER = {
+      version: '1.0.0',
+      competencyId: CONTRACT.competencyId,
+
+      getState: function () {
+        return getState();
+      },
+
+      markKnowledgeCheckComplete: function (domainId) {
+        var state = getState();
+        var d = getDomainState(state, domainId);
+
+        d.knowledgeCheck = true;
+
+        saveState(state);
+        renderReadiness();
+        renderDomains();
+      },
+
+      markScenarioComplete: function (domainId) {
+        var state = getState();
+        var d = getDomainState(state, domainId);
+
+        d.scenario = true;
+
+        saveState(state);
+        renderReadiness();
+        renderDomains();
+      },
+
+      markAccountSimulationComplete: function (domainId, channel, response) {
+        var state = getState();
+        var d = getDomainState(state, domainId);
+
+        if (!d.scenario) {
+          console.warn(
+            'Account simulation requires scenario completion for ' +
+            domainId
+          );
+          return false;
+        }
+
+        var bridge =
+          window.TSM_ADVANCED_DETECTION_HONEYWELL_BRIDGE_V1;
+
+        if (!bridge ||
+            typeof bridge.createEvidence !== 'function') {
+          console.warn(
+            'Honeywell simulation bridge unavailable.'
+          );
+          return false;
+        }
+
+        var result = bridge.createEvidence(
+          domainId,
+          channel || 'plant',
+          response || d.scenarioResponse || ''
+        );
+
+        if (!result.ok) {
+          console.warn(
+            'Honeywell simulation evidence rejected:',
+            result.reason
+          );
+          return false;
+        }
+
+        d.accountSimulation = true;
+        d.accountSimulationChannel = channel || 'plant';
+        d.accountSimulationEvidence = result.evidence;
+
+        saveState(state);
+        renderReadiness();
+        renderDomains();
+
+        return true;
+      },
+
+      getReadiness: function () {
+        var state = getState();
+
+        return {
+          competencyId: CONTRACT.competencyId,
+          domains: CONTRACT.domains.length,
+          completedDomains: completedDomainCount(state),
+          appliedDomains: appliedDomainCount(state),
+          percentage: CONTRACT.domains.length
+            ? Math.round(
+                completedDomainCount(state) /
+                CONTRACT.domains.length *
+                100
+              )
+            : 0,
+          evidence: state
+        };
+      },
+
+      getHoneywellSimulationEvidence: function (domainId) {
+        var state = getState();
+        var d = getDomainState(state, domainId);
+
+        return d.accountSimulationEvidence || null;
+      }
+    };
+  })();
+  </script>
+</section>
+
 <!-- TRAINING INTELLIGENCE — scaffold. See routes/training-intelligence.js
      and data/training-intelligence/providers/*.json for the honesty-pattern
      rationale: blueprint weights only render/compute once an admin sets
