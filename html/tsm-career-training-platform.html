@@ -1926,6 +1926,61 @@ nav {
     </div>
   </div>
 
+  <div class="section-head" style="color:var(--orange);border-color:var(--orange-dim)">CRCR SCENARIO CHEAT SHEET</div>
+  <div class="msai-cheat">
+    <div class="mcf-title">ANSWER PATTERN FOR SCENARIO / DENIAL QUESTIONS</div>
+    <ol class="mcf-list">
+      <li><b>Identify the specific code or rule</b> — CARC/RARC code, timely filing window, or regulation named, not "a denial happened"</li>
+      <li><b>Name the correction step</b> — what actually fixes it (corrected claim, appeal, retro-auth, adjustment)</li>
+      <li><b>Cite the compliance boundary</b> — HIPAA/PHI, Medicare timely-filing, or payer-specific rule that limits your options</li>
+      <li><b>Close with the operational metric</b> — how this reduces denial rate or days in AR going forward</li>
+    </ol>
+    <div class="msai-cheat-tabs">
+      <button class="msai-ctbtn sel" data-group="crcr" onclick="msaiCheatShow('crcr','mcheat-crcr-d1',this)">D1 · ACCESS</button>
+      <button class="msai-ctbtn" data-group="crcr" onclick="msaiCheatShow('crcr','mcheat-crcr-d2',this)">D2 · BILLING</button>
+      <button class="msai-ctbtn" data-group="crcr" onclick="msaiCheatShow('crcr','mcheat-crcr-d3',this)">D3 · PAYMENT</button>
+      <button class="msai-ctbtn" data-group="crcr" onclick="msaiCheatShow('crcr','mcheat-crcr-d4',this)">D4 · DENIALS</button>
+      <button class="msai-ctbtn" data-group="crcr" onclick="msaiCheatShow('crcr','mcheat-crcr-d5',this)">D5 · COMPLIANCE</button>
+      <button class="msai-ctbtn" data-group="crcr" onclick="msaiCheatShow('crcr','mcheat-crcr-d6',this)">D6 · OPS</button>
+    </div>
+    <div class="msai-cheat-panel" data-group="crcr" id="mcheat-crcr-d1">
+      <div class="mcp-label">Vocabulary to use</div>
+      Eligibility verification · pre-authorization · primary/secondary insurance validation · patient financial counseling
+      <div class="mcp-label">Common mistake</div>
+      Describing registration generically instead of naming which verification step (eligibility vs. pre-auth) prevents the downstream denial in the scenario.
+    </div>
+    <div class="msai-cheat-panel" data-group="crcr" id="mcheat-crcr-d2" style="display:none">
+      <div class="mcp-label">Vocabulary to use</div>
+      CMS-1500 (professional) vs. UB-04 (institutional) · CPT / ICD-10 · EDI 837P/837I · modifiers (25, 59, GT)
+      <div class="mcp-label">Common mistake</div>
+      Not distinguishing CMS-1500 from UB-04 when the scenario specifies a facility vs. a professional claim — the form and required fields differ.
+    </div>
+    <div class="msai-cheat-panel" data-group="crcr" id="mcheat-crcr-d3" style="display:none">
+      <div class="mcp-label">Vocabulary to use</div>
+      ERA / 835 reconciliation · EOB interpretation · contractual adjustment · underpayment identification
+      <div class="mcp-label">Common mistake</div>
+      Treating every payment variance as an error instead of first checking whether it's a contractual adjustment.
+    </div>
+    <div class="msai-cheat-panel" data-group="crcr" id="mcheat-crcr-d4" style="display:none">
+      <div class="mcp-label">Vocabulary to use</div>
+      CARC/RARC codes (name the specific code: CO-4, CO-11, CO-50, CO-197) · timely filing window (Medicare vs. commercial differ) · appeal letter · retro authorization
+      <div class="mcp-label">Common mistake</div>
+      Saying "appeal the denial" without naming the CARC/RARC code or the timely-filing window that determines whether an appeal is even still possible — this is the domain candidates score weakest on.
+    </div>
+    <div class="msai-cheat-panel" data-group="crcr" id="mcheat-crcr-d5" style="display:none">
+      <div class="mcp-label">Vocabulary to use</div>
+      HIPAA / PHI · Medicare/Medicaid regulations · parity laws · ABN (Advance Beneficiary Notice) / waiver requirements
+      <div class="mcp-label">Common mistake</div>
+      Forgetting to mention an ABN when a scenario involves a service Medicare may not cover — that's the specific compliance step being tested.
+    </div>
+    <div class="msai-cheat-panel" data-group="crcr" id="mcheat-crcr-d6" style="display:none">
+      <div class="mcp-label">Vocabulary to use</div>
+      Denial rate · days in AR · staff workflow design · bottleneck identification · throughput optimization
+      <div class="mcp-label">Common mistake</div>
+      Answering only the individual-claim fix and skipping the operational metric it improves — Domain 6 questions specifically want the KPI connection.
+    </div>
+  </div>
+
   <div class="cert-actions" style="margin-bottom:1.5rem;">
     <a class="cert-btn primary" href="/html/finops-suite/crcr-study-mode.html" target="_blank">TIMED EXAM SIM</a>
     <a class="cert-btn" href="/html/healthcare/hc-academy/crcr-scenarios.html" target="_blank">SCENARIO ENGINE</a>
@@ -2278,6 +2333,53 @@ nav {
     </div>
   </div>
 
+  <div class="section-head" style="color:var(--orange);border-color:var(--orange-dim)">SAFE MLO SCENARIO CHEAT SHEET</div>
+  <div class="msai-cheat">
+    <div class="mcf-title">ANSWER PATTERN FOR SCENARIO QUESTIONS</div>
+    <ol class="mcf-list">
+      <li><b>Name the governing law or form</b> — TILA/Reg Z, RESPA/Reg X, the 1003, or whichever applies — not "federal rules"</li>
+      <li><b>State the specific number or timeline</b> — the 3-day Closing Disclosure rule, the right-of-rescission window, a disclosure deadline</li>
+      <li><b>Flag the ethics angle if present</b> — fair lending, anti-steering, predatory-lending red flag</li>
+      <li><b>Close with the borrower-protection outcome</b> — what the rule is actually protecting the borrower from</li>
+    </ol>
+    <div class="msai-cheat-tabs">
+      <button class="msai-ctbtn sel" data-group="mlo" onclick="msaiCheatShow('mlo','mcheat-mlo-a1',this)">AREA 1 · 23%</button>
+      <button class="msai-ctbtn" data-group="mlo" onclick="msaiCheatShow('mlo','mcheat-mlo-a2',this)">AREA 2 · 20%</button>
+      <button class="msai-ctbtn" data-group="mlo" onclick="msaiCheatShow('mlo','mcheat-mlo-a3',this)">AREA 3 · 27%</button>
+      <button class="msai-ctbtn" data-group="mlo" onclick="msaiCheatShow('mlo','mcheat-mlo-a4',this)">AREA 4 · 14%</button>
+      <button class="msai-ctbtn" data-group="mlo" onclick="msaiCheatShow('mlo','mcheat-mlo-a5',this)">AREA 5 · 16%</button>
+    </div>
+    <div class="msai-cheat-panel" data-group="mlo" id="mcheat-mlo-a1">
+      <div class="mcp-label">Vocabulary to use</div>
+      TILA / Reg Z (APR, right of rescission) · RESPA / Reg X (GFE, HUD-1, anti-kickback) · ECOA · HMDA · CRA · Dodd-Frank / QM / ATR · SAFE Act
+      <div class="mcp-label">Common mistake</div>
+      Confusing TILA (disclosure/APR/rescission) with RESPA (settlement costs/kickbacks) — the largest content area, and the two laws are frequently swapped in wrong-answer choices.
+    </div>
+    <div class="msai-cheat-panel" data-group="mlo" id="mcheat-mlo-a2" style="display:none">
+      <div class="mcp-label">Vocabulary to use</div>
+      FHA / VA / USDA / Conventional · ARM vs. fixed-rate mechanics · DTI / LTV underwriting ratios · appraisal types · title and escrow
+      <div class="mcp-label">Common mistake</div>
+      Mixing up DTI (debt-to-income, borrower qualification) with LTV (loan-to-value, collateral risk) — they answer different underwriting questions.
+    </div>
+    <div class="msai-cheat-panel" data-group="mlo" id="mcheat-mlo-a3" style="display:none">
+      <div class="mcp-label">Vocabulary to use</div>
+      1003 / URLA application · Loan Estimate disclosure timeline · Closing Disclosure 3-day rule · points/fees/APR calculation · rate lock
+      <div class="mcp-label">Common mistake</div>
+      Missing the 3-day rule specifically — Closing Disclosure must be received 3 business days before consummation, and that number is exactly what a scenario question is testing.
+    </div>
+    <div class="msai-cheat-panel" data-group="mlo" id="mcheat-mlo-a4" style="display:none">
+      <div class="mcp-label">Vocabulary to use</div>
+      Fair lending / anti-steering · predatory lending red flags · fraud detection & reporting · NMLS code of conduct
+      <div class="mcp-label">Common mistake</div>
+      Treating an ethics scenario as a technical question — the exam wants you to name the ethical violation (e.g. steering) by name, not just describe the situation.
+    </div>
+    <div class="msai-cheat-panel" data-group="mlo" id="mcheat-mlo-a5" style="display:none">
+      <div class="mcp-label">Vocabulary to use</div>
+      State licensing requirements · license application & renewal · surety bond · state supervisory authority & exams
+      <div class="mcp-label">Common mistake</div>
+      Answering with federal rules when the scenario specifically says "state" — this content area is the one candidates most often under-prepare for (it's state-specific and not covered by memorizing TILA/RESPA).
+    </div>
+  </div>
 
   <div class="section-head amber" style="margin-top:1.5rem;">TSM PLATFORM TOOLS · MLO</div>
   <div class="apps-grid">
@@ -2786,6 +2888,67 @@ nav {
     </div>
   </div>
 
+  <div class="section-head" style="color:var(--orange);border-color:var(--orange-dim)">SERVICENOW CSA SCENARIO CHEAT SHEET</div>
+  <div class="msai-cheat">
+    <div style="font-size:9px;color:var(--text3);margin-bottom:.7rem;">Domain weights below come from the Training Intelligence admin-verified CSA blueprint (Now Learning CSA Mainline Exam Blueprint, Jan 2026 revision) — if the live loader above ever shows different weights, treat that as the current source of truth instead.</div>
+    <div class="mcf-title">ANSWER PATTERN FOR SCENARIO QUESTIONS</div>
+    <ol class="mcf-list">
+      <li><b>Name the exact record/table or module</b> — Incident, Problem, Change, CMDB CI, ACL — not "a ticket" or "the system"</li>
+      <li><b>Distinguish the ITIL concept pair the question is testing</b> — Incident vs. Problem, Standard vs. Normal vs. Emergency change</li>
+      <li><b>Name the configuration/security mechanism</b> — ACL, role, business rule, or workflow, specifically</li>
+      <li><b>Close with the operational outcome</b> — what breaks or what's protected if this isn't configured correctly</li>
+    </ol>
+    <div class="msai-cheat-tabs">
+      <button class="msai-ctbtn sel" data-group="sn" onclick="msaiCheatShow('sn','mcheat-sn-d1',this)">NAV · 7%</button>
+      <button class="msai-ctbtn" data-group="sn" onclick="msaiCheatShow('sn','mcheat-sn-d2',this)">CONFIG · 10%</button>
+      <button class="msai-ctbtn" data-group="sn" onclick="msaiCheatShow('sn','mcheat-sn-d3',this)">COLLAB · 20%</button>
+      <button class="msai-ctbtn" data-group="sn" onclick="msaiCheatShow('sn','mcheat-sn-d4',this)">AUTOMATION · 20%</button>
+      <button class="msai-ctbtn" data-group="sn" onclick="msaiCheatShow('sn','mcheat-sn-d5',this)">DB/SECURITY · 30%</button>
+      <button class="msai-ctbtn" data-group="sn" onclick="msaiCheatShow('sn','mcheat-sn-d6',this)">MIGRATION · 13%</button>
+    </div>
+    <div class="msai-cheat-panel" data-group="sn" id="mcheat-sn-d1">
+      <div class="mcp-label">Domain</div>Platform Overview and Navigation
+      <div class="mcp-label">Vocabulary to use</div>
+      Application Navigator · list views/filters · form views · UI actions · favorites
+      <div class="mcp-label">Common mistake</div>
+      Smallest domain (7%) — don't over-invest study time here relative to Database Management (30%).
+    </div>
+    <div class="msai-cheat-panel" data-group="sn" id="mcheat-sn-d2" style="display:none">
+      <div class="mcp-label">Domain</div>Instance Configuration
+      <div class="mcp-label">Vocabulary to use</div>
+      System properties · UI policies vs. client scripts · form/list configuration
+      <div class="mcp-label">Common mistake</div>
+      Confusing a UI policy (declarative, form-level) with a client script (scripted) when the scenario asks for the simplest correct approach — CSA favors declarative/no-code answers.
+    </div>
+    <div class="msai-cheat-panel" data-group="sn" id="mcheat-sn-d3" style="display:none">
+      <div class="mcp-label">Domain</div>Configuring Applications for Collaboration
+      <div class="mcp-label">Vocabulary to use</div>
+      Notifications · email templates · Live Chat · Knowledge Management · Service Catalog
+      <div class="mcp-label">Common mistake</div>
+      Treating this as a minor domain — it's tied with Automation at 20%, second only to Database/Security.
+    </div>
+    <div class="msai-cheat-panel" data-group="sn" id="mcheat-sn-d4" style="display:none">
+      <div class="mcp-label">Domain</div>Self Service & Automation
+      <div class="mcp-label">Vocabulary to use</div>
+      Flow Designer · workflow · business rules · scheduled jobs · Service Catalog request flow
+      <div class="mcp-label">Common mistake</div>
+      Naming "a script" generically instead of the specific automation mechanism (Flow Designer vs. business rule vs. scheduled job) the scenario calls for.
+    </div>
+    <div class="msai-cheat-panel" data-group="sn" id="mcheat-sn-d5" style="display:none">
+      <div class="mcp-label">Domain</div>Database Management and Platform Security
+      <div class="mcp-label">Vocabulary to use</div>
+      CMDB / CI relationships · ACLs (Access Control Lists) · roles · groups · tables/fields · data dictionary
+      <div class="mcp-label">Common mistake</div>
+      Under-preparing this domain — at 30% it's the single largest domain on the exam, nearly a third of the total score, and it's the one most candidates treat as "just permissions."
+    </div>
+    <div class="msai-cheat-panel" data-group="sn" id="mcheat-sn-d6" style="display:none">
+      <div class="mcp-label">Domain</div>Data Migration and Integration
+      <div class="mcp-label">Vocabulary to use</div>
+      Import Sets · Transform Maps · Web Services (REST/SOAP) · data sources
+      <div class="mcp-label">Common mistake</div>
+      Not distinguishing an Import Set (staging) from a Transform Map (the mapping/transform step that moves staged data into a target table) — these are almost always tested as a pair.
+    </div>
+  </div>
 
   <div class="cert-actions" style="margin-bottom:1.5rem;">
     <a class="cert-btn primary" href="/html/l1-copilot/servicenow-exam-sim.html" target="_blank">TIMED EXAM SIM</a>
@@ -2902,6 +3065,70 @@ nav {
   <div class="panel-sub">
     Demonstrated learning across fire detection, smoke detection, gas detection,
     alarm systems, monitoring, detection technologies, and the life-safety ecosystem.
+  </div>
+
+  <div class="section-head" style="color:var(--orange);border-color:var(--orange-dim)">DOMAIN CHEAT SHEET</div>
+  <div class="msai-cheat">
+    <div style="font-size:9px;color:var(--text3);margin-bottom:.7rem;">This is a TSM training competency, not an external certification — there's no exam blueprint or weighting. Every knowledge check and scenario across all 7 domains tests the same underlying discipline below.</div>
+    <div class="mcf-title">THE UNIVERSAL PATTERN ACROSS ALL 7 DOMAINS</div>
+    <ol class="mcf-list">
+      <li><b>Never lead with a product or technology</b> — every knowledge check in this competency is designed to catch a technology-first answer</li>
+      <li><b>Ask about the hazard first</b> — what specifically is being detected, and what does it behave like (density, dispersion, particle type)</li>
+      <li><b>Ask about the environment second</b> — dust, humidity, airflow, temperature, nuisance-alarm risk</li>
+      <li><b>Only then discuss technology/placement</b> — the recommendation should be the last step, not the first</li>
+      <li><b>Close by naming the broader system</b> — detection is one part of initiating devices → control unit → notification → monitoring → human response</li>
+    </ol>
+    <div class="msai-cheat-tabs">
+      <button class="msai-ctbtn sel" data-group="ad" onclick="msaiCheatShow('ad','mcheat-ad-d1',this)">FIRE</button>
+      <button class="msai-ctbtn" data-group="ad" onclick="msaiCheatShow('ad','mcheat-ad-d2',this)">SMOKE</button>
+      <button class="msai-ctbtn" data-group="ad" onclick="msaiCheatShow('ad','mcheat-ad-d3',this)">GAS</button>
+      <button class="msai-ctbtn" data-group="ad" onclick="msaiCheatShow('ad','mcheat-ad-d4',this)">ALARM SYSTEMS</button>
+      <button class="msai-ctbtn" data-group="ad" onclick="msaiCheatShow('ad','mcheat-ad-d5',this)">MONITORING</button>
+      <button class="msai-ctbtn" data-group="ad" onclick="msaiCheatShow('ad','mcheat-ad-d6',this)">TECHNOLOGIES</button>
+      <button class="msai-ctbtn" data-group="ad" onclick="msaiCheatShow('ad','mcheat-ad-d7',this)">ECOSYSTEM</button>
+    </div>
+    <div class="msai-cheat-panel" data-group="ad" id="mcheat-ad-d1">
+      <div class="mcp-label">Core answer</div>
+      Match the detection technology to the hazard and environment. Detector selection depends on expected fire characteristics, nuisance conditions, and required response — not price or familiarity.
+      <div class="mcp-label">What the scenario is really testing</div>
+      Whether you ask discovery questions about the specific environment (what creates nuisance-alarm risk here) before recommending anything.
+    </div>
+    <div class="msai-cheat-panel" data-group="ad" id="mcheat-ad-d2" style="display:none">
+      <div class="mcp-label">Core answer</div>
+      Smoke detectors sense particles/characteristics associated with smoke, not fire directly — so air movement, dust, steam, temperature, and humidity all affect performance and nuisance-alarm risk.
+      <div class="mcp-label">What the scenario is really testing</div>
+      Whether you name the specific environmental factors (dust, changing airflow) before proposing a detection strategy.
+    </div>
+    <div class="msai-cheat-panel" data-group="ad" id="mcheat-ad-d3" style="display:none">
+      <div class="mcp-label">Core answer</div>
+      The monitored gas and its properties (density, dispersion, toxicity, flammability) drive sensing technology and placement — gas detection exists to warn before a hazard escalates, within a broader response process.
+      <div class="mcp-label">What the scenario is really testing</div>
+      Whether your answer covers the full loop: detection → notification → monitoring → investigation → corrective action, not just "install a sensor."
+    </div>
+    <div class="msai-cheat-panel" data-group="ad" id="mcheat-ad-d4" style="display:none">
+      <div class="mcp-label">Core answer</div>
+      An alarm system connects initiating devices (detection) to a control unit (logic/coordination) to notification appliances (communication) — the control unit's job is to coordinate inputs, status, and outputs, not replace detectors.
+      <div class="mcp-label">What the scenario is really testing</div>
+      Whether you can name all three layers (initiating → control → notification) rather than treating "the alarm system" as one undifferentiated box.
+    </div>
+    <div class="msai-cheat-panel" data-group="ad" id="mcheat-ad-d5" style="display:none">
+      <div class="mcp-label">Core answer</div>
+      Monitoring's value depends on response procedure, not just signal transmission — a monitored alert without a clear escalation/verification process doesn't produce the intended safety outcome.
+      <div class="mcp-label">What the scenario is really testing</div>
+      Whether you ask about the customer's response procedures, not just their monitoring technology, when alerts are frequent but outcomes are inconsistent.
+    </div>
+    <div class="msai-cheat-panel" data-group="ad" id="mcheat-ad-d6" style="display:none">
+      <div class="mcp-label">Core answer</div>
+      Start technology comparisons with the customer's problem, hazard, and desired outcome — never with a product name the customer heard about.
+      <div class="mcp-label">What the scenario is really testing</div>
+      Whether you redirect a customer who asks for "a newer technology" back into a discovery conversation instead of just describing the new product.
+    </div>
+    <div class="msai-cheat-panel" data-group="ad" id="mcheat-ad-d7" style="display:none">
+      <div class="mcp-label">Core answer</div>
+      Life safety is an interconnected ecosystem — detection, alarms, monitoring, facilities, and multiple stakeholder teams (owners, security, responders, integrators) all interact, not just one device or vendor.
+      <div class="mcp-label">What the scenario is really testing</div>
+      Whether you can name the relevant stakeholders and ask ecosystem-level questions when a customer has fragmented teams (separate detection/monitoring/facility/security groups).
+    </div>
   </div>
 
   <div id="tsm-advanced-detection-evidence"
@@ -6751,6 +6978,19 @@ function msaiSelDomain(d, btn) {
   btn.classList.add('sel');
   document.querySelectorAll('.msai-cheat-panel').forEach(p=>p.style.display='none');
   const panel = document.getElementById('mcheat-' + d);
+  if (panel) panel.style.display = 'block';
+}
+
+// Generic tab toggle for the per-cert cheat sheets below (CRCR/MLO/ServiceNow/
+// Advanced Detection). Kept separate from msaiSelDomain above (AB-100's own
+// tab group) rather than merged, so this addition can't affect the already
+// shipped/verified AB-100 cheat sheet.
+function msaiCheatShow(groupName, panelId, btn) {
+  const tabsRow = btn.parentElement;
+  tabsRow.querySelectorAll('.msai-ctbtn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  document.querySelectorAll('.msai-cheat-panel[data-group="' + groupName + '"]').forEach(p => p.style.display = 'none');
+  const panel = document.getElementById(panelId);
   if (panel) panel.style.display = 'block';
 }
 
