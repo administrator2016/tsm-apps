@@ -391,6 +391,7 @@
           <li><a href="#v-pm">PM Copilot</a></li>
           <li><a href="#v-noc">Network Operations Center</a></li>
           <li><a href="#v-college">College Command</a></li>
+          <li><a href="#v-schools">Schools</a></li>
           <li><a href="#v-mortgage">Mortgage</a></li>
         </ul>
       </li>
@@ -488,6 +489,7 @@
         <a href="#v-bpo">BPO Internal</a><a href="#v-re">Real Estate</a><a href="#v-legal">Legal</a>
         <a href="#v-hc">Healthcare</a><a href="#v-pm">PM Copilot</a><a href="#v-noc">NOC</a>
         <a href="#v-college">College Command</a>
+        <a href="#v-schools">Schools</a>
         <a href="#v-mortgage">Mortgage</a>
       </div>
 
@@ -932,6 +934,48 @@
         <div class="callout recovery">
           <span class="callout-label">Recovery Note</span>
           R2T4 (Return of Title IV Funds) exposure is the highest-stakes item across the five domains — it carries a hard federal 45-day deadline, and severity is computed directly off how many open cases are already past it (<code>crit</code> at ≥30% of open cases breached, <code>high</code> at ≥15%, in <code>college-finaid-financial.js</code>). Prioritize aged R2T4 cases before verification backlog or cohort-default flags.
+        </div>
+      </div>
+
+      <!-- Schools -->
+      <div class="vertical" id="v-schools">
+        <h3>Schools (K-12 Grants &amp; Compliance)</h3>
+        <div class="covers">Grant compliance, program monitoring, and multi-module K-12 back-office processing — financial (budget OCR, invoice GL coding, grant tracking), academic (transcript extraction, enrollment intake, IEP/504), HR (certifications, payroll fund coding), and grants (NOFO builder, drawdown, subrecipient monitoring, closeout) — for education-sector clients under FERPA/IDEA/NSLP/Title&nbsp;I/ESSER.</div>
+        <div class="node-line">Primary node: <code>schools-command</code> — <code>html/war-rooms/schools-command/schools-command.html</code></div>
+
+        <h4>Document types you'll see</h4>
+        <p>Schools is two things in one page: a live records dashboard over three engine-scored record types, plus a separate Doc Upload tab for free-form document analysis. The three domains below (<code>server/schools/schools-domain-config.js</code>) are the ones actually scored for exposure — not invented for this manual.</p>
+        <table>
+          <tr><th>Domain</th><th>Entity Label</th><th>What It Is</th></tr>
+          <tr><td><code>grant_breach</code></td><td>GRANT FILES</td><td>An active grant file that's breached its SLA or budget clock</td></tr>
+          <tr><td><code>monitoring_stall</code></td><td>MONITORING ITEMS</td><td>A stalled/overdue monitoring item blocking a review cycle</td></tr>
+          <tr><td><code>compliance_exception</code></td><td>COMPLIANCE EXCEPTIONS</td><td>An open FERPA/IDEA/NSLP/Title&nbsp;I/ESSER exception requiring escalation</td></tr>
+        </table>
+
+        <h4>How this vertical is actioned today</h4>
+        <p>The Grants tab shows a live GRANT FILES / MONITORING ITEMS / COMPLIANCE EXCEPTIONS table, engine-scored from <code>schools-model.json</code> (mirrors <code>mortgage-war-room.html</code>'s engine wiring). "🤖 Run AI Analysis" (<code>schBtnRunAnalysis</code>) scores the loaded data and pushes anomalies to Sentinel Center. Separately, the "📁 Doc Upload" tab accepts free-form documents (budget files, transcripts, invoices, etc.) for AI-paste-and-analyze — this intake path is not wired into the grants relay chain below; it's a standalone analysis tool.</p>
+
+        <h4>Relay chain (War Room → Strategist → Executive Portal)</h4>
+        <table>
+          <tr><th>Stage</th><th>File Path</th></tr>
+          <tr><td>War Room</td><td><code>html/war-rooms/schools-command/schools-command.html</code></td></tr>
+          <tr><td>Strategist</td><td><code>html/war-rooms/schools-command/schools-strategist.html</code></td></tr>
+          <tr><td>Exec Portal</td><td><code>html/war-rooms/schools-command/schools-executive-portal.html</code> — Decision Center wired to <code>/api/exec-portal/schools/decide</code></td></tr>
+          <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_SCHOOLS_STRATEGIST_RELAY</code></td></tr>
+        </table>
+
+        <h4>Troubleshooting</h4>
+        <div class="callout">
+          <span class="callout-label">"The case is in Strategist but nobody clicked Escalate"</span>
+          Same pattern as FinOps and Insurance: not a bug. <code>schWriteRelay()</code> fires automatically both on page load (once saved data hydrates) and after every "Run AI Analysis" — it doesn't wait for a manual escalate click.
+        </div>
+        <div class="callout recovery">
+          <span class="callout-label">Historical bug, now fixed — case-sensitive severity pricing</span>
+          <code>rateForSeverity()</code> in <code>routes/schools-financial.js</code> originally matched severity values against the rate card by exact case only; anything not already uppercase (e.g. a lowercase/mixed-case value from an SIS import) silently priced at $0 instead of erroring. Fixed to fall back to an uppercased match (commit <code>975785e9</code>), alongside a confidence-note fallback ("rate card missing entry — priced at $0") for genuinely unmapped severities, so a $0 exposure now means something specific rather than a silent miss.
+        </div>
+        <div class="callout recovery">
+          <span class="callout-label">Recovery Note</span>
+          <code>funding_delay_exposure_total</code> and <code>compliance_exposure_total</code> (both in <code>routes/schools-financial.js</code>) are the recovery signals here — a grant file past its SLA clock or an open compliance exception both carry a dollar exposure computed off the rate card, not a placeholder.
         </div>
       </div>
 
