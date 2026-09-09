@@ -627,9 +627,17 @@ window.exportClientPackage = function () {
     showToast('Delivery package engine not loaded.', true);
     return;
   }
+  // Real quality score computed from the same explain items the page
+  // already rendered — no new data invented, matches the existing
+  // fromExplainItems(items, opts) contract (tsm-quality-score-engine.js).
+  const qs = (window.TSMQualityScoreEngine && typeof TSMQualityScoreEngine.fromExplainItems === 'function')
+    ? TSMQualityScoreEngine.fromExplainItems(lastExplainItems, {})
+    : null;
   const pkg = TSMDeliveryPackage.build({
     domain: 'Honeywell',
-    explainItems: lastExplainItems
+    explainItems: lastExplainItems,
+    documentCount: Array.isArray(lastExplainItems) ? lastExplainItems.length : null,
+    qualityScore: qs
   });
   const blob = new Blob([JSON.stringify(pkg, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -641,7 +649,8 @@ window.exportClientPackage = function () {
 render();
 window.addEventListener('storage', e => { if(e.key === RELAY_KEY) render(); });
 </script>
-  <script src="/html/shared/tsm-delivery-package.js"></script>
+  <script src="/html/shared/tsm-quality-score-engine.js"></script>
+  <script src="/html/shared/tsm-delivery-package-deps.js"></script>
   <script src="/html/shared/tsm-memory-engine.js"></script>
   <script src="/html/shared/tsm-active-member.js"></script>
   <script src="../../js/tsm-guide-engine.js" defer></script>
