@@ -313,6 +313,14 @@ Sell:
 
 [https://tsm-shell.fly.dev/demo-flows/healthcare-demo-flow.html](https://tsm-shell.fly.dev/demo-flows/healthcare-demo-flow.html)
 
+### War Rooms
+
+Denial War Room:
+[https://tsm-shell.fly.dev/html/healthcare/hc-denial-war-room.html](https://tsm-shell.fly.dev/html/healthcare/hc-denial-war-room.html)
+
+A/R Recovery War Room — ranks open AR accounts by dollar exposure × aging risk, runs an AI recovery-plan pipeline on the top accounts, and syncs every ranked account into the Case Engine (bpo_cases). Has a button to pull in non-appealable/weak Denial War Room cases so a denial that won't win on appeal becomes an AR-recovery thread instead of falling through the cracks:
+[https://tsm-shell.fly.dev/war-rooms/ar-recovery/](https://tsm-shell.fly.dev/war-rooms/ar-recovery/)
+
 ---
 
 ## LegalOps
@@ -354,6 +362,11 @@ Sell:
 ### WIP + Charts Training
 
 [https://tsm-shell.fly.dev/demo-flows/wip-figures-charts-training.html](https://tsm-shell.fly.dev/demo-flows/wip-figures-charts-training.html)
+
+### Career Training Platform
+
+Study → knowledge check → scenario → readiness, per competency domain. Includes the Advanced Detection competency (fire/smoke/gas/alarm/monitoring) with a Honeywell simulation exercise — simulation evidence only, not a certification or field/sales experience claim:
+[https://tsm-shell.fly.dev/tsm-career-training-platform.html](https://tsm-shell.fly.dev/tsm-career-training-platform.html)
 
 ---
 
