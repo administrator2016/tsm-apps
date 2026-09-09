@@ -670,6 +670,21 @@ nav {
 .msai-open-link { display: inline-block; margin-top: .5rem; font-size: 9px; letter-spacing: .1em; padding: 5px 16px; border: 1px solid var(--green-border); color: var(--green); cursor: pointer; background: transparent; font-family: var(--mono); transition: all .15s; text-decoration: none; }
 .msai-open-link:hover { background: var(--green-dim); }
 
+.msai-cheat { background: var(--surface); border: 1px solid var(--border2); border-top: 2px solid var(--orange); padding: 1.1rem; margin-bottom: 1.5rem; }
+.mcf-title { font-size: 9px; letter-spacing: .1em; color: var(--orange); text-transform: uppercase; margin-bottom: .5rem; }
+.mcf-list { margin: 0 0 1.1rem 1.1rem; padding: 0; font-size: 11px; color: var(--text2); line-height: 1.7; }
+.msai-cheat-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: .9rem; }
+.msai-ctbtn { font-family: var(--mono); font-size: 9px; letter-spacing: .08em; padding: 4px 10px; border: 1px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; transition: all .15s; text-transform: uppercase; }
+.msai-ctbtn:hover, .msai-ctbtn.sel { border-color: var(--orange); color: var(--orange); background: var(--orange-dim); }
+.msai-cheat-panel { font-size: 11px; color: var(--text2); line-height: 1.7; }
+.mcp-label { font-size: 9px; letter-spacing: .08em; color: var(--text3); text-transform: uppercase; margin: .8rem 0 .35rem; }
+.mcp-label:first-child { margin-top: 0; }
+.mcp-check { margin: 0 0 0 1.1rem; padding: 0; font-size: 11px; color: var(--text2); line-height: 1.7; }
+.mcv-row { display: grid; grid-template-columns: 1fr 1.4fr 1.4fr; gap: 10px; padding: .5rem 0; border-bottom: 1px solid var(--border2); font-size: 10.5px; }
+.mcv-row:last-child { border-bottom: none; }
+.mcv-vert { color: var(--orange); font-weight: 600; }
+.mcv-lbl { font-size: 8px; letter-spacing: .08em; color: var(--text3); text-transform: uppercase; display: block; margin-bottom: 2px; }
+
 /* ── REGISTRY TABLE ── */
 .registry-table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
 .registry-table thead tr { border-bottom: 1px solid var(--border2); }
@@ -6005,6 +6020,99 @@ function renderQuiz(domainId, labelText, questions) {
     <div class="msai-grade" id="msai-grade"></div>
   </div>
 
+  <div class="section-head" style="color:var(--orange);border-color:var(--orange-dim)">AB-100 DOMAIN CHEAT SHEET</div>
+  <div class="msai-cheat">
+    <div style="font-size:10px;color:var(--text3);margin-bottom:.9rem;">The real exam scores 3 domains at different weights. Use the Answer Formula on every scenario, then check the domain tab you're weakest on.</div>
+
+    <div class="mcf-title">THE ANSWER FORMULA</div>
+    <ol class="mcf-list">
+      <li><b>Restate the problem</b> in one sentence — proves you read the scenario <span style="color:var(--text3)">(Plan)</span></li>
+      <li><b>Name the agent pattern</b> — single vs. multi-agent orchestration, and why <span style="color:var(--text3)">(Design)</span></li>
+      <li><b>Ground it</b> — name a real RAG source, not "the AI knows" <span style="color:var(--text3)">(Design)</span></li>
+      <li><b>Gate it</b> — a Human-in-the-Loop checkpoint before any consequential action <span style="color:var(--text3)">(Deploy)</span></li>
+      <li><b>Govern it</b> — Responsible AI Standard, explainability, audit trail <span style="color:var(--text3)">(Deploy)</span></li>
+      <li><b>Close with the business outcome</b> — tie back to the metric from step 1</li>
+    </ol>
+
+    <div class="msai-cheat-tabs">
+      <button class="msai-ctbtn sel" onclick="msaiSelDomain('plan',this)">PLAN · 25–30%</button>
+      <button class="msai-ctbtn" onclick="msaiSelDomain('design',this)">DESIGN · 25–30%</button>
+      <button class="msai-ctbtn" onclick="msaiSelDomain('deploy',this)">DEPLOY · 40–45%</button>
+    </div>
+
+    <div class="msai-cheat-panel" id="mcheat-plan">
+      <div class="mcp-label">What it means for your answer</div>
+      Name the business problem and a specific success metric BEFORE describing any architecture. An answer that jumps straight to agents with no stated outcome loses Plan-domain points even if the design is correct.
+      <div class="mcp-label">Vocabulary to use</div>
+      Enterprise success metrics · business objectives · Cloud Adoption Framework · ALM planning · measurable outcomes aligned with architecture patterns
+      <div class="mcp-label">Common mistakes</div>
+      Skipping the metric entirely · restating the scenario's own wording instead of naming a real KPI (e.g. MTTR, claims cycle time, denial rate)
+      <div class="mcp-label">Checklist</div>
+      <ul class="mcp-check">
+        <li>Restated the problem in your own words</li>
+        <li>Named a specific, measurable success metric</li>
+        <li>Closed the answer by tying the outcome back to that metric</li>
+      </ul>
+    </div>
+
+    <div class="msai-cheat-panel" id="mcheat-design" style="display:none">
+      <div class="mcp-label">What it means for your answer</div>
+      Name the multi-agent pattern, the grounding strategy, and how the design aligns with the Responsible AI Standard. This is where most candidates put all their effort — do it well, but don't stop here.
+      <div class="mcp-label">Vocabulary to use</div>
+      Multi-agent orchestration · Copilot Studio · Microsoft Foundry / Foundry Tools / Foundry Models · Agent2Agent (A2A) protocol · Model Context Protocol (MCP) · RAG · Azure AI Search · Responsible AI Standard · explainability
+      <div class="mcp-label">Common mistakes</div>
+      "The AI will handle it" with no named pattern · grounding hand-waved as "using its training data" instead of a named index/source · no vertical-specific data source named
+      <div class="mcp-label">Checklist</div>
+      <ul class="mcp-check">
+        <li>Named the agent pattern (multi-agent orchestration, or a justified single agent)</li>
+        <li>Named a real grounding source via RAG / Azure AI Search</li>
+        <li>Mentioned Responsible AI Standard alignment</li>
+      </ul>
+    </div>
+
+    <div class="msai-cheat-panel" id="mcheat-deploy" style="display:none">
+      <div class="mcp-label">What it means for your answer</div>
+      Almost half the real exam (40–45%) is Deploy, and it's the domain candidates skip most. Cover ALM, security/governance, the HITL gate, and monitoring — not just the initial architecture.
+      <div class="mcp-label">Vocabulary to use</div>
+      ALM (Application Lifecycle Management) · Human-in-the-Loop (HITL) gate · data residency and access controls · prompt injection / prompt manipulation defense · audit trail / auditability · monitoring agent performance
+      <div class="mcp-label">Common mistakes</div>
+      Ending the answer at the design step with zero mention of deployment or governance · no HITL gate at all on a scenario with an irreversible or compliance-sensitive action · no audit trail mentioned
+      <div class="mcp-label">Checklist</div>
+      <ul class="mcp-check">
+        <li>HITL gate named, tied to a specific trigger action</li>
+        <li>Governance / explainability / audit trail mentioned</li>
+        <li>Some mention of ongoing monitoring or ALM</li>
+      </ul>
+    </div>
+
+    <div class="mcf-title" style="margin-top:1.1rem;">GROUNDING + HITL TRIGGER BY VERTICAL</div>
+    <div class="mcv-row">
+      <div class="mcv-vert">⚙ Honeywell</div>
+      <div><span class="mcv-lbl">Ground against</span>Historical plant logs + industrial compliance baselines</div>
+      <div><span class="mcv-lbl">HITL gate before</span>Any autonomous actuator command or network isolation</div>
+    </div>
+    <div class="mcv-row">
+      <div class="mcv-vert">🏥 Healthcare</div>
+      <div><span class="mcv-lbl">Ground against</span>Clinical/coding guidelines + payer policies</div>
+      <div><span class="mcv-lbl">HITL gate before</span>Any claim denial, care recommendation, or PHI-touching action</div>
+    </div>
+    <div class="mcv-row">
+      <div class="mcv-vert">🏗 Construction</div>
+      <div><span class="mcv-lbl">Ground against</span>Project schedules, safety codes, subcontractor docs</div>
+      <div><span class="mcv-lbl">HITL gate before</span>Auto-triggering change orders or safety-stop actions</div>
+    </div>
+    <div class="mcv-row">
+      <div class="mcv-vert">🛡 Insurance</div>
+      <div><span class="mcv-lbl">Ground against</span>Policy documents + claims history</div>
+      <div><span class="mcv-lbl">HITL gate before</span>Auto-approving/denying a claim above a threshold</div>
+    </div>
+    <div class="mcv-row">
+      <div class="mcv-vert">🏢 BPO</div>
+      <div><span class="mcv-lbl">Ground against</span>Client-specific SOPs + prior case resolutions</div>
+      <div><span class="mcv-lbl">HITL gate before</span>Acting on a client's behalf (vs. just drafting a recommendation)</div>
+    </div>
+  </div>
+
   <div class="pitch-block cyan">
     <strong>Why this matters for the platform:</strong> AB-100 (Microsoft Certified: Agentic AI Business Solutions Architect) is the presales credential that unlocks Solutions Engineer and AI Presales Architect roles at $126K–$269K. Every concept tested — multi-agent orchestration, HITL governance, explainability, RAG grounding, enterprise ALM — maps directly to what TSM Shell already demonstrates across all 7 verticals. The cert proves to recruiters what the platform already does.
   </div>
@@ -6636,6 +6744,14 @@ function msaiSelVert(v, btn) {
   msaiVert = v;
   document.querySelectorAll('.msai-vbtn').forEach(b=>b.classList.remove('sel'));
   btn.classList.add('sel');
+}
+
+function msaiSelDomain(d, btn) {
+  document.querySelectorAll('.msai-ctbtn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  document.querySelectorAll('.msai-cheat-panel').forEach(p=>p.style.display='none');
+  const panel = document.getElementById('mcheat-' + d);
+  if (panel) panel.style.display = 'block';
 }
 
 async function msaiGenScen() {
