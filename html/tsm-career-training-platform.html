@@ -3591,6 +3591,22 @@ nav {
 
           '<div id="tsm-ad-scenario-result" style="margin-top:.5rem;"></div>' +
 
+          '<div id="tsm-ad-honeywell-application" style="display:none;margin-top:.75rem;padding:.8rem;border:1px solid var(--border);border-radius:4px;background:var(--surface2);">' +
+            '<div style="font-size:9px;color:var(--green);font-weight:700;letter-spacing:.08em;">HONEYWELL ACCOUNT SIMULATION</div>' +
+            '<div style="font-size:10px;color:var(--text2);line-height:1.55;margin-top:.4rem;">' +
+              'Your completed scenario can now be applied as simulated account-learning evidence. Choose the context you want to explore.' +
+            '</div>' +
+            '<div style="display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.65rem;">' +
+              '<button type="button" class="cert-btn primary tsm-ad-honeywell-btn" data-channel="plant">PLANT</button>' +
+              '<button type="button" class="cert-btn primary tsm-ad-honeywell-btn" data-channel="cyber">CYBER</button>' +
+              '<button type="button" class="cert-btn primary tsm-ad-honeywell-btn" data-channel="supplier">SUPPLIER</button>' +
+            '</div>' +
+            '<div id="tsm-ad-honeywell-application-result" style="margin-top:.55rem;font-size:9.5px;color:var(--text2);line-height:1.5;"></div>' +
+            '<div style="margin-top:.65rem;padding:.55rem;border:1px solid var(--border);border-radius:4px;font-size:9px;color:var(--text3);line-height:1.55;">' +
+              '<strong>Simulation boundary:</strong> This demonstrates TSM training competency and simulated account application. It is not Honeywell certification, employment, field-sales experience, or professional field experience.' +
+            '</div>' +
+          '</div>' +
+
           '<div style="font-size:9px;color:var(--text3);line-height:1.5;margin-top:.55rem;">' +
             'Scenario evidence will be recorded after the learner completes the applied response.' +
           '</div>' +
@@ -3691,6 +3707,22 @@ nav {
           d.scenarioCompletedAt =
             new Date().toISOString();
 
+          var honeywellApplication =
+            document.getElementById('tsm-ad-honeywell-application');
+
+          if (honeywellApplication) {
+            honeywellApplication.style.display = 'block';
+            honeywellApplication.setAttribute('data-domain', domainId);
+
+            var honeywellApplicationResult =
+              document.getElementById('tsm-ad-honeywell-application-result');
+
+            if (honeywellApplicationResult) {
+              honeywellApplicationResult.textContent =
+                'Scenario complete. Choose Plant, Cyber, or Supplier to begin the Honeywell simulation.';
+            }
+          }
+
           saveState(state);
           renderReadiness();
           renderDomains();
@@ -3705,7 +3737,111 @@ nav {
       }
 
 
-    function submitKnowledgeCheck(domainId, choiceId) {
+
+    function applyHoneywellSimulation(domainId, channel) {
+      var learner = window.TSM_ADVANCED_DETECTION_LEARNER;
+
+      if (!learner) return;
+
+      var state = getState();
+      var d = getDomainState(state, domainId);
+
+      if (!d.scenario) {
+        console.warn(
+          'Honeywell simulation requires scenario completion for ' +
+          domainId
+        );
+        return;
+      }
+
+      var completed =
+        learner.markAccountSimulationComplete(
+          domainId,
+          channel,
+          d.scenarioResponse || ''
+        );
+
+      var output =
+        document.getElementById('tsm-ad-honeywell-application-result');
+
+      if (!completed) {
+        if (output) {
+          output.textContent =
+            'Simulation evidence could not be created. Complete the required evidence stages first.';
+        }
+        return;
+      }
+
+      var evidence =
+        learner.getHoneywellSimulationEvidence(domainId);
+
+      var context = {
+        version: '1.0.0',
+        competencyId: 'advanced-detection',
+        provider: 'honeywell',
+        mode: 'simulation',
+        domainId: domainId,
+        channel: channel,
+        evidence: evidence,
+        createdAt: new Date().toISOString()
+      };
+
+      try {
+        var serialized = JSON.stringify(context);
+
+        localStorage.setItem(
+          'TSM_ADVANCED_DETECTION_HONEYWELL_CONTEXT_V1',
+          serialized
+        );
+
+        sessionStorage.setItem(
+          'TSM_ADVANCED_DETECTION_HONEYWELL_CONTEXT_V1',
+          serialized
+        );
+      } catch (err) {
+        console.warn(
+          'Honeywell simulation context persistence failed:',
+          err
+        );
+      }
+
+      if (output) {
+        output.textContent =
+          'Simulation evidence recorded for ' +
+          String(channel).toUpperCase() +
+          '. Opening Honeywell Strategist…';
+      }
+
+      setTimeout(function() {
+        window.location.href =
+          '/html/war-rooms/honeywell-strategist.html';
+      }, 350);
+    }
+
+    document.addEventListener('click', function(event) {
+      var button =
+        event.target && event.target.closest
+          ? event.target.closest('.tsm-ad-honeywell-btn')
+          : null;
+
+      if (!button) return;
+
+      var application =
+        document.getElementById('tsm-ad-honeywell-application');
+
+      var domainId =
+        application &&
+        application.getAttribute('data-domain');
+
+      var channel =
+        button.getAttribute('data-channel');
+
+      if (!domainId || !channel) return;
+
+      applyHoneywellSimulation(domainId, channel);
+    });
+
+function submitKnowledgeCheck(domainId, choiceId) {
       var domain = getCurriculumDomain(domainId);
       var result = document.getElementById('tsm-ad-check-result');
 
