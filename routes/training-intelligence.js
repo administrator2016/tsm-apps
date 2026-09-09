@@ -926,4 +926,38 @@ router.post('/api/training-intelligence/lab/:providerId/:domainId/submit', (req,
   });
 });
 
+// TSM FIX 2026-09-09: tsm-career-training-platform.html's GENERATE SCENARIO /
+// GRADE ANSWER buttons, the Interview Q&A generator, and the "explain/quiz/
+// interview" tutor buttons all POST to /api/career/ai-complete expecting an
+// Anthropic-Messages-shaped response ({content:[{type:'text',text}]}) — the
+// route never existed on the backend (every click just fell through to the
+// fetch's catch and showed "Error."). Real fix, same pattern as
+// /api/music/sweet/ai and this file's own groqChat() call sites above:
+// backend proxies to Groq (browser has no key and would 401 against
+// api.anthropic.com directly), then reshapes the plain string reply into the
+// Anthropic-Messages shape so all four existing call sites work unmodified.
+router.post('/api/career/ai-complete', async (req, res) => {
+  const { messages, maxTokens } = req.body || {};
+  const userMessage = Array.isArray(messages)
+    ? messages.filter(m => m && m.role === 'user').map(m => m.content).join('\n\n')
+    : '';
+  if (!userMessage) {
+    return res.status(400).json({ error: 'messages[] with at least one user message is required' });
+  }
+  const capped = Math.min(Number(maxTokens) || 1000, 2000);
+  try {
+    const text = await groqChat(
+      'You are a helpful, direct study assistant for Microsoft AB-100/AI-103 certification and enterprise presales training. No markdown headers, no preamble.',
+      userMessage,
+      capped
+    );
+    if (!text) {
+      return res.status(502).json({ error: 'Model returned an empty response.' });
+    }
+    res.json({ content: [{ type: 'text', text }] });
+  } catch (e) {
+    res.status(500).json({ error: e.message || 'AI request failed.' });
+  }
+});
+
 module.exports = router;
