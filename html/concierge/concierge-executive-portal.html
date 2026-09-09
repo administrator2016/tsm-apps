@@ -275,9 +275,15 @@ window.exportClientPackage = function () {
     showToast('Delivery package engine not loaded.');
     return;
   }
+  const _pkgItems = toDeliveryPackageItems(lastMissions);
+  const _pkgQs = (window.TSMQualityScoreEngine && typeof TSMQualityScoreEngine.fromExplainItems === 'function')
+    ? TSMQualityScoreEngine.fromExplainItems(_pkgItems, {})
+    : null;
   const pkg = TSMDeliveryPackage.build({
     domain: 'Concierge',
-    explainItems: toDeliveryPackageItems(lastMissions),
+    explainItems: _pkgItems,
+    documentCount: Array.isArray(_pkgItems) ? _pkgItems.length : null,
+    qualityScore: _pkgQs,
     sections: { kpis: lastKpis }
   });
   const blob = new Blob([JSON.stringify(pkg, null, 2)], { type: 'application/json' });
@@ -319,6 +325,7 @@ loadAll();
 setInterval(loadAll, 20000);
 </script>
 
+  <script src="/html/shared/tsm-quality-score-engine.js"></script>
   <script src="/html/shared/tsm-delivery-package-deps.js"></script>
   <script src="/shared/tsm-guided-how-to.js" defer></script>
   <script src="/shared/tsm-exec-portal-upgrade.js"></script>

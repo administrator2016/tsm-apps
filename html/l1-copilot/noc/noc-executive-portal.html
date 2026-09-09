@@ -553,9 +553,14 @@ window.exportClientPackage = function () {
     showToast('Delivery package engine not loaded.');
     return;
   }
+  const _pkgQs = (window.TSMQualityScoreEngine && typeof TSMQualityScoreEngine.fromExplainItems === 'function')
+    ? TSMQualityScoreEngine.fromExplainItems(lastExplainItems, {})
+    : null;
   const pkg = TSMDeliveryPackage.build({
     domain: 'NOC',
     explainItems: lastExplainItems,
+    documentCount: Array.isArray(lastExplainItems) ? lastExplainItems.length : null,
+    qualityScore: _pkgQs,
     sections: { financials: lastFinancials, bncaExposure: lastBncaExposure, incidentWip: lastIncidentWip }
   });
   const blob = new Blob([JSON.stringify(pkg, null, 2)], { type: 'application/json' });
@@ -565,6 +570,7 @@ window.exportClientPackage = function () {
   a.click();
 };
 </script>
+  <script src="/html/shared/tsm-quality-score-engine.js"></script>
   <script src="/html/shared/tsm-delivery-package-deps.js"></script>
   <script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
   <script src="/html/core/tsm-runtime.js"></script>

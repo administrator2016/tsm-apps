@@ -1102,9 +1102,14 @@ setInterval(loadRelay, 15000);
       alert('Delivery package engine not loaded.');
       return;
     }
+    var _pkgQs = (window.TSMQualityScoreEngine && typeof TSMQualityScoreEngine.fromExplainItems === 'function')
+      ? TSMQualityScoreEngine.fromExplainItems(lastExplainItems, {})
+      : null;
     var pkg = TSMDeliveryPackage.build({
       domain: 'Insurance',
-      explainItems: lastExplainItems
+      explainItems: lastExplainItems,
+      documentCount: Array.isArray(lastExplainItems) ? lastExplainItems.length : null,
+      qualityScore: _pkgQs
     });
     var blob = new Blob([JSON.stringify(pkg, null, 2)], { type: 'application/json' });
     var a = document.createElement('a');
@@ -1125,6 +1130,7 @@ setInterval(loadRelay, 15000);
   });
 })();
 </script>
+  <script src="/html/shared/tsm-quality-score-engine.js"></script>
   <script src="/html/shared/tsm-delivery-package-deps.js"></script>
   <script src="/html/core/tsm-runtime.js"></script>
   <script src="/html/shared/tsm-memory-engine.js"></script>

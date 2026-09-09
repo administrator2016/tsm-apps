@@ -623,9 +623,15 @@ window.exportClientPackage = function () {
     showToast('Delivery package engine not loaded.');
     return;
   }
+  const _pkgItems = toDeliveryPackageItems(lastExplainItems);
+  const _pkgQs = (window.TSMQualityScoreEngine && typeof TSMQualityScoreEngine.fromExplainItems === 'function')
+    ? TSMQualityScoreEngine.fromExplainItems(_pkgItems, {})
+    : null;
   const pkg = TSMDeliveryPackage.build({
     domain: 'HotelOps',
-    explainItems: toDeliveryPackageItems(lastExplainItems),
+    explainItems: _pkgItems,
+    documentCount: Array.isArray(_pkgItems) ? _pkgItems.length : null,
+    qualityScore: _pkgQs,
     sections: { financials: lastFinancials, riskRegister: lastRiskData, portfolio: lastPortfolio }
   });
   const blob = new Blob([JSON.stringify(pkg, null, 2)], { type: 'application/json' });
@@ -642,6 +648,7 @@ if (window.TSMMissionStore) {
   window.TSMMissionStore.subscribe('*', () => render());
 }
 </script>
+  <script src="/html/shared/tsm-quality-score-engine.js"></script>
   <script src="/html/shared/tsm-delivery-package-deps.js"></script>
   <script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
   <script src="/html/core/tsm-runtime.js"></script>
