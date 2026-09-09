@@ -54,6 +54,22 @@
     return 'healthcare'; // fallback
   }
 
+  const VERTICAL_DOMAIN_MAP = {
+    healthcare: 'Healthcare',
+    finops: 'FinOps',
+    insurance: 'Insurance',
+    construction: 'Construction',
+    legal: 'Legal',
+    concierge: 'Concierge',
+    realestate: 'Real Estate',
+    bpo: 'BPO',
+    collegecommand: 'College Command'
+  };
+
+  function domainLabelFor(vertical) {
+    return VERTICAL_DOMAIN_MAP[vertical] || vertical;
+  }
+
   // ── Read relay ────────────────────────────────────────────────────────────
   function readRelay(keys) {
     for (const k of keys) {
@@ -623,6 +639,14 @@
       if (data.recorded) {
         _logExec(`Server confirmed — decision recorded (id: ${data.decision?.id || 'n/a'})`, 'tsm-log-ok');
         loadImprovementRate(vertical);
+        if (typeof global.TSM !== 'undefined' && global.TSM.evidenceLedger) {
+          global.TSM.evidenceLedger.record({
+            domain: domainLabelFor(vertical),
+            decisionId: String(data.decision?.id || `${vertical}-${index}-${Date.now()}`),
+            summary: text ? `${verdict} — ${text}` : verdict,
+            actor: 'Executive'
+          });
+        }
       } else {
         _logExec(`Server acknowledged the ${verdict} verdict but did not log it (not a terminal decision)`, 'tsm-log-warn');
       }
