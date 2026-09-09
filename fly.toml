@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for tsm-consultz on 2026-06-27T17:08:15Z
+# fly.toml app configuration file generated for tsm-shell-long-sandbar-8751 on 2026-09-08T22:21:44Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -7,6 +7,9 @@ app = 'tsm-shell'
 primary_region = 'dfw'
 
 [build]
+[[mounts]]
+  source = 'tsm_data'
+  destination = '/app/data'
 
 [http_service]
   internal_port = 8080
@@ -15,11 +18,6 @@ primary_region = 'dfw'
   auto_start_machines = true
   min_machines_running = 1
   processes = ['app']
-
-
-[mounts]
-  source = 'tsm_data'
-  destination = '/app/data'
 
 [[vm]]
   size = 'shared-cpu-2x'
