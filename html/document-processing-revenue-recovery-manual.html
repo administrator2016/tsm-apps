@@ -402,6 +402,7 @@
       <li><a href="#appB">Appendix B: Outside This Pipeline</a></li>
       <li><a href="#appC">Appendix C: Sweet Music OS</a></li>
       <li><a href="#appD">Appendix D: The Closing Loop (Decision → Client Portal)</a></li>
+      <li><a href="#appE">Appendix E: The Client Package Export</a></li>
     </ol>
   </nav>
 
@@ -1166,6 +1167,54 @@
       <div class="callout recovery">
         <span class="callout-label">Recovery Note</span>
         A case that never gets an Approve/Reject decision in the Executive Portal — left sitting on Hold, or never opened at all — never reaches the client either, regardless of vertical. An idle Executive Portal queue isn't just a review backlog; it's revenue-recovery work the client can't see yet.
+      </div>
+    </section>
+
+    <section class="doc-section" id="appE">
+      <h2>Appendix E: The Client Package Export — What's Actually Inside It</h2>
+      <p>Appendix D covers the server-side relay that makes an approved case visible in a client's own portal login. This appendix covers a separate, client-side artifact referenced in passing above (<a href="#appD">§ The mechanism</a>): the exported <strong>Client Package</strong>, built by <code>TSMDeliveryPackage.build()</code> (<code>html/shared/tsm-delivery-package.js</code>). It has never had its own section until now.</p>
+
+      <h4>What it contains</h4>
+      <p>Every section is read from an engine this platform already has — nothing in the build function computes a new number. Per the file's own header, this is the "Client Trust Package" (BPO Enterprise Roadmap #9):</p>
+      <table>
+        <tr><th>Section</th><th>Source</th></tr>
+        <tr><td>Processed Documents</td><td>Caller-supplied count — <code>null</code> if not supplied, never guessed</td></tr>
+        <tr><td>Structured Data</td><td>The same <code>explainItems</code> contract every vertical already produces</td></tr>
+        <tr><td>Quality Report</td><td>Caller-supplied <code>qualityScore</code> (TSMQualityScoreEngine result) — <code>null</code> if the caller didn't pass one</td></tr>
+        <tr><td>Exception Report / Risk Report</td><td>The same <code>explainItems</code>, filtered to open findings / high-severity subset</td></tr>
+        <tr><td>Audit Trail</td><td><code>TSM.evidenceLedger.getByDomain(domain)</code> — real, already-recorded provenance, not synthesized</td></tr>
+        <tr><td>Recommended Actions / Executive Summary</td><td><code>TSMExecutiveOutcome.build()</code>'s output, reused rather than re-derived</td></tr>
+        <tr><td>Sections</td><td>Generic per-vertical passthrough (e.g. Mortgage's <code>financials</code>/<code>funnel</code>/<code>riskRegister</code>) — omitted entirely if a caller doesn't supply it</td></tr>
+      </table>
+
+      <h4>How this differs from the Client Portal rollup (Appendix D)</h4>
+      <p>The two are easy to conflate because both trace back to the same Approve action, but they write to two different places. The BPO relay in Appendix D is server-side: it lands in the shared <code>bpo_cases</code> ledger and is what a client's actual portal login reads. The Client Package is assembled client-side, in the analyst's own browser, from whatever engines have already run on that page — it has no server persistence of its own and isn't what a client's portal login shows. It's an export artifact (internal audit / hand-off use), not a second delivery path to the client.</p>
+
+      <h4>Which verticals currently produce a populated Audit Trail</h4>
+      <p>Thirteen pages currently call <code>TSMDeliveryPackage.build()</code>. Calling it is not the same as producing a real Audit Trail — that also requires the page to load <code>evidence-ledger.js</code> <em>and</em> actually call <code>evidenceLedger.record()</code> at the point a decision is shown to a human. Today, only two do both:</p>
+      <table>
+        <tr><th>Vertical</th><th>Loads evidence-ledger.js?</th><th>Calls .record()?</th><th>Audit Trail in export</th></tr>
+        <tr><td>Healthcare</td><td>Yes</td><td>Yes</td><td>Real entries</td></tr>
+        <tr><td>Construction</td><td>Yes</td><td>Yes</td><td>Real entries</td></tr>
+        <tr><td>BPO (<code>bpo-strategist.html</code>)</td><td>Yes — script loaded</td><td><strong>No</strong></td><td>Honestly empty</td></tr>
+        <tr><td>Concierge, NOC, Legal, PM Copilot, Insurance, Schools, Honeywell, Mortgage, FinOps, HotelOps (10 pages)</td><td>No</td><td>No</td><td>Honestly empty</td></tr>
+      </table>
+      <div class="callout scope">
+        <span class="callout-label">Current scope</span>
+        Only Healthcare and Construction are wired end-to-end today. Don't tell an employee on any other vertical that their Client Package "should" have an Audit Trail section populated — for those ten pages, an empty <code>auditTrail: []</code> is correct, current behavior, not a bug. BPO's exec portal file already loads the script (visible prep for the same wiring) but doesn't call <code>.record()</code> yet, so its export is empty too.
+      </div>
+
+      <h4>The read-path bug (now fixed)</h4>
+      <p><code>getAuditTrail()</code> in <code>tsm-delivery-package.js</code> called <code>TSM.evidenceLedger.forDomain(domain)</code> — a method that never existed on <code>EvidenceLedger</code>; the real method is <code>getByDomain(domain, limit)</code>. This meant Audit Trail came back <code>[]</code> even in the hypothetical case where <code>evidence-ledger.js</code> was loaded and populated. Fixed in commit <code>20d7e314</code>, which also wired the real <code>.record()</code> calls into Healthcare and Construction. The fix itself is global to the read path — any additional vertical wired the same way going forward will get a correct Audit Trail immediately, with no further change needed to <code>tsm-delivery-package.js</code>.</p>
+
+      <div class="callout recovery">
+        <span class="callout-label">TSM.evidenceLedger is per-browser, not shared</span>
+        The evidence ledger persists to <code>localStorage</code> (<code>tsm.trustEvidence.ledger.v1</code>), which is local to one browser/device — unlike the BPO relay in Appendix D, which is server-side and shared. Two different analysts on two different machines will each only see their own approvals in a Client Package's Audit Trail. This is a real, non-obvious limitation of the current design — not a bug to file, but worth knowing before promising a client an Audit Trail reflects every analyst who ever touched a case.
+      </div>
+
+      <div class="callout">
+        <span class="callout-label">"I exported an old Client Package and auditTrail is empty — is that the bug?"</span>
+        Only if it's from Healthcare or Construction <em>and</em> was exported before <code>20d7e314</code> landed (2026-08-24) — re-export to confirm it's now populated. For any of the other eleven pages, an empty Audit Trail has always been the honest, correct result and isn't related to this fix. A <code>null</code> Quality Report is a separate, unrelated situation — it just means the caller didn't pass a <code>qualityScore</code> for that export, not a symptom of the Audit Trail bug.
       </div>
     </section>
 
