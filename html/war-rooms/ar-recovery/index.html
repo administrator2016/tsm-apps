@@ -135,6 +135,10 @@ footer.pagefoot{text-align:center;padding:24px 0 4px;font-size:8px;color:var(--f
 </style>
   <script src="/html/js/career/tsm-rcm-career-engine.js"></script>
   <script src="/html/js/career/tsm-ar-recovery-career-adapter.js"></script>
+  <!-- Case Engine (window.TSMCaseManager) — same include the Denial War
+     Room uses, so every ranked account here lands in bpo_cases and shows
+     up in client-portal.html's rollup, same as a denial case. -->
+  <script src="/html/shared/tsm-case-manager.js"></script>
   <!-- Cross-sector memory bus (window.TSMMemory) — same one finops-operations.html
      writes Working Capital data into. Renders its own floating widget;
      sector is resolved from ?vertical= (see AR_VERTICAL_CONFIG below and
@@ -184,7 +188,9 @@ footer.pagefoot{text-align:center;padding:24px 0 4px;font-size:8px;color:var(--f
         <button class="btn btn-sample" onclick="loadSample('outpatient')">⚡ Outpatient Clinic Sample</button>
         <button class="btn btn-sample" onclick="loadSample('hospital')">🏥 Hospital System Sample</button>
         <button class="btn btn-ghost" onclick="document.getElementById('ar-input').value='';renderQueue();">Clear</button>
+        <button class="btn btn-ghost" onclick="loadFromDenialCases()">⇩ Import from Denial War Room</button>
       </div>
+      <div class="qs-sub" id="import-status" style="margin-top:4px"></div>
     </div>
     <div class="paste-panel">
       <div class="paste-label">Expected Format (one account per line)</div>
@@ -278,11 +284,135 @@ function loadSample(type){
   rankQueue();
 }
 
+/**
+ * loadFromDenialCases()
+ *
+ * Pulls non-appealable or weak-outlook denial cases straight out of the
+ * Case Engine and merges them into the AR aging queue, so a denial the
+ * Denial War Room already judged unlikely to succeed on appeal becomes
+ * one traceable AR-recovery thread instead of requiring someone to
+ * manually notice and retype it.
+ *
+ * - Only cases with process === 'denial_recovery' and either
+ *   fields.appealable === false or a "WEAK" recovery-likelihood judgment
+ *   are pulled in.
+ * - Skips any denial case missing a claimId or a numeric exposure — never
+ *   fabricates an account number or dollar amount the source record
+ *   didn't actually supply.
+ * - Skips denial cases already imported (deduped via the [src:CASEID]
+ *   tag already present in the textarea — see extractSourceDenialCaseId).
+ * - Age is approximated from the denial case's detectedAt timestamp,
+ *   since a denial case has no claim-service-date field. That
+ *   approximation is stated openly in the appended STATUS text, never
+ *   presented as a real claim-service-date age.
+ */
+function loadFromDenialCases(){
+  const statusEl = document.getElementById('import-status');
+  if (typeof TSMCaseManager === 'undefined') {
+    statusEl.textContent = 'Case Engine not loaded on this page.';
+    return;
+  }
+  const existingText = document.getElementById('ar-input').value;
+  const already = new Set();
+  (existingText.match(/\[src:([^\]]+)\]/g) || []).forEach(tag => already.add(tag.slice(5, -1)));
+
+  const denialCases = TSMCaseManager.getAll('healthcare').filter(c => c.process === 'denial_recovery');
+  const weakOrNonAppealable = denialCases.filter(c => {
+    const notAppealable = c.fields && c.fields.appealable === false;
+    const weak = (c.recommendedActions || []).some(a => /WEAK/i.test(a));
+    return notAppealable || weak;
+  });
+
+  let imported = 0, alreadyImported = 0, skippedMissingData = 0;
+  const newLines = [];
+  weakOrNonAppealable.forEach(c => {
+    if (already.has(c.caseId)) { alreadyImported++; return; }
+    const claimId = c.fields && c.fields.claimId;
+    const exposure = typeof c.exposure === 'number' ? c.exposure : null;
+    if (!claimId || exposure === null) { skippedMissingData++; return; }
+    const ageApprox = Math.max(0, Math.round((Date.now() - new Date(c.detectedAt).getTime()) / 86400000));
+    const baseStatus = c.description || c.title || 'Imported from Denial War Room';
+    newLines.push(
+      'ACCOUNT: ' + claimId +
+      ' | PAYER: ' + (c.client || 'Unknown Payer') +
+      ' | BALANCE: $' + exposure.toFixed(2) +
+      ' | AGE: ' + ageApprox + ' days' +
+      ' | STATUS: ' + baseStatus +
+      ' [age approximated from denial-case detection, not a real claim-service-date age]' +
+      ' [src:' + c.caseId + ']'
+    );
+    imported++;
+  });
+
+  if (newLines.length) {
+    const ta = document.getElementById('ar-input');
+    ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + newLines.join('\n');
+    rankQueue();
+  }
+
+  statusEl.textContent = imported + ' imported · ' + alreadyImported + ' already imported · ' + skippedMissingData + ' skipped (missing claim ID or exposure)';
+}
+
 // ── DETERMINISTIC PARSER + PRIORITY RANKING ─────────────────────────
 // No AI call needed for this step — pure regex extraction + scoring,
 // so the priority queue is instant, reproducible, and works even
 // without an API key configured.
 let currentQueue = [];
+
+// Account -> Case Engine caseId, so a re-rank updates the same bpo_cases
+// record instead of creating a duplicate every time RANK RECOVERY QUEUE
+// runs. Keyed by account number (deterministic and stable across
+// re-parses of the textarea, unlike an in-memory row reference).
+let arSyncedCaseIds = {};
+
+/**
+ * syncARCaseToEngine(row, batchLikelihood?) -> TSMCase | null
+ *
+ * Mirrors one ranked AR account into the Case Engine (TSMCaseManager),
+ * the same server-synced system (bpo_cases, /api/bpo/reports/*) the
+ * Denial War Room's syncStructuredCaseToEngine() writes to. This is what
+ * makes every account in this queue show up in client-portal.html's
+ * rollup and memberCaseSummary, same as a denial case.
+ *
+ * batchLikelihood, when supplied, is the shared "RECOVERY LIKELIHOOD:"
+ * line from Engine 03's output — a judgment about the batch of top-N
+ * accounts analyzed together, not a per-account result. It's attached
+ * under recommendedActions with an explicit "(batch judgment...)" label
+ * so nothing downstream mistakes it for an account-specific finding.
+ */
+function syncARCaseToEngine(row, batchLikelihood){
+  if (!row || typeof TSMCaseManager === 'undefined') return null;
+  const severity = row.bucket.key === '120+' ? 'high' : (row.bucket.key === '91-120' || row.bucket.key === '61-90' ? 'med' : 'low');
+  const recommendedActions = [recommendedAction(row.status, row.bucket)];
+  if (batchLikelihood) {
+    recommendedActions.push('Recovery likelihood (batch judgment, top-priority accounts analyzed together): ' + batchLikelihood);
+  }
+  const patch = {
+    sector: 'healthcare',
+    vertical: 'healthcare',
+    client: row.payer || '',
+    process: 'ar_recovery',
+    source: 'ar_recovery_war_room',
+    title: (row.account ? row.account + ' — ' : '') + row.payer,
+    description: row.status || '',
+    priority: TSMCaseManager.priorityFor(severity, null),
+    exposure: typeof row.balance === 'number' ? row.balance : null,
+    recommendedActions: recommendedActions,
+    fields: { account: row.account, payer: row.payer, ageDays: row.age, bucket: row.bucket.key, sourceDenialCaseId: row.sourceDenialCaseId || null }
+  };
+  try {
+    const existingId = arSyncedCaseIds[row.account];
+    if (existingId && TSMCaseManager.getById(existingId)) {
+      return TSMCaseManager.update(existingId, patch);
+    }
+    const rec = TSMCaseManager.create(patch);
+    arSyncedCaseIds[row.account] = rec.caseId;
+    return rec;
+  } catch (e) {
+    console.error('[case-engine] AR sync failed', e);
+    return null;
+  }
+}
 
 function bucketFor(age){
   if (age <= 30) return { key:'0-30', cls:'b-0-30', mult:1.0 };
@@ -306,6 +436,19 @@ function recommendedAction(status, bucket){
   return 'Standard follow-up cadence';
 }
 
+// extractSourceDenialCaseId(status) -> caseId | null
+// Reads the "[src:CASEID]" tag a denial-case import stamps into the
+// STATUS field. This has to live in the status text itself (not an
+// in-memory row property) because rankQueue() fully re-parses the
+// textarea into fresh row objects on every click — an in-memory link
+// would get silently wiped on the very next re-rank. Encoding it into
+// the one thing that actually survives a re-parse is what keeps the
+// import dedup and the sourceDenialCaseId link stable across re-ranks.
+function extractSourceDenialCaseId(status){
+  const m = /\[src:([^\]]+)\]/.exec(status || '');
+  return m ? m[1] : null;
+}
+
 function parseARText(text){
   const rows = [];
   const lineRe = /ACCOUNT:\s*([^|]+)\|\s*PAYER:\s*([^|]+)\|\s*BALANCE:\s*\$?\s*([\d,]+(?:\.\d{2})?)\s*\|\s*AGE:\s*(\d+)\s*days?\s*\|\s*STATUS:\s*(.+)/gi;
@@ -315,12 +458,14 @@ function parseARText(text){
     const age = parseInt(m[4], 10);
     if (isNaN(balance) || isNaN(age)) continue;
     const bucket = bucketFor(age);
+    const rawStatus = m[5].trim();
     rows.push({
       account: m[1].trim(),
       payer: m[2].trim(),
       balance,
       age,
-      status: m[5].trim(),
+      status: rawStatus.replace(/\s*\[src:[^\]]+\]/, '').trim(),
+      sourceDenialCaseId: extractSourceDenialCaseId(rawStatus),
       bucket,
       score: balance * bucket.mult
     });
@@ -374,6 +519,11 @@ function renderQueue(){
   document.getElementById('fire-btn').disabled = false;
   document.getElementById('process-info').textContent = 'Ready — will analyze the top ' + Math.min(5, sorted.length) + ' priority accounts.';
   currentQueue = sorted;
+
+  // Every ranked account gets a deterministic case the moment the queue
+  // renders — no AI call required. Re-ranking updates the same records
+  // via arSyncedCaseIds rather than duplicating them.
+  sorted.forEach(row => syncARCaseToEngine(row));
 }
 
 function rankQueue(){
@@ -484,6 +634,16 @@ async function runPipeline(){
       );
     });
   }
+
+  // Attach the shared batch recovery-likelihood judgment (Engine 03's
+  // required "RECOVERY LIKELIHOOD:" line) to the top-N analyzed accounts'
+  // cases — clearly labeled as a batch judgment inside
+  // syncARCaseToEngine(), never misattributed as a per-account result.
+  const likelihoodMatch = outputs[2].match(/RECOVERY LIKELIHOOD:\s*(STRONG|MODERATE|WEAK)[^\n]*/i);
+  if (likelihoodMatch) {
+    currentQueue.slice(0, topN).forEach(row => syncARCaseToEngine(row, likelihoodMatch[0].trim()));
+  }
+
   document.getElementById('fire-btn').disabled = false;
 }
 
