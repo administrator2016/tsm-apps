@@ -1927,6 +1927,7 @@
         </div>
     </div>
 
+    <script src="crcr-question-bank.js"></script>
     <script>
         /* ══ HUB STATE ══════════════════════════════════════════ */
         let cfg = JSON.parse(localStorage.getItem('sa_cfg') || '{}');
@@ -2004,11 +2005,11 @@
         }
 
         function crcrBuildQuiz() {
-            const set = [...CRCR_QUIZ].sort(() => Math.random() - .5).slice(0, 8);
+            const set = [...(typeof CRCR_QUESTION_BANK !== 'undefined' ? CRCR_QUESTION_BANK : CRCR_QUIZ)].sort(() => Math.random() - .5).slice(0, 15);
             window.__crcrQuiz = set; window.__crcrAnswers = {};
             return set.map((q, i) =>
                 '<div class="crcr-quiz-q" id="crcrQQ_' + i + '">' +
-                '<div class="crcr-quiz-num">Q' + (i + 1) + ' of 8</div>' +
+                '<div class="crcr-quiz-num">Q' + (i + 1) + ' of ' + set.length + '</div>' +
                 '<div class="crcr-quiz-txt">' + q.q + '</div>' +
                 '<div class="crcr-quiz-opts" id="crcrQOpts_' + i + '">' +
                 q.opts.map((o, j) => '<button class="crcr-qopt" onclick="crcrAnswer(' + i + ',' + j + ')">' + String.fromCharCode(65 + j) + '. ' + o + '</button>').join('') +
@@ -2019,6 +2020,7 @@
             '<div style="display:flex;gap:7px;margin-top:10px">' +
             '<button class="crcr-sbtn ok" onclick="crcrScoreQuiz()">Submit Quiz</button>' +
             '<button class="crcr-sbtn" onclick="crcrSetDomain(\'quiz\',document.querySelector(\'[data-d=quiz]\'))">New Questions</button>' +
+            '<a class="crcr-sbtn" href="/finops-suite/crcr-study-mode.html" target="_blank" style="text-decoration:none;display:inline-block">Full Timed Practice Exam (real 90-min/70% format) →</a>' +
             '</div>';
         }
 
@@ -2418,11 +2420,11 @@
             }
 
             function crcrBuildQuiz() {
-                const set = [...CRCR_QUIZ].sort(() => Math.random() - .5).slice(0, 8);
+                const set = [...(typeof CRCR_QUESTION_BANK !== 'undefined' ? CRCR_QUESTION_BANK : CRCR_QUIZ)].sort(() => Math.random() - .5).slice(0, 15);
                 window.__crcrQuiz = set; window.__crcrAnswers = {};
                 return set.map((q, i) =>
                     '<div class="crcr-quiz-q" id="crcrQQ_' + i + '">' +
-                    '<div class="crcr-quiz-num">Q' + (i + 1) + ' of 8</div>' +
+                    '<div class="crcr-quiz-num">Q' + (i + 1) + ' of ' + set.length + '</div>' +
                     '<div class="crcr-quiz-txt">' + q.q + '</div>' +
                     '<div class="crcr-quiz-opts" id="crcrQOpts_' + i + '">' +
                     q.opts.map((o, j) => '<button class="crcr-qopt" onclick="crcrAnswer(' + i + ',' + j + ')">' + String.fromCharCode(65 + j) + '. ' + o + '</button>').join('') +
@@ -2433,6 +2435,7 @@
                 '<div style="display:flex;gap:7px;margin-top:10px">' +
                 '<button class="crcr-sbtn ok" onclick="crcrScoreQuiz()">Submit Quiz</button>' +
                 '<button class="crcr-sbtn" onclick="crcrSetDomain(\'quiz\',document.querySelector(\'[data-d=quiz]\'))">New Questions</button>' +
+            '<a class="crcr-sbtn" href="/finops-suite/crcr-study-mode.html" target="_blank" style="text-decoration:none;display:inline-block">Full Timed Practice Exam (real 90-min/70% format) →</a>' +
                 '</div>';
             }
 

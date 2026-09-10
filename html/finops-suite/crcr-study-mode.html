@@ -187,6 +187,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
 <script src="/html/js/tsm-runtime-lock.js"></script>
 <script src="/html/js/tsm-event-contract.js"></script>
 <script src="/html/js/tsm-autonomy-layer.js"></script>
+<script src="crcr-question-bank.js"></script>
 </head>
 <body data-vertical="finops" data-page-role="warroom">
 
@@ -275,14 +276,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
 <div class="panel" id="panel-exam">
   <div id="examNotStarted" class="exam-not-started">
     <div class="exam-title">CRCR Exam Simulation</div>
-    <div class="exam-sub">75 questions · 2 hour timer · 75% passing threshold. Simulates the actual CRCR certification exam with randomized questions from all domains.</div>
+    <div class="exam-sub" id="examSubLabel">Loading exam spec…</div>
     <button class="start-btn" onclick="startExam()">Start Exam →</button>
   </div>
   <div id="examActive">
     <div class="exam-hdr">
       <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">CRCR EXAM SIMULATION</div>
-      <div class="exam-timer" id="examTimer">2:00:00</div>
-      <div class="exam-pct" id="examPct">Q1 of 75</div>
+      <div class="exam-timer" id="examTimer">1:30:00</div>
+      <div class="exam-pct" id="examPct">Q1</div>
       <div style="margin-left:auto">
         <button class="btn danger" onclick="endExam()">End Exam</button>
       </div>
@@ -760,28 +761,70 @@ function practiceDenial(code, name) {
 
 /* ════════════════════════════════════════════
    EXAM MODE
+   Uses the shared CRCR_QUESTION_BANK (crcr-question-bank.js) instead of
+   the old 15-question QUIZ_BANK padded-by-repetition to fake 75 questions.
+   Real HFMA CRCR exam: 75 questions / 90 minutes / 70% passing (CRCR_EXAM_SPEC).
+   The bank currently has fewer unique questions than the real exam, so the
+   simulation is scaled honestly (all unique questions, timer scaled to match
+   the real exam's ~1.2 min/question pace) rather than repeating questions.
    ════════════════════════════════════════════ */
 var examQuestions = [];
 var examCurrent = 0;
 var examScore = 0;
 var examTimer = null;
-var examSeconds = 7200;
+var examSeconds = 0;
+var examTotalSeconds = 0;
 var examSelectedOpt = null;
+var examUnitStats = {};
+
+function examPoolSize() {
+  return (typeof CRCR_QUESTION_BANK !== 'undefined') ? CRCR_QUESTION_BANK.length : QUIZ_BANK.length;
+}
+function examTargetCount() {
+  var spec = (typeof CRCR_EXAM_SPEC !== 'undefined') ? CRCR_EXAM_SPEC : { questions: 75, minutes: 90, passPct: 70 };
+  return Math.min(spec.questions, examPoolSize());
+}
+function examPassPct() {
+  return (typeof CRCR_EXAM_SPEC !== 'undefined') ? CRCR_EXAM_SPEC.passPct : 70;
+}
+function examMinutesFor(count) {
+  var spec = (typeof CRCR_EXAM_SPEC !== 'undefined') ? CRCR_EXAM_SPEC : { questions: 75, minutes: 90 };
+  return Math.max(10, Math.round(spec.minutes * (count / spec.questions)));
+}
+
+function refreshExamSubLabel() {
+  var count = examTargetCount();
+  var pool = examPoolSize();
+  var mins = examMinutesFor(count);
+  var label = count + ' questions · ' + mins + ' min timer · ' + examPassPct() + '% passing threshold (matches the real HFMA CRCR exam: 75 questions / 90 min / 70%). ';
+  if (pool < 75) {
+    label += 'Question bank currently has ' + pool + ' unique questions, so every question appears once — none are repeated to pad the count.';
+  } else {
+    label += 'Simulates the actual CRCR certification exam with randomized questions from all 4 units.';
+  }
+  var el = document.getElementById('examSubLabel');
+  if (el) el.textContent = label;
+}
+refreshExamSubLabel();
 
 function startExam() {
   document.getElementById('examNotStarted').style.display = 'none';
   document.getElementById('examResult').style.display = 'none';
   document.getElementById('examActive').style.display = 'block';
-  examQuestions = [];
-  while (examQuestions.length < 75) {
-    examQuestions = examQuestions.concat(QUIZ_BANK);
-  }
-  examQuestions = examQuestions.slice(0, 75).sort(function() { return Math.random() - 0.5; });
+  var pool = (typeof CRCR_QUESTION_BANK !== 'undefined') ? CRCR_QUESTION_BANK : QUIZ_BANK;
+  var count = examTargetCount();
+  examQuestions = pool.slice().sort(function() { return Math.random() - 0.5; }).slice(0, count);
   examCurrent = 0;
   examScore = 0;
   examSelectedOpt = null;
-  examSeconds = 7200;
+  examUnitStats = {};
+  if (typeof CRCR_UNITS !== 'undefined') {
+    Object.keys(CRCR_UNITS).forEach(function(u) { examUnitStats[u] = { correct: 0, total: 0 }; });
+  }
+  examTotalSeconds = examMinutesFor(count) * 60;
+  examSeconds = examTotalSeconds;
   clearInterval(examTimer);
+  document.getElementById('examTimer').classList.remove('urgent');
   examTimer = setInterval(function() {
     examSeconds--;
     var h = Math.floor(examSeconds / 3600);
@@ -824,28 +867,51 @@ function selectExamOption(i) {
 }
 
 function nextExamQuestion() {
-  if (examSelectedOpt !== null && examQuestions[examCurrent].ans === examSelectedOpt) examScore++;
+  var q = examQuestions[examCurrent];
+  var unit = q.unit;
+  if (unit && examUnitStats[unit]) examUnitStats[unit].total++;
+  if (examSelectedOpt !== null && q.ans === examSelectedOpt) {
+    examScore++;
+    if (unit && examUnitStats[unit]) examUnitStats[unit].correct++;
+  }
   examCurrent++;
-  if (examCurrent >= 75) { endExam(); return; }
+  if (examCurrent >= examQuestions.length) { endExam(); return; }
   renderExamQuestion();
 }
 
 function endExam() {
   clearInterval(examTimer);
   document.getElementById('examActive').style.display = 'none';
-  var pct = Math.round((examScore / 75) * 100);
-  var passed = pct >= 75;
+  var total = examQuestions.length;
+  var pct = total ? Math.round((examScore / total) * 100) : 0;
+  var passPct = examPassPct();
+  var passed = pct >= passPct;
   document.getElementById('examScoreNum').textContent = pct + '%';
   document.getElementById('examScoreNum').style.color = passed ? 'var(--green)' : 'var(--red)';
-  document.getElementById('examScoreGrade').textContent = passed ? '✓ PASS — You meet the CRCR passing threshold' : '✗ FAIL — Score below 75% passing threshold';
+  document.getElementById('examScoreGrade').textContent = passed
+    ? '✓ PASS — You meet the CRCR passing threshold (' + passPct + '%)'
+    : '✗ FAIL — Score below the ' + passPct + '% passing threshold';
   document.getElementById('examScoreGrade').style.color = passed ? 'var(--green)' : 'var(--red)';
-  var timeUsed = 7200 - examSeconds;
-  var mins = Math.floor(timeUsed / 60);
-  document.getElementById('examBreakdown').innerHTML =
-    '<tr><td>Questions Correct</td><td>' + examScore + '/75</td></tr>' +
+  var timeUsed = examTotalSeconds - examSeconds;
+  var mins = Math.floor(Math.max(0, timeUsed) / 60);
+  var rows =
+    '<tr><td>Questions Correct</td><td>' + examScore + '/' + total + '</td></tr>' +
     '<tr><td>Score</td><td>' + pct + '%</td></tr>' +
     '<tr><td>Time Used</td><td>' + mins + ' minutes</td></tr>' +
-    '<tr><td>Passing Threshold</td><td>75%</td></tr>';
+    '<tr><td>Passing Threshold</td><td>' + passPct + '%</td></tr>';
+  if (typeof CRCR_UNITS !== 'undefined') {
+    rows += '<tr><td colspan="2" style="padding-top:10px;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.1em">BY UNIT (HFMA CRCR STRUCTURE)</td></tr>';
+    Object.keys(CRCR_UNITS).forEach(function(u) {
+      var s = examUnitStats[u];
+      if (!s || s.total === 0) {
+        rows += '<tr><td>' + CRCR_UNITS[u].label + '</td><td>— no questions this attempt</td></tr>';
+      } else {
+        var upct = Math.round((s.correct / s.total) * 100);
+        rows += '<tr><td>' + CRCR_UNITS[u].label + '</td><td>' + s.correct + '/' + s.total + ' (' + upct + '%)</td></tr>';
+      }
+    });
+  }
+  document.getElementById('examBreakdown').innerHTML = rows;
   document.getElementById('examResult').style.display = 'block';
   state.scores.push(pct);
   saveState();
