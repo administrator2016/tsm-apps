@@ -342,7 +342,7 @@ function getPrompts(doc, brief) {
   return [
     base + `ENGINE 01 — INCIDENT INTELLIGENCE\nExtract and structure:\n▸ INCIDENT TYPE — equipment failure, process upset, safety event, etc.\n▸ AFFECTED SYSTEMS — specific equipment, lines, processes impacted\n▸ DETECTION TIME — when was it caught, how\n▸ CURRENT STATUS — offline, degraded, contained\n▸ KEY PARTIES — maintenance, operations, safety, management involved\nBe specific. Extract all facts from the document.`,
 
-    base + `ENGINE 02 — PRODUCTION IMPACT ANALYSIS\nCalculate and structure:\n▸ CAPACITY LOSS — percentage and absolute output reduction\n▸ DOWNTIME ESTIMATE — hours/days to full restoration\n▸ OUTPUT DELTA — units, batches, or revenue lost per hour/day\n▸ DOWNSTREAM RISK — customer orders, delivery commitments at risk\n▸ INVENTORY BUFFER — days of finished goods available\n▸ PRODUCTION IMPACT SCORE — 1-10 severity\nQuantify everything with specific numbers.`,
+    base + `ENGINE 02 — PRODUCTION IMPACT ANALYSIS\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"downtimeEstimate": "<short string>"}\n\nPART 2 — Calculate and structure:\n▸ CAPACITY LOSS — percentage and absolute output reduction\n▸ DOWNTIME ESTIMATE — hours/days to full restoration\n▸ OUTPUT DELTA — units, batches, or revenue lost per hour/day\n▸ DOWNSTREAM RISK — customer orders, delivery commitments at risk\n▸ INVENTORY BUFFER — days of finished goods available\n▸ PRODUCTION IMPACT SCORE — 1-10 severity\nQuantify everything with specific numbers. The downtimeEstimate in PART 1 must match the DOWNTIME ESTIMATE you give in PART 2 exactly — this is the figure the executive dashboard displays, so it has to agree with your own analysis text.`,
 
     base + `ENGINE 03 — ROOT CAUSE ANALYSIS\nAnalyze and structure:\n▸ PRIMARY CAUSE — most probable root cause\n▸ CONTRIBUTING FACTORS — secondary issues that enabled the failure\n▸ FAILURE MODE — how the equipment or process failed\n▸ DETECTION GAPS — why was this not caught earlier\n▸ RECURRENCE RISK — probability and timeline of recurrence\n▸ SIMILAR ASSETS AT RISK — other equipment that may have same vulnerability\nBe direct about probable causes even with limited data.`,
 
@@ -668,7 +668,25 @@ function extractFinancialKPI(text) {
 }
 
 function extractDowntimeKPI(text) {
-  const m = text.match(/(\d+[-–]\d+\s*hours?|\d+\s*hours?|\d+\s*days?)/i);
+  // FIX (2026-09-10): Engine 2 now emits a leading KPI_JSON downtimeEstimate
+  // (same PART 1/PART 2 pattern as Engine 4's totalExposure fix). Parse that
+  // first. Store it under containmentEta (not just downtimeEstimate) because
+  // that's the field name the Honeywell strategist/executive portals already
+  // read via kpis.containment.containmentEta — their "WHY THESE NUMBERS"
+  // explain text literally cites that path, so the stored key has to match
+  // it or the downstream tile silently falls back to '—' even though this
+  // war room did compute a figure.
+  const json = parseKpiJson(text);
+  if (json && json.downtimeEstimate) {
+    document.getElementById('kpiDowntime').textContent = json.downtimeEstimate;
+    sessionData.kpis.containment = { containmentEta: json.downtimeEstimate, source: 'structured-json' };
+    return;
+  }
+  // Broadened fallback: original pattern only matched hours/days and missed
+  // multi-week lead-time estimates (e.g. "3-5 weeks if replacement
+  // required"), which is exactly the kind of figure Engine 2's own analysis
+  // text reports for parts lead time. Now also matches weeks/months.
+  const m = text.match(/(\d+[-–]\d+\s*(?:hours?|days?|weeks?|months?)|\d+\s*(?:hours?|days?|weeks?|months?))/i);
   document.getElementById('kpiDowntime').textContent = m ? m[0] : 'N/A';
   sessionData.kpis.containment = { raw: m ? m[0] : null, source: 'regex-fallback' };
 }
