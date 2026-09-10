@@ -455,8 +455,55 @@ Quantify everything with specific numbers.`,
 
     groundedBase + `ENGINE 03 — ROOT CAUSE ANALYSIS\nAnalyze and structure:\n▸ PRIMARY CAUSE — most probable root cause\n▸ CONTRIBUTING FACTORS — secondary issues that enabled the event\n▸ FAILURE MODE — how the cell/module/system or process failed\n▸ DETECTION GAPS — was this caught at the earliest reasonable stage; note whether early-warning detection (off-gas sensing, aspirating smoke) performed as intended\n▸ RECURRENCE RISK — probability and timeline of recurrence\n▸ SIMILAR ASSETS AT RISK — other racks, lines, or modules that may share the same vulnerability\nBe direct about probable causes even with limited data.`,
 
-    groundedBase + `ENGINE 04 — FINANCIAL EXPOSURE CALCULATION\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\n\nPART 2 — Calculate and structure:\n▸ ${cfg.financePrompt.toUpperCase()}\n▸ TOTAL EXPOSURE — combined projected financial exposure over the incident/downtime scenario, including applicable downtime/dispatch penalties and replacement/remediation costs. KPI_JSON totalExposureLow/totalExposureHigh must represent the low/high bounds of this combined exposure range, not a single cost component.\n▸ INSURANCE APPLICABILITY — what losses may be recoverable\n▸ TOTAL FINANCIAL RISK — combined exposure range\nProvide dollar amounts. Estimate if exact figures not available.`,
+    groundedBase + `ENGINE 04 — FINANCIAL EXPOSURE CALCULATION
 
+IMPORTANT: Perform the financial reasoning internally BEFORE writing the first line below. The KPI_JSON values and the final TOTAL EXPOSURE values MUST be identical.
+
+Respond in exactly two parts, in this order:
+
+PART 1 — On its own line, output exactly:
+KPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}
+
+PART 2 — Calculate and structure:
+
+▸ SOURCE-GROUNDED FINANCIAL EXPOSURE
+- Use only financial rates, contract terms, penalties, costs, quantities, or other dollar-denominated facts explicitly present in the incident/source context.
+- Do NOT invent an "industry benchmark," "typical contract rate," utility penalty rate, market rate, OEM quote, or other financial assumption and present it as a source fact.
+- If the source provides a contractual penalty/rate, use that exact source value and identify it as source-provided.
+- If no contractual penalty/rate is provided, state "Penalty rate not provided in source — not quantified" rather than inventing a rate.
+- Lost MWh or MW may be calculated from the authoritative BESS operating facts, but energy quantity alone is NOT a dollar exposure without a source-provided monetary rate.
+
+▸ DOWNTIME / DISPATCH IMPACT
+- Preserve the authoritative BESS facts: 20 MW nameplate power, 80 MWh installed energy capacity, 35% output curtailment, and 12–24 hours to the re-energization decision.
+- Keep the conditional 3–5 week replacement lead time separate.
+- Do not convert the 3–5 week window into hours.
+- Calculate lost energy only when useful to explain the exposure, but do not assign an unsupported dollar value to it.
+
+▸ REPLACEMENT / REMEDIATION COST
+- Include replacement or remediation cost only when supported by the source.
+- If the source does not provide a cost, an estimate may be supplied ONLY if explicitly labeled "ESTIMATE / ASSUMPTION" and kept separate from source-provided financial facts.
+- Do not claim that an estimated value came from an OEM quote unless the source actually contains that quote.
+
+▸ INSURANCE APPLICABILITY
+- Explain which portions may potentially be recoverable under property damage or business-interruption coverage.
+- Do not treat insurance recovery as a reduction of total exposure unless the source provides an actual coverage amount.
+- Do not assume a policy limit, deductible, indemnity period, or guaranteed coverage.
+
+▸ TOTAL FINANCIAL RISK
+- Total exposure is the combined projected financial impact that is actually supportable from the source plus clearly labeled estimates.
+- Do NOT create a penalty amount merely to make the exposure larger or more complete.
+- If a financial component cannot be quantified from the source, explicitly mark it "NOT QUANTIFIED".
+- The low/high range MUST be mathematically consistent with the components shown below.
+
+▸ KPI CONTRACT — CRITICAL
+- The first KPI_JSON line MUST contain the exact same totalExposureLow and totalExposureHigh numbers that appear in the final TOTAL EXPOSURE section.
+- Do not independently estimate the KPI range and then calculate a different narrative range.
+- Before emitting KPI_JSON, calculate the final low/high exposure internally.
+- Repeat those exact same numbers in TOTAL EXPOSURE.
+- Use JSON numbers only — no "$", commas, ranges, or quoted numeric values inside KPI_JSON.
+- Example format only: KPI_JSON: {"totalExposureLow": 400000, "totalExposureHigh": 600000}
+
+Provide dollar amounts only where they are source-supported or explicitly labeled estimates.`,
     groundedBase + `ENGINE 05 — RANKED ACTION PLAN\nGenerate ranked response with owners and deadlines:\n1. IMMEDIATE (0-2 hours) — safety, isolation/containment, assessment\n2. SHORT-TERM (2-24 hours) — repair authorization, parts/module procurement, temporary workaround\n3. MEDIUM-TERM (1-7 days) — full restoration, root cause remediation\n4. PREVENTIVE — detection or process changes to prevent recurrence\n\nFor each action include: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME\nRank by urgency and impact.`,
 
     groundedBase + `ENGINE 06 — EXECUTIVE DISPATCH\n\nFIRST — OUTPUT THIS MACHINE-READABLE KPI LINE EXACTLY ON ITS OWN LINE BEFORE ANY NARRATIVE:\nKPI_JSON: {"riskScore": <YOUR_NUMERIC_SCORE_0_TO_100>, "downtimeEstimate": "12-24 hours to re-energization decision; 3-5 weeks if thermal runaway confirmed and module replacement is required"}\n\nThe KPI_JSON line is mandatory and must appear first. Do not omit it, delay it, or place it inside markdown.\n\nThen generate the executive decision package:\n▸ INCIDENT SUMMARY — 2 sentences for C-suite\n▸ FINANCIAL IMPACT — reference the Engine 04 total exposure range; do not replace it with a separate hourly revenue-loss calculation\n▸ DECISIONS REQUIRED — ranked list with AUTHORIZE/ESCALATE/REVIEW labels\n1. [Decision] · Owner: [role] · Deadline: [timeframe] · Cost: $[amount]\n2. [Decision] · Owner: [role] · Deadline: [timeframe]\n3. [Decision] · Owner: [role] · Deadline: [timeframe]\n▸ BNCA — Best Next Course of Action in one clear sentence\n▸ ESCALATION TRIGGER — what would require CEO/Board notification\nThis goes directly to the executive team. Be decisive. Keep the narrative concise.\n\nBESS EXECUTIVE KPI CONTRACT:\n- riskScore must be a JSON NUMBER, not a word or quoted string. Use a numeric integer from 0-100, such as 70. Do not write "seventy", "thirty", or any spelled-out number. It is the executive risk score. Do not reuse Engine 02's 1-10 IMPACT SCORE.\n- downtimeEstimate must preserve BOTH source recovery windows in one short string: "12-24 hours to re-energization decision; 3-5 weeks if thermal runaway confirmed and module replacement is required".\n- Never convert 3-5 weeks into hours.\n- Never invent a different restoration duration.\n- The Engine 04 combined exposure range is authoritative for financial exposure. Do not substitute a separate hourly revenue-loss figure for total exposure.
