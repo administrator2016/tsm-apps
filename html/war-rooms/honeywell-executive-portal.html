@@ -273,6 +273,8 @@ function kpiSecondary(k){
   if(!k) return '—';
   if(typeof k.bufferDays === 'number') return k.bufferDays + ' days';
   if(k.containmentEta) return k.containmentEta;
+  if(k.downtimeEstimate) return k.downtimeEstimate;
+  if(k.leadTimeEstimate) return k.leadTimeEstimate;
   if(k.raw) return k.raw;
   return '—';
 }
@@ -351,7 +353,7 @@ function getExplainItems(data){
   const secKpi = k.buffer || k.containment;
   const secVal = kpiSecondary(secKpi);
   if (secVal !== '—') {
-    const secField = k.buffer ? 'buffer.bufferDays' : 'containment.containmentEta';
+    const secField = k.buffer ? 'buffer.bufferDays' : 'containment';
     const explain = `Read directly from kpis.${secField} as written by the ${srcLabel} war room.`;
     items.push({
       label: secondaryLabel(src),

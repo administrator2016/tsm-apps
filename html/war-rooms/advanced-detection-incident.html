@@ -481,7 +481,7 @@ function registerDetectionAnomalies() {
       anomalyCode: 'HW_DETECTION_LEADTIME', severity: 'MEDIUM',
       title: `ADVANCED DETECTION — EARLY WARNING — lead time ${leadTimeStr}`,
       source: 'advanced-detection-incident',
-      meta: { value: sessionData.kpis.leadTime }
+      meta: { value: sessionData.kpis.containment }
     });
   }
 }
@@ -603,7 +603,7 @@ function extractFinancialKPI(text) {
 function extractLeadTimeKPI(text) {
   const m = text.match(/(\d+[-–]\d+\s*(?:min|minutes?|hours?)|\d+\s*(?:min|minutes?|hours?))/i);
   document.getElementById('kpiLeadTime').textContent = m ? m[0] : 'N/A';
-  sessionData.kpis.leadTime = { raw: m ? m[0] : null, source: 'regex-fallback' };
+  sessionData.kpis.containment = { raw: m ? m[0] : null, source: 'regex-fallback' };
 }
 
 function buildRiskKPI(text) {
