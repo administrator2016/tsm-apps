@@ -1174,6 +1174,7 @@
 
     "/war-rooms/honeywell-strategist.html",
     "/war-rooms/honeywell-executive-portal.html",
+    "/war-rooms/bess-gigafactory-incident.html",
 
     "/plant-incident.html",
     "/cyber-incident.html",
