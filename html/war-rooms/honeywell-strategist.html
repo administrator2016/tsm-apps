@@ -238,10 +238,20 @@ function kpiExposure(k){
   return '—';
 }
 
+function kpiSecondary(k){
+  if(!k) return '—';
+  if(typeof k.bufferDays === 'number') return k.bufferDays + ' days';
+  if(k.containmentEta) return k.containmentEta;
+  if(k.downtimeEstimate) return k.downtimeEstimate;
+  if(k.leadTimeEstimate) return k.leadTimeEstimate;
+  if(k.raw) return k.raw;
+  return '—';
+}
+
 function kpiTertiary(k){
   if(!k) return '—';
   if(typeof k.ordersAtRisk === 'number') return k.ordersAtRisk + ' orders';
-  if(typeof k.riskScore === 'number') return k.riskScore + '/100';   // ← add this line
+  if(typeof k.riskScore === 'number') return k.riskScore + '/100';
   if(k.raw) return k.raw;
   return '—';
 }
