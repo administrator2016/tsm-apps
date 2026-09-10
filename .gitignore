@@ -97,3 +97,4 @@ advisor-architecture-sweep.txt
 indacrib.txt
 .vercel
 .env*
+*.sh
