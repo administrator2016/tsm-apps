@@ -429,18 +429,41 @@ function getPrompts(doc, brief) {
   const base = brief
     ? `You are a ${cfg.engineLabel} intelligence engine for TSM Command. Continue analyzing this incident using the extracted intelligence below — do not ask for the original report, this is the complete factual basis.\n\nEXTRACTED INCIDENT INTELLIGENCE:\n${brief}\n\n`
     : full;
+  const bessGrounding = scenario === 'bess'
+    ? `
+
+AUTHORITATIVE BESS SOURCE FACTS — DO NOT ALTER OR INFER:
+- Nameplate power: 20 MW
+- Installed energy capacity: 80 MWh
+- Chemistry: LFP
+- Output impact: curtailed to 65% of contracted capacity
+- Initial decision window: 12-24 hours to re-energization decision
+- Conditional replacement lead time: 3-5 weeks if thermal runaway is confirmed
+- Do not substitute 8 MWh or any other capacity value.
+- Do not convert the 3-5 week replacement window into hours.
+`
+    : '';
+
+  const groundedBase = base + bessGrounding;
   return [
-    base + `ENGINE 01 — INCIDENT INTELLIGENCE\nExtract and structure:\n▸ INCIDENT TYPE — thermal event, off-gas alarm, detection pre-alarm, process upset, etc.\n▸ AFFECTED SYSTEMS — specific ${cfg.e1} impacted\n▸ DETECTION TIME — when was it caught, how (name the detection technology if stated)\n▸ CURRENT STATUS — isolated, offline, degraded, contained\n▸ KEY PARTIES — operations, EHS/safety, fire response, management involved\nBe specific. Extract all facts from the document.`,
+    groundedBase + `ENGINE 01 — INCIDENT INTELLIGENCE\nExtract and structure:\n▸ INCIDENT TYPE — thermal event, off-gas alarm, detection pre-alarm, process upset, etc.\n▸ AFFECTED SYSTEMS — specific ${cfg.e1} impacted\n▸ DETECTION TIME — when was it caught, how (name the detection technology if stated)\n▸ CURRENT STATUS — isolated, offline, degraded, contained\n▸ KEY PARTIES — operations, EHS/safety, fire response, management involved\nBe specific. Extract all facts from the document.`,
 
-    base + `ENGINE 02 — ${cfg.eng2Title}\nCalculate and structure:\n▸ CAPACITY / OUTPUT LOSS — percentage and absolute reduction\n▸ DOWNTIME ESTIMATE — hours/days to full restoration\n▸ ${cfg.e2Verbs.toUpperCase()} — assess spread risk and containment status\n▸ DOWNSTREAM RISK — contracts, dispatch commitments, buffer inventory at risk\n▸ IMPACT SCORE — 1-10 severity\nQuantify everything with specific numbers.`,
+    groundedBase + `ENGINE 02 — ${cfg.eng2Title}\nCalculate and structure:\n▸ CAPACITY / OUTPUT LOSS — percentage and absolute reduction. For BESS, use 20 MW nameplate power and 80 MWh installed energy capacity exactly as stated in the source.
+▸ DOWNTIME / RECOVERY WINDOWS — preserve the source-defined windows. For BESS, keep 12-24 hours to re-energization decision separate from the conditional 3-5 week module-replacement lead time.
+\n▸ ${cfg.e2Verbs.toUpperCase()} — assess spread risk and containment status\n▸ DOWNSTREAM RISK — contracts, dispatch commitments, buffer inventory at risk\n▸ IMPACT SCORE — 1-10 severity\nBESS CONTRACT: Never substitute 8 MWh or another capacity value. Never convert 3-5 weeks into hours. Do not collapse the initial decision window and conditional replacement lead time into one unsupported duration.
+Quantify everything with specific numbers.`,
 
-    base + `ENGINE 03 — ROOT CAUSE ANALYSIS\nAnalyze and structure:\n▸ PRIMARY CAUSE — most probable root cause\n▸ CONTRIBUTING FACTORS — secondary issues that enabled the event\n▸ FAILURE MODE — how the cell/module/system or process failed\n▸ DETECTION GAPS — was this caught at the earliest reasonable stage; note whether early-warning detection (off-gas sensing, aspirating smoke) performed as intended\n▸ RECURRENCE RISK — probability and timeline of recurrence\n▸ SIMILAR ASSETS AT RISK — other racks, lines, or modules that may share the same vulnerability\nBe direct about probable causes even with limited data.`,
+    groundedBase + `ENGINE 03 — ROOT CAUSE ANALYSIS\nAnalyze and structure:\n▸ PRIMARY CAUSE — most probable root cause\n▸ CONTRIBUTING FACTORS — secondary issues that enabled the event\n▸ FAILURE MODE — how the cell/module/system or process failed\n▸ DETECTION GAPS — was this caught at the earliest reasonable stage; note whether early-warning detection (off-gas sensing, aspirating smoke) performed as intended\n▸ RECURRENCE RISK — probability and timeline of recurrence\n▸ SIMILAR ASSETS AT RISK — other racks, lines, or modules that may share the same vulnerability\nBe direct about probable causes even with limited data.`,
 
-    base + `ENGINE 04 — FINANCIAL EXPOSURE CALCULATION\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\n\nPART 2 — Calculate and structure:\n▸ ${cfg.financePrompt.toUpperCase()}\n▸ TOTAL EXPOSURE — projected cost over estimated downtime window\n▸ INSURANCE APPLICABILITY — what losses may be recoverable\n▸ TOTAL FINANCIAL RISK — combined exposure range\nProvide dollar amounts. Estimate if exact figures not available.`,
+    groundedBase + `ENGINE 04 — FINANCIAL EXPOSURE CALCULATION\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\n\nPART 2 — Calculate and structure:\n▸ ${cfg.financePrompt.toUpperCase()}\n▸ TOTAL EXPOSURE — combined projected financial exposure over the incident/downtime scenario, including applicable downtime/dispatch penalties and replacement/remediation costs. KPI_JSON totalExposureLow/totalExposureHigh must represent the low/high bounds of this combined exposure range, not a single cost component.\n▸ INSURANCE APPLICABILITY — what losses may be recoverable\n▸ TOTAL FINANCIAL RISK — combined exposure range\nProvide dollar amounts. Estimate if exact figures not available.`,
 
-    base + `ENGINE 05 — RANKED ACTION PLAN\nGenerate ranked response with owners and deadlines:\n1. IMMEDIATE (0-2 hours) — safety, isolation/containment, assessment\n2. SHORT-TERM (2-24 hours) — repair authorization, parts/module procurement, temporary workaround\n3. MEDIUM-TERM (1-7 days) — full restoration, root cause remediation\n4. PREVENTIVE — detection or process changes to prevent recurrence\n\nFor each action include: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME\nRank by urgency and impact.`,
+    groundedBase + `ENGINE 05 — RANKED ACTION PLAN\nGenerate ranked response with owners and deadlines:\n1. IMMEDIATE (0-2 hours) — safety, isolation/containment, assessment\n2. SHORT-TERM (2-24 hours) — repair authorization, parts/module procurement, temporary workaround\n3. MEDIUM-TERM (1-7 days) — full restoration, root cause remediation\n4. PREVENTIVE — detection or process changes to prevent recurrence\n\nFor each action include: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME\nRank by urgency and impact.`,
 
-    base + `ENGINE 06 — EXECUTIVE DISPATCH\nGenerate executive decision package:\n▸ INCIDENT SUMMARY — 2 sentences for C-suite\n▸ FINANCIAL IMPACT — total exposure in dollars\n▸ DECISIONS REQUIRED — ranked list with AUTHORIZE/ESCALATE/REVIEW labels\n  1. [Decision] · Owner: [role] · Deadline: [timeframe] · Cost: $[amount]\n  2. [Decision] · Owner: [role] · Deadline: [timeframe]\n  3. [Decision] · Owner: [role] · Deadline: [timeframe]\n▸ BNCA — Best Next Course of Action in one clear sentence\n▸ ESCALATION TRIGGER — what would require CEO/Board notification\nThis goes directly to the executive team. Be decisive.\n\nIMPORTANT: On its own final line, output a machine-readable summary in this exact format so downstream tools can parse it reliably:\nKPI_JSON: {"riskScore": <0-100 integer>, "downtimeEstimate": "<short string>"}`
+    groundedBase + `ENGINE 06 — EXECUTIVE DISPATCH\nGenerate executive decision package:\n▸ INCIDENT SUMMARY — 2 sentences for C-suite\n▸ FINANCIAL IMPACT — total exposure in dollars\n▸ DECISIONS REQUIRED — ranked list with AUTHORIZE/ESCALATE/REVIEW labels\n  1. [Decision] · Owner: [role] · Deadline: [timeframe] · Cost: $[amount]\n  2. [Decision] · Owner: [role] · Deadline: [timeframe]\n  3. [Decision] · Owner: [role] · Deadline: [timeframe]\n▸ BNCA — Best Next Course of Action in one clear sentence\n▸ ESCALATION TRIGGER — what would require CEO/Board notification\nThis goes directly to the executive team. Be decisive.
+
+BESS EXECUTIVE KPI CONTRACT: Preserve the source's two recovery windows. Use a short downtimeEstimate such as "12-24 hours to re-energization decision; 3-5 weeks if thermal runaway confirmed and module replacement is required". Do not convert weeks to hours and do not invent a different restoration duration. riskScore is the executive 0-100 score and must not reuse Engine 02's 1-10 IMPACT SCORE.
+
+IMPORTANT: On its own final line, output a machine-readable summary in this exact format so downstream tools can parse it reliably:\nKPI_JSON: {"riskScore": <0-100 integer>, "downtimeEstimate": "<short string>"}`
   ];
 }
 
@@ -484,7 +507,11 @@ async function fireAllEngines() {
 
       if (i === 3) extractFinancialKPI(text);
       if (i === 1) extractDowntimeKPI(text);
-      if (i === 5) { buildActionPanel(text); buildRiskKPI(text); }
+      if (i === 5) {
+        buildActionPanel(text);
+        buildRiskKPI(text);
+        extractDowntimeKPI(text);
+      }
     } catch(e) {
       hadError = true;
       document.getElementById(`eo${i}`).textContent = `Engine ${i+1} error: ${e.message}`;
@@ -728,9 +755,24 @@ function extractFinancialKPI(text) {
 }
 
 function extractDowntimeKPI(text) {
+  const json = parseKpiJson(text);
+
+  if (json && typeof json.downtimeEstimate === 'string' && json.downtimeEstimate.trim()) {
+    const value = json.downtimeEstimate.trim();
+    document.getElementById('kpiDowntime').textContent = value;
+    sessionData.kpis.containment = {
+      downtimeEstimate: value,
+      source: 'engine-06'
+    };
+    return;
+  }
+
   const m = text.match(/(\d+[-–]\d+\s*hours?|\d+\s*hours?|\d+\s*days?|\d+[-–]\d+\s*weeks?|\d+\s*weeks?)/i);
   document.getElementById('kpiDowntime').textContent = m ? m[0] : 'N/A';
-  sessionData.kpis.containment = { raw: m ? m[0] : null, source: 'regex-fallback' };
+  sessionData.kpis.containment = {
+    raw: m ? m[0] : null,
+    source: 'regex-fallback'
+  };
 }
 
 function buildRiskKPI(text) {

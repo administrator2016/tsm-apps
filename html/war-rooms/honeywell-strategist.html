@@ -251,6 +251,7 @@ function kpiSecondary(k){
 function kpiTertiary(k){
   if(!k) return '—';
   if(typeof k.ordersAtRisk === 'number') return k.ordersAtRisk + ' orders';
+  if(typeof k.riskScore === 'number') return k.riskScore + '/100';
   if(k.raw) return k.raw;
   return '—';
 }
@@ -350,7 +351,7 @@ function getExplainItems(data){
     items.push({
       label: tertiaryLabel(src),
       value: terVal,
-      explain: `Read directly from kpis.${k.orders ? 'orders.ordersAtRisk' : 'risk'} as written by the ${srcLabel} war room.`
+      explain: `Read directly from kpis.${k.orders ? 'orders.ordersAtRisk' : 'risk.riskScore'} as written by the ${srcLabel} war room.`
     });
   }
 
