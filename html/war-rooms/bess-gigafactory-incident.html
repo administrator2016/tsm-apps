@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TSM · BESS / Gigafactory Incident Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050a0f;--bg2:#0a1020;--bg3:#0d1528;
+  --cyan:#00d4d4;--amber:#f5a623;--green:#22c55e;
+  --red:#ef4444;--purple:#a855f7;--blue:#3b82f6;
+  --orange:#f97316;--text:#e2e8f0;--muted:#64748b;--border:#1e293b;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;}
+
+.topbar{height:42px;background:#020810;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;}
+.tb-brand{font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--orange);letter-spacing:.15em;}
+.tb-stat{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);}
+.tb-stat span{color:var(--green);}
+.tb-stat.crit span{color:var(--red);}
+.tb-time{font-family:'Orbitron',sans-serif;font-size:.75rem;color:var(--orange);}
+
+.alert-bar{height:32px;background:rgba(239,68,68,.08);border-bottom:1px solid rgba(239,68,68,.3);display:flex;align-items:center;padding:0 20px;gap:12px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--red);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.alert-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+.nav-tabs{display:flex;align-items:center;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;gap:2px;flex-wrap:wrap;}
+.nav-tab{padding:10px 18px;font-family:'Orbitron',sans-serif;font-size:.58rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.08em;transition:.2s;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:var(--orange);border-bottom-color:var(--orange);}
+
+.scenario-toggle{display:flex;gap:2px;margin-left:auto;}
+.scen-btn{padding:8px 14px;font-family:'Orbitron',sans-serif;font-size:.56rem;letter-spacing:.08em;color:var(--muted);background:transparent;border:1px solid var(--border);cursor:pointer;}
+.scen-btn.active{color:#fff;background:var(--orange);border-color:var(--orange);}
+
+.main{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 110px);}
+
+/* SIDEBAR */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:16px;}
+.sb-section{font-family:'Orbitron',sans-serif;font-size:.55rem;color:var(--muted);letter-spacing:.15em;margin-bottom:8px;}
+.doc-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:10px;resize:vertical;min-height:120px;outline:none;line-height:1.5;}
+.doc-input:focus{border-color:var(--orange);}
+.doc-type-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.doc-tag{font-size:.6rem;padding:3px 8px;border-radius:3px;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:'JetBrains Mono',monospace;transition:.2s;}
+.doc-tag.active{border-color:var(--orange);color:var(--orange);background:rgba(249,115,22,.08);}
+.fire-btn{width:100%;background:var(--orange);color:#fff;border:none;border-radius:4px;padding:12px;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.1em;cursor:pointer;transition:.2s;margin-top:8px;}
+.fire-btn:hover{opacity:.85;}
+.fire-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.kpi{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px;text-align:center;}
+.kpi-val{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700;color:var(--orange);}
+.kpi-val.red{color:var(--red);}
+.kpi-val.green{color:var(--green);}
+.kpi-lbl{font-size:.58rem;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace;}
+
+.engine-status{display:flex;flex-direction:column;gap:6px;}
+.eng-row{display:flex;align-items:center;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.62rem;}
+.eng-name{color:var(--muted);}
+.eng-badge{padding:2px 8px;border-radius:2px;font-size:.55rem;font-weight:700;}
+.eng-badge.idle{background:rgba(100,116,139,.15);color:var(--muted);}
+.eng-badge.running{background:rgba(249,115,22,.15);color:var(--orange);}
+.eng-badge.done{background:rgba(34,197,94,.15);color:var(--green);}
+
+.detection-ref{background:var(--bg3);border:1px solid rgba(0,212,212,.25);border-radius:4px;padding:10px;font-size:.6rem;line-height:1.6;color:var(--muted);}
+.detection-ref b{color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.58rem;}
+.detection-ref a{color:var(--cyan);text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:.58rem;}
+.detection-ref a:hover{text-decoration:underline;}
+
+/* MAIN PANEL */
+.content{padding:20px;display:flex;flex-direction:column;gap:20px;}
+
+.incident-header{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
+.inc-title{font-family:'Orbitron',sans-serif;font-size:.9rem;color:var(--red);letter-spacing:.05em;}
+.inc-meta{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);}
+.inc-badge{padding:4px 12px;background:rgba(239,68,68,.15);border:1px solid var(--red);border-radius:3px;font-family:'Orbitron',sans-serif;font-size:.6rem;color:var(--red);letter-spacing:.1em;}
+
+.engines-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.engine-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.eng-card-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.eng-card-num{font-family:'Orbitron',sans-serif;font-size:.6rem;color:var(--orange);}
+.eng-card-title{font-family:'Orbitron',sans-serif;font-size:.62rem;color:var(--text);letter-spacing:.05em;}
+.eng-card-status{font-size:.55rem;padding:2px 8px;border-radius:2px;font-family:'JetBrains Mono',monospace;}
+.status-idle{background:rgba(100,116,139,.1);color:var(--muted);}
+.status-run{background:rgba(249,115,22,.15);color:var(--orange);}
+.status-done{background:rgba(34,197,94,.15);color:var(--green);}
+.eng-card-body{padding:14px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);line-height:1.7;min-height:100px;white-space:pre-wrap;}
+.eng-card-body.active{color:var(--text);}
+.eng-card-body table.md-table{border-collapse:collapse;width:100%;margin:8px 0;white-space:normal;}
+.eng-card-body table.md-table th,.eng-card-body table.md-table td{border:1px solid var(--border);padding:4px 6px;text-align:left;vertical-align:top;}
+.eng-card-body table.md-table th{color:var(--muted);text-transform:uppercase;font-size:.6rem;}
+
+.action-panel{background:var(--bg2);border:1px solid rgba(249,115,22,.3);border-radius:6px;padding:16px 20px;}
+.action-title{font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--orange);margin-bottom:12px;letter-spacing:.08em;}
+.action-list{display:flex;flex-direction:column;gap:8px;}
+.action-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg3);border-radius:4px;border:1px solid var(--border);}
+.action-rank{font-family:'Orbitron',sans-serif;font-size:.7rem;font-weight:700;color:var(--orange);width:24px;text-align:center;flex-shrink:0;}
+.action-text{flex:1;font-size:.75rem;color:var(--text);}
+.action-owner{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);}
+.action-deadline{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--amber);}
+.action-btn{padding:4px 12px;border-radius:3px;font-family:'Orbitron',sans-serif;font-size:.55rem;letter-spacing:.08em;cursor:pointer;border:none;}
+.btn-authorize{background:var(--orange);color:#fff;}
+.btn-escalate{background:transparent;border:1px solid var(--orange) !important;color:var(--orange);}
+.btn-review{background:transparent;border:1px solid var(--amber) !important;color:var(--amber);}
+
+.escalate-bar{display:flex;gap:12px;align-items:center;}
+.esc-btn{flex:1;padding:12px;background:var(--orange);color:#fff;border:none;border-radius:4px;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.1em;cursor:pointer;transition:.2s;}
+.esc-btn:hover{opacity:.85;}
+.esc-btn:disabled{opacity:.4;cursor:not-allowed;}
+.esc-btn.secondary{background:transparent;border:1px solid var(--orange);color:var(--orange);}
+
+.toast{position:fixed;bottom:44px;right:20px;background:var(--bg2);border:1px solid var(--green);border-radius:6px;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--green);box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:999;opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.err{border-color:var(--red);color:var(--red);}
+
+.statusbar{height:28px;background:#020810;border-top:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:20px;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);position:fixed;bottom:0;left:0;right:0;}
+.sb-item span{color:var(--green);}
+.sb-item.warn span{color:var(--amber);}
+.sb-item.crit span{color:var(--red);}
+</style>
+</head>
+<body data-vertical="bess-gigafactory" data-page-role="warroom">
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:16px">
+    <span class="tb-brand">⚡ TSM ENTERPRISE</span>
+    <span class="tb-stat">VERTICAL <span>OPERATIONS</span></span>
+    <span class="tb-stat crit">INCIDENT <span>ACTIVE</span></span>
+    <span class="tb-stat">API <span>/api/war-room/stream</span></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span class="tb-time" id="clock">--:--:--</span>
+  </div>
+</div>
+
+<!-- ALERT BAR -->
+<div class="alert-bar">
+  <div class="alert-dot"></div>
+  <span id="alertBarText">CRITICAL INCIDENT ACTIVE — BESS / GIGAFACTORY EVENT DETECTED — COMMAND CENTER ENGAGED — ALL ENGINES STANDBY</span>
+</div>
+
+<!-- NAV -->
+<div class="nav-tabs">
+  <div class="nav-tab" onclick="window.location='/html/plant-incident.html'">⚡ PLANT</div>
+  <div class="nav-tab" onclick="window.location='/html/supplier-shutdown.html'">📦 SUPPLIER</div>
+  <div class="nav-tab" onclick="window.location='/html/cyber-incident.html'">🛡 CYBER</div>
+  <div class="nav-tab active">🔋 BESS / GIGAFACTORY</div>
+  <div class="nav-tab" onclick="goToStrategist()">→ STRATEGIST</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/honeywell-executive-portal.html'">↑ EXECUTIVE</div>
+  <div class="scenario-toggle">
+    <button class="scen-btn active" id="scenBessBtn" onclick="setScenario('bess')">🔋 BESS</button>
+    <button class="scen-btn" id="scenGigaBtn" onclick="setScenario('gigafactory')">🏭 GIGAFACTORY</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div>
+      <div class="sb-section" id="intakeLabel">BESS INTAKE</div>
+      <textarea class="doc-input" id="docInput" placeholder="Paste incident report, BMS/EMS alarm log, off-gas sensor data, or site technician notes here..."></textarea>
+      <div class="doc-type-row" id="docTypeRow"></div>
+      <button class="fire-btn" id="fireBtn" onclick="fireAllEngines()">⚡ FIRE ALL 6 ENGINES</button>
+      <button class="fire-btn" id="sampleBtn" onclick="loadSampleDoc()" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px;">⤓ Load Sample Incident</button>
+    </div>
+
+    <div>
+      <div class="sb-section">LIVE KPIs</div>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-val red" id="kpiRisk">—</div><div class="kpi-lbl">RISK SCORE</div></div>
+        <div class="kpi"><div class="kpi-val red" id="kpiExposure">—</div><div class="kpi-lbl">$ EXPOSURE</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpiDowntime">—</div><div class="kpi-lbl">DOWNTIME EST</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpiEngines">0/6</div><div class="kpi-lbl">ENGINES</div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sb-section">ENGINE STATUS</div>
+      <div class="engine-status">
+        <div class="eng-row"><span class="eng-name">01 · Incident Intel</span><span class="eng-badge idle" id="es0">IDLE</span></div>
+        <div class="eng-row"><span class="eng-name">02 · Thermal / Off-Gas Impact</span><span class="eng-badge idle" id="es1">IDLE</span></div>
+        <div class="eng-row"><span class="eng-name">03 · Root Cause</span><span class="eng-badge idle" id="es2">IDLE</span></div>
+        <div class="eng-row"><span class="eng-name">04 · Exposure Calc</span><span class="eng-badge idle" id="es3">IDLE</span></div>
+        <div class="eng-row"><span class="eng-name">05 · Action Planner</span><span class="eng-badge idle" id="es4">IDLE</span></div>
+        <div class="eng-row"><span class="eng-name">06 · Exec Dispatch</span><span class="eng-badge idle" id="es5">IDLE</span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sb-section">ADVANCED DETECTION REFERENCE</div>
+      <div class="detection-ref">
+        <div style="margin-bottom:6px"><b>Li-ion Tamer</b> — off-gas sensing for early lithium-ion thermal-runaway warning, ahead of visible smoke or heat. Primary reference for BESS off-gas events.</div>
+        <div style="margin-bottom:8px"><b>VESDA</b> — aspirating smoke detection for very-early warning in gigafactory clean rooms and large open floor plans.</div>
+        <a href="/html/tsm-career-training-platform.html" target="_blank">↗ Open Honeywell Advanced Detection track</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- INCIDENT HEADER -->
+    <div class="incident-header">
+      <div>
+        <div class="inc-title" id="incTitle">⚠ AWAITING INCIDENT REPORT</div>
+        <div class="inc-meta" id="incMeta">Paste incident data and fire engines to begin command center analysis</div>
+      </div>
+      <div class="inc-badge" id="incBadge">STANDBY</div>
+    </div>
+
+    <!-- ENGINE OUTPUTS -->
+    <div class="engines-grid">
+      <div class="engine-card">
+        <div class="eng-card-header">
+          <span class="eng-card-num">ENGINE 01</span>
+          <span class="eng-card-title">INCIDENT INTELLIGENCE</span>
+          <span class="eng-card-status status-idle" id="ec0">IDLE</span>
+        </div>
+        <div class="eng-card-body" id="eo0">Awaiting incident report — paste BMS/EMS alarm data, off-gas sensor logs, or technician notes to begin.</div>
+      </div>
+      <div class="engine-card">
+        <div class="eng-card-header">
+          <span class="eng-card-num">ENGINE 02</span>
+          <span class="eng-card-title" id="eng2Title">THERMAL / OFF-GAS IMPACT</span>
+          <span class="eng-card-status status-idle" id="ec1">IDLE</span>
+        </div>
+        <div class="eng-card-body" id="eo1">Impact assessment will calculate affected racks/lines, production or capacity loss, and downstream exposure.</div>
+      </div>
+      <div class="engine-card">
+        <div class="eng-card-header">
+          <span class="eng-card-num">ENGINE 03</span>
+          <span class="eng-card-title">ROOT CAUSE ANALYSIS</span>
+          <span class="eng-card-status status-idle" id="ec2">IDLE</span>
+        </div>
+        <div class="eng-card-body" id="eo2">Root cause engine will identify probable failure origin, contributing factors, and recurrence risk.</div>
+      </div>
+      <div class="engine-card">
+        <div class="eng-card-header">
+          <span class="eng-card-num">ENGINE 04</span>
+          <span class="eng-card-title">FINANCIAL EXPOSURE</span>
+          <span class="eng-card-status status-idle" id="ec3">IDLE</span>
+        </div>
+        <div class="eng-card-body" id="eo3">Financial exposure engine will calculate asset loss, downtime cost, and remediation/insurance exposure.</div>
+      </div>
+      <div class="engine-card">
+        <div class="eng-card-header">
+          <span class="eng-card-num">ENGINE 05</span>
+          <span class="eng-card-title">ACTION PLAN</span>
+          <span class="eng-card-status status-idle" id="ec4">IDLE</span>
+        </div>
+        <div class="eng-card-body" id="eo4">Action plan engine will generate ranked response steps with owners, timelines, and resource requirements.</div>
+      </div>
+      <div class="engine-card">
+        <div class="eng-card-header">
+          <span class="eng-card-num">ENGINE 06</span>
+          <span class="eng-card-title">EXECUTIVE DISPATCH</span>
+          <span class="eng-card-status status-idle" id="ec5">IDLE</span>
+        </div>
+        <div class="eng-card-body" id="eo5">Executive dispatch will package ranked decisions with owners and deadlines for C-suite authorization.</div>
+      </div>
+    </div>
+
+    <!-- RANKED ACTIONS -->
+    <div class="action-panel" id="actionPanel" style="display:none">
+      <div class="action-title">⚡ RANKED EXECUTIVE DECISIONS — AUTHORIZATION REQUIRED</div>
+      <div class="action-list" id="actionList"></div>
+    </div>
+
+    <!-- ESCALATE -->
+    <div class="escalate-bar">
+      <button class="esc-btn" id="escalateBtn" onclick="escalateToStrategist()" disabled>⚡ ESCALATE TO OPERATIONS STRATEGIST →</button>
+      <button class="esc-btn secondary" onclick="exportReport()">↓ EXPORT INCIDENT REPORT</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="statusbar">
+  <span class="sb-item" id="sbTitle">TSM · BESS / Gigafactory Incident Command Center</span>
+  <span class="sb-item crit">INCIDENT <span>ACTIVE</span></span>
+  <span class="sb-item">ENGINES <span id="sbEngines">0 / 6</span></span>
+  <span class="sb-item">MODEL <span>openai/gpt-oss-120b</span></span>
+  <span class="sb-item" style="margin-left:auto">TSM OS v4.1 · Fly.io</span>
+</div>
+
+<script src="../js/war-room-stream.js"></script>
+<script>
+// ── CLOCK ─────────────────────────────────────────────────────────────────────
+function tick() { document.getElementById('clock').textContent = new Date().toLocaleTimeString(); }
+setInterval(tick, 1000); tick();
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const INCIDENT_TYPE = 'bess';                  // identifies this tool's payload to downstream consumers
+const RELAY_DOMAIN = 'HONEYWELL_BESS';
+const RELAY_KEY = 'TSM_HONEYWELL_BESS_RELAY';
+const STRATEGIST_URL = '/html/war-rooms/honeywell-strategist.html';
+
+let scenario = 'bess';                          // 'bess' | 'gigafactory' — same relay/domain, different intake framing
+let docType = 'thermal_runaway';
+let enginesComplete = 0;
+let sessionData = { source: INCIDENT_TYPE, scenario, outputs: [], docText: '', timestamp: null };
+
+// ── SCENARIO CONFIG ───────────────────────────────────────────────────────────
+const SCENARIOS = {
+  bess: {
+    label: 'BESS INTAKE',
+    alertText: 'CRITICAL INCIDENT ACTIVE — BESS THERMAL EVENT DETECTED — COMMAND CENTER ENGAGED — ALL ENGINES STANDBY',
+    statusTitle: 'TSM · BESS Incident Command Center',
+    eng2Title: 'OFF-GAS / THERMAL IMPACT',
+    placeholder: `Paste incident report, BMS/EMS alarm log, off-gas sensor data, or site technician notes here...
+
+Example:
+Site: BESS Site — Casa Grande, AZ (20 MW / 80 MWh, LFP chemistry)
+Enclosure: Rack 14, Module 6
+Trigger: Li-ion off-gas sensor alarm at 02:12 AM — elevated VOC/H2 reading, no visible smoke or flame yet
+BMS status: Cell group isolated, DC contactors opened per protocol; adjacent racks 13 and 15 on elevated monitoring
+Impact: Site output curtailed to 65% of contracted capacity pending isolation confirmation
+Estimated downtime: 12-24 hours before rack re-energization decision; module replacement lead time 3-5 weeks if thermal runaway confirmed
+Downstream: Site has a capacity firming contract with the utility off-taker; missed dispatch windows carry availability penalties
+Safety note: No injuries, no fire. Fire department notified per site emergency plan as precaution given off-gas signature.`,
+    docTags: [
+      { label: 'Thermal Runaway', type: 'thermal_runaway' },
+      { label: 'Off-Gas Alarm', type: 'offgas_alarm' },
+      { label: 'BMS/EMS Fault', type: 'bms_fault' },
+      { label: 'Capacity Impact', type: 'capacity_impact' },
+    ],
+    sample: `Site: BESS Site — Casa Grande, AZ (20 MW / 80 MWh, LFP chemistry)
+Enclosure: Rack 14, Module 6
+Trigger: Li-ion off-gas sensor alarm at 02:12 AM — elevated VOC/H2 reading, no visible smoke or flame yet
+BMS status: Cell group isolated, DC contactors opened per protocol; adjacent racks 13 and 15 on elevated monitoring
+Impact: Site output curtailed to 65% of contracted capacity pending isolation confirmation
+Estimated downtime: 12-24 hours before rack re-energization decision; module replacement lead time 3-5 weeks if thermal runaway confirmed
+Downstream: Site has a capacity firming contract with the utility off-taker; missed dispatch windows carry availability penalties
+Safety note: No injuries, no fire. Fire department notified per site emergency plan as precaution given off-gas signature.`,
+    engineLabel: 'BESS operations and energy storage safety',
+    e1: 'battery enclosure, rack, module, and inverter systems',
+    e2Verbs: 'off-gas detection, thermal spread, and MWh capacity',
+    financePrompt: 'downtime revenue loss (firming/dispatch penalties), module/rack replacement cost, insurance applicability for thermal-runaway property loss',
+  },
+  gigafactory: {
+    label: 'GIGAFACTORY INTAKE',
+    alertText: 'CRITICAL INCIDENT ACTIVE — GIGAFACTORY LINE EVENT DETECTED — COMMAND CENTER ENGAGED — ALL ENGINES STANDBY',
+    statusTitle: 'TSM · Gigafactory Incident Command Center',
+    eng2Title: 'PRODUCTION / DETECTION IMPACT',
+    placeholder: `Paste incident report, VESDA/aspirating detection alert, line-stoppage log, or site technician notes here...
+
+Example:
+Site: Gigafactory — Cell Assembly Building 2, Zone C (dry room, electrode coating line)
+Detection: VESDA aspirating smoke detection triggered pre-alarm at 04:31 AM in the solvent recovery area near coating line C-3
+Line status: Line C-3 automatically halted per interlock; lines C-1/C-2 running at reduced throughput pending clearance
+Cause under investigation: Possible NMP solvent vapor concentration spike from a recovery-system filter fault
+Impact: Cell output on Line C-3 offline; overall building throughput down ~18%
+Estimated downtime: 4-8 hours pending filter inspection and dry-room re-certification
+Downstream: Two downstream pack-assembly lines are drawing down cell buffer inventory
+Safety note: No fire, no injuries. Pre-alarm only (VESDA Level 1); facilities and EHS dispatched to zone per procedure.`,
+    docTags: [
+      { label: 'VESDA Pre-Alarm', type: 'vesda_prealarm' },
+      { label: 'Line Stoppage', type: 'line_stoppage' },
+      { label: 'Process Upset', type: 'process_upset' },
+      { label: 'Production Impact', type: 'production_impact' },
+    ],
+    sample: `Site: Gigafactory — Cell Assembly Building 2, Zone C (dry room, electrode coating line)
+Detection: VESDA aspirating smoke detection triggered pre-alarm at 04:31 AM in the solvent recovery area near coating line C-3
+Line status: Line C-3 automatically halted per interlock; lines C-1/C-2 running at reduced throughput pending clearance
+Cause under investigation: Possible NMP solvent vapor concentration spike from a recovery-system filter fault
+Impact: Cell output on Line C-3 offline; overall building throughput down ~18%
+Estimated downtime: 4-8 hours pending filter inspection and dry-room re-certification
+Downstream: Two downstream pack-assembly lines are drawing down cell buffer inventory
+Safety note: No fire, no injuries. Pre-alarm only (VESDA Level 1); facilities and EHS dispatched to zone per procedure.`,
+    engineLabel: 'gigafactory cell/pack manufacturing and early-warning detection',
+    e1: 'production lines, dry rooms, and solvent recovery systems',
+    e2Verbs: 'aspirating smoke pre-alarm response, line throughput, and dry-room recertification',
+    financePrompt: 'lost cell/pack output, line-stoppage cost per hour, dry-room recertification cost, downstream buffer-inventory risk',
+  }
+};
+
+function setScenario(s) {
+  scenario = s;
+  sessionData.scenario = s;
+  document.getElementById('scenBessBtn').classList.toggle('active', s === 'bess');
+  document.getElementById('scenGigaBtn').classList.toggle('active', s === 'gigafactory');
+  const cfg = SCENARIOS[s];
+  document.getElementById('intakeLabel').textContent = cfg.label;
+  document.getElementById('alertBarText').textContent = cfg.alertText;
+  document.getElementById('sbTitle').textContent = cfg.statusTitle;
+  document.getElementById('eng2Title').textContent = cfg.eng2Title;
+  document.getElementById('docInput').placeholder = cfg.placeholder;
+  const row = document.getElementById('docTypeRow');
+  row.innerHTML = cfg.docTags.map((t, i) =>
+    `<div class="doc-tag${i === 0 ? ' active' : ''}" onclick="setDocType(this,'${t.type}')">${t.label}</div>`
+  ).join('');
+  docType = cfg.docTags[0].type;
+}
+
+function setDocType(el, type) {
+  document.querySelectorAll('.doc-tag').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  docType = type;
+}
+
+function loadSampleDoc() {
+  document.getElementById('docInput').value = SCENARIOS[scenario].sample;
+  const row = document.getElementById('docTypeRow');
+  const firstTag = row.querySelector('.doc-tag');
+  if (firstTag) setDocType(firstTag, SCENARIOS[scenario].docTags[0].type);
+  showToast(`Sample ${scenario === 'bess' ? 'BESS' : 'gigafactory'} incident loaded — hit FIRE ALL 6 ENGINES.`);
+}
+
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(showToast._h);
+  showToast._h = setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+// ── ENGINE PROMPTS ────────────────────────────────────────────────────────────
+function getPrompts(doc, brief) {
+  const cfg = SCENARIOS[scenario];
+  const full = `You are a ${cfg.engineLabel} intelligence engine for TSM Command. Analyze this incident report with precision. Focus on operational impact, financial exposure, and ranked executive actions. Be specific with numbers and timelines.\n\nINCIDENT REPORT:\n${doc}\n\n`;
+  const base = brief
+    ? `You are a ${cfg.engineLabel} intelligence engine for TSM Command. Continue analyzing this incident using the extracted intelligence below — do not ask for the original report, this is the complete factual basis.\n\nEXTRACTED INCIDENT INTELLIGENCE:\n${brief}\n\n`
+    : full;
+  return [
+    base + `ENGINE 01 — INCIDENT INTELLIGENCE\nExtract and structure:\n▸ INCIDENT TYPE — thermal event, off-gas alarm, detection pre-alarm, process upset, etc.\n▸ AFFECTED SYSTEMS — specific ${cfg.e1} impacted\n▸ DETECTION TIME — when was it caught, how (name the detection technology if stated)\n▸ CURRENT STATUS — isolated, offline, degraded, contained\n▸ KEY PARTIES — operations, EHS/safety, fire response, management involved\nBe specific. Extract all facts from the document.`,
+
+    base + `ENGINE 02 — ${cfg.eng2Title}\nCalculate and structure:\n▸ CAPACITY / OUTPUT LOSS — percentage and absolute reduction\n▸ DOWNTIME ESTIMATE — hours/days to full restoration\n▸ ${cfg.e2Verbs.toUpperCase()} — assess spread risk and containment status\n▸ DOWNSTREAM RISK — contracts, dispatch commitments, buffer inventory at risk\n▸ IMPACT SCORE — 1-10 severity\nQuantify everything with specific numbers.`,
+
+    base + `ENGINE 03 — ROOT CAUSE ANALYSIS\nAnalyze and structure:\n▸ PRIMARY CAUSE — most probable root cause\n▸ CONTRIBUTING FACTORS — secondary issues that enabled the event\n▸ FAILURE MODE — how the cell/module/system or process failed\n▸ DETECTION GAPS — was this caught at the earliest reasonable stage; note whether early-warning detection (off-gas sensing, aspirating smoke) performed as intended\n▸ RECURRENCE RISK — probability and timeline of recurrence\n▸ SIMILAR ASSETS AT RISK — other racks, lines, or modules that may share the same vulnerability\nBe direct about probable causes even with limited data.`,
+
+    base + `ENGINE 04 — FINANCIAL EXPOSURE CALCULATION\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\n\nPART 2 — Calculate and structure:\n▸ ${cfg.financePrompt.toUpperCase()}\n▸ TOTAL EXPOSURE — projected cost over estimated downtime window\n▸ INSURANCE APPLICABILITY — what losses may be recoverable\n▸ TOTAL FINANCIAL RISK — combined exposure range\nProvide dollar amounts. Estimate if exact figures not available.`,
+
+    base + `ENGINE 05 — RANKED ACTION PLAN\nGenerate ranked response with owners and deadlines:\n1. IMMEDIATE (0-2 hours) — safety, isolation/containment, assessment\n2. SHORT-TERM (2-24 hours) — repair authorization, parts/module procurement, temporary workaround\n3. MEDIUM-TERM (1-7 days) — full restoration, root cause remediation\n4. PREVENTIVE — detection or process changes to prevent recurrence\n\nFor each action include: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME\nRank by urgency and impact.`,
+
+    base + `ENGINE 06 — EXECUTIVE DISPATCH\nGenerate executive decision package:\n▸ INCIDENT SUMMARY — 2 sentences for C-suite\n▸ FINANCIAL IMPACT — total exposure in dollars\n▸ DECISIONS REQUIRED — ranked list with AUTHORIZE/ESCALATE/REVIEW labels\n  1. [Decision] · Owner: [role] · Deadline: [timeframe] · Cost: $[amount]\n  2. [Decision] · Owner: [role] · Deadline: [timeframe]\n  3. [Decision] · Owner: [role] · Deadline: [timeframe]\n▸ BNCA — Best Next Course of Action in one clear sentence\n▸ ESCALATION TRIGGER — what would require CEO/Board notification\nThis goes directly to the executive team. Be decisive.\n\nIMPORTANT: On its own final line, output a machine-readable summary in this exact format so downstream tools can parse it reliably:\nKPI_JSON: {"riskScore": <0-100 integer>, "downtimeEstimate": "<short string>"}`
+  ];
+}
+
+// ── FIRE ENGINES ─────────────────────────────────────────────────────────────
+async function fireAllEngines() {
+  const doc = document.getElementById('docInput').value.trim();
+  if (!doc) { showToast('Paste an incident report first.', true); return; }
+
+  enginesComplete = 0;
+  sessionData = { source: INCIDENT_TYPE, scenario, outputs: [], docText: doc, timestamp: new Date().toISOString(), docType, kpis: {} };
+  document.getElementById('fireBtn').disabled = true;
+  document.getElementById('escalateBtn').disabled = true;
+  document.getElementById('actionPanel').style.display = 'none';
+
+  document.getElementById('incTitle').textContent = '⚡ INCIDENT ANALYSIS IN PROGRESS';
+  document.getElementById('incMeta').textContent = `Scenario: ${scenario} · Doc type: ${docType} · ${doc.length} chars · ${new Date().toLocaleTimeString()}`;
+  document.getElementById('incBadge').textContent = 'ANALYZING';
+  document.getElementById('kpiRisk').textContent = '—';
+  document.getElementById('kpiExposure').textContent = '—';
+  document.getElementById('kpiDowntime').textContent = '—';
+
+  let prompts = getPrompts(doc, null);
+  let hadError = false;
+
+  for (let i = 0; i < prompts.length; i++) {
+    if (i > 0) await new Promise(r => setTimeout(r, 600));
+    if (i === 1) {
+      const brief = sessionData.outputs[0]?.text;
+      if (brief) prompts = getPrompts(doc, brief);
+    }
+    setEngineStatus(i, 'running');
+    try {
+      const text = await callAPI(prompts[i]);
+      document.getElementById(`eo${i}`).innerHTML = renderEngineOutput(text);
+      document.getElementById(`eo${i}`).classList.add('active');
+      setEngineStatus(i, 'done');
+      enginesComplete++;
+      document.getElementById('kpiEngines').textContent = `${enginesComplete}/6`;
+      document.getElementById('sbEngines').textContent = `${enginesComplete} / 6`;
+      sessionData.outputs.push({ engine: i + 1, title: ['Incident Intel', SCENARIOS[scenario].eng2Title, 'Root Cause', 'Financial Exposure', 'Action Plan', 'Exec Dispatch'][i], text });
+
+      if (i === 3) extractFinancialKPI(text);
+      if (i === 1) extractDowntimeKPI(text);
+      if (i === 5) { buildActionPanel(text); buildRiskKPI(text); }
+    } catch(e) {
+      hadError = true;
+      document.getElementById(`eo${i}`).textContent = `Engine ${i+1} error: ${e.message}`;
+      document.getElementById(`eo${i}`).classList.add('active');
+      setEngineStatus(i, 'error');
+      showToast(`Engine ${i+1} failed — ${e.message}`, true);
+    }
+  }
+
+  if (hadError) {
+    document.getElementById('incTitle').textContent = '⚠ ANALYSIS COMPLETE WITH ERRORS';
+    document.getElementById('incBadge').textContent = 'PARTIAL';
+    document.getElementById('incBadge').style.borderColor = '#f5a623';
+    document.getElementById('incBadge').style.color = '#f5a623';
+  } else {
+    document.getElementById('incTitle').textContent = '✓ 6-ENGINE ANALYSIS COMPLETE';
+    document.getElementById('incBadge').textContent = 'COMPLETE';
+    document.getElementById('incBadge').style.borderColor = '#22c55e';
+    document.getElementById('incBadge').style.color = '#22c55e';
+  }
+  document.getElementById('fireBtn').disabled = false;
+  document.getElementById('escalateBtn').disabled = !sessionData.outputs.length;
+
+  saveRelay();
+  registerBessAnomalies();
+  setTimeout(() => showFieldDefectScan(sessionData.outputs), 800);
+}
+
+// ===== FIELD DEFECT SCAN (Anomaly Advisor — diagnosis half) =====
+function showFieldDefectScan(outputs) {
+  const existing = document.getElementById('anomaly-slide-panel');
+  if (existing) existing.remove();
+
+  const panel = document.createElement('div');
+  panel.id = 'anomaly-slide-panel';
+  panel.style.cssText = `
+    position:fixed; bottom:0; right:0; width:420px; max-height:75vh;
+    background:#050a0f; border-top:2px solid var(--cyan); border-left:2px solid var(--cyan);
+    z-index:300; display:flex; flex-direction:column;
+    transform:translateY(100%); transition:transform 0.4s cubic-bezier(0.16,1,0.3,1);
+    font-family:'JetBrains Mono',monospace;
+  `;
+
+  panel.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(0,212,212,.2);background:#0a1020;">
+      <span style="color:var(--cyan);font-size:11px;font-weight:700;letter-spacing:2px;">⬡ ANOMALY ADVISOR — FIELD DEFECT SCAN</span>
+      <button onclick="document.getElementById('anomaly-slide-panel').remove()" style="background:transparent;border:none;color:#666;font-size:16px;cursor:pointer;line-height:1;padding:0 2px;">✕</button>
+    </div>
+    <div id="anomaly-panel-body" style="flex:1;overflow-y:auto;padding:12px 14px;font-size:11px;line-height:1.8;color:#94a8c0;">
+      <div id="anomaly-scan-msg" style="color:var(--cyan);font-size:10px;letter-spacing:1px;">⬡ SCANNING ENGINE OUTPUTS FOR FIELD-LEVEL DEFECTS...</div>
+    </div>
+  `;
+
+  document.body.appendChild(panel);
+  requestAnimationFrame(() => { panel.style.transform = 'translateY(0)'; });
+
+  const body = document.getElementById('anomaly-panel-body');
+  const ctx = (outputs || []).map(o => `ENGINE ${o.engine} (${o.title}):\n${(o.text || '').slice(0, 350)}`).join('\n\n');
+  const sys = `You are TSM Anomaly Advisor, a field-level defect detection engine for BESS/gigafactory incident documentation. Analyze the engine outputs and identify specific actionable document/data defects — missing fields, unverified claims, gaps an energy-storage or manufacturing operations lead would need filled before this goes to the exec team. Output ONLY a numbered list. Each item must follow this exact format:
+⚠ [FIELD NAME] — what is wrong — exact fix instruction (which section, what to verify or add).
+Maximum 8 items. No preamble. No headers. No summary. Start immediately with item 1.`;
+
+  callWarRoomAPI(ctx, sys, { maxTokens: 700 })
+    .then(text => {
+      const msg = document.getElementById('anomaly-scan-msg');
+      if (msg) msg.remove();
+      const span = document.createElement('span');
+      span.innerHTML = text.replace(/⚠/g, '<span style="color:#f59e0b">⚠</span>').replace(/—/g, '<span style="color:rgba(0,212,212,.4)"> — </span>');
+      body.appendChild(span);
+      const footer = document.createElement('div');
+      footer.style.cssText = 'margin-top:14px;padding-top:10px;border-top:1px solid rgba(0,212,212,.15);color:rgba(0,212,212,.35);font-size:9px;letter-spacing:1px;';
+      footer.textContent = '⬡ SCAN COMPLETE — SEE EXEC DISPATCH BELOW FOR ROUTING';
+      body.appendChild(footer);
+    })
+    .catch(err => {
+      const msg = document.getElementById('anomaly-scan-msg');
+      if (msg) msg.remove();
+      const e = document.createElement('div');
+      e.style.color = '#ef4444';
+      e.textContent = '[Advisor error: ' + err.message + ']';
+      body.appendChild(e);
+    });
+}
+
+// ===== TSM MEMORY: REGISTER CROSS-MODULE ANOMALIES =====
+// Same convention as plant-incident.html / supplier-shutdown.html / cyber-incident.html —
+// self-dedupes by anomalyCode against TSM_OPERATIONAL_MEMORY_V3, sector 'honeywell'.
+function registerBessAnomalies() {
+  if (!window.TSMMemory || typeof window.TSMMemory.registerAnomaly !== 'function') return;
+
+  function alreadyOpen(code) {
+    try {
+      const all = JSON.parse(localStorage.getItem('TSM_OPERATIONAL_MEMORY_V3') || '{}');
+      const bucket = all.honeywell;
+      return !!(bucket && Array.isArray(bucket.anomalies) &&
+        bucket.anomalies.some(a => a.anomalyCode === code && a.status === 'open'));
+    } catch (e) { return false; }
+  }
+  function fire(a) {
+    if (alreadyOpen(a.anomalyCode)) return;
+    window.TSMMemory.registerAnomaly(a);
+  }
+
+  const scenLabel = scenario === 'bess' ? 'BESS' : 'GIGAFACTORY';
+  const exposureStr = document.getElementById('kpiExposure').textContent;
+  if (exposureStr && exposureStr !== '—' && exposureStr !== 'N/A') {
+    fire({
+      entityType: 'honeywell-incident', entityId: 'bess',
+      anomalyCode: 'HW_BESS_EXPOSURE', severity: 'HIGH',
+      title: `${scenLabel} — ENERGY STORAGE INCIDENT — ${exposureStr} exposure`,
+      source: 'bess-gigafactory-incident',
+      meta: { exposure: sessionData.kpis.exposure, scenario }
+    });
+  }
+
+  const downtimeStr = document.getElementById('kpiDowntime').textContent;
+  if (downtimeStr && downtimeStr !== '—' && downtimeStr !== 'N/A') {
+    fire({
+      entityType: 'honeywell-incident', entityId: 'bess',
+      anomalyCode: 'HW_BESS_CONTAINMENT', severity: 'MEDIUM',
+      title: `${scenLabel} — ENERGY STORAGE INCIDENT — downtime est. ${downtimeStr}`,
+      source: 'bess-gigafactory-incident',
+      meta: { value: sessionData.kpis.containment, scenario }
+    });
+  }
+}
+
+function saveRelay() {
+  const relay = JSON.stringify(sessionData);
+  try {
+    localStorage.setItem(RELAY_KEY, relay);
+    sessionStorage.setItem(RELAY_KEY, relay);
+    if (window.TSM && window.TSM.relay && window.TSM.relay.write) {
+      try { window.TSM.relay.write(RELAY_DOMAIN, sessionData); } catch (e) { /* noop */ }
+    }
+  } catch (e) {
+    showToast('Could not save relay data locally.', true);
+  }
+}
+
+function setEngineStatus(i, status) {
+  const badge = document.getElementById(`es${i}`);
+  const card  = document.getElementById(`ec${i}`);
+  const cls   = status === 'running' ? 'running' : status === 'done' ? 'done' : 'idle';
+  const lbl   = status === 'running' ? 'RUNNING' : status === 'done' ? 'COMPLETE ✓' : status === 'error' ? 'ERROR' : 'IDLE';
+  badge.className = `eng-badge ${cls}`;
+  badge.textContent = lbl;
+  card.className = `eng-card-status status-${status === 'done' ? 'done' : status === 'running' ? 'run' : 'idle'}`;
+  card.textContent = lbl;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderEngineOutput(text) {
+  const clean = text.replace(/KPI_JSON:\s*\{[^}]*\}\n*/i, '').trim();
+  const lines = clean.split('\n');
+  const isTableSep = l => /^\s*\|?[\s:|-]+\|?\s*$/.test(l) && l.includes('-');
+  const inlineFmt = s => escapeHtml(s).replace(/&lt;br\s*\/?&gt;/gi, '<br>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  const tables = [];
+  const outLines = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (/^\s*\|.*\|\s*$/.test(line) && lines[i + 1] !== undefined && isTableSep(lines[i + 1])) {
+      const headers = line.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      let t = '<table class="md-table"><thead><tr>' + headers.map(c => `<th>${inlineFmt(c)}</th>`).join('') + '</tr></thead><tbody>';
+      i += 2;
+      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) {
+        const cells = lines[i].trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+        t += '<tr>' + cells.map(c => `<td>${inlineFmt(c)}</td>`).join('') + '</tr>';
+        i++;
+      }
+      t += '</tbody></table>';
+      outLines.push(`@@TABLE${tables.length}@@`);
+      tables.push(t);
+      continue;
+    }
+    outLines.push(line);
+    i++;
+  }
+
+  let html = escapeHtml(outLines.join('\n'));
+  html = html.replace(/&lt;br\s*\/?&gt;/gi, '<br>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/^▸\s*(.+)$/gm, '<div style="margin:4px 0">▸ $1</div>');
+  html = html.replace(/^(\d+)\.\s+(.+)$/gm, '<div style="margin:4px 0 4px 8px"><strong>$1.</strong> $2</div>');
+  html = html.replace(/\n{2,}/g, '<br><br>').replace(/\n/g, '<br>');
+  tables.forEach((t, idx) => { html = html.replace(`@@TABLE${idx}@@`, t); });
+  return html;
+}
+
+function parseDecisionActions(text) {
+  const startIdx = text.search(/DECISIONS REQUIRED/i);
+  if (startIdx === -1) return null;
+  let block = text.slice(startIdx);
+  const nextSection = block.slice(20).search(/\n\s*▸/);
+  if (nextSection !== -1) block = block.slice(0, nextSection + 20);
+
+  const stripMd = s => s.replace(/\*\*/g, '').replace(/^[\*_]+|[\*_]+$/g, '').trim();
+
+  const lineRe = /(\d+)\.\s*([^\n·]+?)\s*·\s*Owner:\s*([^·\n]+?)(?:\s*·\s*Deadline:\s*([^·\n]+?))?(?:\s*·\s*(?:Cost|Budget):\s*\$?([^\n]+))?\s*(?=\n|$)/gi;
+  const defaultLabels = ['AUTHORIZE','ESCALATE','REVIEW','AUTHORIZE'];
+  const results = [];
+  let m;
+  while ((m = lineRe.exec(block)) !== null) {
+    let decisionText = stripMd(m[2]);
+    const labelMatch = decisionText.match(/^(AUTHORIZE|ESCALATE|REVIEW)\b[:\-]?\s*/i);
+    const label = labelMatch ? labelMatch[1].toUpperCase() : (defaultLabels[results.length] || 'REVIEW');
+    if (labelMatch) decisionText = decisionText.slice(labelMatch[0].length).trim();
+    results.push({
+      rank: Number(m[1]),
+      label,
+      text: decisionText,
+      owner: stripMd(m[3] || 'Unassigned'),
+      deadline: stripMd(m[4] || 'TBD'),
+    });
+  }
+  return results.length ? results : null;
+}
+
+function parseKpiJson(text) {
+  const m = text.match(/KPI_JSON:\s*(\{[^}]*\})/);
+  if (!m) return null;
+  try { return JSON.parse(m[1]); } catch (e) { return null; }
+}
+
+function extractFinancialKPI(text) {
+  const json = parseKpiJson(text);
+  if (json && (json.totalExposureLow || json.totalExposureHigh)) {
+    const lo = json.totalExposureLow, hi = json.totalExposureHigh;
+    const fmt = n => '$' + Number(n).toLocaleString();
+    document.getElementById('kpiExposure').textContent = (lo && hi && lo !== hi) ? `${fmt(lo)}–${fmt(hi)}` : fmt(hi || lo);
+    sessionData.kpis.exposure = json;
+    return;
+  }
+  const m = text.match(/\$[\d,]+(?:\s*[-–]\s*\$[\d,]+)?/);
+  document.getElementById('kpiExposure').textContent = m ? m[0].slice(0,16) : 'N/A';
+  sessionData.kpis.exposure = { raw: m ? m[0] : null, source: 'regex-fallback' };
+}
+
+function extractDowntimeKPI(text) {
+  const m = text.match(/(\d+[-–]\d+\s*hours?|\d+\s*hours?|\d+\s*days?|\d+[-–]\d+\s*weeks?|\d+\s*weeks?)/i);
+  document.getElementById('kpiDowntime').textContent = m ? m[0] : 'N/A';
+  sessionData.kpis.containment = { raw: m ? m[0] : null, source: 'regex-fallback' };
+}
+
+function buildRiskKPI(text) {
+  const json = parseKpiJson(text);
+  if (json && typeof json.riskScore === 'number') {
+    document.getElementById('kpiRisk').textContent = json.riskScore + '/100';
+    sessionData.kpis.risk = json;
+    return;
+  }
+  const m = text.match(/(\d{2,3})\/100|RISK[:\s]+(\d{2,3})/i);
+  document.getElementById('kpiRisk').textContent = m ? (m[1]||m[2]) + '/100' : 'N/A';
+  sessionData.kpis.risk = { raw: m ? (m[1]||m[2]) : null, source: 'regex-fallback' };
+}
+
+function buildActionPanel(text) {
+  const panel = document.getElementById('actionPanel');
+  const list  = document.getElementById('actionList');
+  panel.style.display = 'block';
+
+  const fallback = scenario === 'bess' ? [
+    { rank: 1, label: 'AUTHORIZE', text: 'Confirm rack isolation and keep off-gas monitoring on adjacent racks — dispatch site safety lead', owner: 'Site Ops Manager', deadline: '0–2 hrs' },
+    { rank: 2, label: 'ESCALATE', text: 'Notify off-taker of curtailed capacity and firming-window risk', owner: 'Commercial Ops', deadline: '2–4 hrs' },
+    { rank: 3, label: 'REVIEW', text: 'Assess module/rack replacement lead time and insurance claim eligibility', owner: 'Asset Management', deadline: '4–8 hrs' },
+    { rank: 4, label: 'AUTHORIZE', text: 'Schedule third-party thermal-runaway root-cause inspection', owner: 'Engineering', deadline: '24 hrs' },
+  ] : [
+    { rank: 1, label: 'AUTHORIZE', text: 'Confirm VESDA pre-alarm resolution and clear zone before line restart', owner: 'EHS Lead', deadline: '0–2 hrs' },
+    { rank: 2, label: 'ESCALATE', text: 'Notify downstream pack-assembly lines of buffer-inventory drawdown risk', owner: 'Production Planning', deadline: '2–4 hrs' },
+    { rank: 3, label: 'REVIEW', text: 'Inspect solvent recovery filter and re-certify dry room before full restart', owner: 'Facilities Engineering', deadline: '4–8 hrs' },
+    { rank: 4, label: 'AUTHORIZE', text: 'Audit other coating lines for the same filter-fault vulnerability', owner: 'Process Engineering', deadline: '24 hrs' },
+  ];
+
+  const actions = parseDecisionActions(text) || fallback;
+  sessionData.kpis.actions = { parsed: parseDecisionActions(text) !== null };
+
+  list.innerHTML = actions.map(a => `
+    <div class="action-item">
+      <div class="action-rank">${a.rank}</div>
+      <div style="flex:1">
+        <div class="action-text">${a.text}</div>
+        <div style="display:flex;gap:16px;margin-top:4px">
+          <span class="action-owner">OWNER: ${a.owner}</span>
+          <span class="action-deadline">DEADLINE: ${a.deadline}</span>
+        </div>
+      </div>
+      <button class="action-btn btn-${a.label.toLowerCase()}">${a.label}</button>
+    </div>
+  `).join('');
+}
+
+// ── API CALL ──────────────────────────────────────────────────────────────────
+async function callAPI(prompt) {
+  return callWarRoomAPI(prompt, 'You are a BESS/gigafactory operations and early-warning detection intelligence engine for TSM Command. Expert in battery energy storage systems, lithium-ion cell manufacturing, off-gas and aspirating smoke detection technologies, production impact, and executive decision support. Be specific with dollar amounts and timelines.', { maxTokens: 700 });
+}
+
+function goToStrategist() {
+  window.location.href = STRATEGIST_URL;
+}
+
+function escalateToStrategist() {
+  saveRelay();
+  showToast('Relay packaged — opening Operations Strategist…');
+  setTimeout(() => { window.location.href = STRATEGIST_URL; }, 600);
+}
+
+function exportReport() {
+  if (!sessionData.outputs.length) { showToast('Run analysis first.', true); return; }
+  const text = sessionData.outputs.map(o => `=== ENGINE ${o.engine}: ${o.title} ===\n\n${o.text}`).join('\n\n' + '─'.repeat(60) + '\n\n');
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `TSM-${scenario === 'bess' ? 'BESS' : 'Gigafactory'}-Incident-${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+setScenario('bess');
+</script>
+  <script src="/html/shared/tsm-memory-engine.js"></script>
+  <script src="../js/tsm-guide-engine.js" defer></script>
+  <script src="/shared/tsm-generic-relay-loader.js" data-relay-key="tsm_hw_bess_docsearch_relay" data-auto-key="TSM_HW_BESS_WAR_RELAY"></script>
+</body>
+</html>
