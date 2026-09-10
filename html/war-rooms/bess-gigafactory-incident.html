@@ -453,59 +453,179 @@ AUTHORITATIVE BESS SOURCE FACTS — DO NOT ALTER OR INFER:
 \n▸ ${cfg.e2Verbs.toUpperCase()} — assess spread risk and containment status\n▸ DOWNSTREAM RISK — contracts, dispatch commitments, buffer inventory at risk\n▸ IMPACT SCORE — 1-10 severity\nBESS CONTRACT: Never substitute 8 MWh or another capacity value. Never convert 3-5 weeks into hours. Do not collapse the initial decision window and conditional replacement lead time into one unsupported duration.
 Quantify everything with specific numbers.`,
 
-    groundedBase + `ENGINE 03 — ROOT CAUSE ANALYSIS\nAnalyze and structure:\n▸ PRIMARY CAUSE — most probable root cause\n▸ CONTRIBUTING FACTORS — secondary issues that enabled the event\n▸ FAILURE MODE — how the cell/module/system or process failed\n▸ DETECTION GAPS — was this caught at the earliest reasonable stage; note whether early-warning detection (off-gas sensing, aspirating smoke) performed as intended\n▸ RECURRENCE RISK — probability and timeline of recurrence\n▸ SIMILAR ASSETS AT RISK — other racks, lines, or modules that may share the same vulnerability\nBe direct about probable causes even with limited data.`,
+    groundedBase + `ENGINE 03 — ROOT CAUSE ANALYSIS
 
+Analyze the incident using strict evidence discipline.
+
+IMPORTANT:
+Separate VERIFIED FACTS from HYPOTHESES / POSSIBLE CAUSES.
+Do not present an inferred cause, engineering assumption, industry pattern, or calculation as an incident finding unless the source explicitly supports it.
+
+Respond with the following sections:
+
+▸ VERIFIED INCIDENT FACTS
+List only facts explicitly supported by the incident/source context.
+
+For this BESS scenario, preserve these authoritative facts:
+- 20 MW nameplate power
+- 80 MWh installed energy capacity
+- Output curtailed to 65%
+- Rack 14 / Module 6 affected
+- LFP chemistry
+- VOC/H2 off-gas alarm at 02:12 AM
+- No visible smoke or flame reported
+- BMS cell-group isolation and DC contactor opening
+- Adjacent racks 13 and 15 on elevated monitoring
+- 12–24 hours to the re-energization decision
+- 3–5 weeks conditional replacement lead time if thermal runaway is confirmed
+
+▸ PRIMARY CAUSE
+State the most supportable cause.
+
+If the source does not establish a confirmed root cause, explicitly say:
+"ROOT CAUSE NOT CONFIRMED — hypothesis only."
+
+You may identify a likely mechanism, but label it:
+"HYPOTHESIS / REQUIRES INVESTIGATION."
+
+Do not claim a specific internal short circuit, manufacturing defect, mechanical damage, HVAC failure, sensor calibration drift, or other physical failure as confirmed unless the source explicitly states it.
+
+▸ CONTRIBUTING FACTORS
+List only source-supported factors as findings.
+
+Potential causes not established by the source must be labeled:
+"HYPOTHESIS / REQUIRES INVESTIGATION."
+
+Do not invent maintenance history, temperature measurements, airflow percentages, sensor accuracy, cell construction defects, or environmental conditions.
+
+▸ FAILURE MODE
+Describe the observed sequence only to the extent supported by the source:
+off-gas detection → alarm → BMS isolation / contactor opening → current containment status.
+
+Do not assert that a particular internal physical mechanism caused the gas generation unless confirmed by source evidence.
+
+▸ DETECTION / CONTROL GAPS
+Distinguish:
+- what the system demonstrably detected,
+- what protective action demonstrably occurred,
+- what remains unknown,
+- what additional evidence is required.
+
+▸ FINANCIAL / BUSINESS IMPACT
+Do NOT introduce dollar values here unless they are explicitly source-provided.
+Do not use assumed PPA prices, hourly revenue rates, insurance surcharges, penalty benchmarks, or market estimates as root-cause findings.
+
+If a monetary figure is needed for context, write:
+"NOT QUANTIFIED — source provides no monetary rate."
+
+Be explicit about confidence:
+CONFIRMED / HIGH CONFIDENCE / HYPOTHESIS / UNKNOWN.`,
     groundedBase + `ENGINE 04 — FINANCIAL EXPOSURE CALCULATION
 
-IMPORTANT: Perform the financial reasoning internally BEFORE writing the first line below. The KPI_JSON values and the final TOTAL EXPOSURE values MUST be identical.
+IMPORTANT: Perform all financial reasoning internally BEFORE writing KPI_JSON.
 
-Respond in exactly two parts, in this order:
+The KPI_JSON range and the final TOTAL EXPOSURE range MUST be identical.
 
-PART 1 — On its own line, output exactly:
+Respond in exactly two parts.
+
+PART 1 — On its own line:
 KPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}
 
-PART 2 — Calculate and structure:
+PART 2 — Financial exposure analysis:
 
-▸ SOURCE-GROUNDED FINANCIAL EXPOSURE
-- Use only financial rates, contract terms, penalties, costs, quantities, or other dollar-denominated facts explicitly present in the incident/source context.
-- Do NOT invent an "industry benchmark," "typical contract rate," utility penalty rate, market rate, OEM quote, or other financial assumption and present it as a source fact.
-- If the source provides a contractual penalty/rate, use that exact source value and identify it as source-provided.
-- If no contractual penalty/rate is provided, state "Penalty rate not provided in source — not quantified" rather than inventing a rate.
-- Lost MWh or MW may be calculated from the authoritative BESS operating facts, but energy quantity alone is NOT a dollar exposure without a source-provided monetary rate.
+▸ SOURCE-PROVIDED FINANCIAL FACTS
+Identify every dollar amount, contractual rate, penalty, replacement quote, or insurance amount actually present in the incident/source context.
 
-▸ DOWNTIME / DISPATCH IMPACT
-- Preserve the authoritative BESS facts: 20 MW nameplate power, 80 MWh installed energy capacity, 35% output curtailment, and 12–24 hours to the re-energization decision.
-- Keep the conditional 3–5 week replacement lead time separate.
-- Do not convert the 3–5 week window into hours.
-- Calculate lost energy only when useful to explain the exposure, but do not assign an unsupported dollar value to it.
+If none exists:
+SOURCE-PROVIDED: None.
 
-▸ REPLACEMENT / REMEDIATION COST
-- Include replacement or remediation cost only when supported by the source.
-- If the source does not provide a cost, an estimate may be supplied ONLY if explicitly labeled "ESTIMATE / ASSUMPTION" and kept separate from source-provided financial facts.
-- Do not claim that an estimated value came from an OEM quote unless the source actually contains that quote.
+Do NOT invent a contractual penalty, utility rate, PPA price, market rate, "industry benchmark," OEM quote, insurance limit, deductible, or other financial fact.
+
+▸ OPERATIONAL EXPOSURE
+Preserve:
+- 20 MW nameplate
+- 80 MWh installed energy
+- 65% current output
+- 7 MW power shortfall
+- 12–24 hour decision window
+- 3–5 week conditional replacement lead time
+
+Operational quantities such as MW and MWh may be calculated, but do not convert them to dollars without a monetary rate.
+
+▸ PLANNING ESTIMATE
+If source-provided monetary data is absent, provide a clearly labeled planning estimate for replacement/remediation ONLY.
+
+Use this exact label:
+"ESTIMATE / ASSUMPTION — planning estimate, not source-provided."
+
+For this BESS demonstration, use a conservative replacement/remediation planning range of:
+LOW: $400,000
+HIGH: $600,000
+
+This is a planning assumption for executive scenario modeling.
+It is NOT an OEM quote, contract price, source fact, or market benchmark.
+
+Do not add an invented dispatch penalty or lost-revenue amount.
 
 ▸ INSURANCE APPLICABILITY
-- Explain which portions may potentially be recoverable under property damage or business-interruption coverage.
-- Do not treat insurance recovery as a reduction of total exposure unless the source provides an actual coverage amount.
-- Do not assume a policy limit, deductible, indemnity period, or guaranteed coverage.
+Explain potential property-damage and business-interruption applicability.
+Do not assume policy limits, deductibles, indemnity periods, or actual recovery amounts.
 
-▸ TOTAL FINANCIAL RISK
-- Total exposure is the combined projected financial impact that is actually supportable from the source plus clearly labeled estimates.
-- Do NOT create a penalty amount merely to make the exposure larger or more complete.
-- If a financial component cannot be quantified from the source, explicitly mark it "NOT QUANTIFIED".
-- The low/high range MUST be mathematically consistent with the components shown below.
+▸ TOTAL EXPOSURE
+For this scenario, total exposure must include the explicitly labeled replacement/remediation planning estimate.
+
+Use:
+TOTAL EXPOSURE — $400,000–$600,000
+
+SOURCE-PROVIDED: None
+ESTIMATE / ASSUMPTION: $400,000–$600,000 replacement/remediation planning range
+NOT QUANTIFIED: contractual penalties, lost-revenue rate, insurance recovery
 
 ▸ KPI CONTRACT — CRITICAL
-- The first KPI_JSON line MUST contain the exact same totalExposureLow and totalExposureHigh numbers that appear in the final TOTAL EXPOSURE section.
-- Do not independently estimate the KPI range and then calculate a different narrative range.
-- Before emitting KPI_JSON, calculate the final low/high exposure internally.
-- Repeat those exact same numbers in TOTAL EXPOSURE.
-- Use JSON numbers only — no "$", commas, ranges, or quoted numeric values inside KPI_JSON.
-- Example format only: KPI_JSON: {"totalExposureLow": 400000, "totalExposureHigh": 600000}
+The first KPI_JSON line MUST be:
+KPI_JSON: {"totalExposureLow": 400000, "totalExposureHigh": 600000}
 
-Provide dollar amounts only where they are source-supported or explicitly labeled estimates.`,
-    groundedBase + `ENGINE 05 — RANKED ACTION PLAN\nGenerate ranked response with owners and deadlines:\n1. IMMEDIATE (0-2 hours) — safety, isolation/containment, assessment\n2. SHORT-TERM (2-24 hours) — repair authorization, parts/module procurement, temporary workaround\n3. MEDIUM-TERM (1-7 days) — full restoration, root cause remediation\n4. PREVENTIVE — detection or process changes to prevent recurrence\n\nFor each action include: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME\nRank by urgency and impact.`,
+The final TOTAL EXPOSURE section MUST repeat:
+$400,000–$600,000
 
+Do not produce $0–$0 for this demonstration.
+Do not create any additional unsupported monetary component.
+
+Use JSON numbers only inside KPI_JSON — no "$", commas, ranges, or quoted numeric values.`,
+    groundedBase + `ENGINE 05 — RANKED ACTION PLAN
+
+Generate a ranked operational response plan using only the incident facts and clearly labeled planning assumptions.
+
+IMPORTANT FINANCIAL DISCIPLINE:
+- Do not use "market rates," "industry benchmarks," internal BOMs, third-party service contracts, or invented vendor pricing as if they were source facts.
+- Do not fabricate dollar amounts.
+- If a cost is not source-provided, write "NOT QUANTIFIED" unless a planning estimate is explicitly necessary.
+- Any planning estimate must be labeled:
+  "ESTIMATE / ASSUMPTION — planning estimate, not source-provided."
+
+Rank actions:
+
+1. IMMEDIATE (0–2 hours)
+Safety, isolation, containment, verification.
+
+2. SHORT-TERM (2–24 hours)
+Diagnostics, re-energization decision, procurement preparation, temporary workaround.
+
+3. MEDIUM-TERM (1–7 days)
+Restoration planning, forensic investigation, remediation.
+
+4. PREVENTIVE
+Detection, monitoring, maintenance, process, or engineering improvements.
+
+For every action include:
+OWNER · DEADLINE · COST STATUS · EXPECTED OUTCOME
+
+COST STATUS rules:
+- Source-supported dollar amount → identify as SOURCE-PROVIDED.
+- Planning estimate → explicitly label ESTIMATE / ASSUMPTION.
+- Otherwise → NOT QUANTIFIED.
+
+Do not claim an OEM quote, BOM price, market benchmark, rental rate, labor rate, or contract cost unless it exists in the source.`,
     groundedBase + `ENGINE 06 — EXECUTIVE DISPATCH\n\nFIRST — OUTPUT THIS MACHINE-READABLE KPI LINE EXACTLY ON ITS OWN LINE BEFORE ANY NARRATIVE:\nKPI_JSON: {"riskScore": <YOUR_NUMERIC_SCORE_0_TO_100>, "downtimeEstimate": "12-24 hours to re-energization decision; 3-5 weeks if thermal runaway confirmed and module replacement is required"}\n\nThe KPI_JSON line is mandatory and must appear first. Do not omit it, delay it, or place it inside markdown.\n\nThen generate the executive decision package:\n▸ INCIDENT SUMMARY — 2 sentences for C-suite\n▸ FINANCIAL IMPACT — reference the Engine 04 total exposure range; do not replace it with a separate hourly revenue-loss calculation\n▸ DECISIONS REQUIRED — ranked list with AUTHORIZE/ESCALATE/REVIEW labels\n1. [Decision] · Owner: [role] · Deadline: [timeframe] · Cost: $[amount]\n2. [Decision] · Owner: [role] · Deadline: [timeframe]\n3. [Decision] · Owner: [role] · Deadline: [timeframe]\n▸ BNCA — Best Next Course of Action in one clear sentence\n▸ ESCALATION TRIGGER — what would require CEO/Board notification\nThis goes directly to the executive team. Be decisive. Keep the narrative concise.\n\nBESS EXECUTIVE KPI CONTRACT:\n- riskScore must be a JSON NUMBER, not a word or quoted string. Use a numeric integer from 0-100, such as 70. Do not write "seventy", "thirty", or any spelled-out number. It is the executive risk score. Do not reuse Engine 02's 1-10 IMPACT SCORE.\n- downtimeEstimate must preserve BOTH source recovery windows in one short string: "12-24 hours to re-energization decision; 3-5 weeks if thermal runaway confirmed and module replacement is required".\n- Never convert 3-5 weeks into hours.\n- Never invent a different restoration duration.\n- The Engine 04 combined exposure range is authoritative for financial exposure. Do not substitute a separate hourly revenue-loss figure for total exposure.
 - FINANCIAL IMPACT SAFEGUARD: Do not invent, estimate, recalculate, or restate a dollar exposure range that is not explicitly available from Engine 04 context. If the exact Engine 04 range is not available, state "See Engine 04 structured exposure range" rather than supplying a different dollar figure.
 - If an Engine 04 exposure range is available, repeat that exact low/high range consistently everywhere in the Executive Dispatch narrative.
