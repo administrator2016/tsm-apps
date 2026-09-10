@@ -90,6 +90,8 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
   <div class="nav-tab" onclick="window.location='/html/plant-incident.html'">⚡ PLANT</div>
   <div class="nav-tab" onclick="window.location='/html/supplier-shutdown.html'">📦 SUPPLIER</div>
   <div class="nav-tab" onclick="window.location='/html/cyber-incident.html'">🛡 CYBER</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/bess-gigafactory-incident.html'">🔋 BESS</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/advanced-detection-incident.html'">📡 DETECTION</div>
   <div class="nav-tab" onclick="window.location='/html/war-rooms/honeywell-strategist.html'">→ STRATEGIST</div>
   <div class="nav-tab active">↑ EXECUTIVE</div>
 </div>
@@ -145,9 +147,11 @@ setInterval(tick,1000);tick();
 const RELAY_KEY = 'TSM_HONEYWELL_EXEC_RELAY';
 
 const SOURCE_META = {
-  plant:   { label: 'PLANT — OPERATIONS INCIDENT',     icon: '⚡', color: 'var(--orange)' },
-  cyber:   { label: 'CYBER — SECURITY INCIDENT',        icon: '🛡', color: 'var(--red)' },
-  supplier:{ label: 'SUPPLIER SHUTDOWN — SUPPLY CHAIN', icon: '📦', color: 'var(--amber)' }
+  plant:    { label: 'PLANT — OPERATIONS INCIDENT',     icon: '⚡', color: 'var(--orange)' },
+  cyber:    { label: 'CYBER — SECURITY INCIDENT',        icon: '🛡', color: 'var(--red)' },
+  supplier: { label: 'SUPPLIER SHUTDOWN — SUPPLY CHAIN', icon: '📦', color: 'var(--amber)' },
+  bess:     { label: 'BESS/GIGAFACTORY — THERMAL EVENT', icon: '🔋', color: 'var(--red)' },
+  detection:{ label: 'ADVANCED DETECTION — PRE-ALARM',   icon: '📡', color: 'var(--amber)' }
 };
 
 function showToast(msg, isErr){
@@ -446,7 +450,7 @@ function registerHoneywellAnomalies(data){
 
   const exposureStr = kpiExposure(k.exposure);
   if(exposureStr !== '—'){
-    const severity = src === 'cyber' ? 'CRITICAL' : (src === 'plant' ? 'HIGH' : 'MEDIUM');
+    const severity = (src === 'cyber' || src === 'bess') ? 'CRITICAL' : (src === 'plant' ? 'HIGH' : 'MEDIUM');
     fire({
       entityType: 'honeywell-incident', entityId: src,
       anomalyCode: 'HW_' + codeSrc + '_EXPOSURE', severity,
@@ -461,7 +465,7 @@ function registerHoneywellAnomalies(data){
   if(secVal !== '—'){
     fire({
       entityType: 'honeywell-incident', entityId: src,
-      anomalyCode: 'HW_' + codeSrc + '_' + (k.buffer ? 'BUFFER' : 'CONTAINMENT'), severity: src === 'cyber' ? 'HIGH' : 'MEDIUM',
+      anomalyCode: 'HW_' + codeSrc + '_' + (k.buffer ? 'BUFFER' : 'CONTAINMENT'), severity: (src === 'cyber' || src === 'bess') ? 'HIGH' : 'MEDIUM',
       title: `${meta.label} — ${secondaryLabel(src)} at ${secVal}`,
       source: 'honeywell-executive-portal',
       meta: { value: secKpi, incidentSource: src }
@@ -520,7 +524,7 @@ function hwFeedException(data){
   _hwFedIds[fedKey] = true;
 
   const secVal = kpiSecondary(k.buffer || k.containment);
-  const severity = src === 'cyber' ? 'high' : (src === 'plant' ? 'high' : 'med');
+  const severity = (src === 'cyber' || src === 'bess') ? 'high' : (src === 'plant' ? 'high' : 'med');
   const exposureNum = (k.exposure && (k.exposure.totalExposureHigh || k.exposure.totalExposureLow)) || null;
 
   const exceptionRecord = TSMExceptions.add({

@@ -1217,14 +1217,24 @@ const VERTICALS = {
     storageKey: "tsm_doc_index_hw",
     searchPlaceholder: "Search by incident, site, supplier, asset ID...",
     nodes: {
-      "hw-plant":    { label:"Plant Incident War Room",    route:"/html/plant-incident.html" },
-      "hw-supplier": { label:"Supplier Shutdown War Room", route:"/html/supplier-shutdown.html" },
-      "hw-cyber":    { label:"Cyber Incident War Room",    route:"/html/cyber-incident.html" },
+      "hw-plant":     { label:"Plant Incident War Room",              route:"/html/plant-incident.html" },
+      "hw-supplier":  { label:"Supplier Shutdown War Room",           route:"/html/supplier-shutdown.html" },
+      "hw-cyber":     { label:"Cyber Incident War Room",              route:"/html/cyber-incident.html" },
+      // BESS/Gigafactory + Advanced Detection (2026-09-10) — same split-node
+      // pattern as hw-plant/hw-supplier/hw-cyber above: each is its own
+      // destination, not another stop on a shared pipeline. Detection is the
+      // pre-alarm/early-warning tool (VESDA/Li-ion Tamer sensor signatures,
+      // before thermal runaway); BESS/Gigafactory is the post-detection
+      // incident command center once an event is confirmed.
+      "hw-bess":      { label:"BESS/Gigafactory War Room",            route:"/html/war-rooms/bess-gigafactory-incident.html" },
+      "hw-detection": { label:"Advanced Detection War Room",          route:"/html/war-rooms/advanced-detection-incident.html" },
     },
     seed: [
       { fileName:"Plant_Incident_LineB_Report.record",   documentType:"INCIDENT",       vendor:"",              invoiceNo:"HW-PLT-001", exclusionCode:"",       amount:0, sourceNode:"hw-plant",    routing:["hw-plant"],    timestamp:Date.now()-2*3600000, _ext:{client:"Honeywell", ref:"HW-PLT-001"} },
       { fileName:"Supplier_Disruption_TierOne.record",    documentType:"DISRUPTION",     vendor:"Tier-1 Supplier", invoiceNo:"HW-SUP-001", exclusionCode:"",     amount:0, sourceNode:"hw-supplier", routing:["hw-supplier"], timestamp:Date.now()-4*3600000, _ext:{client:"Honeywell", ref:"HW-SUP-001"} },
       { fileName:"Cyber_OT_Incident_Report.record",       documentType:"SECURITY",       vendor:"",              invoiceNo:"HW-CYB-001", exclusionCode:"",       amount:0, sourceNode:"hw-cyber",    routing:["hw-cyber"],    timestamp:Date.now()-6*3600000, _ext:{client:"Honeywell", ref:"HW-CYB-001"} },
+      { fileName:"BESS_Thermal_Event_CasaGrande.record",  documentType:"INCIDENT",       vendor:"",              invoiceNo:"HW-BESS-001", exclusionCode:"",      amount:0, sourceNode:"hw-bess",     routing:["hw-bess"],     timestamp:Date.now()-1*3600000, _ext:{client:"Honeywell", ref:"HW-BESS-001"} },
+      { fileName:"OffGas_PreAlarm_Zone3B.record",         documentType:"SENSOR ALERT",   vendor:"",              invoiceNo:"HW-DET-001", exclusionCode:"",      amount:0, sourceNode:"hw-detection",routing:["hw-detection"], timestamp:Date.now()-30*60000, _ext:{client:"Honeywell", ref:"HW-DET-001"} },
     ]
   },
   fo: {
@@ -2653,6 +2663,10 @@ const WAR_ROOM_ROUTES = {
   'hw-supplier':          { label:'Honeywell Supplier Shutdown War Room',   url:'/html/supplier-shutdown.html',   relay:'tsm_hw_supplier_docsearch_relay', autoKey:'TSM_HW_SUPPLIER_WAR_RELAY' },
   'hw-cyber-war-room':    { label:'Honeywell Cyber Incident War Room',      url:'/html/cyber-incident.html',      relay:'tsm_hw_cyber_docsearch_relay',    autoKey:'TSM_HW_CYBER_WAR_RELAY' },
   'hw-cyber':             { label:'Honeywell Cyber Incident War Room',      url:'/html/cyber-incident.html',      relay:'tsm_hw_cyber_docsearch_relay',    autoKey:'TSM_HW_CYBER_WAR_RELAY' },
+  'hw-bess-war-room':     { label:'Honeywell BESS/Gigafactory War Room',    url:'/html/war-rooms/bess-gigafactory-incident.html',      relay:'tsm_hw_bess_docsearch_relay',      autoKey:'TSM_HW_BESS_WAR_RELAY' },
+  'hw-bess':              { label:'Honeywell BESS/Gigafactory War Room',    url:'/html/war-rooms/bess-gigafactory-incident.html',      relay:'tsm_hw_bess_docsearch_relay',      autoKey:'TSM_HW_BESS_WAR_RELAY' },
+  'hw-detection-war-room':{ label:'Honeywell Advanced Detection War Room',  url:'/html/war-rooms/advanced-detection-incident.html',     relay:'tsm_hw_detection_docsearch_relay', autoKey:'TSM_HW_DETECTION_WAR_RELAY' },
+  'hw-detection':         { label:'Honeywell Advanced Detection War Room',  url:'/html/war-rooms/advanced-detection-incident.html',     relay:'tsm_hw_detection_docsearch_relay', autoKey:'TSM_HW_DETECTION_WAR_RELAY' },
   'hotelops-war-room':    { label:'HotelOps War Room',                      url:'/html/hotelops/hotelops-war-room.html', relay:'tsm_hotelops_docsearch_relay', autoKey:'TSM_HOTELOPS_WAR_RELAY' },
   'hotel':                { label:'HotelOps War Room',                      url:'/html/hotelops/hotelops-war-room.html', relay:'tsm_hotelops_docsearch_relay', autoKey:'TSM_HOTELOPS_WAR_RELAY' },
   // rcmos-war-room / propertyrevenue-war-room / l1-war-room: navigation-only
@@ -3100,6 +3114,8 @@ const DEMO_DOCS = [
   { id:'dd-hw-plant',    verticals:['hw'], fileName:'Plant_Incident_LineB_Report.pdf',         documentType:'FILING',    vendor:'',                    invoiceNo:'HW-PLT-001', exclusionCode:'OSHA-VIO', amount:0,     sourceNodes:{hw:'hw-plant'},    routing:{hw:['hw-plant','strategist','bnca-engine']}, _ext:{client:'Honeywell', ref:'HW-PLT-001', defectFlags:['Safety Incident']}, tags:['incident','plant','safety','osha','line b'] },
   { id:'dd-hw-supplier', verticals:['hw'], fileName:'Supplier_Disruption_TierOne_Notice.pdf',  documentType:'DOCUMENT REPORT', vendor:'Tier-1 Supplier',invoiceNo:'HW-SUP-001', exclusionCode:'',         amount:0,     sourceNodes:{hw:'hw-supplier'}, routing:{hw:['hw-supplier','strategist']},            _ext:{client:'Honeywell', ref:'HW-SUP-001', defectFlags:[]},                   tags:['supplier','disruption','tier-1','shutdown'] },
   { id:'dd-hw-cyber',    verticals:['hw'], fileName:'Cyber_OT_Incident_Report.pdf',            documentType:'ESCALATION',vendor:'',                   invoiceNo:'HW-CYB-001', exclusionCode:'SEC-OT',   amount:0,     sourceNodes:{hw:'hw-cyber'},    routing:{hw:['hw-cyber','strategist','bnca-engine']}, _ext:{client:'Honeywell', ref:'HW-CYB-001', defectFlags:['Security Incident']},tags:['cyber','ot','security','incident','plant'] },
+  { id:'dd-hw-bess',     verticals:['hw'], fileName:'BESS_Thermal_Event_CasaGrande.pdf',      documentType:'INCIDENT',  vendor:'',                    invoiceNo:'HW-BESS-001',exclusionCode:'THERMAL',  amount:0,     sourceNodes:{hw:'hw-bess'},     routing:{hw:['hw-bess','strategist','bnca-engine']},  _ext:{client:'Honeywell', ref:'HW-BESS-001', defectFlags:['Thermal Runaway']}, tags:['bess','battery','thermal','off-gas','gigafactory'] },
+  { id:'dd-hw-detection',verticals:['hw'], fileName:'OffGas_PreAlarm_Zone3B.pdf',              documentType:'SENSOR ALERT', vendor:'',                 invoiceNo:'HW-DET-001', exclusionCode:'PREALARM', amount:0,     sourceNodes:{hw:'hw-detection'},routing:{hw:['hw-detection','strategist']},           _ext:{client:'Honeywell', ref:'HW-DET-001', defectFlags:['Pre-Alarm']},        tags:['detection','vesda','li-ion tamer','off-gas','pre-alarm'] },
 
   // ── LOGISTICS SAMPLE DOCS ────────────────────
   // Same zero-coverage gap as Honeywell above -- added 2026-08-28.
