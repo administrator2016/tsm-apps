@@ -778,6 +778,20 @@ function buildRiskKPI(text) {
     sessionData.kpis.risk = json;
     return;
   }
+  const wordScores = {
+    zero: 0, ten: 10, twenty: 20, thirty: 30, forty: 40,
+    fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90,
+    onehundred: 100
+  };
+  const wm = text.match(/KPI_JSON:\s*\{[^}]*"riskScore"\s*:\s*([A-Za-z-]+)/i);
+  const wk = wm ? wm[1].toLowerCase().replace(/-/g, '') : '';
+  if (Object.prototype.hasOwnProperty.call(wordScores, wk)) {
+    const score = wordScores[wk];
+    document.getElementById('kpiRisk').textContent = score + '/100';
+    sessionData.kpis.risk = { riskScore: score, source: 'kpi-word-normalized' };
+    return;
+  }
+
   const m = text.match(/(\d{2,3})\/100|RISK[:\s]+(\d{2,3})/i);
   document.getElementById('kpiRisk').textContent = m ? (m[1]||m[2]) + '/100' : 'N/A';
   sessionData.kpis.risk = { raw: m ? (m[1]||m[2]) : null, source: 'regex-fallback' };
