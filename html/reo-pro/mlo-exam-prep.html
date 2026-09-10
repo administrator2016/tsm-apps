@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NMLS SAFE Act — MLO Exam Prep · TSM</title>
+<style>
+  :root {
+    --bg: #060a12; --panel: #0b1220; --border: #1c2740;
+    --text: #d7e6ff; --text2: #8fa3c4; --text3: #5a6d8f;
+    --accent: #00d9a3; --accent-dim: #0a3d33;
+    --warn: #ff5c5c; --gold: #f5c94a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    padding: 24px; line-height: 1.5;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 20px; color: var(--accent); margin: 0 0 4px; }
+  .sub { color: var(--text3); font-size: 12px; margin-bottom: 20px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab {
+    background: var(--panel); border: 1px solid var(--border); color: var(--text2);
+    padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 12px;
+    font-family: inherit;
+  }
+  .tab.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .fc-count { color: var(--text3); font-size: 12px; margin-bottom: 12px; }
+  .fc-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 40px 24px; min-height: 160px; display: flex; align-items: center;
+    justify-content: center; text-align: center; cursor: pointer; font-size: 16px;
+    margin-bottom: 16px;
+  }
+  .fc-card .front { color: var(--accent); font-weight: bold; }
+  .fc-card .back { color: var(--text); font-size: 14px; display: none; }
+  .fc-card.flipped .front { display: none; }
+  .fc-card.flipped .back { display: block; }
+  .fc-nav { display: flex; gap: 10px; justify-content: center; }
+  button.nav-btn {
+    background: var(--panel); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 18px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 12px;
+  }
+  button.nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .sc-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .sc-title { color: var(--gold); font-weight: bold; margin-bottom: 8px; }
+  .sc-desc { font-size: 13px; color: var(--text2); margin-bottom: 14px; }
+  .sc-btns { display: flex; gap: 10px; margin-bottom: 10px; }
+  .sc-answer { display: none; font-size: 13px; border-top: 1px solid var(--border); padding-top: 12px; }
+  .sc-answer.shown { display: block; }
+  .sc-answer .label { color: var(--text3); font-size: 11px; text-transform: uppercase; margin-top: 8px; }
+  .sc-answer .violation { color: var(--warn); }
+  .sc-answer .action { color: var(--text); }
+  .sc-answer .penalty { color: var(--text2); }
+
+  .quiz-meta { color: var(--text3); font-size: 12px; margin-bottom: 12px; }
+  .q-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .q-text { margin-bottom: 14px; font-size: 14px; }
+  .choice {
+    display: block; width: 100%; text-align: left; background: #0e1626;
+    border: 1px solid var(--border); color: var(--text); padding: 10px 14px;
+    border-radius: 6px; margin-bottom: 8px; cursor: pointer; font-family: inherit; font-size: 13px;
+  }
+  .choice:hover { border-color: var(--accent); }
+  .choice.correct { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+  .choice.wrong { border-color: var(--warn); color: var(--warn); }
+  .explain { display: none; font-size: 12px; color: var(--text2); margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+  .explain.shown { display: block; }
+  .quiz-score { font-size: 14px; color: var(--gold); margin-top: 20px; }
+
+  .empty { color: var(--warn); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>NMLS SAFE Act — MLO Exam Prep</h1>
+  <div class="sub" id="trackSub">Loading…</div>
+
+  <div class="tabs">
+    <button class="tab active" data-panel="flash">Flashcards</button>
+    <button class="tab" data-panel="scenarios">Scenarios</button>
+    <button class="tab" data-panel="quiz">Quiz</button>
+  </div>
+
+  <div class="panel active" id="panel-flash">
+    <div class="fc-count" id="fcCount"></div>
+    <div class="fc-card" id="fcCard">
+      <div class="front"></div>
+      <div class="back"></div>
+    </div>
+    <div class="fc-nav">
+      <button class="nav-btn" id="fcPrev">← Prev</button>
+      <button class="nav-btn" id="fcFlip">Flip</button>
+      <button class="nav-btn" id="fcNext">Next →</button>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-scenarios"></div>
+
+  <div class="panel" id="panel-quiz">
+    <div class="quiz-meta" id="quizMeta"></div>
+    <div id="quizBody"></div>
+    <div class="quiz-score" id="quizScore" style="display:none"></div>
+  </div>
+</div>
+
+<script src="exam-content.js"></script>
+<script>
+(function () {
+  var track = (typeof EXAM_TRACKS !== 'undefined') ? EXAM_TRACKS['mlo-safe'] : null;
+
+  if (!track) {
+    document.getElementById('trackSub').innerHTML =
+      '<span class="empty">exam-content.js failed to load or mlo-safe track is missing.</span>';
+    return;
+  }
+
+  document.getElementById('trackSub').textContent =
+    track.label + ' · ' + track.flashcards.length + ' flashcards · ' +
+    track.scenarios.length + ' scenarios · ' + track.quiz.length + ' quiz questions';
+
+  var tabs = document.querySelectorAll('.tab');
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t) { t.classList.remove('active'); });
+      document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('active'); });
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+    });
+  });
+
+  var fcIndex = 0;
+  var fcCard = document.getElementById('fcCard');
+  var fcCount = document.getElementById('fcCount');
+
+  function renderCard() {
+    var card = track.flashcards[fcIndex];
+    fcCard.classList.remove('flipped');
+    fcCard.querySelector('.front').textContent = card.front;
+    fcCard.querySelector('.back').textContent = card.back;
+    fcCount.textContent = 'Card ' + (fcIndex + 1) + ' of ' + track.flashcards.length;
+  }
+
+  fcCard.addEventListener('click', function () { fcCard.classList.toggle('flipped'); });
+  document.getElementById('fcFlip').addEventListener('click', function () { fcCard.classList.toggle('flipped'); });
+  document.getElementById('fcNext').addEventListener('click', function () {
+    fcIndex = (fcIndex + 1) % track.flashcards.length;
+    renderCard();
+  });
+  document.getElementById('fcPrev').addEventListener('click', function () {
+    fcIndex = (fcIndex - 1 + track.flashcards.length) % track.flashcards.length;
+    renderCard();
+  });
+  renderCard();
+
+  var scPanel = document.getElementById('panel-scenarios');
+  track.scenarios.forEach(function (sc, i) {
+    var div = document.createElement('div');
+    div.className = 'sc-card';
+    div.innerHTML =
+      '<div class="sc-title">' + (i + 1) + '. ' + sc.title + '</div>' +
+      '<div class="sc-desc">' + sc.description + '</div>' +
+      '<div class="sc-btns">' +
+        '<button class="choice" data-v="true" style="width:auto;display:inline-block">Compliant</button>' +
+        '<button class="choice" data-v="false" style="width:auto;display:inline-block">Not Compliant</button>' +
+      '</div>' +
+      '<div class="sc-answer">' +
+        '<div class="label">Violation</div><div class="violation">' + sc.violation + '</div>' +
+        '<div class="label">Correct Action</div><div class="action">' + sc.correctAction + '</div>' +
+        '<div class="label">Penalty Exposure</div><div class="penalty">' + sc.penalty + '</div>' +
+      '</div>';
+    scPanel.appendChild(div);
+
+    var answerBox = div.querySelector('.sc-answer');
+    div.querySelectorAll('.sc-btns .choice').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var picked = btn.dataset.v === 'true';
+        var isCorrect = picked === sc.isCompliant;
+        div.querySelectorAll('.sc-btns .choice').forEach(function (b) {
+          b.classList.remove('correct', 'wrong');
+        });
+        btn.classList.add(isCorrect ? 'correct' : 'wrong');
+        answerBox.classList.add('shown');
+      });
+    });
+  });
+
+  document.getElementById('quizMeta').textContent =
+    track.quiz.length + ' questions · static bank, no timer';
+  var quizBody = document.getElementById('quizBody');
+  var answered = 0, correct = 0;
+
+  track.quiz.forEach(function (q, i) {
+    var div = document.createElement('div');
+    div.className = 'q-card';
+    var choicesHtml = q.choices.map(function (c, ci) {
+      return '<button class="choice" data-i="' + ci + '">' + c + '</button>';
+    }).join('');
+    div.innerHTML =
+      '<div class="q-text">' + (i + 1) + '. ' + q.q + '</div>' +
+      choicesHtml +
+      '<div class="explain">' + q.explain + '</div>';
+    quizBody.appendChild(div);
+
+    var explainBox = div.querySelector('.explain');
+    var locked = false;
+    div.querySelectorAll('.choice').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (locked) return;
+        locked = true;
+        var picked = parseInt(btn.dataset.i, 10);
+        div.querySelectorAll('.choice').forEach(function (b, bi) {
+          if (bi === q.answer) b.classList.add('correct');
+          else if (bi === picked) b.classList.add('wrong');
+        });
+        explainBox.classList.add('shown');
+        answered++;
+        if (picked === q.answer) correct++;
+        if (answered === track.quiz.length) {
+          var scoreEl = document.getElementById('quizScore');
+          scoreEl.style.display = 'block';
+          scoreEl.textContent = 'Score: ' + correct + ' / ' + track.quiz.length +
+            ' (' + Math.round(100 * correct / track.quiz.length) + '%)';
+        }
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>
