@@ -98,3 +98,5 @@ indacrib.txt
 .vercel
 .env*
 *.sh
+*.backup-*
+*.backup
