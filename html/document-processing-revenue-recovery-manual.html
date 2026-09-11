@@ -454,6 +454,86 @@
       <p style="margin-top:14px;">The classifier's job is narrow and specific: given a filename and document content, return which vertical(s) a document belongs to, a document type, and a small set of structured fields (see Section 3). It does not decide what to do with the document — that's the War Room reviewer's job, informed by the fields the classifier extracted.</p>
     </section>
 
+
+    <section class="doc-section" id="candidate-intelligence">
+      <h2><span class="num">CI</span> Candidate Intelligence — Registry &amp; Readiness</h2>
+
+      <p>Candidate Intelligence is a cross-suite capability, not another document-routing vertical. It provides a canonical candidate record and carries verified readiness evidence between Candidate Readiness, Career Training, and Staffing.</p>
+
+      <div class="callout reviewer">
+        <span class="callout-label">Canonical Source of Truth</span>
+        <strong>Candidate Registry</strong> is the authoritative source for candidate identity, lifecycle status, readiness score, and readiness evidence. Do not create a competing candidate store in browser <code>localStorage</code>.
+      </div>
+
+      <h4>The Candidate Intelligence flow</h4>
+
+      <table>
+        <tr><th>Stage</th><th>System</th><th>What Happens</th></tr>
+        <tr>
+          <td>1. Assessment</td>
+          <td><code>html/tsm-candidate-readiness-v2.html</code></td>
+          <td>Candidate completes the existing Readiness V2 workflow. The established scoring algorithm is not changed by the Registry integration.</td>
+        </tr>
+        <tr>
+          <td>2. Candidate Record</td>
+          <td><code>POST /api/candidates</code></td>
+          <td>The candidate is persisted in the Candidate Registry with identity, role, lifecycle status, and Registry metadata.</td>
+        </tr>
+        <tr>
+          <td>3. Readiness Event</td>
+          <td><code>POST /api/candidates/:id/training-events</code></td>
+          <td>The completed readiness result is recorded as a <code>readiness_assessment</code> training event, preserving an audit trail.</td>
+        </tr>
+        <tr>
+          <td>4. Evidence Promotion</td>
+          <td><code>readiness_assessment.meta</code></td>
+          <td>The latest readiness assessment evidence is promoted into the candidate's <code>readinessEvidence</code> record.</td>
+        </tr>
+        <tr>
+          <td>5. Career Consumption</td>
+          <td><code>html/tsm-career-training-platform.html</code></td>
+          <td>Career Training reads Registry-backed readiness evidence to inform training, progression, and manager views.</td>
+        </tr>
+        <tr>
+          <td>6. Staffing Consumption</td>
+          <td><code>html/tsm-staffing-readiness-demo.html</code></td>
+          <td>Staffing reads the same Registry evidence for readiness, matching, gaps, and placement status.</td>
+        </tr>
+      </table>
+
+      <h4>Readiness evidence</h4>
+
+      <p>The readiness assessment carries evidence rather than only a single score. The Registry-backed evidence can include <code>workflow</code>, <code>compliance</code>, <code>comm</code>, <code>adapt</code>, <code>l1</code>, <code>l2</code>, <code>l3</code>, <code>track</code>, <code>strengths</code>, <code>gaps</code>, <code>recommendation</code>, and the originating <code>source</code>.</p>
+
+      <p>This distinction matters operationally: the readiness score answers <em>how ready</em>; the evidence explains <em>why</em> and identifies the next training or placement action.</p>
+
+      <h4>Lifecycle status</h4>
+
+      <table>
+        <tr><th>Registry Status</th><th>Operational Meaning</th></tr>
+        <tr><td><code>in_training</code></td><td>Candidate remains on a development track.</td></tr>
+        <tr><td><code>needs_review</code></td><td>Candidate requires readiness review before placement.</td></tr>
+        <tr><td><code>ready_for_placement</code></td><td>Candidate is eligible for placement consideration based on the recorded readiness result.</td></tr>
+      </table>
+
+      <div class="callout risk">
+        <span class="callout-label">Evidence Integrity Rule</span>
+        Never fabricate strengths, gaps, scores, certifications, or historical training activity. If evidence does not exist in the Registry, the consuming application must treat it as unavailable rather than inventing a value.
+      </div>
+
+      <h4>Ownership boundaries</h4>
+
+      <ul>
+        <li><strong>Candidate Readiness V2</strong> owns the assessment experience and its existing scoring model.</li>
+        <li><strong>Candidate Registry</strong> owns the canonical candidate record, readiness score, lifecycle status, and readiness evidence.</li>
+        <li><strong>Career Training</strong> owns training progression and training experiences; it consumes Registry readiness evidence.</li>
+        <li><strong>Staffing Readiness</strong> owns staffing-facing matching and placement views; it consumes Registry readiness evidence.</li>
+        <li><strong>Training events</strong> remain the audit trail for recorded candidate activity.</li>
+      </ul>
+
+      <p>The same architecture can be extended to future readiness tracks without changing the ownership model: assessment produces evidence, Registry makes that evidence canonical, and downstream applications consume the canonical record.</p>
+    </section>
+
     <section class="doc-section" id="s3">
       <h2><span class="num">3</span> What Gets Captured From Every Document</h2>
       <p>Regardless of vertical, every intake record carries the same core field set. Knowing these fields matters because they're what a War Room reviewer sees on the document card, and what downstream routing logic (see Section 7) keys off of.</p>
