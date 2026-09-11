@@ -326,7 +326,8 @@ async function fireAllEngines(){
   document.getElementById('escalateBtn').disabled=!sessionData.outputs.length;
   saveRelay();
   registerSupplierAnomalies();
-  setTimeout(() => showFieldDefectScan(sessionData.outputs), 800);
+  // Anomaly Advisor field-defect-scan panel disabled per request — was firing an extra LLM call and popping a slide-in panel post-analysis that added no value for demo/exec flows.
+  // setTimeout(() => showFieldDefectScan(sessionData.outputs), 800);
 }
 
 // ===== FIELD DEFECT SCAN (Anomaly Advisor — diagnosis half) =====
