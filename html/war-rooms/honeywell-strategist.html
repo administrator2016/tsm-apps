@@ -294,7 +294,15 @@ function computeHoneywellBNCA(data){
   }
   const src = data.source || 'unknown';
   const buffer = k.buffer || {};
-  const daysUntilDeadline = (src === 'supplier' && typeof buffer.bufferDays === 'number') ? buffer.bufferDays : 0;
+  // Supplier's bufferDays remains the primary deadline signal where present.
+  // Every other vertical can now also carry kpis.deadline.daysUntilDeadline,
+  // parsed from the war room's own ranked action plan (Engine 05) — without
+  // this, plant/cyber/bess/detection always defaulted to 0 and "IF IGNORED"
+  // was mathematically forced to equal "CURRENT EXPOSURE" every time.
+  const deadlineKpi = k.deadline || {};
+  const daysUntilDeadline = (src === 'supplier' && typeof buffer.bufferDays === 'number')
+    ? buffer.bufferDays
+    : (typeof deadlineKpi.daysUntilDeadline === 'number' ? deadlineKpi.daysUntilDeadline : 0);
   return window.TSMBNCAExposureEngine.project({
     baseExposure: baseExposure,
     severity: hwBncaSeverity(src),

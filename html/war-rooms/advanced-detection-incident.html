@@ -363,7 +363,7 @@ function getPrompts(doc, brief) {
   return [
     base + `ENGINE 01 — DETECTION INTELLIGENCE\nExtract and structure:\n▸ DETECTION TECHNOLOGY — VESDA aspirating smoke, Li-ion Tamer off-gas sensing, or both\n▸ SIGNATURE DETECTED — specific gas species or particulate signature reported, and what it typically indicates\n▸ ALARM STAGE — pre-alarm, alarm, or action stage per the narrative\n▸ AFFECTED ZONE/ASSET — specific rack, room, bay, or line segment impacted\n▸ KEY PARTIES — facilities, EHS, operations, safety involved\nBe specific. Extract all facts from the document.`,
 
-    base + `ENGINE 02 — FACILITY IMPACT\nCalculate and structure:\n▸ AFFECTED CAPACITY — percentage and absolute output/asset value in the affected zone\n▸ ISOLATION STATUS — confirmed, in progress, or not yet started\n▸ OCCUPANCY/EVACUATION IMPACT — per the narrative's stated response, not invented\n▸ DOWNSTREAM RISK — customer commitments, adjacent systems, or production lines at risk\n▸ UNAFFECTED CAPACITY — what continues operating normally\n▸ FACILITY IMPACT SCORE — 1-10 severity\nQuantify everything with specific numbers from the narrative.`,
+    base + `ENGINE 02 — FACILITY IMPACT\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"leadTimeEstimate": "<short string>"}\n\nPART 2 — Calculate and structure:\n▸ AFFECTED CAPACITY — percentage and absolute output/asset value in the affected zone\n▸ ISOLATION STATUS — confirmed, in progress, or not yet started\n▸ OCCUPANCY/EVACUATION IMPACT — per the narrative's stated response, not invented\n▸ DOWNSTREAM RISK — customer commitments, adjacent systems, or production lines at risk\n▸ UNAFFECTED CAPACITY — what continues operating normally\n▸ FACILITY IMPACT SCORE — 1-10 severity\nQuantify everything with specific numbers from the narrative. The leadTimeEstimate in PART 1 must match your stated restoration/replacement timeline in PART 2 exactly — this is the figure the executive dashboard displays.`,
 
     base + `ENGINE 03 — FAILURE PROGRESSION\nAnalyze and structure:\n▸ CURRENT STAGE — where this sits on the off-gas/particulate → thermal runaway → smoke/flame progression\n▸ DETECTION LEAD TIME — how much earlier this was caught versus a conventional spot smoke detector, based on the narrative\n▸ CONTRIBUTING FACTORS — what enabled the event (cell stress, airflow, ventilation, etc.)\n▸ ESCALATION RISK — probability and timeline of progressing to the next stage if unaddressed\n▸ SIMILAR ASSETS AT RISK — other racks/zones that may share the same exposure\nBe direct about probable trajectory even with limited data.`,
 
@@ -371,7 +371,7 @@ function getPrompts(doc, brief) {
 
     base + `ENGINE 05 — RESPONSE PLAN\nGenerate ranked response with owners and deadlines:\n1. IMMEDIATE (0-2 hours) — isolation confirmation, area walk-down, EHS notification\n2. SHORT-TERM (2-24 hours) — root-cause inspection, affected-asset quarantine, customer notification if needed\n3. MEDIUM-TERM (1-7 days) — remediation, requalification, restoration to service\n4. PREVENTIVE — sensor threshold review, procedure updates to prevent recurrence\n\nFor each action include: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME\nRank by urgency and impact. Do not recommend or describe commanding any physical control system directly — recommend the human action (e.g., "confirm isolation with facilities," not "trigger shutdown").`,
 
-    base + `ENGINE 06 — EXECUTIVE DISPATCH\nGenerate executive decision package:\n▸ INCIDENT SUMMARY — 2 sentences for C-suite\n▸ FINANCIAL IMPACT — total exposure in dollars\n▸ DECISIONS REQUIRED — ranked list with AUTHORIZE/ESCALATE/REVIEW labels\n  1. [Decision] · Owner: [role] · Deadline: [timeframe] · Cost: $[amount]\n  2. [Decision] · Owner: [role] · Deadline: [timeframe]\n  3. [Decision] · Owner: [role] · Deadline: [timeframe]\n▸ BNCA — Best Next Course of Action in one clear sentence\n▸ ESCALATION TRIGGER — what would require CEO/Board or AHJ notification\nThis goes directly to the executive team. Be decisive.\n\nIMPORTANT: On its own final line, output a machine-readable summary in this exact format so downstream tools can parse it reliably:\nKPI_JSON: {"riskScore": <0-100 integer>, "leadTimeEstimate": "<short string>"}`
+    base + `ENGINE 06 — EXECUTIVE DISPATCH\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"riskScore": <0-100 integer>}\nThen, in under 180 words, generate a concise executive decision package:\n▸ INCIDENT SUMMARY — 2 sentences for C-suite\n▸ FINANCIAL IMPACT — total exposure in dollars\n▸ DECISIONS REQUIRED — up to 3, ranked, each formatted exactly as:\n  1. AUTHORIZE/ESCALATE/REVIEW: [decision] · Owner: [role] · Deadline: [timeframe] · Cost: $[amount]\n▸ BNCA — Best Next Course of Action in one sentence\n▸ ESCALATION TRIGGER — one sentence on what requires CEO/Board or AHJ notification\nThis goes directly to the executive team. Be decisive and brief.`
   ];
 }
 
@@ -402,6 +402,9 @@ async function fireAllEngines() {
       const brief = sessionData.outputs[0]?.text;
       if (brief) prompts = getPrompts(doc, brief);
     }
+    if (i === 5) {
+      prompts[5] = groundExecDispatchPrompt(prompts[5], sessionData.kpis.exposure, sessionData.outputs[3]?.text);
+    }
     setEngineStatus(i, 'running');
     try {
       const text = await callAPI(prompts[i]);
@@ -414,7 +417,11 @@ async function fireAllEngines() {
       sessionData.outputs.push({ engine: i + 1, title: ['Detection Intel','Facility Impact','Failure Progression','Financial Exposure','Response Plan','Exec Dispatch'][i], text });
 
       if (i === 3) extractFinancialKPI(text);
-      if (i === 2) extractLeadTimeKPI(text);
+      // FIX: this previously read i===2 (Engine 03, "Failure Progression"),
+      // which never carries lead-time data — Engine 02 ("Facility Impact")
+      // is the one whose prompt now emits the leadTimeEstimate KPI_JSON.
+      if (i === 1) extractLeadTimeKPI(text);
+      if (i === 4) extractDeadlineSignal(text);
       if (i === 5) { buildActionPanel(text); buildRiskKPI(text); }
     } catch(e) {
       hadError = true;
@@ -601,7 +608,17 @@ function extractFinancialKPI(text) {
 }
 
 function extractLeadTimeKPI(text) {
-  const m = text.match(/(\d+[-–]\d+\s*(?:min|minutes?|hours?)|\d+\s*(?:min|minutes?|hours?))/i);
+  // Structured JSON path first (matches plant's containment fix) — the old
+  // regex-only version here only ever matched minutes/hours and silently
+  // missed multi-week replacement lead times, which is exactly what a
+  // sensor/module lead-time figure usually looks like.
+  const json = parseKpiJson(text);
+  if (json && json.leadTimeEstimate) {
+    document.getElementById('kpiLeadTime').textContent = json.leadTimeEstimate;
+    sessionData.kpis.containment = { leadTimeEstimate: json.leadTimeEstimate, source: 'structured-json' };
+    return;
+  }
+  const m = text.match(/(\d+[-–]\d+\s*(?:min|minutes?|hours?|days?|weeks?|months?)|\d+\s*(?:min|minutes?|hours?|days?|weeks?|months?))/i);
   document.getElementById('kpiLeadTime').textContent = m ? m[0] : 'N/A';
   sessionData.kpis.containment = { raw: m ? m[0] : null, source: 'regex-fallback' };
 }
@@ -613,9 +630,48 @@ function buildRiskKPI(text) {
     sessionData.kpis.risk = json;
     return;
   }
+  // Rescue a bare "riskScore": NN fragment even if the surrounding JSON
+  // failed to parse as a whole (e.g. truncated on a later field).
+  const fieldM = text.match(/"riskScore"\s*:\s*(\d{1,3})/i);
+  if (fieldM) {
+    const score = Number(fieldM[1]);
+    document.getElementById('kpiRisk').textContent = score + '/100';
+    sessionData.kpis.risk = { riskScore: score, source: 'partial-json-fallback' };
+    return;
+  }
   const m = text.match(/(\d{2,3})\/100|RISK[:\s]+(\d{2,3})/i);
   document.getElementById('kpiRisk').textContent = m ? (m[1]||m[2]) + '/100' : 'N/A';
   sessionData.kpis.risk = { raw: m ? (m[1]||m[2]) : null, source: 'regex-fallback' };
+}
+
+// Real deadline signal for the BNCA "if ignored" projection (see plant
+// war room's extractDeadlineSignal for the full rationale).
+function extractDeadlineSignal(text) {
+  const matches = [...text.matchAll(/Deadline:\s*([^\n·]+)/gi)];
+  let minDays = null;
+  for (const m of matches) {
+    const raw = m[1].trim();
+    const hrM = raw.match(/(\d+(?:\.\d+)?)\s*(?:-|–)?\s*(\d+(?:\.\d+)?)?\s*(hour|hr)/i);
+    const dayM = raw.match(/(\d+(?:\.\d+)?)\s*(?:-|–)?\s*(\d+(?:\.\d+)?)?\s*(day)/i);
+    let days = null;
+    if (hrM) days = Number(hrM[2] || hrM[1]) / 24;
+    else if (dayM) days = Number(dayM[2] || dayM[1]);
+    if (days !== null && (minDays === null || days < minDays)) minDays = days;
+  }
+  if (minDays !== null) {
+    sessionData.kpis.deadline = { daysUntilDeadline: Math.max(minDays, 0.01), source: 'action-plan' };
+  }
+}
+
+// Ground Engine 06 in Engine 04's already-computed financial figures so it
+// can't drift to a conflicting repair/remediation cost.
+function groundExecDispatchPrompt(prompt, financialKpi, financialText) {
+  if (!financialKpi || (!financialKpi.totalExposureLow && !financialKpi.totalExposureHigh)) return prompt;
+  const fmt = n => '$' + Number(n).toLocaleString();
+  const lo = financialKpi.totalExposureLow, hi = financialKpi.totalExposureHigh;
+  const range = (lo && hi && lo !== hi) ? `${fmt(lo)}–${fmt(hi)}` : fmt(hi || lo);
+  const snippet = (financialText || '').slice(0, 600);
+  return prompt + `\n\nGROUNDING — Engine 04 already calculated this incident's financial exposure as ${range}. Your FINANCIAL IMPACT line and any dollar figures MUST be consistent with Engine 04's analysis below, not independently re-estimated:\n${snippet}`;
 }
 
 function buildActionPanel(text) {

@@ -350,8 +350,20 @@ function getPrompts(doc, brief) {
 
     base + `ENGINE 05 — RANKED ACTION PLAN\nGenerate ranked response with owners and deadlines:\n1. IMMEDIATE (0-2 hours) — safety, containment, assessment\n2. SHORT-TERM (2-24 hours) — repair authorization, parts procurement, temporary workaround\n3. MEDIUM-TERM (1-7 days) — full restoration, root cause remediation\n4. PREVENTIVE — actions to prevent recurrence\n\nFor each action include: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME\nRank by urgency and impact.`,
 
-    base + `ENGINE 06 — EXECUTIVE DISPATCH\nGenerate executive decision package:\n▸ INCIDENT SUMMARY — 2 sentences for C-suite\n▸ FINANCIAL IMPACT — total exposure in dollars\n▸ DECISIONS REQUIRED — ranked list with AUTHORIZE/ESCALATE/REVIEW labels\n  1. [Decision] · Owner: [role] · Deadline: [timeframe] · Cost: $[amount]\n  2. [Decision] · Owner: [role] · Deadline: [timeframe]\n  3. [Decision] · Owner: [role] · Deadline: [timeframe]\n▸ BNCA — Best Next Course of Action in one clear sentence\n▸ ESCALATION TRIGGER — what would require CEO/Board notification\nThis goes directly to the executive team. Be decisive.\n\nIMPORTANT: On its own final line, output a machine-readable summary in this exact format so downstream tools can parse it reliably:\nKPI_JSON: {"riskScore": <0-100 integer>, "downtimeEstimate": "<short string>"}`
+    base + `ENGINE 06 — EXECUTIVE DISPATCH\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"riskScore": <0-100 integer>}\nThen, in under 180 words, generate a concise executive decision package:\n▸ INCIDENT SUMMARY — 2 sentences for C-suite\n▸ FINANCIAL IMPACT — total exposure in dollars\n▸ DECISIONS REQUIRED — up to 3, ranked, each formatted exactly as:\n  1. AUTHORIZE/ESCALATE/REVIEW: [decision] · Owner: [role] · Deadline: [timeframe] · Cost: $[amount]\n▸ BNCA — Best Next Course of Action in one sentence\n▸ ESCALATION TRIGGER — one sentence on what requires CEO/Board notification\nThis goes directly to the executive team. Be decisive and brief.`
   ];
+}
+
+// Rebuild Engine 06's prompt right before it runs, grounding it in Engine 04's
+// already-computed financial figures so it can't invent a conflicting repair
+// cost or exposure number — same fix applied across cyber/bess/detection.
+function groundExecDispatchPrompt(prompt, financialKpi, financialText) {
+  if (!financialKpi || (!financialKpi.totalExposureLow && !financialKpi.totalExposureHigh)) return prompt;
+  const fmt = n => '$' + Number(n).toLocaleString();
+  const lo = financialKpi.totalExposureLow, hi = financialKpi.totalExposureHigh;
+  const range = (lo && hi && lo !== hi) ? `${fmt(lo)}–${fmt(hi)}` : fmt(hi || lo);
+  const snippet = (financialText || '').slice(0, 600);
+  return prompt + `\n\nGROUNDING — Engine 04 already calculated this incident's financial exposure as ${range}. Your FINANCIAL IMPACT line and any dollar figures (repair cost, $/day, etc.) MUST be consistent with Engine 04's analysis below, not independently re-estimated:\n${snippet}`;
 }
 
 // ── FIRE ENGINES ─────────────────────────────────────────────────────────────
@@ -384,6 +396,11 @@ async function fireAllEngines() {
       const brief = sessionData.outputs[0]?.text;
       if (brief) prompts = getPrompts(doc, brief);
     }
+    // Ground Engine 06 in Engine 04's actual computed numbers right before it
+    // runs, so it can't drift to a different repair cost / exposure figure.
+    if (i === 5) {
+      prompts[5] = groundExecDispatchPrompt(prompts[5], sessionData.kpis.exposure, sessionData.outputs[3]?.text);
+    }
     setEngineStatus(i, 'running');
     try {
       const text = await callAPI(prompts[i]);
@@ -398,6 +415,7 @@ async function fireAllEngines() {
       // Extract KPIs from engine outputs (structured JSON first, regex fallback)
       if (i === 3) extractFinancialKPI(text);
       if (i === 1) extractDowntimeKPI(text);
+      if (i === 4) extractDeadlineSignal(text);
       if (i === 5) { buildActionPanel(text); buildRiskKPI(text); }
     } catch(e) {
       hadError = true;
@@ -698,9 +716,42 @@ function buildRiskKPI(text) {
     sessionData.kpis.risk = json;
     return;
   }
+  // Belt-and-suspenders: even if the JSON block as a whole failed to parse
+  // (e.g. truncated mid-string on a later field), a "riskScore": NN
+  // fragment is often still intact earlier in the same blob — pull it
+  // directly instead of falling all the way through to N/A.
+  const fieldM = text.match(/"riskScore"\s*:\s*(\d{1,3})/i);
+  if (fieldM) {
+    const score = Number(fieldM[1]);
+    document.getElementById('kpiRisk').textContent = score + '/100';
+    sessionData.kpis.risk = { riskScore: score, source: 'partial-json-fallback' };
+    return;
+  }
   const m = text.match(/(\d{2,3})\/100|RISK[:\s]+(\d{2,3})/i);
   document.getElementById('kpiRisk').textContent = m ? (m[1]||m[2]) + '/100' : 'N/A';
   sessionData.kpis.risk = { raw: m ? (m[1]||m[2]) : null, source: 'regex-fallback' };
+}
+
+// Real deadline signal for the BNCA "if ignored" projection — previously
+// only the supplier war room fed one (via bufferDays), so plant/cyber/bess/
+// detection always got daysUntilDeadline=0 and "IF IGNORED" was
+// mathematically forced to equal "CURRENT EXPOSURE" every time. Pull the
+// soonest deadline out of Engine 05's ranked action plan instead.
+function extractDeadlineSignal(text) {
+  const matches = [...text.matchAll(/Deadline:\s*([^\n·]+)/gi)];
+  let minDays = null;
+  for (const m of matches) {
+    const raw = m[1].trim();
+    const hrM = raw.match(/(\d+(?:\.\d+)?)\s*(?:-|–)?\s*(\d+(?:\.\d+)?)?\s*(hour|hr)/i);
+    const dayM = raw.match(/(\d+(?:\.\d+)?)\s*(?:-|–)?\s*(\d+(?:\.\d+)?)?\s*(day)/i);
+    let days = null;
+    if (hrM) days = Number(hrM[2] || hrM[1]) / 24;
+    else if (dayM) days = Number(dayM[2] || dayM[1]);
+    if (days !== null && (minDays === null || days < minDays)) minDays = days;
+  }
+  if (minDays !== null) {
+    sessionData.kpis.deadline = { daysUntilDeadline: Math.max(minDays, 0.01), source: 'action-plan' };
+  }
 }
 
 function buildActionPanel(text) {

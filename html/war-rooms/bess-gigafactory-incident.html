@@ -668,6 +668,9 @@ async function fireAllEngines() {
       const brief = sessionData.outputs[0]?.text;
       if (brief) prompts = getPrompts(doc, brief);
     }
+    if (i === 5) {
+      prompts[5] = groundExecDispatchPrompt(prompts[5], sessionData.kpis.exposure, sessionData.outputs[3]?.text);
+    }
     setEngineStatus(i, 'running');
     try {
       const text = await callAPI(prompts[i]);
@@ -681,6 +684,7 @@ async function fireAllEngines() {
 
       if (i === 3) extractFinancialKPI(text);
       if (i === 1) extractDowntimeKPI(text);
+      if (i === 4) extractDeadlineSignal(text);
       if (i === 5) {
         buildActionPanel(text);
         buildRiskKPI(text);
@@ -970,9 +974,51 @@ function buildRiskKPI(text) {
     return;
   }
 
+  // Rescue a bare "riskScore": NN fragment even if the surrounding JSON
+  // failed to parse as a whole (e.g. truncated on a later field).
+  const fieldM = text.match(/"riskScore"\s*:\s*(\d{1,3})/i);
+  if (fieldM) {
+    const score = Number(fieldM[1]);
+    document.getElementById('kpiRisk').textContent = score + '/100';
+    sessionData.kpis.risk = { riskScore: score, source: 'partial-json-fallback' };
+    return;
+  }
+
   const m = text.match(/(\d{2,3})\/100|RISK[:\s]+(\d{2,3})/i);
   document.getElementById('kpiRisk').textContent = m ? (m[1]||m[2]) + '/100' : 'N/A';
   sessionData.kpis.risk = { raw: m ? (m[1]||m[2]) : null, source: 'regex-fallback' };
+}
+
+// Real deadline signal for the BNCA "if ignored" projection (see plant
+// war room's extractDeadlineSignal for the full rationale).
+function extractDeadlineSignal(text) {
+  const matches = [...text.matchAll(/Deadline:\s*([^\n·]+)/gi)];
+  let minDays = null;
+  for (const m of matches) {
+    const raw = m[1].trim();
+    const hrM = raw.match(/(\d+(?:\.\d+)?)\s*(?:-|–)?\s*(\d+(?:\.\d+)?)?\s*(hour|hr)/i);
+    const dayM = raw.match(/(\d+(?:\.\d+)?)\s*(?:-|–)?\s*(\d+(?:\.\d+)?)?\s*(day)/i);
+    let days = null;
+    if (hrM) days = Number(hrM[2] || hrM[1]) / 24;
+    else if (dayM) days = Number(dayM[2] || dayM[1]);
+    if (days !== null && (minDays === null || days < minDays)) minDays = days;
+  }
+  if (minDays !== null) {
+    sessionData.kpis.deadline = { daysUntilDeadline: Math.max(minDays, 0.01), source: 'action-plan' };
+  }
+}
+
+// The prompt tells Engine 06 to "reference the Engine 04 total exposure
+// range" but never actually hands it that range — Engine 06's prompt is
+// built once up front from only Engine 01's brief, so the instruction was
+// toothless. Inject the real computed number right before Engine 06 runs.
+function groundExecDispatchPrompt(prompt, financialKpi, financialText) {
+  if (!financialKpi || (!financialKpi.totalExposureLow && !financialKpi.totalExposureHigh)) return prompt;
+  const fmt = n => '$' + Number(n).toLocaleString();
+  const lo = financialKpi.totalExposureLow, hi = financialKpi.totalExposureHigh;
+  const range = (lo && hi && lo !== hi) ? `${fmt(lo)}–${fmt(hi)}` : fmt(hi || lo);
+  const snippet = (financialText || '').slice(0, 600);
+  return prompt + `\n\nGROUNDING — Engine 04 already calculated this incident's financial exposure as ${range}. Your FINANCIAL IMPACT line MUST use this exact range, not a separately re-derived figure:\n${snippet}`;
 }
 
 function buildActionPanel(text) {

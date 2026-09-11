@@ -242,13 +242,25 @@ function getPrompts(doc, brief){
     ? `You are a supply chain disruption intelligence engine for TSM Command. Continue analyzing this disruption using the extracted intelligence below — do not ask for the original report, this is the complete factual basis.\n\nEXTRACTED DISRUPTION INTELLIGENCE:\n${brief}\n\n`
     : full;
   return[
-    base+`ENGINE 01 — DISRUPTION INTELLIGENCE\nExtract:\n▸ SUPPLIER — name, location, relationship tier\n▸ DISRUPTION TYPE — shutdown, delay, force majeure, quality hold\n▸ EFFECTIVE DATE — when disruption started or will start\n▸ AFFECTED PRODUCTS/PARTS — specific SKUs or categories\n▸ OPEN PURCHASE ORDERS — count and total value\n▸ INITIAL SEVERITY — critical, high, medium\n\nIMPORTANT: On its own final line, output: KPI_JSON: {"ordersAtRisk": <integer>}`,
-    base+`ENGINE 02 — INVENTORY ANALYSIS\nCalculate:\n▸ CURRENT INVENTORY — days of supply on hand per critical part\n▸ CRITICAL PARTS — items with <30 days buffer\n▸ PRODUCTION WINDOW — how long before lines are affected\n▸ SAFETY STOCK ADEQUACY — is safety stock sufficient\n▸ REORDER LEAD TIMES — standard vs expedited\n▸ INVENTORY RISK SCORE — 1-10\n\nIMPORTANT: On its own final line, output: KPI_JSON: {"bufferDays": <integer>}`,
-    base+`ENGINE 03 — REVENUE EXPOSURE\nCalculate:\n▸ TOTAL PO VALUE AT RISK — all open orders in dollars\n▸ CUSTOMER COMMITMENTS — orders promised with delivery dates at risk\n▸ DAILY REVENUE EXPOSURE — $/day if disruption continues\n▸ PENALTY EXPOSURE — late delivery penalties or liquidated damages\n▸ TOTAL FINANCIAL RISK — combined worst-case exposure\n▸ RECOVERY WINDOW — days to mitigate with ideal response\n\nIMPORTANT: On its own final line, output: KPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}`,
-    base+`ENGINE 04 — ALTERNATE SOURCING ANALYSIS\nAnalyze:\n▸ IDENTIFIED ALTERNATIVES — name, location, qualification status\n▸ LEAD TIME DELTA — weeks longer than primary supplier\n▸ COST PREMIUM — % price increase for alternate source\n▸ QUALIFICATION REQUIREMENTS — testing, certification needed\n▸ QUALIFICATION TIMELINE — weeks to qualify alternate\n▸ RECOMMENDATION — best alternate with rationale`,
+    base+`ENGINE 01 — DISRUPTION INTELLIGENCE\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"ordersAtRisk": <integer>}\nThen extract:\n▸ SUPPLIER — name, location, relationship tier\n▸ DISRUPTION TYPE — shutdown, delay, force majeure, quality hold\n▸ EFFECTIVE DATE — when disruption started or will start\n▸ AFFECTED PRODUCTS/PARTS — specific SKUs or categories\n▸ OPEN PURCHASE ORDERS — count and total value\n▸ INITIAL SEVERITY — critical, high, medium\nKeep PART 2 under 150 words.`,
+    base+`ENGINE 02 — INVENTORY ANALYSIS\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"bufferDays": <integer>}\nThen calculate, in under 150 words:\n▸ CURRENT INVENTORY — days of supply on hand per critical part\n▸ CRITICAL PARTS — items with <30 days buffer\n▸ PRODUCTION WINDOW — how long before lines are affected\n▸ SAFETY STOCK ADEQUACY — is safety stock sufficient\n▸ REORDER LEAD TIMES — standard vs expedited\n▸ INVENTORY RISK SCORE — 1-10`,
+    base+`ENGINE 03 — REVENUE EXPOSURE\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\nThen calculate, in under 150 words:\n▸ TOTAL PO VALUE AT RISK — all open orders in dollars\n▸ CUSTOMER COMMITMENTS — orders promised with delivery dates at risk\n▸ DAILY REVENUE EXPOSURE — $/day if disruption continues\n▸ PENALTY EXPOSURE — late delivery penalties or liquidated damages\n▸ TOTAL FINANCIAL RISK — combined worst-case exposure, must match the KPI_JSON line above\n▸ RECOVERY WINDOW — days to mitigate with ideal response`,
+    base+`ENGINE 04 — ALTERNATE SOURCING ANALYSIS\nAnalyze, in under 150 words:\n▸ IDENTIFIED ALTERNATIVES — name, location, qualification status\n▸ LEAD TIME DELTA — weeks longer than primary supplier\n▸ COST PREMIUM — % price increase for alternate source\n▸ QUALIFICATION REQUIREMENTS — testing, certification needed\n▸ QUALIFICATION TIMELINE — weeks to qualify alternate\n▸ RECOMMENDATION — best alternate with rationale`,
     base+`ENGINE 05 — RANKED ACTION PLAN\n1. IMMEDIATE (0-24 hrs) — communication, inventory hold, internal escalation\n2. SHORT-TERM (1-7 days) — alternate supplier engagement, customer notification, expediting\n3. MEDIUM-TERM (1-4 weeks) — qualification of alternates, contractual actions\n4. PREVENTIVE — dual-source strategy, safety stock policy update\nFor each: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME`,
-    base+`ENGINE 06 — EXECUTIVE DISPATCH\n▸ SITUATION SUMMARY — 2 sentences for C-suite\n▸ TOTAL REVENUE AT RISK — dollar figure\n▸ DECISIONS REQUIRED:\n  1. [Decision] · Owner: [role] · Deadline: [timeframe] · Budget: $[amount]\n  2. [Decision] · Owner: [role] · Deadline: [timeframe]\n  3. [Decision] · Owner: [role] · Deadline: [timeframe]\n▸ BNCA — Best Next Course of Action in one sentence\n▸ ESCALATION TRIGGER — when CEO/Board notification is required`
+    base+`ENGINE 06 — EXECUTIVE DISPATCH\nIn under 180 words:\n▸ SITUATION SUMMARY — 2 sentences for C-suite\n▸ TOTAL REVENUE AT RISK — dollar figure\n▸ DECISIONS REQUIRED:\n  1. [Decision] · Owner: [role] · Deadline: [timeframe] · Budget: $[amount]\n  2. [Decision] · Owner: [role] · Deadline: [timeframe]\n  3. [Decision] · Owner: [role] · Deadline: [timeframe]\n▸ BNCA — Best Next Course of Action in one sentence\n▸ ESCALATION TRIGGER — when CEO/Board notification is required`
   ];
+}
+
+// Ground Engine 06 in Engine 03's already-computed revenue-exposure figures
+// so "TOTAL REVENUE AT RISK" can't independently drift from the Revenue
+// Exposure engine it's meant to be summarizing.
+function groundExecDispatchPrompt(prompt, exposureKpi, exposureText) {
+  if (!exposureKpi || (!exposureKpi.totalExposureLow && !exposureKpi.totalExposureHigh)) return prompt;
+  const fmt = n => '$' + Number(n).toLocaleString();
+  const lo = exposureKpi.totalExposureLow, hi = exposureKpi.totalExposureHigh;
+  const range = (lo && hi && lo !== hi) ? `${fmt(lo)}–${fmt(hi)}` : fmt(hi || lo);
+  const snippet = (exposureText || '').slice(0, 600);
+  return prompt + `\n\nGROUNDING — Engine 03 already calculated this disruption's revenue exposure as ${range}. Your TOTAL REVENUE AT RISK line MUST use this exact range, not a separately re-derived figure:\n${snippet}`;
 }
  
 async function fireAllEngines(){
@@ -273,6 +285,9 @@ async function fireAllEngines(){
     if(i===1){
       const brief=sessionData.outputs[0]?.text;
       if(brief) prompts=getPrompts(doc, brief);
+    }
+    if(i===5){
+      prompts[5]=groundExecDispatchPrompt(prompts[5], sessionData.kpis.exposure, sessionData.outputs[2]?.text);
     }
     setEng(i,'running');
     try{
@@ -454,7 +469,11 @@ function escapeHtml(s){
 }
 
 function renderEngineOutput(text){
-  const clean=text.replace(/\n?KPI_JSON:\s*\{[^}]*\}\s*$/i,'').trim();
+  // FIX: was end-anchored only, so it never stripped the tag now that
+  // KPI_JSON leads the response (Engine 01/02/03) instead of trailing it —
+  // the raw "KPI_JSON: {...}" line was showing up in the rendered card.
+  // Strip it wherever it appears, matching plant's equivalent fix.
+  const clean=text.replace(/KPI_JSON:\s*\{[^}]*\}\n*/i,'').trim();
 
   const lines=clean.split('\n');
   const isTableSep=l=>/^\s*\|?[\s:|-]+\|?\s*$/.test(l)&&l.includes('-');
@@ -520,7 +539,12 @@ function parseDecisionActions(text){
 }
 
 function parseKpiJson(text){
-  const m=text.match(/KPI_JSON:\s*(\{.*\})\s*$/);
+  // FIX: was end-anchored (\s*$), which only matched when KPI_JSON was the
+  // very last thing in the text. All 3 KPI-bearing prompts now put KPI_JSON
+  // on the FIRST line instead (to avoid truncation eating it, same fix
+  // already applied to plant/cyber/bess/detection) — an end-anchored regex
+  // would silently stop matching anything the moment that landed.
+  const m=text.match(/KPI_JSON:\s*(\{[^}]*\})/);
   if(!m)return null;
   try{return JSON.parse(m[1]);}catch(e){return null;}
 }
@@ -532,6 +556,17 @@ function extractExposureKPI(text){
     const fmt=n=>'$'+Number(n).toLocaleString();
     document.getElementById('kpiExposure').textContent=(lo&&hi&&lo!==hi)?`${fmt(lo)}–${fmt(hi)}`:fmt(hi||lo);
     sessionData.kpis.exposure=json;
+    return;
+  }
+  // Partial-JSON rescue: pull the fields directly even if the object as a
+  // whole failed to parse (e.g. truncated after totalExposureLow).
+  const loM=text.match(/"totalExposureLow"\s*:\s*(\d+(?:\.\d+)?)/i);
+  const hiM=text.match(/"totalExposureHigh"\s*:\s*(\d+(?:\.\d+)?)/i);
+  if(loM||hiM){
+    const lo=loM?Number(loM[1]):null, hi=hiM?Number(hiM[1]):null;
+    const fmt=n=>'$'+Number(n).toLocaleString();
+    document.getElementById('kpiExposure').textContent=(lo&&hi&&lo!==hi)?`${fmt(lo)}–${fmt(hi)}`:fmt(hi||lo);
+    sessionData.kpis.exposure={totalExposureLow:lo,totalExposureHigh:hi,source:'partial-json-fallback'};
     return;
   }
   const m=text.match(/\$[\d,.]+(?:\s*[-–]\s*\$[\d,.]+)?/);
@@ -546,6 +581,13 @@ function extractBufferKPI(text){
     sessionData.kpis.buffer=json;
     return;
   }
+  const fieldM=text.match(/"bufferDays"\s*:\s*(\d+)/i);
+  if(fieldM){
+    const days=Number(fieldM[1]);
+    document.getElementById('kpiBuffer').textContent=days+' days';
+    sessionData.kpis.buffer={bufferDays:days,source:'partial-json-fallback'};
+    return;
+  }
   const m=text.match(/(\d+)\s*days?/i);
   document.getElementById('kpiBuffer').textContent=m?m[0]:'N/A';
   sessionData.kpis.buffer={raw:m?m[0]:null,source:'regex-fallback'};
@@ -556,6 +598,13 @@ function extractOrdersKPI(text){
   if(json&&typeof json.ordersAtRisk==='number'){
     document.getElementById('kpiOrders').textContent=json.ordersAtRisk+' orders';
     sessionData.kpis.orders=json;
+    return;
+  }
+  const fieldM=text.match(/"ordersAtRisk"\s*:\s*(\d+)/i);
+  if(fieldM){
+    const n=Number(fieldM[1]);
+    document.getElementById('kpiOrders').textContent=n+' orders';
+    sessionData.kpis.orders={ordersAtRisk:n,source:'partial-json-fallback'};
     return;
   }
   const m=text.match(/(\d+)\s*orders?/i);
@@ -583,7 +632,11 @@ function buildActions(text){
 }
  
 async function callAPI(prompt){
-  return callWarRoomAPI(prompt, 'You are a supply chain disruption intelligence engine for TSM Command. Expert in supplier risk, inventory management, alternate sourcing, and executive decision support. Be specific with dollar amounts and timelines.', { maxTokens: 400 });
+  // Raised from 400 — the lowest budget of any of the 5 war rooms and the
+  // most truncation-prone, especially now that Engine 04's sourcing
+  // analysis and Engine 06's dispatch both need real room after their
+  // leading KPI_JSON / grounding text.
+  return callWarRoomAPI(prompt, 'You are a supply chain disruption intelligence engine for TSM Command. Expert in supplier risk, inventory management, alternate sourcing, and executive decision support. Be specific with dollar amounts and timelines.', { maxTokens: 700 });
 }
 function goToStrategist(){
   window.location.href = STRATEGIST_URL;
