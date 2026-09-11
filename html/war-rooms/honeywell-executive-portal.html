@@ -649,9 +649,34 @@ window.exportClientPackage = function () {
   // Real quality score computed from the same explain items the page
   // already rendered — no new data invented, matches the existing
   // fromExplainItems(items, opts) contract (tsm-quality-score-engine.js).
-  const qs = (window.TSMQualityScoreEngine && typeof TSMQualityScoreEngine.fromExplainItems === 'function')
+  let qs = (window.TSMQualityScoreEngine && typeof TSMQualityScoreEngine.fromExplainItems === 'function')
     ? TSMQualityScoreEngine.fromExplainItems(lastExplainItems, {})
     : null;
+  // Honeywell-only honesty fix: none of the 6 Honeywell engine prompts
+  // (supplier-shutdown.html / plant-incident.html / cyber-incident.html)
+  // ever ask the model for a per-item confidence figure, so every item
+  // getExplainItems() builds has no .confidence field. The shared engine's
+  // fromExplainItems() falls back to a flat 60 in that case (see its own
+  // "conservative default when nothing self-reports confidence" comment) --
+  // that's a real, intentional feature for verticals that DO have a
+  // confidence signal, so the shared engine itself is left untouched here.
+  // For Honeywell specifically, a flat 60 isn't a measurement, it's a
+  // placeholder that looks like data -- so report confidence honestly as
+  // unavailable and recompute overall from only the three metrics that
+  // are real for this vertical (accuracy/completeness/compliance,
+  // reweighted proportionally so they still sum to 100%).
+  if (qs && qs.confidence === 60 && !lastExplainItems.some(it => typeof it.confidence === 'number')) {
+    const w = { accuracy: 0.30, completeness: 0.25, compliance: 0.25 }; // same weights as the shared engine, confidence weight (0.20) dropped
+    const wSum = w.accuracy + w.completeness + w.compliance; // 0.80
+    const overall = Math.round(
+      (qs.accuracy * w.accuracy + qs.completeness * w.completeness + qs.compliance * w.compliance) / wSum
+    );
+    qs = Object.assign({}, qs, {
+      overall: overall,
+      confidence: null,
+      confidenceUnavailable: true // no per-item confidence signal exists for this vertical
+    });
+  }
   // Same exposure object hwFeedException() already parses via exposureNum
   // (line ~544) -- reused here so financialExposure stops coming back null.
   // BUGFIX: this previously read exposure.totalExposureHigh directly, which
