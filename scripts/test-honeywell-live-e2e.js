@@ -39,16 +39,54 @@
  *   TSM_SESSION_SECRET=dev TSM_ADMIN_PASSWORD=dev node server.js &
  *   node scripts/test-honeywell-live-e2e.js
  *
+ * The script polls /health and waits for the server to come up, so you
+ * don't need to add a manual sleep between the two commands above.
+ *
  * Env:
- *   TEST_BASE_URL   - default http://localhost:8080 (server.js default PORT)
+ *   TEST_BASE_URL   - override entirely, e.g. http://localhost:3000.
+ *                     Defaults to http://localhost:$PORT (mirroring
+ *                     server.js's own PORT-or-8080 fallback) -- if your
+ *                     environment exports PORT (Codespaces often defaults
+ *                     it to 3000), this picks it up automatically.
  *   TEST_HEADLESS   - "false" to watch it run
  */
 
 const { chromium } = require('playwright');
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:8080';
+// server.js itself falls back to process.env.PORT || 8080, so mirror that
+// same fallback here instead of hardcoding 8080 -- environments that export
+// PORT (Codespaces commonly defaults it to 3000) would otherwise cause a
+// silent port mismatch between "where the server actually is" and "where
+// this test looks".
+const BASE_URL = process.env.TEST_BASE_URL || `http://localhost:${process.env.PORT || 8080}`;
 const HEADLESS = process.env.TEST_HEADLESS !== 'false';
 const ENGINE_STEP_TIMEOUT_MS = 20_000;
+const SERVER_WAIT_TIMEOUT_MS = 30_000;
+
+// Poll until the server actually answers, instead of racing it right after
+// `node server.js &` -- avoids the ERR_CONNECTION_REFUSED you get from
+// starting the browser test before the server has finished booting.
+async function waitForServer(baseUrl) {
+  const deadline = Date.now() + SERVER_WAIT_TIMEOUT_MS;
+  let lastErr;
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch(`${baseUrl}/health`);
+      if (res.ok || res.status < 500) return;
+    } catch (e) {
+      lastErr = e;
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  throw new Error(
+    `Server never became reachable at ${baseUrl} (waited ${SERVER_WAIT_TIMEOUT_MS}ms).\n` +
+    `Check that it's actually listening there -- server.js logs its own port on ` +
+    `startup ("TSM Platform Core Engine listening on port N"). If it's on a ` +
+    `different port than ${baseUrl}, rerun with:\n` +
+    `  TEST_BASE_URL=http://localhost:<actual-port> node scripts/test-honeywell-live-e2e.js\n` +
+    (lastErr ? `Last error: ${lastErr.message}` : ''),
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Test bookkeeping
@@ -383,6 +421,10 @@ async function verifyStrategist(page, domain) {
 }
 
 async function main() {
+  console.log(`Waiting for server at ${BASE_URL} ...`);
+  await waitForServer(BASE_URL);
+  console.log('Server is up.');
+
   const browser = await chromium.launch({ headless: HEADLESS });
   const context = await browser.newContext({ viewport: { width: 1600, height: 1000 } });
   const consoleErrors = [];
