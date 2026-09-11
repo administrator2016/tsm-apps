@@ -1319,15 +1319,28 @@ function buildSkills(){
       <span class="skill-label" id="slbl-${i}">Not rated</span>
     </div>`).join('');
 }
-function ratSkill(skill,val){
+function ratSkill(skillIndex,val){
+  const track=state.track||'admin';
+  const skills=TRACK_SKILLS[track]||TRACK_SKILLS.admin;
+  const skill=skills[skillIndex];
+  if(!skill)return;
+
+  // Store ratings by canonical skill name so downstream
+  // readiness evidence is derived from the actual skill.
   state.skills[skill]=val;
+
   const labels=['Beginner','Basic','Intermediate','Proficient','Expert'];
-  const lblEl=document.getElementById('slbl-'+skill);
-  lblEl.textContent=labels[val-1];
-  lblEl.style.color=['var(--red)','var(--amber)','var(--amber)','var(--green)','var(--green)'][val-1];
+  const lblEl=document.getElementById('slbl-'+skillIndex);
+  if(lblEl){
+    lblEl.textContent=labels[val-1];
+    lblEl.style.color=['var(--red)','var(--amber)','var(--amber)','var(--green)','var(--green)'][val-1];
+  }
+
   for(let d=1;d<=5;d++){
-    const dot=document.getElementById(`sd-${skill}-${d}`);
-    dot.className='skill-dot'+(d<=val?` lit-${d}`:'');
+    const dot=document.getElementById(`sd-${skillIndex}-${d}`);
+    if(dot){
+      dot.className='skill-dot'+(d<=val?` lit-${d}`:'');
+    }
   }
 }
 
@@ -1802,46 +1815,98 @@ function setFilter(f,el){
   renderCandidateTable();
 }
 
-function renderCandidateTable(){
-  const candidates=JSON.parse(localStorage.getItem('tsm_candidates')||'[]');
+async function renderCandidateTable(){
+  // Candidate Registry is the canonical source of truth.
+  // Do not read or write a competing localStorage candidate store.
+  let candidates=[];
+
+  try{
+    const res=await fetch('/api/candidates');
+    if(!res.ok) throw new Error(`Candidate Registry request failed (${res.status})`);
+    const data=await res.json();
+    candidates=(data.candidates||[]).map(candidate=>{
+      const e=candidate.readinessEvidence||{};
+      const score=Number(candidate.readinessScore||0);
+
+      return {
+        candidateId:candidate.candidateId,
+        fname:(candidate.name||'').split(' ')[0]||'Unnamed',
+        lname:(candidate.name||'').split(' ').slice(1).join(' '),
+        email:candidate.email||'',
+        track:e.track||candidate.role||'General Professional',
+        overall:score,
+        workflow:e.workflow,
+        compliance:e.compliance,
+        comm:e.comm,
+        adapt:e.adapt,
+        l1:e.l1,
+        l2:e.l2,
+        l3:e.l3,
+        status:candidate.status==='ready_for_placement'
+          ? 'ready'
+          : candidate.status==='needs_review'
+            ? 'review'
+            : 'in_training',
+        reco:e.recommendation||'',
+        timestamp:candidate.updatedAt||candidate.createdAt,
+        strengths:Array.isArray(e.strengths)?e.strengths:[],
+        gaps:Array.isArray(e.gaps)?e.gaps:[],
+        readinessEvidence:e
+      };
+    });
+  }catch(err){
+    console.warn('V2 Manager Candidate Registry load failed:',err);
+  }
+
   const search=(document.getElementById('mgr-search')?.value||'').toLowerCase();
+
   const filtered=candidates.filter(c=>{
-    const matchSearch=!search||`${c.fname} ${c.lname} ${c.email} ${c.track}`.toLowerCase().includes(search);
-    const matchFilter=mgrFilter==='all'||c.status===mgrFilter||c.track.toLowerCase().includes(mgrFilter);
+    const matchSearch=!search||
+      `${c.fname} ${c.lname} ${c.email} ${c.track}`.toLowerCase().includes(search);
+
+    const matchFilter=
+      mgrFilter==='all'||
+      c.status===mgrFilter||
+      c.track.toLowerCase().includes(mgrFilter);
+
     return matchSearch&&matchFilter;
   });
 
   const ready=candidates.filter(c=>c.status==='ready').length;
-  const avg=candidates.length?Math.round(candidates.reduce((a,b)=>a+b.overall,0)/candidates.length):0;
-  const l3cert=candidates.filter(c=>c.l3>=60).length;
+  const avg=candidates.length
+    ? Math.round(candidates.reduce((a,b)=>a+b.overall,0)/candidates.length)
+    : 0;
+  const l3cert=candidates.filter(c=>Number(c.l3)>=60).length;
+
   document.getElementById('mst-total').textContent=candidates.length;
   document.getElementById('mst-ready').textContent=ready;
   document.getElementById('mst-avg').textContent=candidates.length?avg+'%':'—';
   document.getElementById('mst-l3').textContent=l3cert;
 
   const tbody=document.getElementById('candidate-tbody');
+
   if(!filtered.length){
     tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--dim);font-size:11px;">No candidates found</td></tr>`;
     return;
   }
+
   tbody.innerHTML=filtered.map((c,i)=>`
     <tr onclick="toggleExpand('exp-${i}')" style="cursor:pointer;">
       <td>
         <div class="cand-name">${c.fname} ${c.lname}</div>
         <div style="font-size:9px;color:var(--dim);">${c.email}</div>
-        ${c.new?'<span style="font-size:8px;background:rgba(16,185,129,.15);color:var(--green);padding:1px 6px;border-radius:2px;margin-top:3px;display:inline-block;">NEW</span>':''}
       </td>
       <td style="font-size:11px;">${c.track.split('/')[0].trim()}</td>
       <td><span style="font-family:var(--display);font-size:18px;color:var(--gold);">${c.overall}%</span></td>
       <td>
         <div class="level-pips">
           <div class="lp ${c.l1?'done':''}">L1</div>
-          <div class="lp ${c.l2>=70?'done':c.l2>0?'active':''}">L2</div>
-          <div class="lp ${c.l3>=60?'done':c.l3>0?'active':''}">L3</div>
+          <div class="lp ${Number(c.l2)>=70?'done':Number(c.l2)>0?'active':''}">L2</div>
+          <div class="lp ${Number(c.l3)>=60?'done':Number(c.l3)>0?'active':''}">L3</div>
         </div>
       </td>
       <td><span class="status-pip pip-${c.status}">${c.status==='ready'?'● Ready':c.status==='review'?'◎ Review':'○ Dev Track'}</span></td>
-      <td style="font-size:10px;color:var(--dim);">${new Date(c.timestamp).toLocaleDateString()}</td>
+      <td style="font-size:10px;color:var(--dim);">${c.timestamp?new Date(c.timestamp).toLocaleDateString():'—'}</td>
       <td style="font-size:9px;color:var(--dim);">▾</td>
     </tr>
     <tr><td colspan="7" style="padding:0;">
@@ -1850,30 +1915,57 @@ function renderCandidateTable(){
           ${[['Workflow',c.workflow],['Compliance',c.compliance],['Communication',c.comm],['Adaptability',c.adapt]].map(([l,v])=>`
           <div style="background:var(--bg);border-radius:4px;padding:8px 10px;">
             <div style="font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">${l}</div>
-            <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:4px;"><div style="width:${v}%;height:100%;background:${v>=80?'var(--green)':v>=65?'var(--amber)':'var(--red)'};border-radius:2px;"></div></div>
-            <div style="font-size:11px;color:${v>=80?'var(--green)':v>=65?'var(--amber)':'var(--red)'};">${v}%</div>
+            <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:4px;"><div style="width:${Number(v)||0}%;height:100%;background:${Number(v)>=80?'var(--green)':Number(v)>=65?'var(--amber)':'var(--red)'};border-radius:2px;"></div></div>
+            <div style="font-size:11px;color:${Number(v)>=80?'var(--green)':Number(v)>=65?'var(--amber)':'var(--red)'};">${v==null?'—':v+'%'}</div>
           </div>`).join('')}
         </div>
-        <div style="font-size:10px;color:var(--text);line-height:1.6;margin-bottom:8px;">${c.reco}</div>
+        <div style="font-size:10px;color:var(--text);line-height:1.6;margin-bottom:8px;">${c.reco||'No recommendation recorded.'}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <div style="font-size:9px;color:var(--dim);">L2 Score: ${c.l2||'—'}% · L3 Score: ${c.l3||'—'}%</div>
+          <div style="font-size:9px;color:var(--dim);">L2 Score: ${c.l2??'—'}% · L3 Score: ${c.l3??'—'}%</div>
         </div>
       </div>
     </td></tr>`).join('');
 }
+
 
 function toggleExpand(id){
   const el=document.getElementById(id);
   if(el) el.classList.toggle('open');
 }
 function clearAllCandidates(){
-  if(confirm('Clear all candidate records? This cannot be undone.')){
-    localStorage.removeItem('tsm_candidates');
-    renderCandidateTable();
-  }
+  alert('Candidate records are managed by the Candidate Registry. Use Registry administration to remove records.');
 }
-function exportCSV(){
-  const candidates=JSON.parse(localStorage.getItem('tsm_candidates')||'[]');
+async function exportCSV(){
+  let candidates=[];
+  try{
+    const res=await fetch('/api/candidates');
+    if(!res.ok) throw new Error(`Candidate Registry request failed (${res.status})`);
+    const data=await res.json();
+    candidates=(data.candidates||[]).map(candidate=>{
+      const e=candidate.readinessEvidence||{};
+      return {
+        fname:(candidate.name||'').split(' ')[0]||'Unnamed',
+        lname:(candidate.name||'').split(' ').slice(1).join(' '),
+        email:candidate.email||'',
+        track:e.track||candidate.role||'General Professional',
+        overall:Number(candidate.readinessScore||0),
+        workflow:e.workflow,
+        compliance:e.compliance,
+        comm:e.comm,
+        adapt:e.adapt,
+        l1:e.l1,
+        l2:e.l2,
+        l3:e.l3,
+        status:candidate.status||'in_training',
+        timestamp:candidate.updatedAt||candidate.createdAt
+      };
+    });
+  }catch(err){
+    console.error('Candidate Registry export failed:',err);
+    alert('Unable to load Candidate Registry.');
+    return;
+  }
+
   if(!candidates.length){alert('No candidate records to export.');return;}
   const headers=['Name','Email','Track','Overall','Workflow','Compliance','Communication','Adaptability','L1','L2 Score','L3 Score','Status','Date'];
   const rows=candidates.map(c=>[
