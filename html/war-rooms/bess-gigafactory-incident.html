@@ -942,7 +942,34 @@ function extractFinancialKPI(text) {
     sessionData.kpis.exposure = Object.assign({}, json, { totalExposureLow: lo, totalExposureHigh: hi });
     return;
   }
-  const m = text.match(/\$[\d,]+(?:\s*[-–]\s*\$[\d,]+)?/);
+  // Last-resort scrape when Engine 04 didn't lead with a parseable
+  // KPI_JSON line at all. Now captures an optional M/MM/B/K suffix and
+  // scales it the same way tsmNormalizeExposurePair() would, instead of
+  // silently dropping the unit and displaying bare digits (e.g. was
+  // rendering "$6.83" for a stated "$6.83M" exposure). Mirrors the same
+  // fix applied to supplier-shutdown.html / plant-incident.html /
+  // cyber-incident.html's extractExposureKPI()/extractFinancialKPI().
+  const m = text.match(/\$[\d,.]+\s*(MM|[MBK])?(?:\s*[-–]\s*\$[\d,.]+\s*(MM|[MBK])?)?/i);
+  if (m) {
+    const SCALE = { M: 1e6, MM: 1e6, B: 1e9, K: 1e3 };
+    const parsePart = (numStr, unitStr) => {
+      const n = Number(numStr.replace(/[$,]/g, ''));
+      const u = unitStr ? unitStr.toUpperCase() : null;
+      return u && SCALE[u] ? n * SCALE[u] : n;
+    };
+    const parts = m[0].match(/\$[\d,.]+\s*(?:MM|[MBK])?/gi) || [];
+    if (parts.length) {
+      const fmt = n => '$' + Number(n).toLocaleString();
+      const vals = parts.map(p => {
+        const pm = p.match(/\$([\d,.]+)\s*(MM|[MBK])?/i);
+        return parsePart(pm[1], pm[2]);
+      });
+      const lo = vals[0], hi = vals.length > 1 ? vals[1] : vals[0];
+      document.getElementById('kpiExposure').textContent = (lo && hi && lo !== hi) ? `${fmt(lo)}\u2013${fmt(hi)}` : fmt(hi || lo);
+      sessionData.kpis.exposure = { totalExposureLow: lo, totalExposureHigh: hi, source: 'regex-fallback-scaled' };
+      return;
+    }
+  }
   document.getElementById('kpiExposure').textContent = m ? m[0].slice(0,16) : 'N/A';
   sessionData.kpis.exposure = { raw: m ? m[0] : null, source: 'regex-fallback' };
 }
