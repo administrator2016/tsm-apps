@@ -253,6 +253,7 @@ let position = 0;
 let secondsLeft = EXAM_SECONDS;
 let timerHandle = null;
 let finished = false;
+let candidateInfo = { fname: '', lname: '', email: '' };
 
 function shuffle(arr) {
   const a = arr.slice();
@@ -283,7 +284,81 @@ function formatTime(s) {
   return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
 }
 
+// Persist a completed exam attempt to the canonical Candidate Registry.
+// Mirrors the write pattern used by tsm-candidate-readiness-v2.html —
+// Registry is the source of truth, this page does not keep a competing
+// local record. Fire-and-forget: registry availability never blocks
+// the exam results screen from rendering.
+async function syncToRegistry(pct, passed, byDomain, timeUsed) {
+  try {
+    const candidateRes = await fetch('/api/candidates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: `${candidateInfo.fname} ${candidateInfo.lname}`.trim(),
+        role: 'ServiceNow / ITIL Support',
+        email: candidateInfo.email || null,
+        status: pct >= 85 ? 'ready_for_placement' : passed ? 'needs_review' : 'in_training',
+        source: 'servicenow_itil_exam_sim',
+        isSampleData: false
+      })
+    });
+
+    if (!candidateRes.ok) {
+      const data = await candidateRes.json().catch(() => ({}));
+      throw new Error(data.error || `Candidate Registry create failed (${candidateRes.status})`);
+    }
+
+    const candidateData = await candidateRes.json();
+    const candidateId = candidateData?.candidate?.candidateId;
+    if (!candidateId) {
+      throw new Error('Candidate Registry response missing candidateId');
+    }
+
+    const eventRes = await fetch(
+      `/api/candidates/${encodeURIComponent(candidateId)}/training-events`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'servicenow_itil_exam',
+          score: pct,
+          weight: 2,
+          meta: {
+            passed,
+            passPct: PASS_PCT,
+            timeUsedSeconds: timeUsed,
+            domainBreakdown: byDomain,
+            source: 'servicenow_itil_exam_sim'
+          }
+        })
+      }
+    );
+
+    if (!eventRes.ok) {
+      const data = await eventRes.json().catch(() => ({}));
+      throw new Error(data.error || `Candidate Registry training event failed (${eventRes.status})`);
+    }
+
+    const eventData = await eventRes.json();
+    console.log('ServiceNow exam Registry sync PASS:', {
+      candidateId,
+      readinessScore: eventData?.candidate?.readinessScore
+    });
+  } catch (e) {
+    console.error('ServiceNow exam Registry sync failed:', e);
+  }
+}
+
 function startExam() {
+  const fname = (document.getElementById('cand-fname')?.value || '').trim();
+  const lname = (document.getElementById('cand-lname')?.value || '').trim();
+  const email = (document.getElementById('cand-email')?.value || '').trim();
+  if (!fname || !lname) {
+    alert('Enter your first and last name so this result can be recorded to your Candidate Registry record.');
+    return;
+  }
+  candidateInfo = { fname, lname, email };
   exam = buildExam();
   position = 0;
   secondsLeft = EXAM_SECONDS;
@@ -353,7 +428,13 @@ function renderStartScreen() {
         <li>No feedback is shown during the exam — answer, move on, and review at the end.</li>
         <li>You can jump between questions freely and change answers before submitting.</li>
         <li>The exam auto-submits if the timer runs out.</li>
+        <li>Your result is recorded to the Candidate Registry under the name you enter below.</li>
       </ul>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+        <input id="cand-fname" type="text" placeholder="First name" style="flex:1;min-width:140px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:10px 12px;font-family:var(--mono);font-size:12px;">
+        <input id="cand-lname" type="text" placeholder="Last name" style="flex:1;min-width:140px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:10px 12px;font-family:var(--mono);font-size:12px;">
+        <input id="cand-email" type="email" placeholder="Email (optional)" style="flex:1;min-width:180px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:10px 12px;font-family:var(--mono);font-size:12px;">
+      </div>
       <button class="start-btn" onclick="startExam()">START EXAM →</button>
     </div>`;
 }
@@ -423,6 +504,8 @@ function renderResultsScreen() {
   const pct = Math.round((correctCount / total) * 100);
   const passed = pct >= PASS_PCT;
   const timeUsed = EXAM_SECONDS - secondsLeft;
+
+  syncToRegistry(pct, passed, byDomain, timeUsed);
 
   let domainHtml = '';
   Object.keys(byDomain).forEach(d => {
