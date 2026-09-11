@@ -187,7 +187,7 @@ footer.pagefoot{text-align:center;padding:24px 0 4px;font-size:8px;color:var(--f
       <div class="sample-row">
         <button class="btn btn-sample" onclick="loadSample('outpatient')">⚡ Outpatient Clinic Sample</button>
         <button class="btn btn-sample" onclick="loadSample('hospital')">🏥 Hospital System Sample</button>
-        <button class="btn btn-ghost" onclick="document.getElementById('ar-input').value='';renderQueue();">Clear</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('ar-input').value='';currentQueue=[];renderQueue();">Clear</button>
         <button class="btn btn-ghost" onclick="loadFromDenialCases()">⇩ Import from Denial War Room</button>
       </div>
       <div class="qs-sub" id="import-status" style="margin-top:4px"></div>
