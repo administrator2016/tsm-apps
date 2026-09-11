@@ -555,7 +555,7 @@
           ' Use balance, aging, urgency, root cause, and recovery opportunity—not just the largest balance.' +
         '</p>' +
 
-        '<div style="margin-bottom:12px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);">' +
+        '<div id="tsmArCareerAccountsStatus" style="margin-bottom:12px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);">' +
           '<strong>Accounts available:</strong> ' +
           accounts.length +
           (accounts.length
@@ -622,8 +622,44 @@
         return;
       }
 
+      /*
+       * Re-discover the queue table right now instead of reusing the
+       * `accounts` this render() closed over. That variable was
+       * captured at mount time, which -- because #tsmRcmCareerPanel is
+       * static markup already in the page -- happens on initial page
+       * load, before the person has pasted a sample or clicked RANK
+       * RECOVERY QUEUE. A stale empty `accounts` here silently scored
+       * every attempt against zero accounts (the deterministic
+       * 40 + 0*20 = 28 base score) even after the queue was fully
+       * ranked on screen, because this closure never got a second
+       * look at the DOM.
+       */
+      var liveAccounts = discoverAccounts();
+
+      var statusEl =
+        document.getElementById('tsmArCareerAccountsStatus');
+
+      if (statusEl) {
+        statusEl.innerHTML =
+          '<strong>Accounts available:</strong> ' +
+          liveAccounts.length +
+          (liveAccounts.length
+            ? ' · Live queue detected.'
+            : ' · Load an A/R sample or queue first.');
+      }
+
+      if (!liveAccounts.length) {
+        resultContainer.innerHTML =
+          '<div style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);">' +
+            '<strong>No recovery queue detected.</strong> ' +
+            'Load a sample and click \u26a1 RANK RECOVERY QUEUE so the ' +
+            'Step 2 table renders, then come back and score.' +
+          '</div>';
+        return;
+      }
+
       var selectionResult =
-        scoreSelection(accounts, selectedIds);
+        scoreSelection(liveAccounts, selectedIds);
 
       var reasoningResult =
         scoreReasoning(reasoning, selectionResult.selected);
