@@ -258,11 +258,21 @@ function renderEngineOutput(text) {
   return html;
 }
 
+// Safety net: normalizes exposure figures that were saved to localStorage
+// before this fix (e.g. from an earlier demo run) as well as any future
+// model slip -- covers this tile's display.
+function tsmNormalizeExposurePair(lo, hi){
+  const bothPresent = lo != null && hi != null;
+  if(bothPresent && lo > 0 && hi > 0 && lo < 1000 && hi < 1000){
+    return [lo * 1e6, hi * 1e6];
+  }
+  return [lo, hi];
+}
 function kpiExposure(k){
   if(!k) return '—';
   if(k.totalExposureLow || k.totalExposureHigh){
+    const [lo,hi]=tsmNormalizeExposurePair(k.totalExposureLow, k.totalExposureHigh);
     const fmt=n=>'$'+Number(n).toLocaleString();
-    const lo=k.totalExposureLow, hi=k.totalExposureHigh;
     return (lo && hi && lo!==hi) ? `${fmt(lo)}–${fmt(hi)}` : fmt(hi||lo);
   }
   if(k.raw) return k.raw;

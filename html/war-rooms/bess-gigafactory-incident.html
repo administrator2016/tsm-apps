@@ -446,7 +446,7 @@ AUTHORITATIVE BESS SOURCE FACTS — DO NOT ALTER OR INFER:
 
   const groundedBase = base + bessGrounding;
   return [
-    groundedBase + `ENGINE 01 — INCIDENT INTELLIGENCE\nExtract and structure:\n▸ INCIDENT TYPE — thermal event, off-gas alarm, detection pre-alarm, process upset, etc.\n▸ AFFECTED SYSTEMS — specific ${cfg.e1} impacted\n▸ DETECTION TIME — when was it caught, how (name the detection technology if stated)\n▸ CURRENT STATUS — isolated, offline, degraded, contained\n▸ KEY PARTIES — operations, EHS/safety, fire response, management involved\nBe specific. Extract all facts from the document.`,
+    groundedBase + `ENGINE 01 — INCIDENT INTELLIGENCE\nExtract and structure:\n▸ INCIDENT TYPE — thermal event, off-gas alarm, detection pre-alarm, process upset, etc.\n▸ AFFECTED SYSTEMS — specific ${cfg.e1} impacted\n▸ DETECTION TIME — when was it caught, how (name the detection technology if stated)\n▸ CURRENT STATUS — isolated, offline, degraded, contained\n▸ KEY PARTIES — operations, EHS/safety, fire response, management involved\n▸ KEY FIGURES & NAMES — every specific quantity, dollar figure, timeframe, and named party/vendor stated in the document, verbatim\nCRITICAL — GROUNDING RULE: this extraction is the ONLY source of truth every later engine will see (they do not re-read the original document). Copy every stated number, name, and quote verbatim. Never invent, round, or substitute a plausible-sounding figure or name for one the source does not provide — write "NOT SPECIFIED IN SOURCE" instead. Omitting or fabricating a detail here means it is permanently lost or corrupted for every downstream engine.`,
 
     groundedBase + `ENGINE 02 — ${cfg.eng2Title}\nCalculate and structure:\n▸ CAPACITY / OUTPUT LOSS — percentage and absolute reduction. For BESS, use 20 MW nameplate power and 80 MWh installed energy capacity exactly as stated in the source.
 ▸ DOWNTIME / RECOVERY WINDOWS — preserve the source-defined windows. For BESS, keep 12-24 hours to re-energization decision separate from the conditional 3-5 week module-replacement lead time.
@@ -530,6 +530,7 @@ Respond in exactly two parts.
 
 PART 1 — On its own line:
 KPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}
+CRITICAL — UNITS: both numbers MUST be whole-dollar integers (e.g. 6830000 for $6.83M). NEVER write the number in millions (e.g. never write 6.83) and never include a $ sign, comma, or abbreviation inside KPI_JSON.
 
 PART 2 — Financial exposure analysis:
 
@@ -919,13 +920,26 @@ function parseKpiJson(text) {
   try { return JSON.parse(m[1]); } catch (e) { return null; }
 }
 
+// Safety net: if a model ever writes exposure "in millions" (e.g. 6.83
+// instead of 6830000) despite the prompt's explicit whole-dollar contract,
+// every downstream reader of sessionData.kpis.exposure -- this tile, the
+// strategist/exec-portal tiles, and the BNCA exposure-projection engine --
+// would silently render/compute against a truncated figure. Correct that
+// shape once, here, at the single point every downstream reader draws from.
+function tsmNormalizeExposurePair(lo, hi) {
+  const bothPresent = lo != null && hi != null;
+  if (bothPresent && lo > 0 && hi > 0 && lo < 1000 && hi < 1000) {
+    return [lo * 1e6, hi * 1e6];
+  }
+  return [lo, hi];
+}
 function extractFinancialKPI(text) {
   const json = parseKpiJson(text);
   if (json && (json.totalExposureLow || json.totalExposureHigh)) {
-    const lo = json.totalExposureLow, hi = json.totalExposureHigh;
+    let [lo, hi] = tsmNormalizeExposurePair(json.totalExposureLow, json.totalExposureHigh);
     const fmt = n => '$' + Number(n).toLocaleString();
     document.getElementById('kpiExposure').textContent = (lo && hi && lo !== hi) ? `${fmt(lo)}–${fmt(hi)}` : fmt(hi || lo);
-    sessionData.kpis.exposure = json;
+    sessionData.kpis.exposure = Object.assign({}, json, { totalExposureLow: lo, totalExposureHigh: hi });
     return;
   }
   const m = text.match(/\$[\d,]+(?:\s*[-–]\s*\$[\d,]+)?/);

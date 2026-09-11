@@ -320,13 +320,13 @@ function getPrompts(doc, brief) {
     ? `You are an OT/ICS cybersecurity intelligence engine for TSM Command. Continue analyzing this incident using the extracted intelligence below — do not ask for the original report, this is the complete factual basis.\n\nEXTRACTED INCIDENT INTELLIGENCE:\n${brief}\n\n`
     : full;
   return [
-    base + `ENGINE 01 — INCIDENT INTELLIGENCE\nExtract and structure:\n▸ INCIDENT TYPE — intrusion, malware, unauthorized access, anomalous traffic, etc.\n▸ AFFECTED SYSTEMS — specific OT/ICS assets, network segments, IT/OT boundary points impacted\n▸ DETECTION TIME — when was it caught, how (SIEM, IDS, manual)\n▸ CURRENT STATUS — isolated, contained, active, unknown scope\n▸ KEY PARTIES — SOC, OT engineering, IT security, plant operations involved\nBe specific. Extract all facts from the document.`,
+    base + `ENGINE 01 — INCIDENT INTELLIGENCE\nExtract and structure:\n▸ INCIDENT TYPE — intrusion, malware, unauthorized access, anomalous traffic, etc.\n▸ AFFECTED SYSTEMS — specific OT/ICS assets, network segments, IT/OT boundary points impacted\n▸ DETECTION TIME — when was it caught, how (SIEM, IDS, manual)\n▸ CURRENT STATUS — isolated, contained, active, unknown scope\n▸ KEY PARTIES — SOC, OT engineering, IT security, plant operations involved\n▸ KEY FIGURES & NAMES — every specific quantity, dollar figure, timeframe, and named system/vendor stated in the document, verbatim\nCRITICAL — GROUNDING RULE: this extraction is the ONLY source of truth every later engine will see (they do not re-read the original document). Copy every stated number, name, and quote verbatim. Never invent, round, or substitute a plausible-sounding figure or name for one the source does not provide — write "NOT SPECIFIED IN SOURCE" instead. Omitting or fabricating a detail here means it is permanently lost or corrupted for every downstream engine.`,
 
     base + `ENGINE 02 — OPERATIONAL & SAFETY IMPACT ANALYSIS\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"containmentEta": "<short string>"}\nThen, in under 130 words using bullet points only (no markdown tables), briefly cover:\n▸ SAFETY RISK — any risk to physical safety systems, interlocks, or personnel\n▸ PRODUCTION IMPACT — systems taken offline, capacity loss, manual fallback in use\n▸ CONTAINMENT STATUS — segments isolated, systems quarantined\n▸ BUSINESS CONTINUITY RISK — how close to full operational disruption\n▸ OPERATIONAL IMPACT SCORE — 1-10 severity, must be consistent with the tone of your analysis\nQuantify with specific numbers where possible. Be concise -- this is a summary, not a full report.`,
 
     base + `ENGINE 03 — ATTACK VECTOR & ROOT CAUSE ANALYSIS\nAnalyze and structure:\n▸ PROBABLE ENTRY POINT — phishing, remote access, supply chain, physical access, IT/OT boundary gap\n▸ LATERAL MOVEMENT PATH — how the threat moved between systems\n▸ EXPLOITED VULNERABILITY — unpatched system, weak segmentation, credential compromise, etc.\n▸ DETECTION GAPS — why was this not caught earlier\n▸ ATTRIBUTION CONFIDENCE — opportunistic vs. targeted, any indicators of actor sophistication\n▸ SIMILAR ASSETS AT RISK — other systems that may share the same vulnerability\nBe direct about probable causes even with limited data.`,
 
-    base + `ENGINE 04 — FINANCIAL EXPOSURE CALCULATION\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\nThen, in under 150 words using bullet points only (no markdown tables), briefly cover:\n▸ INCIDENT RESPONSE COST — forensics, remediation, external IR firm engagement\n▸ DOWNTIME COST — $/hour or $/day of lost production from isolation/containment\n▸ REGULATORY EXPOSURE — breach notification obligations, potential fines\n▸ CUSTOMER/CONTRACT IMPACT — SLA penalties, reputational cost, contract risk\n▸ TOTAL FINANCIAL RISK — combined exposure range, must match the KPI_JSON line above\nEstimate if exact figures not available. Be concise -- this is a summary, not a full report.`,
+    base + `ENGINE 04 — FINANCIAL EXPOSURE CALCULATION\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\nCRITICAL — UNITS: both numbers MUST be whole-dollar integers (e.g. 6830000 for $6.83M). NEVER write the number in millions (e.g. never write 6.83) and never include a $ sign, comma, or abbreviation inside KPI_JSON.\nThen, in under 150 words using bullet points only (no markdown tables), briefly cover:\n▸ INCIDENT RESPONSE COST — forensics, remediation, external IR firm engagement\n▸ DOWNTIME COST — $/hour or $/day of lost production from isolation/containment\n▸ REGULATORY EXPOSURE — breach notification obligations, potential fines\n▸ CUSTOMER/CONTRACT IMPACT — SLA penalties, reputational cost, contract risk\n▸ TOTAL FINANCIAL RISK — combined exposure range, must match the KPI_JSON line above\nEstimate if exact figures not available. Be concise -- this is a summary, not a full report.`,
 
     base + `ENGINE 05 — RANKED CONTAINMENT & ACTION PLAN\nGenerate ranked response with owners and deadlines:\n1. IMMEDIATE (0-2 hours) — isolation, containment, evidence preservation\n2. SHORT-TERM (2-24 hours) — forensic investigation, credential rotation, patch/mitigate\n3. MEDIUM-TERM (1-7 days) — full remediation, system restoration, validation\n4. PREVENTIVE — segmentation improvements, monitoring gaps to close\n\nFor each action include: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME\nRank by urgency and impact.`,
 
@@ -636,13 +636,26 @@ function parseKpiJson(text) {
   try { return JSON.parse(m[1]); } catch (e) { return null; }
 }
 
+// Safety net: if a model ever writes exposure "in millions" (e.g. 6.83
+// instead of 6830000) despite the prompt's explicit whole-dollar contract,
+// every downstream reader of sessionData.kpis.exposure -- this tile, the
+// strategist/exec-portal tiles, and the BNCA exposure-projection engine --
+// would silently render/compute against a truncated figure. Correct that
+// shape once, here, at the single point every downstream reader draws from.
+function tsmNormalizeExposurePair(lo, hi) {
+  const bothPresent = lo != null && hi != null;
+  if (bothPresent && lo > 0 && hi > 0 && lo < 1000 && hi < 1000) {
+    return [lo * 1e6, hi * 1e6];
+  }
+  return [lo, hi];
+}
 function extractFinancialKPI(text) {
   const json = parseKpiJson(text);
   if (json && (json.totalExposureLow || json.totalExposureHigh)) {
-    const lo = json.totalExposureLow, hi = json.totalExposureHigh;
+    let [lo, hi] = tsmNormalizeExposurePair(json.totalExposureLow, json.totalExposureHigh);
     const fmt = n => '$' + Number(n).toLocaleString();
     document.getElementById('kpiExposure').textContent = (lo && hi && lo !== hi) ? `${fmt(lo)}–${fmt(hi)}` : fmt(hi || lo);
-    sessionData.kpis.exposure = json;
+    sessionData.kpis.exposure = Object.assign({}, json, { totalExposureLow: lo, totalExposureHigh: hi });
     return;
   }
   const m = text.match(/\$[\d,]+(?:\s*[-–]\s*\$[\d,]+)?/);

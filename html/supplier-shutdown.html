@@ -242,10 +242,10 @@ function getPrompts(doc, brief){
     ? `You are a supply chain disruption intelligence engine for TSM Command. Continue analyzing this disruption using the extracted intelligence below — do not ask for the original report, this is the complete factual basis.\n\nEXTRACTED DISRUPTION INTELLIGENCE:\n${brief}\n\n`
     : full;
   return[
-    base+`ENGINE 01 — DISRUPTION INTELLIGENCE\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"ordersAtRisk": <integer>}\nThen extract:\n▸ SUPPLIER — name, location, relationship tier\n▸ DISRUPTION TYPE — shutdown, delay, force majeure, quality hold\n▸ EFFECTIVE DATE — when disruption started or will start\n▸ AFFECTED PRODUCTS/PARTS — specific SKUs or categories\n▸ OPEN PURCHASE ORDERS — count and total value\n▸ INITIAL SEVERITY — critical, high, medium\nKeep PART 2 under 150 words.`,
+    base+`ENGINE 01 — DISRUPTION INTELLIGENCE\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"ordersAtRisk": <integer>}\nThen extract:\n▸ SUPPLIER — name, location, relationship tier\n▸ DISRUPTION TYPE — shutdown, delay, force majeure, quality hold\n▸ EFFECTIVE DATE — when disruption started or will start\n▸ AFFECTED PRODUCTS/PARTS — specific SKUs or categories (only if the source states one — otherwise write "NOT SPECIFIED IN SOURCE", never invent a SKU or part number)\n▸ OPEN PURCHASE ORDERS — count and total value (state the per-unit price only if the source gives one; otherwise write "NOT SPECIFIED IN SOURCE" — never compute or assume a unit price)\n▸ INVENTORY POSITION — exact on-hand quantity and days-of-supply figure as stated in the source, verbatim\n▸ ALTERNATE SOURCES ALREADY IDENTIFIED — every alternate supplier the source names, with its quote/lead-time exactly as given; if none are named, write "NOT SPECIFIED IN SOURCE"\n▸ INITIAL SEVERITY — critical, high, medium\nCRITICAL — GROUNDING RULE: this extraction is the ONLY source of truth every later engine will see (they do not re-read the original document). Copy every stated number, name, and quote verbatim. Never invent, round, or substitute a plausible-sounding figure or name for one the source does not provide — write "NOT SPECIFIED IN SOURCE" instead. Omitting or fabricating a detail here means it is permanently lost or corrupted for every downstream engine.\nKeep PART 2 under 170 words.`,
     base+`ENGINE 02 — INVENTORY ANALYSIS\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"bufferDays": <integer>}\nThen calculate, in under 150 words:\n▸ CURRENT INVENTORY — days of supply on hand per critical part\n▸ CRITICAL PARTS — items with <30 days buffer\n▸ PRODUCTION WINDOW — how long before lines are affected\n▸ SAFETY STOCK ADEQUACY — is safety stock sufficient\n▸ REORDER LEAD TIMES — standard vs expedited\n▸ INVENTORY RISK SCORE — 1-10`,
-    base+`ENGINE 03 — REVENUE EXPOSURE\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\nThen calculate, in under 150 words:\n▸ TOTAL PO VALUE AT RISK — all open orders in dollars\n▸ CUSTOMER COMMITMENTS — orders promised with delivery dates at risk\n▸ DAILY REVENUE EXPOSURE — $/day if disruption continues\n▸ PENALTY EXPOSURE — late delivery penalties or liquidated damages\n▸ TOTAL FINANCIAL RISK — combined worst-case exposure, must match the KPI_JSON line above\n▸ RECOVERY WINDOW — days to mitigate with ideal response`,
-    base+`ENGINE 04 — ALTERNATE SOURCING ANALYSIS\nAnalyze, in under 150 words:\n▸ IDENTIFIED ALTERNATIVES — name, location, qualification status\n▸ LEAD TIME DELTA — weeks longer than primary supplier\n▸ COST PREMIUM — % price increase for alternate source\n▸ QUALIFICATION REQUIREMENTS — testing, certification needed\n▸ QUALIFICATION TIMELINE — weeks to qualify alternate\n▸ RECOMMENDATION — best alternate with rationale`,
+    base+`ENGINE 03 — REVENUE EXPOSURE\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\nCRITICAL — UNITS: both numbers MUST be whole-dollar integers (e.g. 6830000 for $6.83M). NEVER write the number in millions (e.g. never write 6.83) and never include a $ sign, comma, or abbreviation inside KPI_JSON.\nThen calculate, in under 150 words:\n▸ TOTAL PO VALUE AT RISK — all open orders in dollars\n▸ CUSTOMER COMMITMENTS — orders promised with delivery dates at risk\n▸ DAILY REVENUE EXPOSURE — $/day if disruption continues\n▸ PENALTY EXPOSURE — late delivery penalties or liquidated damages\n▸ TOTAL FINANCIAL RISK — combined worst-case exposure, must match the KPI_JSON line above\n▸ RECOVERY WINDOW — days to mitigate with ideal response`,
+    base+`ENGINE 04 — ALTERNATE SOURCING ANALYSIS\nCRITICAL — GROUNDING RULE: if the ALTERNATE SOURCES ALREADY IDENTIFIED field above names specific suppliers with quotes, you MUST use those exact names and figures as your IDENTIFIED ALTERNATIVES — do not invent, rename, or substitute different supplier names. Only propose additional/hypothetical alternates if that field says "NOT SPECIFIED IN SOURCE", and if you do, label them clearly as "ADDITIONAL OPTION (not in source)".\nAnalyze, in under 150 words:\n▸ IDENTIFIED ALTERNATIVES — name, location, qualification status (from the source where named)\n▸ LEAD TIME DELTA — weeks longer than primary supplier\n▸ COST PREMIUM — % price increase for alternate source\n▸ QUALIFICATION REQUIREMENTS — testing, certification needed\n▸ QUALIFICATION TIMELINE — weeks to qualify alternate\n▸ RECOMMENDATION — best alternate with rationale`,
     base+`ENGINE 05 — RANKED ACTION PLAN\n1. IMMEDIATE (0-24 hrs) — communication, inventory hold, internal escalation\n2. SHORT-TERM (1-7 days) — alternate supplier engagement, customer notification, expediting\n3. MEDIUM-TERM (1-4 weeks) — qualification of alternates, contractual actions\n4. PREVENTIVE — dual-source strategy, safety stock policy update\nFor each: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME`,
     base+`ENGINE 06 — EXECUTIVE DISPATCH\nIn under 180 words:\n▸ SITUATION SUMMARY — 2 sentences for C-suite\n▸ TOTAL REVENUE AT RISK — dollar figure\n▸ DECISIONS REQUIRED:\n  1. [Decision] · Owner: [role] · Deadline: [timeframe] · Budget: $[amount]\n  2. [Decision] · Owner: [role] · Deadline: [timeframe]\n  3. [Decision] · Owner: [role] · Deadline: [timeframe]\n▸ BNCA — Best Next Course of Action in one sentence\n▸ ESCALATION TRIGGER — when CEO/Board notification is required`
   ];
@@ -550,13 +550,29 @@ function parseKpiJson(text){
   try{return JSON.parse(m[1]);}catch(e){return null;}
 }
 
+// Safety net: the prompt now demands whole-dollar integers, but if a model
+// ever slips back to writing exposure "in millions" (e.g. 6.83 instead of
+// 6830000), every downstream consumer of sessionData.kpis.exposure -- this
+// tile, the strategist's tile, the exec portal's tile, AND the BNCA
+// exposure-projection engine -- would silently render/compute against a
+// truncated dollar figure (e.g. "$7" instead of "$6.83M"). Both figures
+// being non-zero and under 1000 is never a legitimate whole-dollar exposure
+// for these scenarios, so treat that shape as millions and correct it once,
+// here, at the single point every downstream reader draws from.
+function tsmNormalizeExposurePair(lo, hi){
+  const bothPresent = lo != null && hi != null;
+  if(bothPresent && lo > 0 && hi > 0 && lo < 1000 && hi < 1000){
+    return [lo * 1e6, hi * 1e6];
+  }
+  return [lo, hi];
+}
 function extractExposureKPI(text){
   const json=parseKpiJson(text);
   if(json&&(json.totalExposureLow||json.totalExposureHigh)){
-    const lo=json.totalExposureLow,hi=json.totalExposureHigh;
+    let [lo,hi]=tsmNormalizeExposurePair(json.totalExposureLow,json.totalExposureHigh);
     const fmt=n=>'$'+Number(n).toLocaleString();
     document.getElementById('kpiExposure').textContent=(lo&&hi&&lo!==hi)?`${fmt(lo)}–${fmt(hi)}`:fmt(hi||lo);
-    sessionData.kpis.exposure=json;
+    sessionData.kpis.exposure=Object.assign({},json,{totalExposureLow:lo,totalExposureHigh:hi});
     return;
   }
   // Partial-JSON rescue: pull the fields directly even if the object as a
@@ -564,7 +580,8 @@ function extractExposureKPI(text){
   const loM=text.match(/"totalExposureLow"\s*:\s*(\d+(?:\.\d+)?)/i);
   const hiM=text.match(/"totalExposureHigh"\s*:\s*(\d+(?:\.\d+)?)/i);
   if(loM||hiM){
-    const lo=loM?Number(loM[1]):null, hi=hiM?Number(hiM[1]):null;
+    let lo=loM?Number(loM[1]):null, hi=hiM?Number(hiM[1]):null;
+    [lo,hi]=tsmNormalizeExposurePair(lo,hi);
     const fmt=n=>'$'+Number(n).toLocaleString();
     document.getElementById('kpiExposure').textContent=(lo&&hi&&lo!==hi)?`${fmt(lo)}–${fmt(hi)}`:fmt(hi||lo);
     sessionData.kpis.exposure={totalExposureLow:lo,totalExposureHigh:hi,source:'partial-json-fallback'};

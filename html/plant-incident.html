@@ -340,13 +340,13 @@ function getPrompts(doc, brief) {
     ? `You are a plant operations intelligence engine for TSM Command. Continue analyzing this incident using the extracted intelligence below — do not ask for the original report, this is the complete factual basis.\n\nEXTRACTED INCIDENT INTELLIGENCE:\n${brief}\n\n`
     : full;
   return [
-    base + `ENGINE 01 — INCIDENT INTELLIGENCE\nExtract and structure:\n▸ INCIDENT TYPE — equipment failure, process upset, safety event, etc.\n▸ AFFECTED SYSTEMS — specific equipment, lines, processes impacted\n▸ DETECTION TIME — when was it caught, how\n▸ CURRENT STATUS — offline, degraded, contained\n▸ KEY PARTIES — maintenance, operations, safety, management involved\nBe specific. Extract all facts from the document.`,
+    base + `ENGINE 01 — INCIDENT INTELLIGENCE\nExtract and structure:\n▸ INCIDENT TYPE — equipment failure, process upset, safety event, etc.\n▸ AFFECTED SYSTEMS — specific equipment, lines, processes impacted\n▸ DETECTION TIME — when was it caught, how\n▸ CURRENT STATUS — offline, degraded, contained\n▸ KEY PARTIES — maintenance, operations, safety, management involved\n▸ KEY FIGURES & NAMES — every specific quantity, dollar figure, timeframe, and named party/vendor stated in the document, verbatim\nCRITICAL — GROUNDING RULE: this extraction is the ONLY source of truth every later engine will see (they do not re-read the original document). Copy every stated number, name, and quote verbatim. Never invent, round, or substitute a plausible-sounding figure or name for one the source does not provide — write "NOT SPECIFIED IN SOURCE" instead. Omitting or fabricating a detail here means it is permanently lost or corrupted for every downstream engine.`,
 
     base + `ENGINE 02 — PRODUCTION IMPACT ANALYSIS\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"downtimeEstimate": "<short string>"}\n\nPART 2 — Calculate and structure:\n▸ CAPACITY LOSS — percentage and absolute output reduction\n▸ DOWNTIME ESTIMATE — hours/days to full restoration\n▸ OUTPUT DELTA — units, batches, or revenue lost per hour/day\n▸ DOWNSTREAM RISK — customer orders, delivery commitments at risk\n▸ INVENTORY BUFFER — days of finished goods available\n▸ PRODUCTION IMPACT SCORE — 1-10 severity\nQuantify everything with specific numbers. The downtimeEstimate in PART 1 must match the DOWNTIME ESTIMATE you give in PART 2 exactly — this is the figure the executive dashboard displays, so it has to agree with your own analysis text.`,
 
     base + `ENGINE 03 — ROOT CAUSE ANALYSIS\nAnalyze and structure:\n▸ PRIMARY CAUSE — most probable root cause\n▸ CONTRIBUTING FACTORS — secondary issues that enabled the failure\n▸ FAILURE MODE — how the equipment or process failed\n▸ DETECTION GAPS — why was this not caught earlier\n▸ RECURRENCE RISK — probability and timeline of recurrence\n▸ SIMILAR ASSETS AT RISK — other equipment that may have same vulnerability\nBe direct about probable causes even with limited data.`,
 
-    base + `ENGINE 04 — FINANCIAL EXPOSURE CALCULATION\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\n\nPART 2 — Calculate and structure:\n▸ DOWNTIME COST — $/hour or $/day of lost production\n▸ TOTAL EXPOSURE — projected cost over estimated downtime window\n▸ REPAIR COST ESTIMATE — parts, labor, contractor costs\n▸ CUSTOMER IMPACT — penalty clauses, expedite costs, lost revenue\n▸ INSURANCE APPLICABILITY — what losses may be recoverable\n▸ TOTAL FINANCIAL RISK — combined exposure range\nProvide dollar amounts. Estimate if exact figures not available.`,
+    base + `ENGINE 04 — FINANCIAL EXPOSURE CALCULATION\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\nCRITICAL — UNITS: both numbers MUST be whole-dollar integers (e.g. 6830000 for $6.83M). NEVER write the number in millions (e.g. never write 6.83) and never include a $ sign, comma, or abbreviation inside KPI_JSON.\n\nPART 2 — Calculate and structure:\n▸ DOWNTIME COST — $/hour or $/day of lost production\n▸ TOTAL EXPOSURE — projected cost over estimated downtime window\n▸ REPAIR COST ESTIMATE — parts, labor, contractor costs\n▸ CUSTOMER IMPACT — penalty clauses, expedite costs, lost revenue\n▸ INSURANCE APPLICABILITY — what losses may be recoverable\n▸ TOTAL FINANCIAL RISK — combined exposure range\nProvide dollar amounts. Estimate if exact figures not available.`,
 
     base + `ENGINE 05 — RANKED ACTION PLAN\nGenerate ranked response with owners and deadlines:\n1. IMMEDIATE (0-2 hours) — safety, containment, assessment\n2. SHORT-TERM (2-24 hours) — repair authorization, parts procurement, temporary workaround\n3. MEDIUM-TERM (1-7 days) — full restoration, root cause remediation\n4. PREVENTIVE — actions to prevent recurrence\n\nFor each action include: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME\nRank by urgency and impact.`,
 
@@ -672,13 +672,26 @@ function parseKpiJson(text) {
   try { return JSON.parse(m[1]); } catch (e) { return null; }
 }
 
+// Safety net: if a model ever writes exposure "in millions" (e.g. 6.83
+// instead of 6830000) despite the prompt's explicit whole-dollar contract,
+// every downstream reader of sessionData.kpis.exposure -- this tile, the
+// strategist/exec-portal tiles, and the BNCA exposure-projection engine --
+// would silently render/compute against a truncated figure. Correct that
+// shape once, here, at the single point every downstream reader draws from.
+function tsmNormalizeExposurePair(lo, hi) {
+  const bothPresent = lo != null && hi != null;
+  if (bothPresent && lo > 0 && hi > 0 && lo < 1000 && hi < 1000) {
+    return [lo * 1e6, hi * 1e6];
+  }
+  return [lo, hi];
+}
 function extractFinancialKPI(text) {
   const json = parseKpiJson(text);
   if (json && (json.totalExposureLow || json.totalExposureHigh)) {
-    const lo = json.totalExposureLow, hi = json.totalExposureHigh;
+    let [lo, hi] = tsmNormalizeExposurePair(json.totalExposureLow, json.totalExposureHigh);
     const fmt = n => '$' + Number(n).toLocaleString();
     document.getElementById('kpiExposure').textContent = (lo && hi && lo !== hi) ? `${fmt(lo)}–${fmt(hi)}` : fmt(hi || lo);
-    sessionData.kpis.exposure = json;
+    sessionData.kpis.exposure = Object.assign({}, json, { totalExposureLow: lo, totalExposureHigh: hi });
     return;
   }
   const m = text.match(/\$[\d,]+(?:\s*[-–]\s*\$[\d,]+)?/);
