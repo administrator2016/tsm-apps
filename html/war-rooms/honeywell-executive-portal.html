@@ -572,6 +572,7 @@ function hwFeedException(data){
 // counter wired, so qualityScore/documentCount stay undefined -- honest
 // nulls in the built package, same convention as insurance-executive-portal.html.
 let lastExplainItems = [];
+let lastKpis = null;
 
 function render(){
   const data = loadRelay();
@@ -589,6 +590,7 @@ function render(){
     : (data.timestamp ? `Relayed ${new Date(data.timestamp).toLocaleString()}` : 'Escalation received');
 
   const k = data.kpis || {};
+  lastKpis = k;
   let html = `<div class="kpi-row">
     <div class="kpi"><div class="kpi-val red">${kpiExposure(k.exposure)}</div><div class="kpi-lbl">FINANCIAL EXPOSURE</div></div>
     <div class="kpi"><div class="kpi-val amber">${kpiSecondary(k.buffer || k.containment)}</div><div class="kpi-lbl">${secondaryLabel(data.source)}</div></div>
@@ -650,11 +652,21 @@ window.exportClientPackage = function () {
   const qs = (window.TSMQualityScoreEngine && typeof TSMQualityScoreEngine.fromExplainItems === 'function')
     ? TSMQualityScoreEngine.fromExplainItems(lastExplainItems, {})
     : null;
+  // Same exposure object hwFeedException() already parses via exposureNum
+  // (line ~544) -- reused here so financialExposure stops coming back null.
+  const exposure = lastKpis && lastKpis.exposure;
+  const estimatedImpactTotal = exposure && typeof exposure.totalExposureHigh === 'number'
+    ? exposure.totalExposureHigh
+    : (exposure && typeof exposure.totalExposureLow === 'number' ? exposure.totalExposureLow : null);
+  const missionQueueSummary = estimatedImpactTotal != null
+    ? { estimatedImpactTotal: estimatedImpactTotal, unestimatedCount: 0 }
+    : null; // honest null if no exposure figure was ever relayed
   const pkg = TSMDeliveryPackage.build({
     domain: 'Honeywell',
     explainItems: lastExplainItems,
     documentCount: Array.isArray(lastExplainItems) ? lastExplainItems.length : null,
-    qualityScore: qs
+    qualityScore: qs,
+    missionQueueSummary: missionQueueSummary
   });
   const blob = new Blob([JSON.stringify(pkg, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
