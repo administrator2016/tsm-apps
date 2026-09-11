@@ -776,6 +776,8 @@ nav {
     <button class="sec-tab" onclick="setSector('finops')">FinOps</button>
     <button class="sec-tab" onclick="setSector('construction')">Construction</button>
     <button class="sec-tab" onclick="setSector('insurance')">Insurance</button>
+    <button class="sec-tab" onclick="setSector('it')">IT / ServiceNow</button>
+    <button class="sec-tab" onclick="setSector('realestate')">Real Estate / MLO</button>
     <button class="sec-tab" onclick="setSector('all')">All Sectors</button>
   </div>
 </div>
@@ -1089,6 +1091,70 @@ const SECTORS = {
       { sector: 'Compliance', pct: 90, details: [['Licensing', '94%'], ['DOI regs', '88%'], ['Market conduct', '91%']] },
       { sector: 'Fraud / SIU', pct: 61, details: [['ISO search', '54%'], ['Pattern analysis', '62%'], ['Statement taking', '70%']] },
     ]
+  },
+  it: {
+    label: 'IT / ServiceNow',
+    color: 'p',
+    accent: 'var(--purple)',
+    candidates: [
+      { name: 'Elena Vasquez',    role: 'ServiceNow Administrator', score: 90, status: 'ready',    match: ['ServiceNow CSA','ITIL v4','Incident Mgmt'], gap: [],                    eta: 'Ready Now' },
+      { name: 'Marcus Whitfield', role: 'Help Desk Technician',      score: 77, status: 'training', match: ['Ticketing','Password Reset','L1 Triage'],  gap: ['CMDB','Change Mgmt'], eta: '5 days' },
+      { name: 'Priya Chandran',   role: 'IT Support Specialist',     score: 84, status: 'assess',   match: ['ServiceNow Nav','Access Mgmt'],            gap: ['Problem Mgmt'],       eta: '3 days' },
+      { name: 'Jake Bowman',      role: 'Desktop Support Analyst',   score: 58, status: 'gap',      match: ['Hardware Troubleshooting'],                gap: ['ServiceNow','ITIL Basics','Notifications'], eta: '2 weeks' },
+      { name: 'Yuki Tanaka',      role: 'Systems Administrator',     score: 95, status: 'placed',   match: ['CMDB','Change Mgmt','ITIL v4'],            gap: [],                    eta: 'Placed @ Cognizant' },
+    ],
+    modules: [
+      { icon: '🖥️', title: 'ServiceNow Navigation & Fundamentals', sub: 'Platform navigation, forms, lists, and core record structures', pct: 81, items: ['UI navigation ✓','Incident record structure ✓','List filtering & views ✓','Knowledge base search ✓','Personal workspace setup'] },
+      { icon: '📘', title: 'ITIL v4 Foundation Concepts', sub: 'Service value system, 4 dimensions, key practices', pct: 68, items: ['Service value chain ✓','4 dimensions model ✓','Incident vs Problem vs Change','Continual improvement','Guiding principles ✓'] },
+      { icon: '🚨', title: 'Incident & Problem Management', sub: 'Ticket triage, escalation paths, root cause workflows', pct: 79, items: ['Priority matrix ✓','Escalation SLAs ✓','Problem record linkage ✓','Known error database','Post-incident review'] },
+      { icon: '🗂️', title: 'Change & CMDB Administration', sub: 'Change request lifecycle, CI relationships, notifications', pct: 60, items: ['Change request types ✓','CAB approval flow','CI relationship mapping','Notification rules ✓','Access control lists'] },
+    ],
+    coaching: {
+      body: 'Elena Vasquez and Yuki Tanaka are placement-ready for L1/L2 service-desk roles. The pipeline bottleneck is Change & CMDB administration (60%) — Jake Bowman needs the full ServiceNow Fundamentals + ITIL Basics track before any client submission. Recommend pairing Marcus Whitfield with a CMDB shadow shift.',
+      prompts: ['Build a ServiceNow Fundamentals plan for Jake Bowman', 'Which enterprise clients need L1 service-desk staff this month?', 'Score Priya Chandran against a Tier-1 support role', 'Draft a CMDB shadow-shift schedule for Marcus Whitfield']
+    },
+    placements: [
+      { name: 'Yuki Tanaka',    role: 'Systems Administrator',     sector: 'IT / ServiceNow', client: 'Cognizant', score: 95, steps: [true, true, true, true, true], stepLabels: ['Intake','Assess','Train','Match','Day 1'] },
+      { name: 'Elena Vasquez',  role: 'ServiceNow Administrator',  sector: 'IT / ServiceNow', client: 'Infosys (AECOM acct)', score: 90, steps: [true, true, true, true, false], stepLabels: ['Intake','Assess','Train','Match','Day 1'] },
+    ],
+    gaps: [
+      { sector: 'ServiceNow Nav', pct: 81, details: [['UI fluency', '86%'], ['Record structure', '79%'], ['KB search', '78%']] },
+      { sector: 'ITIL v4 Concepts', pct: 68, details: [['Value chain', '71%'], ['4 dimensions', '65%'], ['Practices', '68%']] },
+      { sector: 'Incident/Problem', pct: 79, details: [['Priority matrix', '84%'], ['Escalation', '76%'], ['RCA linkage', '77%']] },
+      { sector: 'Change/CMDB', pct: 60, details: [['Change flow', '64%'], ['CI mapping', '52%'], ['Notifications', '65%']] },
+    ]
+  },
+  realestate: {
+    label: 'Real Estate / MLO',
+    color: 't',
+    accent: 'var(--teal)',
+    candidates: [
+      { name: 'Danielle Osei',    role: 'Licensed Loan Originator',   score: 93, status: 'ready',    match: ['NMLS SAFE','Federal Lending Law','TRID'], gap: [],                       eta: 'Ready Now' },
+      { name: 'Trent Waverly',    role: 'Mortgage Processor',         score: 71, status: 'training', match: ['Loan File Prep','Docs Review'],           gap: ['State Regs','Ethics Module'], eta: '1 week' },
+      { name: 'Camila Reyes',     role: 'Real Estate Coordinator',    score: 86, status: 'assess',   match: ['Escrow Basics','Title Review'],           gap: ['Fair Lending'],          eta: '4 days' },
+      { name: 'Owen Fitzgerald',  role: 'Leasing Agent',              score: 62, status: 'gap',      match: ['Client Intake'],                          gap: ['NMLS SAFE','Mortgage Basics','TRID'], eta: '2 weeks' },
+      { name: 'Ines Ardor',      role: 'Underwriting Support (MLO)', score: 91, status: 'placed',   match: ['Federal Lending Law','Ethics','TRID'],    gap: [],                       eta: 'Placed @ First American' },
+    ],
+    modules: [
+      { icon: '📜', title: 'NMLS SAFE Act — Federal Law', sub: 'RESPA, TILA, TRID, and federal mortgage disclosure rules', pct: 75, items: ['RESPA basics ✓','TILA disclosures ✓','TRID timing rules ✓','Loan estimate accuracy','Closing disclosure review'] },
+      { icon: '🗺️', title: 'State-Specific Regulations', sub: 'State licensing law, continuing ed requirements, filings', pct: 66, items: ['State licensing basics ✓','CE requirement tracking','State disclosure variances','Renewal filing process','Multi-state practice rules'] },
+      { icon: '🏠', title: 'Loan Origination Process', sub: 'Intake through closing: docs, underwriting handoff, funding', pct: 80, items: ['Loan file intake ✓','Document collection ✓','Underwriting handoff ✓','Conditional approval process','Funding & closing'] },
+      { icon: '⚖️', title: 'Ethics & Fair Lending', sub: 'Fair Housing Act, ECOA, anti-discrimination standards', pct: 70, items: ['Fair Housing Act ✓','ECOA basics ✓','Redlining awareness','Steering prohibitions ✓','Complaint handling'] },
+    ],
+    coaching: {
+      body: 'Danielle Osei and Ines Ardor are placement-ready for MLO roles requiring active NMLS licensure. State-specific regulation coverage is the pipeline bottleneck (66%) — Owen Fitzgerald needs the full SAFE Act track before any client submission. Camila Reyes is one Fair Lending module away from an underwriting-support placement.',
+      prompts: ['Build an NMLS SAFE Act study plan for Owen Fitzgerald', 'Which mortgage clients are hiring licensed MLOs this quarter?', 'Score Camila Reyes against an underwriting-support role', 'Draft a state-licensing renewal checklist for Trent Waverly']
+    },
+    placements: [
+      { name: 'Ines Ardor',     role: 'Underwriting Support (MLO)', sector: 'Real Estate / MLO', client: 'First American', score: 91, steps: [true, true, true, true, true], stepLabels: ['Intake','Assess','Train','Match','Day 1'] },
+      { name: 'Danielle Osei',  role: 'Licensed Loan Originator',   sector: 'Real Estate / MLO', client: 'Rocket Mortgage', score: 93, steps: [true, true, true, true, false], stepLabels: ['Intake','Assess','Train','Match','Day 1'] },
+    ],
+    gaps: [
+      { sector: 'Federal Law (SAFE)', pct: 75, details: [['RESPA', '79%'], ['TILA', '74%'], ['TRID timing', '72%']] },
+      { sector: 'State Regulations', pct: 66, details: [['Licensing basics', '73%'], ['CE tracking', '58%'], ['Disclosure variance', '67%']] },
+      { sector: 'Loan Origination', pct: 80, details: [['File intake', '85%'], ['Doc collection', '81%'], ['Funding/closing', '74%']] },
+      { sector: 'Ethics/Fair Lending', pct: 70, details: [['Fair Housing Act', '76%'], ['ECOA', '68%'], ['Steering prohibitions', '66%']] },
+    ]
   }
 };
 
@@ -1115,6 +1181,10 @@ function staffingSectorForCandidate(candidate) {
     return 'healthcare';
   }
 
+  if (/real estate|realtor|mortgage|\bmlo\b|loan officer|loan originat|escrow|title (agent|officer)|property management|leasing agent|nmls/.test(text)) {
+    return 'realestate';
+  }
+
   if (/loan|finance|finops|account|accounts|receivable|payable|bank/.test(text)) {
     return 'finops';
   }
@@ -1127,7 +1197,11 @@ function staffingSectorForCandidate(candidate) {
     return 'insurance';
   }
 
-  // Staffing currently has four sectors. Unknown roles remain visible
+  if (/it support|help ?desk|service ?now|\bitil\b|desktop support|technical support|sysadmin|system administrator|it technician/.test(text)) {
+    return 'it';
+  }
+
+  // Staffing currently has six sectors. Unknown roles remain visible
   // in Healthcare rather than disappearing from the pipeline.
   return 'healthcare';
 }
@@ -1240,13 +1314,14 @@ async function loadCanonicalCandidates() {
 
 const SECTOR_COLORS = {
   healthcare: 'var(--green)', finops: 'var(--amber)',
-  construction: 'var(--coral)', insurance: 'var(--blue)'
+  construction: 'var(--coral)', insurance: 'var(--blue)',
+  it: 'var(--purple)', realestate: 'var(--teal)'
 };
 
 function setSector(s) {
   currentSector = s;
   document.querySelectorAll('.sec-tab').forEach((t, i) => {
-    const keys = ['healthcare','finops','construction','insurance','all'];
+    const keys = ['healthcare','finops','construction','insurance','it','realestate','all'];
     t.classList.toggle('active', keys[i] === s);
   });
   expandedModule = null;
@@ -1414,7 +1489,7 @@ function renderAll() {
   renderModules(allMods);
   renderGaps(allGaps.slice(0,8), 'var(--green)');
   renderCoaching({
-    body: 'Across all 4 sectors, 9 candidates are placement-ready. Primary bottleneck: ERP/systems proficiency in FinOps (59%) and Estimating SW in Construction (63%). Healthcare and Insurance pipelines are strongest. Recommend prioritizing FinOps ERP accelerator this week.',
+    body: 'Across all 6 sectors, 7 candidates are placement-ready. Primary bottleneck: ERP/systems proficiency in FinOps (59%) and Change/CMDB administration in IT (60%). Healthcare and Insurance pipelines are strongest. Recommend prioritizing FinOps ERP and ServiceNow CMDB accelerators this week.',
     prompts: ['Show me all placement-ready candidates across sectors', 'Which sector has the most critical skill gaps right now?', 'Generate a 30-day cross-sector readiness improvement plan', 'Match all ready candidates to open client positions']
   }, 'All Sectors');
   renderPlacements(allPlace);
@@ -1485,7 +1560,7 @@ function handlePrompt(p) {
 }
 
 // AUTOPLAY
-const AUTOPLAY_SECTORS = ['healthcare', 'finops', 'construction', 'insurance', 'all'];
+const AUTOPLAY_SECTORS = ['healthcare', 'finops', 'construction', 'insurance', 'it', 'realestate', 'all'];
 let autoSectorIdx = 0;
 
 function toggleAutoPlay() {
