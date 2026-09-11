@@ -654,10 +654,19 @@ window.exportClientPackage = function () {
     : null;
   // Same exposure object hwFeedException() already parses via exposureNum
   // (line ~544) -- reused here so financialExposure stops coming back null.
+  // BUGFIX: this previously read exposure.totalExposureHigh directly, which
+  // is the raw stored value (e.g. 7.85) -- the same raw shape kpiExposure()
+  // runs through tsmNormalizeExposurePair() before display. Without that
+  // same normalization here, the exported executiveSummary.whyItMatters
+  // .financialExposure came back as the bare 7.85 instead of 7850000, even
+  // after the KPI row and structuredData item both displayed correctly.
   const exposure = lastKpis && lastKpis.exposure;
-  const estimatedImpactTotal = exposure && typeof exposure.totalExposureHigh === 'number'
-    ? exposure.totalExposureHigh
-    : (exposure && typeof exposure.totalExposureLow === 'number' ? exposure.totalExposureLow : null);
+  const [normLo, normHi] = exposure
+    ? tsmNormalizeExposurePair(exposure.totalExposureLow, exposure.totalExposureHigh)
+    : [null, null];
+  const estimatedImpactTotal = typeof normHi === 'number'
+    ? normHi
+    : (typeof normLo === 'number' ? normLo : null);
   const missionQueueSummary = estimatedImpactTotal != null
     ? { estimatedImpactTotal: estimatedImpactTotal, unestimatedCount: 0 }
     : null; // honest null if no exposure figure was ever relayed
