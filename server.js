@@ -2977,6 +2977,11 @@ app.use(require('./routes/music'));
 // TSM Training Intelligence — certification blueprints, roadmaps, teaching, quizzes, and hands-on labs
 app.use(require('./routes/training-intelligence'));
 
+// Candidate Registry — single source of truth shared by the Career Training
+// Platform and the Staffing Readiness Assessment. Mongo-backed via
+// server/candidate-registry-service.js (same MONGODB_URI as tsm-ledger-service.js).
+app.use(require('./routes/candidate-registry'));
+
 // ── ENTERPRISE CAPABILITY BRIDGE ───────────────────────────────────────────────
 // Session-persisted stores for O2C/CRM/CPQ/Catalog/Approval (previously
 // stateless /query-only) + the capability-sweep orchestrator. BPO reference

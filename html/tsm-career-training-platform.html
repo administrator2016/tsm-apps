@@ -1270,42 +1270,65 @@ nav {
       <thead><tr>
         <th>CANDIDATE</th><th>SECTOR</th><th>ASSIGNED COURSE</th><th>PROGRESS</th><th>SCORE</th><th>STATUS</th><th>APPROVAL</th>
       </tr></thead>
-      <tbody>
-        <tr onclick="switchTo('profile')">
-          <td><span class="reg-name">John Smith</span></td>
-          <td>Healthcare</td><td>CRCR · Revenue Cycle</td>
-          <td><div class="prog-mini"><div class="prog-mini-bar"><div class="prog-mini-fill" style="width:42%"></div></div><span style="font-size:9px;color:var(--text3)">42%</span></div></td>
-          <td style="color:var(--amber);font-weight:700">42%</td>
-          <td><span class="reg-status learning">LEARNING</span></td>
-          <td style="color:var(--text3);font-size:10px">Pending</td>
-        </tr>
-        <tr onclick="switchTo('profile')">
-          <td><span class="reg-name">Mary Jones</span></td>
-          <td>Insurance</td><td>AHIP · Medicare</td>
-          <td><div class="prog-mini"><div class="prog-mini-bar"><div class="prog-mini-fill" style="width:76%"></div></div><span style="font-size:9px;color:var(--text3)">76%</span></div></td>
-          <td style="color:var(--green);font-weight:700">76%</td>
-          <td><span class="reg-status approved">APPROVED</span></td>
-          <td style="color:var(--green);font-size:10px">✓ Approved</td>
-        </tr>
-        <tr onclick="switchTo('profile')">
-          <td><span class="reg-name">David Lee</span></td>
-          <td>Finance</td><td>AB-100 · AI Solutions</td>
-          <td><div class="prog-mini"><div class="prog-mini-bar"><div class="prog-mini-fill" style="width:18%;background:var(--red)"></div></div><span style="font-size:9px;color:var(--text3)">18%</span></div></td>
-          <td style="color:var(--red);font-weight:700">18%</td>
-          <td><span class="reg-status learning">LEARNING</span></td>
-          <td style="color:var(--text3);font-size:10px">Not started</td>
-        </tr>
-        <tr onclick="switchTo('profile')">
-          <td><span class="reg-name">Sarah Kim</span></td>
-          <td>Real Estate</td><td>SAFE MLO · Mortgage</td>
-          <td><div class="prog-mini"><div class="prog-mini-bar"><div class="prog-mini-fill" style="width:91%"></div></div><span style="font-size:9px;color:var(--text3)">91%</span></div></td>
-          <td style="color:var(--green);font-weight:700">91%</td>
-          <td><span class="reg-status pending">PENDING</span></td>
-          <td style="color:var(--amber);font-size:10px">Under review</td>
-        </tr>
+      <tbody id="registryTbody">
+        <tr><td colspan="7" style="color:var(--text3);font-size:11px;padding:1rem">Loading candidates…</td></tr>
       </tbody>
     </table>
   </div>
+  <div id="registrySampleBadge" style="display:none;font-size:10px;color:var(--amber);margin:-1rem 0 1.5rem;">
+    ⚠ Sample data — from the shared Candidate Registry API, not a live intake pipeline yet.
+  </div>
+  <script>
+  (function () {
+    async function loadRegistry() {
+      const tbody = document.getElementById('registryTbody');
+      try {
+        const res = await fetch('/api/candidates');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const { candidates } = await res.json();
+
+        if (!candidates || !candidates.length) {
+          tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text3);font-size:11px;padding:1rem">No candidates yet.</td></tr>';
+          return;
+        }
+
+        const anySample = candidates.some(c => c.isSampleData);
+        const badge = document.getElementById('registrySampleBadge');
+        if (badge) badge.style.display = anySample ? 'block' : 'none';
+
+        const statusClass = (s) => (
+          s === 'ready_for_placement' ? 'approved' :
+          s === 'needs_review' ? 'pending' : 'learning'
+        );
+        const statusLabel = (s) => (
+          s === 'ready_for_placement' ? 'APPROVED' :
+          s === 'needs_review' ? 'PENDING' : 'LEARNING'
+        );
+        const scoreColor = (score) => (
+          score >= 75 ? 'var(--green)' : score >= 45 ? 'var(--amber)' : 'var(--red)'
+        );
+
+        tbody.innerHTML = candidates.map(c => {
+          const score = typeof c.readinessScore === 'number' ? c.readinessScore : 0;
+          return `
+            <tr onclick="switchTo('profile')" data-candidate-id="${c.candidateId}">
+              <td><span class="reg-name">${c.name}${c.isSampleData ? ' <span style=\"color:var(--text3);font-size:9px\">(sample)</span>' : ''}</span></td>
+              <td>${c.role || '—'}</td>
+              <td>${c.role || '—'}</td>
+              <td><div class="prog-mini"><div class="prog-mini-bar"><div class="prog-mini-fill" style="width:${score}%;background:${scoreColor(score)}"></div></div><span style="font-size:9px;color:var(--text3)">${score}%</span></div></td>
+              <td style="color:${scoreColor(score)};font-weight:700">${score}%</td>
+              <td><span class="reg-status ${statusClass(c.status)}">${statusLabel(c.status)}</span></td>
+              <td style="color:var(--text3);font-size:10px">${c.status === 'ready_for_placement' ? '✓ Approved' : c.status === 'needs_review' ? 'Under review' : 'Pending'}</td>
+            </tr>`;
+        }).join('');
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="7" style="color:var(--red);font-size:11px;padding:1rem">Could not load candidates from the registry API (' + err.message + ').</td></tr>';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', loadRegistry);
+    if (document.readyState !== 'loading') loadRegistry();
+  })();
+  </script>
 
   <div class="section-head cyan">CANDIDATE CATEGORIES</div>
   <div class="assign-grid">
@@ -6457,10 +6480,10 @@ function renderQuiz(domainId, labelText, questions) {
 
   <div class="section-head green">OPERATIONS KPIs</div>
   <div class="mgr-kpi-row">
-    <div class="mgr-kpi"><div class="mgr-kpi-val" style="color:var(--cyan)">4</div><div class="mgr-kpi-lbl">ACTIVE CANDIDATES</div></div>
-    <div class="mgr-kpi"><div class="mgr-kpi-val" style="color:var(--amber)">2</div><div class="mgr-kpi-lbl">PENDING REVIEWS</div></div>
-    <div class="mgr-kpi"><div class="mgr-kpi-val" style="color:var(--green)" id="mgr-avg-readiness">57%</div><div class="mgr-kpi-lbl">AVG READINESS</div></div>
-    <div class="mgr-kpi"><div class="mgr-kpi-val" style="color:var(--purple)">1</div><div class="mgr-kpi-lbl">PLACEMENTS ACTIVE</div></div>
+    <div class="mgr-kpi"><div class="mgr-kpi-val" style="color:var(--cyan)" id="mgr-active-count">—</div><div class="mgr-kpi-lbl">ACTIVE CANDIDATES</div></div>
+    <div class="mgr-kpi"><div class="mgr-kpi-val" style="color:var(--amber)" id="mgr-pending-count">—</div><div class="mgr-kpi-lbl">PENDING REVIEWS</div></div>
+    <div class="mgr-kpi"><div class="mgr-kpi-val" style="color:var(--green)" id="mgr-avg-readiness">—</div><div class="mgr-kpi-lbl">AVG READINESS</div></div>
+    <div class="mgr-kpi"><div class="mgr-kpi-val" style="color:var(--purple)" id="mgr-placements-count">—</div><div class="mgr-kpi-lbl">PLACEMENTS ACTIVE</div></div>
   </div>
   <div class="mgr-kpi-row">
     <div class="mgr-kpi"><div class="mgr-kpi-val" style="color:var(--green)">3</div><div class="mgr-kpi-lbl">CERTIFICATIONS</div></div>
@@ -6475,38 +6498,68 @@ function renderQuiz(domainId, labelText, questions) {
       <thead><tr>
         <th>CANDIDATE</th><th>SECTOR</th><th>SCORE</th><th>STATUS</th><th>NEXT ACTION</th>
       </tr></thead>
-      <tbody>
-        <tr>
-          <td><span class="reg-name">John Smith</span></td>
-          <td>Healthcare · CRCR</td>
-          <td style="color:var(--amber);font-weight:700">42%</td>
-          <td><span class="reg-status learning">LEARNING</span></td>
-          <td style="font-size:10px;color:var(--text3)">Continue CRCR domains</td>
-        </tr>
-        <tr>
-          <td><span class="reg-name">Mary Jones</span></td>
-          <td>Insurance · AHIP</td>
-          <td style="color:var(--green);font-weight:700">76%</td>
-          <td><span class="reg-status approved">APPROVED</span></td>
-          <td style="font-size:10px;color:var(--green)">→ Deployment cleared</td>
-        </tr>
-        <tr>
-          <td><span class="reg-name">David Lee</span></td>
-          <td>Finance · AB-100</td>
-          <td style="color:var(--red);font-weight:700">18%</td>
-          <td><span class="reg-status learning">LEARNING</span></td>
-          <td style="font-size:10px;color:var(--text3)">Early stage</td>
-        </tr>
-        <tr>
-          <td><span class="reg-name">Sarah Kim</span></td>
-          <td>RE · SAFE MLO</td>
-          <td style="color:var(--green);font-weight:700">91%</td>
-          <td><span class="reg-status pending">PENDING</span></td>
-          <td style="font-size:10px;color:var(--amber)">⚡ Review now → HITL</td>
-        </tr>
+      <tbody id="mgrStatusTbody">
+        <tr><td colspan="5" style="color:var(--text3);font-size:11px;padding:1rem">Loading candidates…</td></tr>
       </tbody>
     </table>
   </div>
+  <script>
+  (function () {
+    function nextAction(c) {
+      if (c.status === 'ready_for_placement') return '<span style="font-size:10px;color:var(--green)">→ Deployment cleared</span>';
+      if (c.status === 'needs_review') return '<span style="font-size:10px;color:var(--amber)">⚡ Review now → HITL</span>';
+      const score = c.readinessScore || 0;
+      return `<span style="font-size:10px;color:var(--text3)">${score < 30 ? 'Early stage' : 'Continue training modules'}</span>`;
+    }
+    function statusClass(s) { return s === 'ready_for_placement' ? 'approved' : s === 'needs_review' ? 'pending' : 'learning'; }
+    function statusLabel(s) { return s === 'ready_for_placement' ? 'APPROVED' : s === 'needs_review' ? 'PENDING' : 'LEARNING'; }
+    function scoreColor(score) { return score >= 75 ? 'var(--green)' : score >= 45 ? 'var(--amber)' : 'var(--red)'; }
+
+    async function loadManagerView() {
+      const tbody = document.getElementById('mgrStatusTbody');
+      try {
+        const res = await fetch('/api/candidates');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const { candidates } = await res.json();
+
+        if (!candidates || !candidates.length) {
+          tbody.innerHTML = '<tr><td colspan="5" style="color:var(--text3);font-size:11px;padding:1rem">No candidates yet.</td></tr>';
+          document.getElementById('mgr-active-count').textContent = '0';
+          document.getElementById('mgr-pending-count').textContent = '0';
+          document.getElementById('mgr-avg-readiness').textContent = '—';
+          document.getElementById('mgr-placements-count').textContent = '0';
+          return;
+        }
+
+        tbody.innerHTML = candidates.map(c => {
+          const score = typeof c.readinessScore === 'number' ? c.readinessScore : 0;
+          return `
+            <tr>
+              <td><span class="reg-name">${c.name}${c.isSampleData ? ' <span style=\"color:var(--text3);font-size:9px\">(sample)</span>' : ''}</span></td>
+              <td>${c.role || '—'}</td>
+              <td style="color:${scoreColor(score)};font-weight:700">${score}%</td>
+              <td><span class="reg-status ${statusClass(c.status)}">${statusLabel(c.status)}</span></td>
+              <td>${nextAction(c)}</td>
+            </tr>`;
+        }).join('');
+
+        const active = candidates.length;
+        const pending = candidates.filter(c => c.status === 'needs_review').length;
+        const placements = candidates.filter(c => c.status === 'ready_for_placement').length;
+        const avgReadiness = Math.round(candidates.reduce((sum, c) => sum + (c.readinessScore || 0), 0) / candidates.length);
+
+        document.getElementById('mgr-active-count').textContent = active;
+        document.getElementById('mgr-pending-count').textContent = pending;
+        document.getElementById('mgr-avg-readiness').textContent = avgReadiness + '%';
+        document.getElementById('mgr-placements-count').textContent = placements;
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="5" style="color:var(--red);font-size:11px;padding:1rem">Could not load candidates (' + err.message + ').</td></tr>';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', loadManagerView);
+    if (document.readyState !== 'loading') loadManagerView();
+  })();
+  </script>
 
   <div class="section-head cyan">PROGRESSION APPROVAL</div>
   <div style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:1rem;">
