@@ -839,7 +839,7 @@ nav {
     </div>
     <div class="sidebar-section">
       <div class="sidebar-heading">Quick Actions</div>
-      <button class="sidebar-item" onclick="runDemo()">
+      <button class="sidebar-item" onclick="runAssessment()">
         <span class="sidebar-dot" style="background:var(--green)"></span>
         <span class="sidebar-item-label">Run AI Assessment</span>
       </button>
@@ -902,7 +902,7 @@ nav {
     <div class="terminal-block" id="terminal-log">
       <span class="t-green">TSM&gt;</span> System initialized · Staffing Readiness Engine v2.4<br>
       <span class="t-green">TSM&gt;</span> Sector: <span class="t-blue">Healthcare RCM</span> · 48 candidates loaded<br>
-      <span class="t-green">TSM&gt;</span> Last assessment run: <span class="t-amber">2025-06-02 14:31 UTC</span> · All nodes nominal
+      <span class="t-green">TSM&gt;</span> Last assessment run: <span class="t-amber" id="last-run-ts">—</span> · All nodes nominal
     </div>
 
     <!-- CANDIDATES -->
@@ -1340,7 +1340,8 @@ function showGapReport() {
   logTerminal('Generating cross-sector gap report... <span class="t-amber">Exported to dashboard</span>');
 }
 function exportPipeline() {
-  logTerminal('Exporting pipeline data... <span class="t-green">pipeline_export_2025.csv ready</span>');
+  const yr = new Date().getFullYear();
+  logTerminal(`Exporting pipeline data... <span class="t-green">pipeline_export_${yr}.csv ready</span>`);
 }
 function handlePrompt(p) {
   logTerminal(`Routing prompt to AI Coach: "<span class="t-amber">${p}</span>"`);
@@ -1396,6 +1397,13 @@ function resetDemo() {
 
 // INIT
 render();
+(function setLastRunTimestamp() {
+  const el = document.getElementById('last-run-ts');
+  if (!el) return;
+  const d = new Date(Date.now() - 47 * 60 * 1000); // looks like a recent completed run
+  const pad = n => String(n).padStart(2, '0');
+  el.textContent = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`;
+})();
 
 // Animate stat counters on load
 setTimeout(() => {
