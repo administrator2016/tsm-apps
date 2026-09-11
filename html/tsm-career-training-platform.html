@@ -7563,5 +7563,28 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="/html/js/career/tsm-servicenow-career-adapter.js"></script>
 <script src="/html/js/career/tsm-rcm-career-progression.js"></script>
   <!-- /TSM_RCM_CAREER_STACK -->
+
+<script>
+(function () {
+  'use strict';
+
+  /*
+   * Guard against bfcache (back/forward cache) restores.
+   *
+   * On a bfcache restore the browser repaints the DOM exactly as it
+   * was left — including any stale career-practice result panel
+   * (denial-recovery, revenue-leakage, etc.) — without re-running
+   * DOMContentLoaded or any adapter's boot() logic. A real reload
+   * already resets each adapter's practice panel correctly, so force
+   * one on a persisted pageshow.
+   */
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted) {
+      window.location.reload();
+    }
+  });
+
+})();
+</script>
 </body>
 </html>

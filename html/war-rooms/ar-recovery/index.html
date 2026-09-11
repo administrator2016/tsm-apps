@@ -1228,5 +1228,33 @@ function copyOut(id){
 })();
 </script>
 
+<script>
+(function () {
+  'use strict';
+
+  /*
+   * Guard against bfcache (back/forward cache) restores.
+   *
+   * On a bfcache restore the browser repaints the DOM exactly as it
+   * was left — including any stale A/R Recovery Queue table and any
+   * stale Career Practice result panel — without re-running
+   * DOMContentLoaded or any of this page's boot() logic. That made a
+   * scored result (and an already-ranked-but-now-stale queue) look
+   * like it "never reset" after navigating away and back.
+   *
+   * The safest fix is to force a real reload on a persisted
+   * pageshow, since a true reload already resets both the queue
+   * table (index.html) and the Career Practice result panel
+   * (tsm-ar-recovery-career-adapter.js) correctly.
+   */
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted) {
+      window.location.reload();
+    }
+  });
+
+})();
+</script>
+
 </body>
 </html>

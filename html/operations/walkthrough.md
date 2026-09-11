@@ -272,9 +272,15 @@ Each domain writes only its own relay key (`TSM_COLLEGE_FINAID_RELAY`, `TSM_COLL
 
 ---
 
-## 13. Honeywell (Plant / Supplier / Cyber-OT)
+## 13. Honeywell (Plant / Supplier / Cyber-OT / BESS / Advanced Detection)
 
-**Structural note:** unlike every other vertical, Honeywell has **three war rooms, no single one** — `html/plant-incident.html`, `html/supplier-shutdown.html`, `html/cyber-incident.html` — all funneling into one shared `html/war-rooms/honeywell-strategist.html` → `html/war-rooms/honeywell-executive-portal.html`.
+**Structural note:** Honeywell uses multiple scenario-specific war rooms that converge on one shared `html/war-rooms/honeywell-strategist.html` → `html/war-rooms/honeywell-executive-portal.html` chain. The current documented scenario set is five entry points: `html/plant-incident.html`, `html/supplier-shutdown.html`, `html/cyber-incident.html`, `html/war-rooms/bess-gigafactory-incident.html`, and `html/war-rooms/advanced-detection-incident.html`.
+
+**BESS / Gigafactory:** `html/war-rooms/bess-gigafactory-incident.html` is the battery-energy-storage / gigafactory incident command scenario. It uses the six-engine War Room pipeline and routes its decision package into the shared Honeywell Strategist → Executive Portal chain. Key documented operating facts include 20 MW nameplate power, 80 MWh installed energy capacity, output curtailed to 65% of contracted capacity, a 12–24 hour re-energization decision window, and a conditional 3–5 week module-replacement lead time if thermal runaway is confirmed. Financial exposure is represented as a `$400,000–$600,000` TSM planning assumption, not a source-provided confirmed cost. Root cause remains unconfirmed unless supported by the incident evidence.
+
+**Advanced Detection:** `html/war-rooms/advanced-detection-incident.html` is the early-warning detection command scenario. It accepts BESS off-gas alerts, Gigafactory off-gas alerts, VESDA particulate alerts, and facility shutdown logs. Its six engines are Detection Intelligence, Facility Impact, Failure Progression, Exposure Calculation, Response Plan, and Executive Dispatch. It explicitly operates as a training / decision-support simulation rather than a live sensor feed or facility control system. The documented API surface is `/api/war-room/stream` and the scenario is intended to provide detection-to-decision lead-time analysis before escalation to the shared Strategist and Executive layers.
+
+**Shared Honeywell relay pattern:** both new scenarios converge into the same Strategist → Executive decision chain rather than creating separate strategist or executive portals.
 
 | Step | Screen | Action | Expected result | If it doesn't work |
 |---|---|---|---|---|
@@ -283,7 +289,7 @@ Each domain writes only its own relay key (`TSM_COLLEGE_FINAID_RELAY`, `TSM_COLL
 | 3 | Exec Portal | **AUTHORIZE** vs **BOARD NOTIFIED** | Two distinct, separately-logged actions (`recordExecutiveAction('AUTHORIZED', ...)` vs `('BOARD_NOTIFIED', ...)`) | If the audit trail only shows one action type when both should have fired, check they weren't collapsed into a single generic ESCALATE somewhere upstream |
 | 4 | Exec Portal | **⬇ EXPORT CLIENT PACKAGE** | Standard export | — |
 
-**No client-facing sales pitch yet for this vertical overall:** Honeywell is currently 3 sub-verticals with no queue/correction logic — off every client-facing pitch entirely, tracked as internal build backlog until it reaches Tier 2. Don't represent it as pilot-ready if a support/sales question comes in about it.
+**No client-facing sales pitch yet for this vertical overall:** Honeywell currently has five documented scenario entry points with shared Strategist/Executive convergence — off every client-facing pitch entirely, tracked as internal build backlog until it reaches Tier 2. Don't represent it as pilot-ready if a support/sales question comes in about it.
 
 ---
 
