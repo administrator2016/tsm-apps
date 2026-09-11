@@ -52,10 +52,9 @@ async function connect() {
       db = client.db(process.env.MONGODB_DB_NAME || DEFAULT_DB_NAME);
 
       const col = db.collection(CANDIDATES_COLLECTION);
-
-      // Firestore MongoDB compatibility does not allow this runtime
-      // UserCred to create indexes. Index management belongs outside the
-      // application startup path.
+      await col.createIndex({ candidateId: 1 }, { unique: true });
+      await col.createIndex({ status: 1 });
+      await col.createIndex({ updatedAt: -1 });
 
       return db;
     } finally {
@@ -138,7 +137,6 @@ async function upsertCandidate(payload) {
     isSampleData: payload.isSampleData !== undefined ? payload.isSampleData : true,
     readinessScore: readiness.score,
     readinessBasis: readiness.basis,
-    readinessEvidence: payload.readinessEvidence || null,
     updatedAt: now,
     createdAt: payload.createdAt || now,
   };
@@ -169,24 +167,15 @@ async function recordTrainingEvent(candidateId, event) {
     .toArray();
   const readiness = computeReadinessScore(events);
 
-  const latestEvidence =
-    event.type === 'readiness_assessment'
-      ? (event.meta || null)
-      : null;
-
-  const update = {
-    readinessScore: readiness.score,
-    readinessBasis: readiness.basis,
-    updatedAt: new Date().toISOString(),
-  };
-
-  if (latestEvidence) {
-    update.readinessEvidence = latestEvidence;
-  }
-
   await database.collection(CANDIDATES_COLLECTION).updateOne(
     { candidateId },
-    { $set: update }
+    {
+      $set: {
+        readinessScore: readiness.score,
+        readinessBasis: readiness.basis,
+        updatedAt: new Date().toISOString(),
+      },
+    }
   );
 
   return getCandidate(candidateId);

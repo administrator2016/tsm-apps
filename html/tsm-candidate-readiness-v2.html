@@ -1608,7 +1608,7 @@ function l3Next(){
 }
 
 /* ══ RESULTS ══ */
-function generateResults(){
+async function generateResults(){
   clearInterval(l3State.timer);
   const skillVals=Object.values(state.skills);
   const avgSkill=skillVals.length?skillVals.reduce((a,b)=>a+b,0)/skillVals.length:3;
@@ -1655,10 +1655,32 @@ function generateResults(){
   document.getElementById('result-reco').textContent=reco;
 
   const allSkills=TRACK_SKILLS[state.track]||TRACK_SKILLS.admin;
-  const strengths=allSkills.filter((_,i)=>(state.skills[i]||3)>=4).slice(0,4);
-  const gaps=allSkills.filter((_,i)=>(state.skills[i]||3)<=3).slice(0,3);
-  document.getElementById('result-strengths').innerHTML=(strengths.length?strengths:allSkills.slice(0,3)).map(s=>`<div style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--text);padding:4px 0;"><span style="color:var(--green);flex-shrink:0;">✓</span>${s}</div>`).join('');
-  document.getElementById('result-gaps').innerHTML=(gaps.length?gaps:['Review module recommended']).map((g,i)=>`<div style="padding:5px 0;border-bottom:0.5px solid var(--border);"><div style="font-size:11px;color:var(--text);">→ ${g}</div><div style="font-size:9px;color:var(--dim);">Target: ${['1 coaching session','Practice module ×2','Simulation drill'][i]||'Self-study'}</div></div>`).join('');
+
+  // Strengths and gaps are evidence-derived from the candidate's actual
+  // skill ratings. Do not populate strengths with fallback skills.
+  const strengths=allSkills
+    .map((skill)=>({skill,score:Number(state.skills[skill])||0}))
+    .filter(x=>x.score>=4)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,4)
+    .map(x=>x.skill);
+
+  const gaps=allSkills
+    .map((skill)=>({skill,score:Number(state.skills[skill])||0}))
+    .filter(x=>x.score>0 && x.score<=3)
+    .sort((a,b)=>a.score-b.score)
+    .slice(0,3)
+    .map(x=>x.skill);
+
+  document.getElementById('result-strengths').innerHTML=
+    (strengths.length?strengths:['No strength threshold met yet'])
+      .map(s=>`<div style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--text);padding:4px 0;"><span style="color:var(--green);flex-shrink:0;">✓</span>${s}</div>`)
+      .join('');
+
+  document.getElementById('result-gaps').innerHTML=
+    (gaps.length?gaps:['No active skill gaps recorded'])
+      .map((g,i)=>`<div style="padding:5px 0;border-bottom:0.5px solid var(--border);"><div style="font-size:11px;color:var(--text);">→ ${g}</div><div style="font-size:9px;color:var(--dim);">Target: ${['1 coaching session','Practice module ×2','Simulation drill'][i]||'Self-study'}</div></div>`)
+      .join('');
 
   // Level unlock tiles
   document.getElementById('ul1-score').textContent=`${fcDeck.length} terms · Complete`;
@@ -1674,22 +1696,84 @@ function generateResults(){
 
   window._resultData={fname:state.fname,lname:state.lname,track:TRACK_LABELS[state.track]||'General',overall,workflow,compliance,comm,adapt,reco,strengths:strengths.length?strengths:allSkills.slice(0,3),gaps:gaps.length?gaps:['Review module recommended'],l1:true,l2:state.l2score,l3:l3pct};
 
+  // Persist completed assessment to the canonical Candidate Registry.
+  // Candidate Registry is the source of truth; V2 does not create a
+  // competing localStorage candidate record.
   try {
-    const existing=JSON.parse(localStorage.getItem('tsm_candidates')||'[]');
-    const entry={
-      id:'cand_'+Date.now(),timestamp:new Date().toISOString(),
-      fname:state.fname,lname:state.lname,email:state.email,phone:state.phone,
-      track:TRACK_LABELS[state.track]||'General',
-      overall,workflow,compliance,comm,adapt,
-      status:overall>=85?'ready':overall>=70?'review':'risk',
-      reco,l1:true,l2:state.l2score,l3:l3pct,
-      strengths:strengths.length?strengths:allSkills.slice(0,3),
-      gaps:gaps.length?gaps:['Review module recommended'],
-      source:'errs-portal',new:true,
-    };
-    existing.unshift(entry);
-    localStorage.setItem('tsm_candidates',JSON.stringify(existing.slice(0,100)));
-  } catch(e){console.warn('localStorage sync failed:',e);}
+    const candidateRes = await fetch('/api/candidates', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name:`${state.fname} ${state.lname}`.trim(),
+        role:TRACK_LABELS[state.track]||'General Professional',
+        email:state.email||null,
+        status:overall>=85
+          ? 'ready_for_placement'
+          : overall>=70
+            ? 'needs_review'
+            : 'in_training',
+        source:'candidate_readiness_v2',
+        isSampleData:false
+      })
+    });
+
+    if(!candidateRes.ok){
+      const data=await candidateRes.json().catch(()=>({}));
+      throw new Error(data.error||`Candidate Registry create failed (${candidateRes.status})`);
+    }
+
+    const candidateData=await candidateRes.json();
+    const candidateId=candidateData?.candidate?.candidateId;
+
+    if(!candidateId){
+      throw new Error('Candidate Registry response missing candidateId');
+    }
+
+    const eventRes = await fetch(
+      `/api/candidates/${encodeURIComponent(candidateId)}/training-events`,
+      {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          type:'readiness_assessment',
+          score:overall,
+          weight:1,
+          meta:{
+            workflow,
+            compliance,
+            comm,
+            adapt,
+            l1:true,
+            l2:state.l2score,
+            l3:l3pct,
+            track:TRACK_LABELS[state.track]||'General',
+            strengths:strengths.length?strengths:allSkills.slice(0,3),
+            gaps:gaps.length?gaps:['Review module recommended'],
+            recommendation:reco,
+            source:'candidate_readiness_v2'
+          }
+        })
+      }
+    );
+
+    if(!eventRes.ok){
+      const data=await eventRes.json().catch(()=>({}));
+      throw new Error(data.error||`Candidate Registry training event failed (${eventRes.status})`);
+    }
+
+    const eventData=await eventRes.json();
+
+    // Keep the canonical ID available to downstream UI/integrations.
+    window._candidateRegistryId=candidateId;
+    window._candidateRegistryRecord=eventData?.candidate||candidateData?.candidate||null;
+
+    console.log('Candidate Registry persistence PASS:', {
+      candidateId,
+      readinessScore:window._candidateRegistryRecord?.readinessScore
+    });
+  } catch(e) {
+    console.error('Candidate Registry persistence failed:',e);
+  }
 }
 
 function setDim(id,val){

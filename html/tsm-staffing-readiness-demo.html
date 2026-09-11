@@ -1101,6 +1101,143 @@ let autoInterval = null;
 let autoStep = 0;
 let autoProgress = 0;
 
+
+// ── CANONICAL CANDIDATE REGISTRY ────────────────────────────────────────────
+// The Candidate Registry is the source of truth for live candidate identity,
+// readiness score, and lifecycle status. Existing Staffing intelligence
+// (modules, gaps, coaching, placements) remains unchanged.
+let CANONICAL_CANDIDATE_REGISTRY = false;
+
+function staffingSectorForCandidate(candidate) {
+  const text = `${candidate.role || ''} ${candidate.source || ''}`.toLowerCase();
+
+  if (/medical|health|billing|clinical|emr|hospital|healthcare/.test(text)) {
+    return 'healthcare';
+  }
+
+  if (/loan|finance|finops|account|accounts|receivable|payable|bank/.test(text)) {
+    return 'finops';
+  }
+
+  if (/construction|field|permit|estimating|rfi|project|procurement/.test(text)) {
+    return 'construction';
+  }
+
+  if (/insurance|claims|underwriting|policy|compliance|fraud|s i u/.test(text)) {
+    return 'insurance';
+  }
+
+  // Staffing currently has four sectors. Unknown roles remain visible
+  // in Healthcare rather than disappearing from the pipeline.
+  return 'healthcare';
+}
+
+function mapRegistryStatus(status) {
+  if (status === 'ready_for_placement') return 'ready';
+  if (status === 'needs_review') return 'assess';
+  if (status === 'in_training') return 'training';
+  return 'gap';
+}
+
+function mapRegistryCandidate(candidate) {
+  const score = Number(candidate.readinessScore || 0);
+  const status = mapRegistryStatus(candidate.status);
+  const sector = staffingSectorForCandidate(candidate);
+
+  const evidence = candidate.readinessEvidence || {};
+
+  const match =
+    Array.isArray(evidence.strengths) && evidence.strengths.length
+      ? evidence.strengths
+      : [candidate.role || 'General Professional'];
+
+  const gap =
+    Array.isArray(evidence.gaps) && evidence.gaps.length
+      ? evidence.gaps
+      : score < 70
+        ? ['Readiness coaching']
+        : [];
+
+  return {
+    name: candidate.name || 'Unnamed Candidate',
+    role: candidate.role || 'General Professional',
+    score,
+    status,
+    match,
+    gap,
+    eta:
+      status === 'ready'
+        ? 'Ready Now'
+        : status === 'assess'
+          ? 'Review Required'
+          : 'Training in Progress',
+    candidateId: candidate.candidateId,
+    source: candidate.source,
+    registryStatus: candidate.status,
+    readinessEvidence: evidence,
+    recommendation: evidence.recommendation || null,
+    track: evidence.track || null,
+    workflow: evidence.workflow ?? null,
+    compliance: evidence.compliance ?? null,
+    communication: evidence.comm ?? null,
+    adaptability: evidence.adapt ?? null,
+    l1: evidence.l1 ?? null,
+    l2: evidence.l2 ?? null,
+    l3: evidence.l3 ?? null,
+    sector
+  };
+}
+
+async function loadCanonicalCandidates() {
+  try {
+    const res = await fetch('/api/candidates', {
+      cache: 'no-store'
+    });
+
+    if (!res.ok) {
+      throw new Error(`Candidate Registry request failed (${res.status})`);
+    }
+
+    const data = await res.json();
+    const candidates = Array.isArray(data.candidates)
+      ? data.candidates
+      : [];
+
+    if (!candidates.length) {
+      console.log(
+        'Staffing Candidate Registry: empty — using existing demo candidates.'
+      );
+      return false;
+    }
+
+    const liveCandidates = candidates.map(mapRegistryCandidate);
+
+    // Replace candidate data only. Do not alter the existing Staffing
+    // modules, gaps, coaching, or placement intelligence.
+    Object.keys(SECTORS).forEach(key => {
+      SECTORS[key].candidates =
+        liveCandidates.filter(candidate => candidate.sector === key);
+    });
+
+    CANONICAL_CANDIDATE_REGISTRY = true;
+
+    console.log('Staffing Candidate Registry PASS:', {
+      candidates: liveCandidates.length,
+      candidateIds: liveCandidates.map(c => c.candidateId),
+      source: 'candidate_registry'
+    });
+
+    return true;
+  } catch (err) {
+    console.warn(
+      'Staffing Candidate Registry unavailable — using existing demo candidates:',
+      err
+    );
+
+    return false;
+  }
+}
+
 const SECTOR_COLORS = {
   healthcare: 'var(--green)', finops: 'var(--amber)',
   construction: 'var(--coral)', insurance: 'var(--blue)'
@@ -1396,7 +1533,12 @@ function resetDemo() {
 }
 
 // INIT
-render();
+// Load canonical candidates before the first render.
+// If the API is unavailable, the existing demo dataset remains intact.
+(async function initStaffingReadiness() {
+  await loadCanonicalCandidates();
+  render();
+})();
 (function setLastRunTimestamp() {
   const el = document.getElementById('last-run-ts');
   if (!el) return;
@@ -1411,7 +1553,7 @@ setTimeout(() => {
   let n = 0;
   const t = setInterval(() => {
     n += 3;
-    if (n >= 100) { clearInterval(t); render(); return; }
+    if (n >= 100) { clearInterval(t); return; }
     document.getElementById('stat-candidates').textContent = Math.round(n * finalCand / 100);
     document.getElementById('stat-ready').textContent = Math.round(n * finalReady / 100);
     document.getElementById('stat-training').textContent = Math.round(n * finalTrain / 100);
