@@ -321,6 +321,28 @@ function tertiaryLabel(source){
 // via payload.bnca_exposure — this page never recomputes it, only displays
 // what was relayed. Mirrors honeywell-strategist.html's renderHoneywellBNCA().
 function hwMoney(n){ return '$' + Math.round(Number(n) || 0).toLocaleString(); }
+
+// Mirrors honeywell-strategist.html's panel of the same name — the
+// strategist now forwards every domain that was active at escalation time
+// (data.allDomains) instead of just the one it happened to have open, so
+// this page can show the executive the same full picture rather than only
+// the single most-recent incident.
+function renderActiveDomainsPanel(allEntries){
+  if(!allEntries || !allEntries.length) return '';
+  const rows = allEntries.map(d => {
+    const meta = SOURCE_META[d.source] || { label: (d.source||'UNKNOWN').toUpperCase(), icon:'◆', color:'var(--gold)' };
+    const exp = kpiExposure((d.kpis||{}).exposure);
+    const when = d.timestamp ? new Date(d.timestamp).toLocaleString() : 'unknown time';
+    return `<tr>
+      <td style="color:${meta.color}">${meta.icon} ${escapeHtml(meta.label)}</td>
+      <td>${escapeHtml(exp)}</td>
+      <td class="no-items" style="padding:0">${escapeHtml(when)}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="sec"><div class="sec-hdr">DOMAINS AT ESCALATION TIME (${allEntries.length})</div>
+    <table class="md-table"><thead><tr><th>DOMAIN</th><th>EXPOSURE</th><th>RELAYED</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
 function renderHoneywellBNCA(bnca){
   if(!bnca) return '';
   if(bnca.unavailable){
@@ -598,9 +620,22 @@ function render(){
     ? `Escalated by strategist ${new Date(data.strategistReviewedAt).toLocaleString()}`
     : (data.timestamp ? `Relayed ${new Date(data.timestamp).toLocaleString()}` : 'Escalation received');
 
+  // If the strategist escalated with multiple active domains, show the full
+  // picture (and its combined exposure) before drilling into the single
+  // most-recent incident below — otherwise this falls back to exactly the
+  // old single-domain-only behavior for any older escalation still sitting
+  // in storage from before this field existed.
+  let html = '';
+  if(data.allDomains && data.allDomains.length){
+    html += renderActiveDomainsPanel(data.allDomains);
+    html += `<div class="sec"><div class="sec-hdr">AGGREGATE BNCA — ALL ACTIVE DOMAINS</div></div>`;
+    html += renderHoneywellBNCA(data.aggregate_bnca);
+    html += `<div class="sec"><div class="sec-hdr">MOST RECENT DOMAIN: ${escapeHtml(meta.label)}</div></div>`;
+  }
+
   const k = data.kpis || {};
   lastKpis = k;
-  let html = `<div class="kpi-row">
+  html += `<div class="kpi-row">
     <div class="kpi"><div class="kpi-val red">${kpiExposure(k.exposure)}</div><div class="kpi-lbl">FINANCIAL EXPOSURE</div></div>
     <div class="kpi"><div class="kpi-val amber">${kpiSecondary(k.buffer || k.containment)}</div><div class="kpi-lbl">${secondaryLabel(data.source)}</div></div>
     <div class="kpi"><div class="kpi-val cyan">${kpiTertiary(k.orders || k.risk)}</div><div class="kpi-lbl">${tertiaryLabel(data.source)}</div></div>

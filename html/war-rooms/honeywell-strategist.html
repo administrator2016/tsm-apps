@@ -163,25 +163,42 @@ function showToast(msg, isErr){
   showToast._h=setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-function loadRelay(){
-  let latest = null;
+// Reads EVERY domain's relay key, not just the newest — the strategist's job
+// is to see all 9 war command centers at once, not silently discard 8 of them
+// because one happened to post most recently. Returns all currently-present
+// domain payloads, newest first. Falls back to the pre-split legacy key only
+// when none of the 9 split keys have anything (same fallback as before).
+function loadAllRelays(){
+  const entries = [];
   for (const key of Object.values(RELAY_KEYS)) {
     try {
       const raw = localStorage.getItem(key) || sessionStorage.getItem(key);
       if (!raw) continue;
       const parsed = JSON.parse(raw);
-      if (!latest || (parsed.timestamp && (!latest.timestamp || parsed.timestamp > latest.timestamp))) {
-        latest = parsed;
-      }
+      entries.push(parsed);
     } catch(e) { /* skip malformed entry, keep checking other domains */ }
   }
-  if (latest) return latest;
-  // Nothing in any of the three split keys — fall back to the legacy
-  // unscoped key in case there's pre-split data still sitting around.
-  try {
-    const raw = localStorage.getItem(LEGACY_RELAY_KEY) || sessionStorage.getItem(LEGACY_RELAY_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch(e) { return null; }
+  if (!entries.length) {
+    try {
+      const raw = localStorage.getItem(LEGACY_RELAY_KEY) || sessionStorage.getItem(LEGACY_RELAY_KEY);
+      if (raw) entries.push(JSON.parse(raw));
+    } catch(e) { /* nothing usable anywhere */ }
+  }
+  entries.sort((a, b) => {
+    const ta = a && a.timestamp ? Date.parse(a.timestamp) : 0;
+    const tb = b && b.timestamp ? Date.parse(b.timestamp) : 0;
+    return (tb || 0) - (ta || 0);
+  });
+  return entries;
+}
+
+// Kept for the single-incident deep-dive view (engine outputs, doc text,
+// per-domain explain panel) — always the newest across all active domains.
+// Aggregate visibility across every domain is handled separately by
+// loadAllRelays()/computeAggregateBNCA(), not by this function.
+function loadRelay(){
+  const all = loadAllRelays();
+  return all.length ? all[0] : null;
 }
 
 function manualRefresh(){
@@ -333,13 +350,79 @@ function computeHoneywellBNCA(data){
   const daysUntilDeadline = (src === 'supplier' && typeof buffer.bufferDays === 'number')
     ? buffer.bufferDays
     : (typeof deadlineKpi.daysUntilDeadline === 'number' ? deadlineKpi.daysUntilDeadline : 0);
-  return window.TSMBNCAExposureEngine.project({
+  const projection = window.TSMBNCAExposureEngine.project({
     baseExposure: baseExposure,
     severity: hwBncaSeverity(src),
     confidence: 70, // no confidence signal in this payload — engine's own neutral default
     daysUntilDeadline: daysUntilDeadline
   });
+  // Attach the real numeric deadline signal used above (the engine itself
+  // only returns a formatted urgencyWindow string) so computeAggregateBNCA()
+  // can rank domains by actual urgency instead of parsing prose.
+  projection._daysUntilDeadline = daysUntilDeadline;
+  return projection;
 }
+// Rolls up every currently-active domain's own BNCA projection into one
+// figure for the executive relay — sums exposure across domains rather than
+// picking a single winner, and surfaces the tightest deadline window across
+// all of them (the one that should drive urgency), so escalating to the
+// executive portal reflects everything the 9 war rooms are reporting, not
+// just whichever one posted last.
+function computeAggregateBNCA(allEntries){
+  if(!window.TSMBNCAExposureEngine || !allEntries || !allEntries.length) return null;
+  const perDomain = allEntries.map(d => {
+    const bnca = computeHoneywellBNCA(d);
+    return (bnca && !bnca.unavailable) ? { source: d.source, meta: SOURCE_META[d.source] || null, bnca } : null;
+  }).filter(Boolean);
+  if(!perDomain.length){
+    return { unavailable: true, reason: 'no domain relay currently carries a structured exposure figure' };
+  }
+  const currentExposure = perDomain.reduce((s,x) => s + (x.bnca.currentExposure || 0), 0);
+  const ifActedExposure = perDomain.reduce((s,x) => s + (x.bnca.ifActed.exposure || 0), 0);
+  const ifIgnoredExposure = perDomain.reduce((s,x) => s + (x.bnca.ifIgnored.exposure || 0), 0);
+  // Tightest real deadline signal across domains drives the combined
+  // message — any one domain hitting its deadline first is what the
+  // executive needs to act on first. Domains with no deadline signal
+  // (_daysUntilDeadline === 0) are only picked if nothing else has one.
+  const withDeadline = perDomain.filter(x => x.bnca._daysUntilDeadline > 0);
+  const pool = withDeadline.length ? withDeadline : perDomain;
+  const tightest = pool.reduce((best, x) =>
+    (!best || x.bnca._daysUntilDeadline < best.bnca._daysUntilDeadline) ? x : best
+  , null);
+  return {
+    currentExposure, ifActed: { exposure: ifActedExposure }, ifIgnored: { exposure: ifIgnoredExposure },
+    urgencyWindow: perDomain.length > 1
+      ? `Combined across ${perDomain.length} active domains — most urgent: ${tightest && tightest.meta ? tightest.meta.label : (tightest ? tightest.source : 'unknown')}${tightest && tightest.bnca.urgencyWindow ? ' (' + tightest.bnca.urgencyWindow + ')' : ''}`
+      : (tightest ? tightest.bnca.urgencyWindow : ''),
+    domainCount: perDomain.length,
+    perDomain: perDomain
+  };
+}
+
+// Lists every domain currently posting a relay — this is the "receiving from
+// each war command center" visibility the strategist is meant to give: the
+// deep-dive section below only ever shows the single newest incident, so
+// without this panel the other active domains would be invisible here even
+// though they're all being folded into the aggregate BNCA above.
+function renderActiveDomainsPanel(allEntries){
+  if(!allEntries || !allEntries.length) return '';
+  const rows = allEntries.map(d => {
+    const meta = SOURCE_META[d.source] || { label: (d.source||'UNKNOWN').toUpperCase(), icon:'◆', color:'var(--amber)' };
+    const sev = hwBncaSeverity(d.source);
+    const exp = kpiExposure((d.kpis||{}).exposure);
+    const when = d.timestamp ? new Date(d.timestamp).toLocaleString() : 'unknown time';
+    return `<tr>
+      <td style="color:${meta.color}">${meta.icon} ${escapeHtml(meta.label)}</td>
+      <td>${escapeHtml(sev)}</td>
+      <td>${escapeHtml(exp)}</td>
+      <td class="no-items" style="padding:0">${escapeHtml(when)}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="sec"><div class="sec-hdr">ACTIVE DOMAINS RECEIVING (${allEntries.length} of ${Object.keys(RELAY_KEYS).length})</div>
+    <table class="md-table"><thead><tr><th>DOMAIN</th><th>SEVERITY</th><th>EXPOSURE</th><th>RELAYED</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
 function hwMoney(n){ return '$' + Math.round(Number(n) || 0).toLocaleString(); }
 function renderHoneywellBNCA(bnca){
   if(!bnca) return '';
@@ -506,7 +589,8 @@ function renderEmpty(){
 }
 
 function render(){
-  const data = loadRelay();
+  const allRelays = loadAllRelays();
+  const data = allRelays.length ? allRelays[0] : null;
   if(!data){ renderEmpty(); return; }
 
   const meta = SOURCE_META[data.source] || { label: (data.source||'UNKNOWN').toUpperCase(), icon:'◆', war:null, color:'var(--amber)' };
@@ -517,11 +601,20 @@ function render(){
   badge.style.color = meta.color;
 
   document.getElementById('hdrSub').textContent = data.timestamp
-    ? `Relayed ${new Date(data.timestamp).toLocaleString()}${data.docType ? ' · doc type: ' + data.docType : ''}`
+    ? `Most recent: ${new Date(data.timestamp).toLocaleString()}${data.docType ? ' · doc type: ' + data.docType : ''} — ${allRelays.length} domain${allRelays.length===1?'':'s'} currently active`
     : 'Relay received';
 
+  // Every active domain's own relay, plus a combined exposure figure across
+  // all of them — this is what the executive escalation actually forwards,
+  // so it's shown here first rather than only ever surfacing the newest
+  // domain's number.
+  let html = renderActiveDomainsPanel(allRelays);
+  html += `<div class="sec"><div class="sec-hdr">AGGREGATE BNCA — ALL ACTIVE DOMAINS</div></div>`;
+  html += renderHoneywellBNCA(computeAggregateBNCA(allRelays));
+
   const k = data.kpis || {};
-  let html = `<div class="kpi-row">
+  html += `<div class="sec"><div class="sec-hdr">MOST RECENT DOMAIN: ${escapeHtml(meta.label)}</div></div>`;
+  html += `<div class="kpi-row">
     <div class="kpi"><div class="kpi-val red">${kpiExposure(k.exposure)}</div><div class="kpi-lbl">FINANCIAL EXPOSURE</div></div>
     <div class="kpi"><div class="kpi-val amber">${kpiSecondary(k.buffer || k.containment)}</div><div class="kpi-lbl">${secondaryLabel(data.source)}</div></div>
     <div class="kpi"><div class="kpi-val cyan">${kpiTertiary(k.orders || k.risk)}</div><div class="kpi-lbl">${tertiaryLabel(data.source)}</div></div>
@@ -563,12 +656,21 @@ function render(){
 }
 
 function escalateExec(){
-  const data = loadRelay();
+  const allRelays = loadAllRelays();
+  const data = allRelays.length ? allRelays[0] : null;
   if(!data){ showToast('No analysis to escalate.', true); return; }
-  // Forward the BNCA exposure projection computed above (previously this
-  // only ever rendered to this page's own DOM and was never relayed, so
-  // the executive portal had no way to show it).
-  const payload = JSON.stringify(Object.assign({}, data, { strategistReviewedAt: new Date().toISOString(), bnca_exposure: computeHoneywellBNCA(data) }));
+  // Forward the most-recent domain's own detail (unchanged, bnca_exposure
+  // field kept for backward compatibility) PLUS the full list of every
+  // currently-active domain and a combined aggregate_bnca across all of
+  // them — previously only the single newest domain's numbers ever reached
+  // the executive portal, silently dropping whatever the other active war
+  // rooms were reporting at the same time.
+  const payload = JSON.stringify(Object.assign({}, data, {
+    strategistReviewedAt: new Date().toISOString(),
+    bnca_exposure: computeHoneywellBNCA(data),
+    allDomains: allRelays,
+    aggregate_bnca: computeAggregateBNCA(allRelays)
+  }));
   try{
     localStorage.setItem('TSM_HONEYWELL_EXEC_RELAY', payload);
     sessionStorage.setItem('TSM_HONEYWELL_EXEC_RELAY', payload);
