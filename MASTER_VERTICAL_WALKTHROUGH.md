@@ -1,7 +1,7 @@
 # TSM Consultz — Master Vertical Walkthrough
 ## War Room → Strategist → Executive Portal (13 Chained Verticals + 1 Standalone)
 
-**Verticals covered:** Healthcare, Construction, FinOps, Insurance, Legal, Real Estate, Mortgage, Schools, PM Copilot, BPO, HotelOps, Concierge, Honeywell (Plant/Supplier/Cyber-OT). RCM-OS is documented separately at the end — it's a standalone reconciliation tool, not a War Room → Strategist → Executive Portal chain.
+**Verticals covered:** Healthcare, Construction, FinOps, Insurance, Legal, Real Estate, Mortgage, Schools, PM Copilot, BPO, HotelOps, Concierge, Honeywell (Plant/Supplier/ Cyber-OT). RCM-OS is documented separately at the end — it's a standalone reconciliation tool, not a War Room → Strategist → Executive Portal chain.
 **Pattern:** every vertical runs the same three-layer chain — operator desk (War Room) → analytical handoff (Strategist) → leadership decision surface (Executive Portal). All onClick chains below are verified against the live HTML/JS, not assumed.
 
 ---
@@ -407,33 +407,68 @@ This is a separate hop from the internal War Room → Strategist → Executive P
 
 ---
 
-## 13. Honeywell (Plant / Supplier / Cyber-OT)
+## 13. Honeywell (Plant / Supplier / Cyber-OT / BESS / Advanced Detection)
 
-**Path:** three parallel scenario-specific entry points — `html/plant-incident.html`, `html/supplier-shutdown.html`, `html/cyber-incident.html` — each escalating into one shared `html/war-rooms/honeywell-strategist.html` → `html/war-rooms/honeywell-executive-portal.html`.
-**Structural note:** unlike every other vertical in this manual, Honeywell has **no single "war room" file** — it has three, one per incident type, all funneling into the same strategist/exec-portal pair.
+**Path:** five parallel scenario-specific entry points — `html/plant-incident.html`, `html/supplier-shutdown.html`, `html/cyber-incident.html`, `html/war-rooms/bess-gigafactory-incident.html`, and `html/war-rooms/advanced-detection-incident.html` — each converging into one shared `html/war-rooms/honeywell-strategist.html` → `html/war-rooms/honeywell-executive-portal.html` chain.
 
-### War Room (one of three, by scenario)
+**Structural note:** Honeywell uses multiple scenario-specific war rooms rather than one universal incident screen. Plant, supplier, cyber-OT, BESS/Gigafactory, and Advanced Detection have different first-response data and workflows, but leadership converges on the same Strategist and Executive Portal.
+
+### War Room — Plant / Supplier / Cyber-OT
+
 - **plant-incident.html** — `⚡ ESCALATE TO OPERATIONS STRATEGIST →` (`#escalateBtn`, disabled until conditions are met) — `escalateToStrategist()`.
 - **supplier-shutdown.html** — `⚡ ESCALATE TO SUPPLY CHAIN STRATEGIST →` — `escalateToStrategist()`.
 - **cyber-incident.html** — `🛡 ESCALATE TO OPERATIONS STRATEGIST →` — `escalateToStrategist()`.
 - All three target the same `STRATEGIST_URL = '/html/war-rooms/honeywell-strategist.html'`.
 
+### BESS / Gigafactory War Room — `bess-gigafactory-incident.html`
+
+- Six-engine incident pipeline covering detection/context, facility impact, failure progression, financial exposure, response planning, and executive dispatch.
+- Documented operating facts: **20 MW nameplate power**, **80 MWh installed energy capacity**, LFP chemistry, and output curtailed to **65% of contracted capacity**.
+- Re-energization decision window: **12–24 hours**.
+- Conditional module-replacement lead time: **3–5 weeks if thermal runaway is confirmed and replacement is required**.
+- Financial exposure: **$400,000–$600,000 TSM planning estimate / assumption**, not a source-provided confirmed cost.
+- Root cause must remain explicitly unconfirmed unless supported by incident evidence.
+- Decision costs remain `NOT QUANTIFIED` unless the source provides an actual cost.
+- Routes into the shared Honeywell Strategist → Executive Portal chain.
+
+### Advanced Detection War Room — `advanced-detection-incident.html`
+
+- Early-warning detection command scenario using BESS off-gas alerts, Gigafactory off-gas alerts, VESDA particulate alerts, and facility shutdown logs.
+- Six engines:
+  1. Detection Intelligence
+  2. Facility Impact
+  3. Failure Progression
+  4. Exposure Calculation
+  5. Response Plan
+  6. Executive Dispatch
+- Uses the canonical `/api/war-room/stream` surface.
+- Detection-to-decision workflow is explicitly a **training / decision-support simulation**, not a live sensor feed or facility control system.
+- It does not command, arm, or trigger real suppression, isolation, or shutdown equipment; actual site fire/life-safety systems and AHJ-approved procedures remain authoritative.
+- Routes into the same shared Honeywell Strategist → Executive Portal chain.
+
 ### Strategist — `honeywell-strategist.html`
+
 - **→ Escalate** — `escalateExec()`.
-- Scenario shortcuts back to any of the three war rooms (`window.location='/html/plant-incident.html'` etc.) and forward to the exec portal.
-- `manualRefresh()`, **Export** — `window.print()`.
+- Receives scenario-specific decision packages from all five Honeywell entry points.
+- Scenario shortcuts can return to the applicable Honeywell war room.
+- Executive escalation continues to `honeywell-executive-portal.html`.
+- `manualRefresh()` and **Export** — `window.print()`.
 
 ### Executive Portal — `honeywell-executive-portal.html`
+
 - **⬇ EXPORT CLIENT PACKAGE** — `exportClientPackage()`.
 - **AUTHORIZE** — `recordExecutiveAction('AUTHORIZED', ...)`.
-- **BOARD NOTIFIED** — `recordExecutiveAction('BOARD_NOTIFIED', ...)` — a named action distinct from the generic ESCALATE seen elsewhere.
-- Same scenario shortcuts back to all three war rooms.
+- **BOARD NOTIFIED** — `recordExecutiveAction('BOARD_NOTIFIED', ...)`.
+- `AUTHORIZED` and `BOARD_NOTIFIED` are separate named executive actions and should remain separately represented in the audit trail.
+- Scenario navigation can return to the applicable Honeywell war room.
 
 **Talk points:**
-- "Honeywell is the only vertical with three front doors instead of one — plant incident, supplier shutdown, cyber-OT breach — because those are genuinely different first-responders with different data, but they converge on one strategist and one executive view. That's deliberate: leadership sees one unified risk picture regardless of which team is closest to the fire."
-- "BOARD NOTIFIED is a named, distinct action from AUTHORIZE — worth calling out to a compliance-minded buyer the same way Legal's 'Discovery Expansion' is."
+- "Honeywell now has five scenario front doors — plant incident, supplier shutdown, cyber-OT, BESS/Gigafactory, and Advanced Detection. Each represents a genuinely different first-response context, but all converge on one strategist and one executive view."
+- "BESS handles the incident-command side of battery/gigafactory events, while Advanced Detection handles the early-warning sensor side. They are complementary, not duplicate war rooms."
+- "BOARD NOTIFIED is a named, distinct executive action from AUTHORIZE, which is important for auditability and governance."
 
----
+**Client-facing status:** Honeywell remains an internal build/backlog vertical and should **not** be represented as pilot-ready solely because these additional scenario rooms are documented.
+
 
 ## 14. L1 Ticket Copilot (IT Ops)
 
@@ -498,6 +533,36 @@ Every section above stops at the Executive Portal — the internal employee-faci
 **Path:** `html/finops-suite/tsm-rcm-os.html` (single self-contained page), with `tsm-rcm-os-howto.html` and `rcm-os-presentation.html` as companion docs/demo.
 
 RCM-OS ("Reconciliation Command Center") does not follow the War Room → Strategist → Executive Portal pattern at all — there's no escalation chain, no relay, and no `exportClientPackage()`. It's a standalone GL-reconciliation simulation tool that lives under the FinOps suite. Don't describe it in three-tier-chain language in a demo; it's a different kind of artifact.
+
+---
+
+## Candidate Intelligence — Career Training Platform (Staff Readiness &amp; Candidate Registry)
+
+**Path:** `html/tsm-career-training-platform.html` (single page, panel-switched via `switchTo()`), fed by the Candidate Registry API (`POST /api/candidates`, `POST /api/candidates/:id/training-events`) rather than a War Room/Strategist/Executive Portal chain.
+
+**Structural note:** like RCM-OS, this is a cross-suite capability, not a 14th chained vertical — there's no escalation relay here. It provides one canonical candidate record (Candidate Registry) that Career Training and Staffing Readiness both read from, so a candidate's readiness evidence only has to be recorded once.
+
+### Candidate Registry — `panel-registry` (nav `02 · Candidate Registry`)
+
+- Manager-facing roster (`registryTbody`) showing every active candidate across sectors: assigned course, progress, readiness score, status, and approval state.
+- Candidates only see their own assigned curriculum; the roster view is manager-only.
+- Footer nav chains to `panel-profile` (Candidate Profile, `03`) and back to `overview`.
+
+### Candidate Readiness Tracker — `panel-readiness` (nav `05 · Readiness Tracker`, under "Assessment & Approval")
+
+- Live explainability panel (`overall-score`, `readiness-bar`) computing an overall readiness percentage from a documented, non-fabricated formula: sector-tool completions (40%) + cert-prep status (35%) + governance-checkpoint adherence (25%).
+- Per-sector checklists (`readiness-check` checkboxes, `updateReadiness()`) across all 7 sectors (Healthcare, FinOps, Insurance, Real Estate, BPO, and others further down the panel) plus 6 cert tracks.
+- Feeds a placement-status readout (`placement-status`) and an exportable audit trail — the same explainability-contract pattern used elsewhere in the platform, described here as compliance-ready structured JSON/PDF.
+- Footer nav chains to `panel-governance`.
+
+**Talk points:**
+- "Candidate Registry is the canonical record — Career Training and Staffing Readiness both read the same readiness evidence instead of keeping their own copies."
+- "The Readiness Tracker's score isn't a black box — it's a documented weighted formula against real checklist completions, the same honesty pattern the rest of the platform holds to."
+- "This is included in the client/interview-facing demo walkthrough alongside the Meridian Industrial incident-command set — it demonstrates the same canonical-record pattern in a staffing context, without needing a live backend."
+
+**Client-facing status:** unlike Honeywell, this one is demo-ready — Candidate Registry and Readiness Tracker are explicitly called out for inclusion in client/interview-facing demos (see `html/document-processing-revenue-recovery-manual.html`, §CI).
+
+**Supporting materials:** the Candidate Intelligence flow (Assessment → Candidate Record → Readiness Event → Evidence Promotion → Career/Staffing Consumption) is documented in full in the Revenue Recovery Manual's §CI, including lifecycle-status values (`in_training`, `needs_review`, `ready_for_placement`) and the ownership boundaries between Candidate Readiness V2, Candidate Registry, Career Training, and Staffing Readiness.
 
 ---
 

@@ -536,6 +536,36 @@ RCM-OS ("Reconciliation Command Center") does not follow the War Room → Strate
 
 ---
 
+## Candidate Intelligence — Career Training Platform (Staff Readiness &amp; Candidate Registry)
+
+**Path:** `html/tsm-career-training-platform.html` (single page, panel-switched via `switchTo()`), fed by the Candidate Registry API (`POST /api/candidates`, `POST /api/candidates/:id/training-events`) rather than a War Room/Strategist/Executive Portal chain.
+
+**Structural note:** like RCM-OS, this is a cross-suite capability, not a 14th chained vertical — there's no escalation relay here. It provides one canonical candidate record (Candidate Registry) that Career Training and Staffing Readiness both read from, so a candidate's readiness evidence only has to be recorded once.
+
+### Candidate Registry — `panel-registry` (nav `02 · Candidate Registry`)
+
+- Manager-facing roster (`registryTbody`) showing every active candidate across sectors: assigned course, progress, readiness score, status, and approval state.
+- Candidates only see their own assigned curriculum; the roster view is manager-only.
+- Footer nav chains to `panel-profile` (Candidate Profile, `03`) and back to `overview`.
+
+### Candidate Readiness Tracker — `panel-readiness` (nav `05 · Readiness Tracker`, under "Assessment & Approval")
+
+- Live explainability panel (`overall-score`, `readiness-bar`) computing an overall readiness percentage from a documented, non-fabricated formula: sector-tool completions (40%) + cert-prep status (35%) + governance-checkpoint adherence (25%).
+- Per-sector checklists (`readiness-check` checkboxes, `updateReadiness()`) across all 7 sectors (Healthcare, FinOps, Insurance, Real Estate, BPO, and others further down the panel) plus 6 cert tracks.
+- Feeds a placement-status readout (`placement-status`) and an exportable audit trail — the same explainability-contract pattern used elsewhere in the platform, described here as compliance-ready structured JSON/PDF.
+- Footer nav chains to `panel-governance`.
+
+**Talk points:**
+- "Candidate Registry is the canonical record — Career Training and Staffing Readiness both read the same readiness evidence instead of keeping their own copies."
+- "The Readiness Tracker's score isn't a black box — it's a documented weighted formula against real checklist completions, the same honesty pattern the rest of the platform holds to."
+- "This is included in the client/interview-facing demo walkthrough alongside the Meridian Industrial incident-command set — it demonstrates the same canonical-record pattern in a staffing context, without needing a live backend."
+
+**Client-facing status:** unlike Honeywell, this one is demo-ready — Candidate Registry and Readiness Tracker are explicitly called out for inclusion in client/interview-facing demos (see `html/document-processing-revenue-recovery-manual.html`, §CI).
+
+**Supporting materials:** the Candidate Intelligence flow (Assessment → Candidate Record → Readiness Event → Evidence Promotion → Career/Staffing Consumption) is documented in full in the Revenue Recovery Manual's §CI, including lifecycle-status values (`in_training`, `needs_review`, `ready_for_placement`) and the ownership boundaries between Candidate Readiness V2, Candidate Registry, Career Training, and Staffing Readiness.
+
+---
+
 ## Cross-Vertical Patterns Worth Naming in a Demo
 
 1. **Escalation is state, not just navigation.** Most "Escalate" buttons (`escalateToStrategist`, `escalateToExec`, `writeExecRelay`, `schWriteRelay`, `escalateExec`) write a payload to storage *before* moving screens — the receiving screen reads real data, it isn't just a link.
