@@ -4813,5 +4813,578 @@ window.selectQ15Scenario = function(id) {
 
 </script>
   <script src="/shared/tsm-generic-relay-loader.js" data-relay-key="tsm_l1_docsearch_relay" data-auto-key="TSM_L1_WAR_RELAY"></script>
+
+<!-- L1QR-PANEL-START -->
+<!--
+  L1 QUICK REFERENCE PANEL — embeddable, dependency-free
+  =======================================================
+  WHAT THIS IS:
+  A slide-out reference panel for closing tickets correctly — universal
+  flow + category-specific checklists (standard incident / onboarding /
+  offboarding), searchable, collapsible sections. Content mirrors
+  l1-copilot-quick-reference-content.md — edit REFERENCE_DATA below to
+  update what's shown; the .md file is the source of truth to edit from.
+
+  HOW TO INTEGRATE INTO l1-ticket-copilot.html:
+  1. Paste the <style> block into your existing <head> or stylesheet.
+  2. Paste the <div id="l1qr-root">...</div> block just before </body>,
+     alongside wherever #l1a-fab (the assistant bubble) already lives.
+  3. Paste the <script> block after that div, or into your existing
+     bundle — it's vanilla JS, no imports, no build step required.
+  4. Optional: place the toggle button (#l1qr-toggle) next to your
+     existing #l1a-fab bubble instead of using the default fixed
+     position — just move the button element in the HTML, the JS
+     doesn't care where it lives in the DOM.
+
+  TRIGGERING A SPECIFIC SECTION FROM YOUR OWN CODE:
+  Once this script has run, window.L1QR is available globally:
+    L1QR.open('offboarding-urgent')  // opens panel, expands just that
+                                      // section, collapses the rest,
+                                      // scrolls it into view
+    L1QR.open()                      // opens panel, all sections visible
+    L1QR.close()
+    L1QR.toggle()
+    L1QR.sections()                  // -> [{id, title, tag}, ...] — use
+                                      // this to build your own mapping
+                                      // from a loaded ticket's
+                                      // Category/Subcategory to a
+                                      // section id, e.g.:
+                                      //   var map = {
+                                      //     'Onboarding': 'onboarding',
+                                      //     'Offboarding-Urgent': 'offboarding-urgent',
+                                      //     'Offboarding-Standard': 'offboarding-standard',
+                                      //     'Offboarding-Scoped': 'offboarding-scoped',
+                                      //     'Offboarding-Exception': 'offboarding-exception'
+                                      //   };
+                                      //   L1QR.open(map[ticket.category] || 'standard');
+  An unrecognized id logs a console warning and falls back to opening
+  the panel with every section visible — it never throws or renders
+  blank, so a bad mapping can't break your host page.
+
+  THEMING:
+  Uses CSS custom properties with fallbacks (var(--x, fallback)), so if
+  l1-ticket-copilot.html already defines --l1-bg / --l1-accent / etc.
+  on :root, this panel inherits them automatically. If not, the
+  fallbacks render a self-consistent dark ops theme on their own.
+-->
+
+<style>
+  #l1qr-root {
+    --qr-bg: var(--l1-panel-bg, #14181f);
+    --qr-bg-elevated: var(--l1-elevated-bg, #1b212c);
+    --qr-border: var(--l1-border, #2a3140);
+    --qr-text: var(--l1-text, #dfe4ee);
+    --qr-text-dim: var(--l1-text-dim, #8b93a6);
+    --qr-accent: var(--l1-accent, #4fa3ff);
+    --qr-warn: var(--l1-warn, #e8a33d);
+    --qr-danger: var(--l1-danger, #e05a5a);
+    --qr-mono: ui-monospace, "SF Mono", Consolas, monospace;
+    --qr-sans: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--qr-sans);
+    color: var(--qr-text);
+  }
+
+  #l1qr-toggle {
+    position: fixed;
+    right: 24px;
+    bottom: 92px; /* sits above a typical fab bubble at bottom:24px */
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--qr-border);
+    background: var(--qr-bg-elevated);
+    color: var(--qr-text);
+    font-family: var(--qr-sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  #l1qr-toggle:hover { border-color: var(--qr-accent); }
+  #l1qr-toggle:active { transform: scale(0.97); }
+  #l1qr-toggle svg { width: 16px; height: 16px; flex: none; }
+
+  #l1qr-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: min(420px, 100vw);
+    background: var(--qr-bg);
+    border-left: 1px solid var(--qr-border);
+    box-shadow: -8px 0 32px rgba(0,0,0,0.4);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.22s ease;
+  }
+  #l1qr-panel.l1qr-open { transform: translateX(0); }
+
+  #l1qr-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--qr-border);
+    flex: none;
+  }
+  #l1qr-header h2 {
+    margin: 0 0 2px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+  #l1qr-header p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--qr-text-dim);
+  }
+  #l1qr-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--qr-border);
+    background: transparent;
+    color: var(--qr-text-dim);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+  }
+  #l1qr-close:hover { color: var(--qr-text); border-color: var(--qr-accent); }
+
+  #l1qr-search-wrap {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--qr-border);
+    flex: none;
+  }
+  #l1qr-search {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--qr-border);
+    background: var(--qr-bg-elevated);
+    color: var(--qr-text);
+    font-size: 13px;
+    font-family: var(--qr-sans);
+  }
+  #l1qr-search::placeholder { color: var(--qr-text-dim); }
+  #l1qr-search:focus {
+    outline: none;
+    border-color: var(--qr-accent);
+  }
+
+  #l1qr-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0 24px;
+  }
+
+  .l1qr-section {
+    border-bottom: 1px solid var(--qr-border);
+  }
+  .l1qr-section-head {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 18px;
+    background: transparent;
+    border: none;
+    color: var(--qr-text);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--qr-sans);
+  }
+  .l1qr-section-head:hover { background: var(--qr-bg-elevated); }
+  .l1qr-section-head .l1qr-chev {
+    color: var(--qr-text-dim);
+    transition: transform 0.15s ease;
+    flex: none;
+  }
+  .l1qr-section.l1qr-expanded .l1qr-chev { transform: rotate(90deg); }
+  .l1qr-section-tag {
+    font-size: 10px;
+    font-family: var(--qr-mono);
+    color: var(--qr-text-dim);
+    border: 1px solid var(--qr-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 8px;
+  }
+
+  .l1qr-section-body {
+    display: none;
+    padding: 0 18px 16px;
+  }
+  .l1qr-section.l1qr-expanded .l1qr-section-body { display: block; }
+
+  .l1qr-section-body ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .l1qr-section-body li {
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--qr-text);
+    margin-bottom: 6px;
+  }
+  .l1qr-section-body li::marker { color: var(--qr-text-dim); }
+
+  .l1qr-note {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--qr-border);
+    background: var(--qr-bg-elevated);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--qr-text-dim);
+  }
+  .l1qr-note strong { color: var(--qr-warn); }
+  .l1qr-note.l1qr-danger strong { color: var(--qr-danger); }
+
+  .l1qr-checklist li {
+    list-style: none;
+    padding-left: 22px;
+    position: relative;
+  }
+  .l1qr-checklist li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 3px;
+    width: 13px;
+    height: 13px;
+    border: 1px solid var(--qr-text-dim);
+    border-radius: 3px;
+  }
+
+  #l1qr-empty {
+    padding: 24px 18px;
+    color: var(--qr-text-dim);
+    font-size: 12.5px;
+    text-align: center;
+    display: none;
+  }
+
+  #l1qr-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 9998;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  #l1qr-overlay.l1qr-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+</style>
+
+<div id="l1qr-root">
+  <button id="l1qr-toggle" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="l1qr-panel">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+    </svg>
+    Quick Reference
+  </button>
+
+  <div id="l1qr-overlay"></div>
+
+  <aside id="l1qr-panel" role="dialog" aria-label="Ticket closure quick reference">
+    <div id="l1qr-header">
+      <h2>Ticket Closure Reference</h2>
+      <p>Universal flow + category checklists — search or expand a section.</p>
+      <button id="l1qr-close" type="button" aria-label="Close">&times;</button>
+    </div>
+    <div id="l1qr-search-wrap">
+      <input id="l1qr-search" type="text" placeholder="Search e.g. 'offboarding', 'work note', 'onboarding'…" autocomplete="off">
+    </div>
+    <div id="l1qr-body"></div>
+    <div id="l1qr-empty">No matches. Try a different term.</div>
+  </aside>
+</div>
+
+<script>
+(function () {
+  // ---- Content source: mirrors l1-copilot-quick-reference-content.md ----
+  // Edit this array to change what the panel shows.
+  var REFERENCE_DATA = [
+    {
+      id: 'universal',
+      tag: 'ALL TICKETS',
+      title: 'Universal Flow',
+      items: [
+        'Caller \u2192 Category/Subcategory \u2192 Configuration Item (only if known)',
+        'Short description + Description filled in',
+        'Impact + Urgency set \u2192 Priority auto-calculates',
+        'Assignment group + Assigned to',
+        'Submit \u2192 reopen by number if the form clears',
+        'State: New \u2192 In Progress the moment real work starts',
+        'Work notes: log every meaningful action as you take it, not one note at the end',
+        'Comments (Customer visible): only for user-facing updates, plain language',
+        'Resolution Information tab: Resolution code + specific Resolution notes',
+        'Resolve \u2192 Closed (manual or automatic per instance)'
+      ],
+      checklist: false,
+      note: { text: 'Before closing, ask: would a stranger reading only the resolution note understand what was wrong and what fixed it?', danger: false }
+    },
+    {
+      id: 'standard',
+      tag: 'HW / SW / ACCESS / NETWORK',
+      title: 'Standard Incident',
+      items: [
+        'No variation from Universal Flow \u2014 this is the baseline',
+        'First work note = your actual diagnostic reasoning, not "looking into it"',
+        'Don\u2019t re-check something the user already confirmed \u2014 note it\u2019s ruled out and move on',
+        'Multiple users affected \u2192 bump Impact, even for something that feels minor',
+        'Time-boxed requests \u2192 Urgency 1-High, move fast \u2014 but never skip identity verification under pressure'
+      ],
+      checklist: false,
+      note: null
+    },
+    {
+      id: 'onboarding',
+      tag: 'ONBOARDING',
+      title: 'Onboarding',
+      items: [
+        'Itemize every system touched: AD account, email, license type, VPN, distribution list, asset tag, image/build version',
+        'Resolution note confirms each item was tested, not just provisioned',
+        'Belongs to another team (e.g. Facilities badge printing)? Reassign cleanly with a note explaining why \u2014 don\u2019t force-work it'
+      ],
+      checklist: true,
+      note: { text: 'Never resolve with a vague note like "Completed setup." List every item individually \u2014 these records get audited.', danger: false }
+    },
+    {
+      id: 'offboarding-urgent',
+      tag: 'OFFBOARDING \u2014 URGENT',
+      title: 'Offboarding: Involuntary / Immediate',
+      items: [
+        'Impact + Urgency \u2192 1-High immediately',
+        'Perform the action, THEN write the note \u2014 never the reverse',
+        'Sequence: AD disable \u2192 VPN cert revoke + force logout \u2192 email disable \u2192 remove from groups',
+        'Resolution note states total elapsed time from ticket receipt to full lockout'
+      ],
+      checklist: true,
+      note: { text: 'Sequencing and timestamps matter more here than anywhere else. Prove WHEN access was cut, not just that it was.', danger: true }
+    },
+    {
+      id: 'offboarding-standard',
+      tag: 'OFFBOARDING \u2014 STANDARD',
+      title: 'Offboarding: 2-Week Notice',
+      items: [
+        'Leave Impact/Urgency low until the last day approaches',
+        'Don\u2019t close early \u2014 only after last-day actions are actually done'
+      ],
+      checklist: false,
+      note: null
+    },
+    {
+      id: 'offboarding-scoped',
+      tag: 'OFFBOARDING \u2014 SCOPED',
+      title: 'Offboarding: Scoped Request (e.g. contractor VPN-only)',
+      items: [
+        'Resolution note states exactly what was revoked',
+        'Resolution note also states what was explicitly left untouched \u2014 don\u2019t let scope get assumed'
+      ],
+      checklist: false,
+      note: null
+    },
+    {
+      id: 'offboarding-exception',
+      tag: 'OFFBOARDING \u2014 EXCEPTION',
+      title: 'Offboarding: Exception (e.g. forwarding instead of deletion)',
+      items: [
+        'REQUIRED FIRST STEP: write a note confirming the approval BEFORE taking any action',
+        'Resolution note references that approval explicitly \u2014 it\u2019s what justifies deviating from standard pattern'
+      ],
+      checklist: true,
+      note: { text: 'Verify approval before acting. Approval-after-the-fact does not count.', danger: true }
+    },
+    {
+      id: 'selfcheck',
+      tag: 'BEFORE YOU CLOSE',
+      title: 'Final Self-Check',
+      items: [
+        'State moved to In Progress before real work began',
+        'At least one Work note shows real reasoning, not just an outcome',
+        'Comments used only for genuine user-facing updates',
+        'Resolution code actually matches what happened',
+        'Resolution notes are specific enough for a stranger to understand the fix',
+        '(Offboarding) timestamps/sequence show exactly when access was cut'
+      ],
+      checklist: true,
+      note: null
+    }
+  ];
+
+  var root = document.getElementById('l1qr-root');
+  var toggle = document.getElementById('l1qr-toggle');
+  var panel = document.getElementById('l1qr-panel');
+  var overlay = document.getElementById('l1qr-overlay');
+  var closeBtn = document.getElementById('l1qr-close');
+  var body = document.getElementById('l1qr-body');
+  var empty = document.getElementById('l1qr-empty');
+  var search = document.getElementById('l1qr-search');
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function renderSections(filterText) {
+    body.innerHTML = '';
+    var q = (filterText || '').trim().toLowerCase();
+    var anyVisible = false;
+
+    REFERENCE_DATA.forEach(function (section, idx) {
+      var haystack = (section.title + ' ' + section.tag + ' ' + section.items.join(' ')).toLowerCase();
+      var matches = !q || haystack.indexOf(q) !== -1;
+      if (!matches) return;
+      anyVisible = true;
+
+      var wrap = document.createElement('div');
+      wrap.className = 'l1qr-section' + (q || idx === 0 ? ' l1qr-expanded' : '');
+      wrap.dataset.id = section.id;
+
+      var head = document.createElement('button');
+      head.type = 'button';
+      head.className = 'l1qr-section-head';
+      head.innerHTML =
+        '<span>' + escapeHtml(section.title) +
+        '<span class="l1qr-section-tag">' + escapeHtml(section.tag) + '</span></span>' +
+        '<span class="l1qr-chev">\u203A</span>';
+      head.addEventListener('click', function () {
+        wrap.classList.toggle('l1qr-expanded');
+      });
+
+      var bodyEl = document.createElement('div');
+      bodyEl.className = 'l1qr-section-body';
+
+      var ul = document.createElement('ul');
+      ul.className = section.checklist ? 'l1qr-checklist' : '';
+      section.items.forEach(function (item) {
+        var li = document.createElement('li');
+        li.textContent = item;
+        ul.appendChild(li);
+      });
+      bodyEl.appendChild(ul);
+
+      if (section.note) {
+        var note = document.createElement('div');
+        note.className = 'l1qr-note' + (section.note.danger ? ' l1qr-danger' : '');
+        note.innerHTML = '<strong>Note: </strong>' + escapeHtml(section.note.text);
+        bodyEl.appendChild(note);
+      }
+
+      wrap.appendChild(head);
+      wrap.appendChild(bodyEl);
+      body.appendChild(wrap);
+    });
+
+    empty.style.display = anyVisible ? 'none' : 'block';
+  }
+
+  function openPanel() {
+    panel.classList.add('l1qr-open');
+    overlay.classList.add('l1qr-open');
+    toggle.setAttribute('aria-expanded', 'true');
+  }
+  function closePanel() {
+    panel.classList.remove('l1qr-open');
+    overlay.classList.remove('l1qr-open');
+    toggle.setAttribute('aria-expanded', 'false');
+  }
+
+  // Collapse every section except the one matching `keepId` (if given).
+  function collapseAllExcept(keepId) {
+    Array.prototype.forEach.call(body.querySelectorAll('.l1qr-section'), function (el) {
+      if (keepId && el.dataset.id === keepId) {
+        el.classList.add('l1qr-expanded');
+      } else {
+        el.classList.remove('l1qr-expanded');
+      }
+    });
+  }
+
+  // Briefly outline a section so a jump-to feels intentional, not silent.
+  function flashSection(el) {
+    el.style.transition = 'background 0.15s ease';
+    el.style.background = 'var(--qr-bg-elevated)';
+    setTimeout(function () { el.style.background = ''; }, 600);
+  }
+
+  /**
+   * Jump straight to one section by id, expand it, collapse the rest,
+   * and scroll it into view. Falls back to just opening the panel with
+   * everything visible if the id isn't found (e.g. a typo, or content
+   * was renamed) — never throws, never leaves the panel blank.
+   */
+  function openSection(sectionId) {
+    search.value = '';
+    renderSections('');
+    openPanel();
+
+    if (!sectionId) return; // plain open, no target section
+
+    var target = body.querySelector('.l1qr-section[data-id="' + sectionId + '"]');
+    if (!target) {
+      console.warn('[L1QR] No quick-reference section found for id "' + sectionId + '". ' +
+        'Valid ids: ' + REFERENCE_DATA.map(function (s) { return s.id; }).join(', '));
+      return; // panel stays open with everything visible — a safe fallback
+    }
+
+    collapseAllExcept(sectionId);
+    // rAF so layout settles (section just expanded) before scrolling
+    requestAnimationFrame(function () {
+      target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      flashSection(target);
+    });
+  }
+
+  toggle.addEventListener('click', function () {
+    panel.classList.contains('l1qr-open') ? closePanel() : openPanel();
+  });
+  closeBtn.addEventListener('click', closePanel);
+  overlay.addEventListener('click', closePanel);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && panel.classList.contains('l1qr-open')) closePanel();
+  });
+  search.addEventListener('input', function () {
+    renderSections(search.value);
+  });
+  renderSections('');
+
+  // ---- Public API ----
+  // Call from your existing ticket-copilot code, e.g.:
+  //   L1QR.open('offboarding-urgent')   // jump to a specific section
+  //   L1QR.open()                       // just open the panel, all sections visible
+  //   L1QR.close()
+  //   L1QR.toggle()
+  //   L1QR.sections()                   // list valid ids, useful for mapping ticket
+  //                                      // Category/Subcategory values to a section id
+  window.L1QR = {
+    open: openSection,
+    close: closePanel,
+    toggle: function () {
+      panel.classList.contains('l1qr-open') ? closePanel() : openPanel();
+    },
+    sections: function () {
+      return REFERENCE_DATA.map(function (s) { return { id: s.id, title: s.title, tag: s.tag }; });
+    }
+  };
+})();
+</script>
+<!-- L1QR-PANEL-END -->
 </body>
 </html>
