@@ -96,6 +96,10 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
   <div class="nav-tab" onclick="window.location='/html/war-rooms/bess-gigafactory-incident.html'">🔋 BESS</div>
   <div class="nav-tab" onclick="window.location='/html/war-rooms/advanced-detection-incident.html'">📡 DETECTION</div>
   <div class="nav-tab" onclick="window.location='/html/war-rooms/healthcare-thermal-continuity.html'">🏥 HEALTHCARE</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/aerospace-maintenance-readiness.html'">✈ AEROSPACE</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/life-sciences-production-continuity.html'">🧪 LIFE SCIENCES</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/industrial-capital-project-recovery.html'">🏗 CAPITAL PROJECT</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/honeywell-cross-domain-cascade.html'">🔗 CROSS-DOMAIN</div>
   <div class="nav-tab active">→ STRATEGIST</div>
   <div class="nav-tab" onclick="window.location='/html/war-rooms/honeywell-executive-portal.html'">↑ EXECUTIVE</div>
 </div>
@@ -130,7 +134,10 @@ const RELAY_KEYS = {
   supplier:  'TSM_HONEYWELL_SUPPLIER_RELAY',
   bess:      'TSM_HONEYWELL_BESS_RELAY',
   detection: 'TSM_HONEYWELL_DETECTION_RELAY',
-  healthcare:'TSM_HONEYWELL_HEALTHCARE_RELAY'
+  healthcare:'TSM_HONEYWELL_HEALTHCARE_RELAY',
+  aerospace:'TSM_HONEYWELL_AEROSPACE_RELAY',
+  lifesciences:'TSM_HONEYWELL_LIFESCIENCES_RELAY',
+  capitalproject:'TSM_HONEYWELL_CAPITALPROJECT_RELAY'
 };
 // Legacy key, kept as a fallback read only — nothing writes to it anymore
 // post-split, but any old in-flight session data still sitting in a
@@ -143,7 +150,10 @@ const SOURCE_META = {
   supplier: { label: 'SUPPLIER SHUTDOWN — SUPPLY CHAIN',   icon: '📦', war: '/html/supplier-shutdown.html',                     color: 'var(--amber)' },
   bess:     { label: 'BESS/GIGAFACTORY — THERMAL EVENT',   icon: '🔋', war: '/html/war-rooms/bess-gigafactory-incident.html',   color: 'var(--red)' },
   detection:{ label: 'ADVANCED DETECTION — PRE-ALARM',     icon: '📡', war: '/html/war-rooms/advanced-detection-incident.html', color: 'var(--amber)' },
-  healthcare:{ label: 'HEALTHCARE — THERMAL CONTINUITY',   icon: '🏥', war: '/html/war-rooms/healthcare-thermal-continuity.html', color: 'var(--green)' }
+  healthcare:{ label: 'HEALTHCARE — THERMAL CONTINUITY',   icon: '🏥', war: '/html/war-rooms/healthcare-thermal-continuity.html', color: 'var(--green)' },
+  aerospace:{ label: 'AEROSPACE — MAINTENANCE READINESS',  icon: '✈', war: '/html/war-rooms/aerospace-maintenance-readiness.html', color: 'var(--blue)' },
+  lifesciences:{ label: 'LIFE SCIENCES — PRODUCTION CONTINUITY', icon: '🧪', war: '/html/war-rooms/life-sciences-production-continuity.html', color: 'var(--green)' },
+  capitalproject:{ label: 'CAPITAL PROJECT — RECOVERY',    icon: '🏗', war: '/html/war-rooms/industrial-capital-project-recovery.html', color: 'var(--amber)' }
 };
 
 function showToast(msg, isErr){
@@ -298,6 +308,9 @@ function hwBncaSeverity(src){
   if(src === 'bess') return 'CRIT'; // thermal runaway — same top tier as cyber
   if(src === 'plant') return 'HIGH';
   if(src === 'healthcare') return 'CRIT'; // patient-safety-adjacent thermal continuity — same top tier as cyber/bess
+  if(src === 'lifesciences') return 'CRIT'; // patient-safety-adjacent batch/cold-chain continuity — same top tier as cyber/bess/healthcare
+  if(src === 'aerospace') return 'HIGH'; // costly but not patient-safety-or-security top tier — same as plant
+  if(src === 'capitalproject') return 'HIGH'; // costly but not patient-safety-or-security top tier — same as plant
   return 'MED'; // includes supplier and detection (pre-alarm, not yet a confirmed event)
 }
 function computeHoneywellBNCA(data){
@@ -436,7 +449,7 @@ function registerHoneywellAnomalies(data){
 
   const exposureStr = kpiExposure(k.exposure);
   if(exposureStr !== '—'){
-    const severity = (src === 'cyber' || src === 'bess' || src === 'healthcare') ? 'CRITICAL' : (src === 'plant' ? 'HIGH' : 'MEDIUM');
+    const severity = (src === 'cyber' || src === 'bess' || src === 'healthcare' || src === 'lifesciences') ? 'CRITICAL' : (src === 'plant' || src === 'aerospace' || src === 'capitalproject' ? 'HIGH' : 'MEDIUM');
     fire({
       entityType: 'honeywell-incident', entityId: src,
       anomalyCode: 'HW_' + codeSrc + '_EXPOSURE', severity,
@@ -451,7 +464,7 @@ function registerHoneywellAnomalies(data){
   if(secVal !== '—'){
     fire({
       entityType: 'honeywell-incident', entityId: src,
-      anomalyCode: 'HW_' + codeSrc + '_' + (k.buffer ? 'BUFFER' : 'CONTAINMENT'), severity: (src === 'cyber' || src === 'bess' || src === 'healthcare') ? 'HIGH' : 'MEDIUM',
+      anomalyCode: 'HW_' + codeSrc + '_' + (k.buffer ? 'BUFFER' : 'CONTAINMENT'), severity: (src === 'cyber' || src === 'bess' || src === 'healthcare' || src === 'lifesciences') ? 'HIGH' : 'MEDIUM',
       title: `${meta.label} — ${secondaryLabel(src)} at ${secVal}`,
       source: 'honeywell-strategist',
       meta: { value: secKpi, incidentSource: src }
@@ -485,6 +498,9 @@ function renderEmpty(){
         <a class="hbtn primary" href="/html/war-rooms/bess-gigafactory-incident.html">🔋 BESS</a>
         <a class="hbtn primary" href="/html/war-rooms/advanced-detection-incident.html">📡 Detection</a>
         <a class="hbtn primary" href="/html/war-rooms/healthcare-thermal-continuity.html">🏥 Healthcare</a>
+        <a class="hbtn primary" href="/html/war-rooms/aerospace-maintenance-readiness.html">✈ Aerospace</a>
+        <a class="hbtn primary" href="/html/war-rooms/life-sciences-production-continuity.html">🧪 Life Sciences</a>
+        <a class="hbtn primary" href="/html/war-rooms/industrial-capital-project-recovery.html">🏗 Capital Project</a>
       </div>
     </div>`;
 }

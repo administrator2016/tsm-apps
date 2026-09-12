@@ -93,6 +93,10 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
   <div class="nav-tab" onclick="window.location='/html/war-rooms/bess-gigafactory-incident.html'">🔋 BESS</div>
   <div class="nav-tab" onclick="window.location='/html/war-rooms/advanced-detection-incident.html'">📡 DETECTION</div>
   <div class="nav-tab" onclick="window.location='/html/war-rooms/healthcare-thermal-continuity.html'">🏥 HEALTHCARE</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/aerospace-maintenance-readiness.html'">✈ AEROSPACE</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/life-sciences-production-continuity.html'">🧪 LIFE SCIENCES</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/industrial-capital-project-recovery.html'">🏗 CAPITAL PROJECT</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/honeywell-cross-domain-cascade.html'">🔗 CROSS-DOMAIN</div>
   <div class="nav-tab" onclick="window.location='/html/war-rooms/honeywell-strategist.html'">→ STRATEGIST</div>
   <div class="nav-tab active">↑ EXECUTIVE</div>
 </div>
@@ -153,7 +157,10 @@ const SOURCE_META = {
   supplier: { label: 'SUPPLIER SHUTDOWN — SUPPLY CHAIN', icon: '📦', color: 'var(--amber)' },
   bess:     { label: 'BESS/GIGAFACTORY — THERMAL EVENT', icon: '🔋', color: 'var(--red)' },
   detection:{ label: 'ADVANCED DETECTION — PRE-ALARM',   icon: '📡', color: 'var(--amber)' },
-  healthcare:{ label: 'HEALTHCARE — THERMAL CONTINUITY', icon: '🏥', color: 'var(--green)' }
+  healthcare:{ label: 'HEALTHCARE — THERMAL CONTINUITY', icon: '🏥', color: 'var(--green)' },
+  aerospace:{ label: 'AEROSPACE — MAINTENANCE READINESS', icon: '✈', color: 'var(--blue)' },
+  lifesciences:{ label: 'LIFE SCIENCES — PRODUCTION CONTINUITY', icon: '🧪', color: 'var(--green)' },
+  capitalproject:{ label: 'CAPITAL PROJECT — RECOVERY', icon: '🏗', color: 'var(--amber)' }
 };
 
 function showToast(msg, isErr){
@@ -465,7 +472,7 @@ function registerHoneywellAnomalies(data){
 
   const exposureStr = kpiExposure(k.exposure);
   if(exposureStr !== '—'){
-    const severity = (src === 'cyber' || src === 'bess' || src === 'healthcare') ? 'CRITICAL' : (src === 'plant' ? 'HIGH' : 'MEDIUM');
+    const severity = (src === 'cyber' || src === 'bess' || src === 'healthcare' || src === 'lifesciences') ? 'CRITICAL' : (src === 'plant' || src === 'aerospace' || src === 'capitalproject' ? 'HIGH' : 'MEDIUM');
     fire({
       entityType: 'honeywell-incident', entityId: src,
       anomalyCode: 'HW_' + codeSrc + '_EXPOSURE', severity,
@@ -480,7 +487,7 @@ function registerHoneywellAnomalies(data){
   if(secVal !== '—'){
     fire({
       entityType: 'honeywell-incident', entityId: src,
-      anomalyCode: 'HW_' + codeSrc + '_' + (k.buffer ? 'BUFFER' : 'CONTAINMENT'), severity: (src === 'cyber' || src === 'bess' || src === 'healthcare') ? 'HIGH' : 'MEDIUM',
+      anomalyCode: 'HW_' + codeSrc + '_' + (k.buffer ? 'BUFFER' : 'CONTAINMENT'), severity: (src === 'cyber' || src === 'bess' || src === 'healthcare' || src === 'lifesciences') ? 'HIGH' : 'MEDIUM',
       title: `${meta.label} — ${secondaryLabel(src)} at ${secVal}`,
       source: 'honeywell-executive-portal',
       meta: { value: secKpi, incidentSource: src }
@@ -539,7 +546,7 @@ function hwFeedException(data){
   _hwFedIds[fedKey] = true;
 
   const secVal = kpiSecondary(k.buffer || k.containment);
-  const severity = (src === 'cyber' || src === 'bess' || src === 'healthcare') ? 'high' : (src === 'plant' ? 'high' : 'med');
+  const severity = (src === 'cyber' || src === 'bess' || src === 'healthcare' || src === 'lifesciences') ? 'high' : (src === 'plant' || src === 'aerospace' || src === 'capitalproject' ? 'high' : 'med');
   const exposureNum = (k.exposure && (k.exposure.totalExposureHigh || k.exposure.totalExposureLow)) || null;
 
   const exceptionRecord = TSMExceptions.add({
