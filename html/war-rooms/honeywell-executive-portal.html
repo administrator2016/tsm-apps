@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TSM · Honeywell Executive</title>
+<title>TSM · Meridian Industrial Executive</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -82,7 +82,7 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:16px">
     <span class="tb-brand">⚡ TSM ENTERPRISE</span>
-    <span class="tb-stat">VERTICAL <span>HONEYWELL EXECUTIVE</span></span>
+    <span class="tb-stat">VERTICAL <span>MERIDIAN INDUSTRIAL EXECUTIVE</span></span>
   </div>
   <span class="tb-time" id="clock">--:--:--</span>
 </div>
@@ -102,7 +102,7 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
 </div>
 <div class="hdr">
   <div>
-    <div class="hdr-title" id="hdrTitle">↑ HONEYWELL EXECUTIVE</div>
+    <div class="hdr-title" id="hdrTitle">↑ MERIDIAN INDUSTRIAL EXECUTIVE</div>
     <div class="hdr-sub" id="hdrSub">Awaiting escalation from the strategist…</div>
   </div>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -543,7 +543,7 @@ function renderEmpty(){
 }
 
 // ===== EXCEPTION / CASE QUEUE FEED — Roadmap #10 Case Engine =====
-// Different shape than the other verticals: Honeywell escalates ONE
+// Different shape than the other verticals: Meridian Industrial escalates ONE
 // incident at a time (Plant / Cyber / Supplier), not a batch list of
 // many SLA-breaching items. So this feeds a single exception per
 // escalation rather than looping a fin.*_exposure_items array. Dedupe
@@ -574,18 +574,18 @@ function hwFeedException(data){
   const exceptionRecord = TSMExceptions.add({
     title: `${meta.label} \u2014 ${exposureStr} exposure escalated to executive`,
     detail: secVal !== '\u2014' ? `${secondaryLabel(src)}: ${secVal}.` : null,
-    recommendedAction: 'See Honeywell Executive Portal for the escalated dispatch and full 6-engine analysis.',
-    severity, confidence: null, sector: 'honeywell', agentLabel: 'Honeywell Strategist'
+    recommendedAction: 'See Meridian Industrial Executive Portal for the escalated dispatch and full 6-engine analysis.',
+    severity, confidence: null, sector: 'honeywell', agentLabel: 'Meridian Industrial Strategist'
   });
 
   if (typeof TSMCaseManager !== 'undefined' && exceptionRecord) {
     const newCase = TSMCaseManager.createFromException(exceptionRecord, {
       process: 'honeywell_' + src + '_incident_resolution',
-      source: 'Honeywell Strategist',
+      source: 'Meridian Industrial Strategist',
       exposure: exposureNum
     });
     if (newCase) {
-      TSMCaseManager.requestApproval(newCase.caseId, { note: 'Auto-requested on case creation from Honeywell exception feed.' });
+      TSMCaseManager.requestApproval(newCase.caseId, { note: 'Auto-requested on case creation from Meridian Industrial exception feed.' });
     }
   }
 
@@ -696,7 +696,7 @@ window.exportClientPackage = function () {
   let qs = (window.TSMQualityScoreEngine && typeof TSMQualityScoreEngine.fromExplainItems === 'function')
     ? TSMQualityScoreEngine.fromExplainItems(lastExplainItems, {})
     : null;
-  // Honeywell-only honesty fix: none of the 6 Honeywell engine prompts
+  // Meridian Industrial-only honesty fix: none of the 6 Meridian Industrial engine prompts
   // (supplier-shutdown.html / plant-incident.html / cyber-incident.html)
   // ever ask the model for a per-item confidence figure, so every item
   // getExplainItems() builds has no .confidence field. The shared engine's
@@ -704,7 +704,7 @@ window.exportClientPackage = function () {
   // "conservative default when nothing self-reports confidence" comment) --
   // that's a real, intentional feature for verticals that DO have a
   // confidence signal, so the shared engine itself is left untouched here.
-  // For Honeywell specifically, a flat 60 isn't a measurement, it's a
+  // For Meridian Industrial specifically, a flat 60 isn't a measurement, it's a
   // placeholder that looks like data -- so report confidence honestly as
   // unavailable and recompute overall from only the three metrics that
   // are real for this vertical (accuracy/completeness/compliance,
@@ -740,7 +740,7 @@ window.exportClientPackage = function () {
     ? { estimatedImpactTotal: estimatedImpactTotal, unestimatedCount: 0 }
     : null; // honest null if no exposure figure was ever relayed
   const pkg = TSMDeliveryPackage.build({
-    domain: 'Honeywell',
+    domain: 'Meridian Industrial',
     explainItems: lastExplainItems,
     documentCount: Array.isArray(lastExplainItems) ? lastExplainItems.length : null,
     qualityScore: qs,

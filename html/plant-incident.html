@@ -311,7 +311,7 @@ function setDocType(el, type) {
   docType = type;
 }
 
-const SAMPLE_DOC = `Plant: Honeywell Process Solutions — Baytown Chemical Facility, Unit 4
+const SAMPLE_DOC = `Plant: Meridian Industrial Process Solutions — Baytown Chemical Facility, Unit 4
 Equipment: Feedwater pump P-4102A (primary), P-4102B (standby)
 Failure: Cavitation detected on P-4102A at 02:44 AM — suction pressure dropped below NPSH margin after upstream strainer fouled with process debris. Standby pump P-4102B auto-started per interlock logic but is running above rated duty point (110% of BEP), triggering high-vibration alarm at 03:10 AM.
 Impact: Unit 4 reactor feed reduced to 62% of nameplate rate to protect P-4102B from prolonged off-BEP operation. Downstream distillation train running at partial reflux to match reduced feed.
@@ -455,7 +455,7 @@ async function fireAllEngines() {
 }
 
 // ===== FIELD DEFECT SCAN (Anomaly Advisor — diagnosis half) =====
-// Honeywell trio never had this: Engine 6 already does routing (buildActionPanel),
+// Meridian Industrial trio never had this: Engine 6 already does routing (buildActionPanel),
 // but nothing scanned the engine outputs for field-level defects the way
 // healthcare/legal/construction/finops do. This adds only the missing diagnosis
 // half — it does not touch or duplicate the existing Exec Dispatch routing.
@@ -736,7 +736,7 @@ function extractDowntimeKPI(text) {
   // FIX (2026-09-10): Engine 2 now emits a leading KPI_JSON downtimeEstimate
   // (same PART 1/PART 2 pattern as Engine 4's totalExposure fix). Parse that
   // first. Store it under containmentEta (not just downtimeEstimate) because
-  // that's the field name the Honeywell strategist/executive portals already
+  // that's the field name the Meridian Industrial strategist/executive portals already
   // read via kpis.containment.containmentEta — their "WHY THESE NUMBERS"
   // explain text literally cites that path, so the stored key has to match
   // it or the downstream tile silently falls back to '—' even though this

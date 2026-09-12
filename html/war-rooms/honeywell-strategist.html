@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TSM · Honeywell Strategist</title>
+<title>TSM · Meridian Industrial Strategist</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -85,7 +85,7 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:16px">
     <span class="tb-brand">⚡ TSM ENTERPRISE</span>
-    <span class="tb-stat">VERTICAL <span>HONEYWELL STRATEGIST</span></span>
+    <span class="tb-stat">VERTICAL <span>MERIDIAN INDUSTRIAL STRATEGIST</span></span>
   </div>
   <span class="tb-time" id="clock">--:--:--</span>
 </div>
@@ -105,7 +105,7 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
 </div>
 <div class="hdr">
   <div>
-    <div class="hdr-title" id="hdrTitle">→ HONEYWELL STRATEGIST</div>
+    <div class="hdr-title" id="hdrTitle">→ MERIDIAN INDUSTRIAL STRATEGIST</div>
     <div class="hdr-sub" id="hdrSub">Awaiting relay from a war room…</div>
   </div>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -683,11 +683,11 @@ function escalateExec(){
       const mission = window.TSMMissionModel.createMission({
         vertical: 'honeywell',
         tenantId: 'default',
-        client: hwSourceMeta ? hwSourceMeta.label : (data.source || 'Honeywell Incident'),
+        client: hwSourceMeta ? hwSourceMeta.label : (data.source || 'Meridian Industrial Incident'),
         classification: {
           summary: data.summary || data.narrative || '',
           incidentSource: data.source || null,
-          source: 'Honeywell Strategist'
+          source: 'Meridian Industrial Strategist'
         },
         workflow: {
           assignedTo: null,
@@ -699,10 +699,10 @@ function escalateExec(){
       });
       window.TSMMissionStore.saveMission(mission);
     } else {
-      console.warn('Mission Core not loaded — skipping mission creation, Honeywell relay write already succeeded.');
+      console.warn('Mission Core not loaded — skipping mission creation, Meridian Industrial relay write already succeeded.');
     }
   } catch (missionErr) {
-    console.warn('Mission Core creation failed (non-fatal, Honeywell relay already written):', missionErr);
+    console.warn('Mission Core creation failed (non-fatal, Meridian Industrial relay already written):', missionErr);
   }
 
   showToast('Escalated to Executive — opening…');
