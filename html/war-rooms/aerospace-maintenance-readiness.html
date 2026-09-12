@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TSM · Advanced Detection Command Center</title>
+<title>TSM · Aerospace Maintenance Readiness Command Center</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -16,21 +16,21 @@
 body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;}
 
 .topbar{height:42px;background:#020810;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;}
-.tb-brand{font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--purple);letter-spacing:.15em;}
+.tb-brand{font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--blue);letter-spacing:.15em;}
 .tb-stat{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);}
-.tb-stat span{color:var(--green);}
+.tb-stat span{color:var(--blue);}
 .tb-stat.crit span{color:var(--red);}
-.tb-time{font-family:'Orbitron',sans-serif;font-size:.75rem;color:var(--purple);}
+.tb-time{font-family:'Orbitron',sans-serif;font-size:.75rem;color:var(--blue);}
 
-.alert-bar{height:32px;background:rgba(168,85,247,.08);border-bottom:1px solid rgba(168,85,247,.3);display:flex;align-items:center;padding:0 20px;gap:12px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--purple);animation:pulse 2s infinite;}
+.alert-bar{height:32px;background:rgba(59,130,246,.08);border-bottom:1px solid rgba(59,130,246,.3);display:flex;align-items:center;padding:0 20px;gap:12px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--blue);animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
-.alert-dot{width:8px;height:8px;border-radius:50%;background:var(--purple);animation:blink 1s infinite;}
+.alert-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);animation:blink 1s infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
 .nav-tabs{display:flex;align-items:center;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;gap:2px;flex-wrap:wrap;}
 .nav-tab{padding:10px 18px;font-family:'Orbitron',sans-serif;font-size:.58rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.08em;transition:.2s;}
 .nav-tab:hover{color:var(--text);}
-.nav-tab.active{color:var(--purple);border-bottom-color:var(--purple);}
+.nav-tab.active{color:var(--blue);border-bottom-color:var(--blue);}
 
 .main{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 110px);}
 
@@ -38,17 +38,17 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
 .sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:16px;}
 .sb-section{font-family:'Orbitron',sans-serif;font-size:.55rem;color:var(--muted);letter-spacing:.15em;margin-bottom:8px;}
 .doc-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:10px;resize:vertical;min-height:120px;outline:none;line-height:1.5;}
-.doc-input:focus{border-color:var(--purple);}
+.doc-input:focus{border-color:var(--blue);}
 .doc-type-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
 .doc-tag{font-size:.6rem;padding:3px 8px;border-radius:3px;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:'JetBrains Mono',monospace;transition:.2s;}
-.doc-tag.active{border-color:var(--purple);color:var(--purple);background:rgba(168,85,247,.08);}
-.fire-btn{width:100%;background:var(--purple);color:#fff;border:none;border-radius:4px;padding:12px;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.1em;cursor:pointer;transition:.2s;margin-top:8px;}
+.doc-tag.active{border-color:var(--blue);color:var(--blue);background:rgba(59,130,246,.08);}
+.fire-btn{width:100%;background:var(--blue);color:#04101f;border:none;border-radius:4px;padding:12px;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.1em;cursor:pointer;transition:.2s;margin-top:8px;font-weight:700;}
 .fire-btn:hover{opacity:.85;}
 .fire-btn:disabled{opacity:.4;cursor:not-allowed;}
 
 .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .kpi{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px;text-align:center;}
-.kpi-val{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700;color:var(--purple);}
+.kpi-val{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700;color:var(--blue);}
 .kpi-val.red{color:var(--red);}
 .kpi-val.green{color:var(--green);}
 .kpi-lbl{font-size:.58rem;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace;}
@@ -58,27 +58,27 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
 .eng-name{color:var(--muted);}
 .eng-badge{padding:2px 8px;border-radius:2px;font-size:.55rem;font-weight:700;}
 .eng-badge.idle{background:rgba(100,116,139,.15);color:var(--muted);}
-.eng-badge.running{background:rgba(168,85,247,.15);color:var(--purple);}
+.eng-badge.running{background:rgba(59,130,246,.15);color:var(--blue);}
 .eng-badge.done{background:rgba(34,197,94,.15);color:var(--green);}
 
 /* MAIN PANEL */
 .content{padding:20px;display:flex;flex-direction:column;gap:20px;}
 
-.incident-header{background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:6px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
-.inc-title{font-family:'Orbitron',sans-serif;font-size:.9rem;color:var(--purple);letter-spacing:.05em;}
+.incident-header{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:6px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
+.inc-title{font-family:'Orbitron',sans-serif;font-size:.9rem;color:var(--blue);letter-spacing:.05em;}
 .inc-meta{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);}
-.inc-badge{padding:4px 12px;background:rgba(168,85,247,.15);border:1px solid var(--purple);border-radius:3px;font-family:'Orbitron',sans-serif;font-size:.6rem;color:var(--purple);letter-spacing:.1em;}
+.inc-badge{padding:4px 12px;background:rgba(59,130,246,.15);border:1px solid var(--blue);border-radius:3px;font-family:'Orbitron',sans-serif;font-size:.6rem;color:var(--blue);letter-spacing:.1em;}
 
 .disclaimer-bar{background:rgba(245,166,35,.06);border:1px solid rgba(245,166,35,.25);border-radius:6px;padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--amber);line-height:1.6;}
 
 .engines-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 .engine-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
 .eng-card-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
-.eng-card-num{font-family:'Orbitron',sans-serif;font-size:.6rem;color:var(--purple);}
+.eng-card-num{font-family:'Orbitron',sans-serif;font-size:.6rem;color:var(--blue);}
 .eng-card-title{font-family:'Orbitron',sans-serif;font-size:.62rem;color:var(--text);letter-spacing:.05em;}
 .eng-card-status{font-size:.55rem;padding:2px 8px;border-radius:2px;font-family:'JetBrains Mono',monospace;}
 .status-idle{background:rgba(100,116,139,.1);color:var(--muted);}
-.status-run{background:rgba(168,85,247,.15);color:var(--purple);}
+.status-run{background:rgba(59,130,246,.15);color:var(--blue);}
 .status-done{background:rgba(34,197,94,.15);color:var(--green);}
 .eng-card-body{padding:14px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);line-height:1.7;min-height:100px;white-space:pre-wrap;}
 .eng-card-body.active{color:var(--text);}
@@ -86,42 +86,42 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
 .eng-card-body table.md-table th,.eng-card-body table.md-table td{border:1px solid var(--border);padding:4px 6px;text-align:left;vertical-align:top;}
 .eng-card-body table.md-table th{color:var(--muted);text-transform:uppercase;font-size:.6rem;}
 
-.action-panel{background:var(--bg2);border:1px solid rgba(168,85,247,.3);border-radius:6px;padding:16px 20px;}
-.action-title{font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--purple);margin-bottom:12px;letter-spacing:.08em;}
+.action-panel{background:var(--bg2);border:1px solid rgba(59,130,246,.3);border-radius:6px;padding:16px 20px;}
+.action-title{font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--blue);margin-bottom:12px;letter-spacing:.08em;}
 .action-list{display:flex;flex-direction:column;gap:8px;}
 .action-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg3);border-radius:4px;border:1px solid var(--border);}
-.action-rank{font-family:'Orbitron',sans-serif;font-size:.7rem;font-weight:700;color:var(--purple);width:24px;text-align:center;flex-shrink:0;}
+.action-rank{font-family:'Orbitron',sans-serif;font-size:.7rem;font-weight:700;color:var(--blue);width:24px;text-align:center;flex-shrink:0;}
 .action-text{flex:1;font-size:.75rem;color:var(--text);}
 .action-owner{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);}
 .action-deadline{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--amber);}
 .action-btn{padding:4px 12px;border-radius:3px;font-family:'Orbitron',sans-serif;font-size:.55rem;letter-spacing:.08em;cursor:pointer;border:none;}
-.btn-authorize{background:var(--purple);color:#fff;}
-.btn-escalate{background:transparent;border:1px solid var(--purple) !important;color:var(--purple);}
+.btn-authorize{background:var(--blue);color:#04101f;}
+.btn-escalate{background:transparent;border:1px solid var(--blue) !important;color:var(--blue);}
 .btn-review{background:transparent;border:1px solid var(--amber) !important;color:var(--amber);}
 
 .escalate-bar{display:flex;gap:12px;align-items:center;}
-.esc-btn{flex:1;padding:12px;background:var(--purple);color:#fff;border:none;border-radius:4px;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.1em;cursor:pointer;transition:.2s;}
+.esc-btn{flex:1;padding:12px;background:var(--blue);color:#04101f;border:none;border-radius:4px;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.1em;cursor:pointer;transition:.2s;}
 .esc-btn:hover{opacity:.85;}
 .esc-btn:disabled{opacity:.4;cursor:not-allowed;}
-.esc-btn.secondary{background:transparent;border:1px solid var(--purple);color:var(--purple);}
+.esc-btn.secondary{background:transparent;border:1px solid var(--blue);color:var(--blue);}
 
-.toast{position:fixed;bottom:44px;right:20px;background:var(--bg2);border:1px solid var(--green);border-radius:6px;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--green);box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:999;opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none;}
+.toast{position:fixed;bottom:44px;right:20px;background:var(--bg2);border:1px solid var(--blue);border-radius:6px;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--blue);box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:999;opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none;}
 .toast.show{opacity:1;transform:translateY(0);}
 .toast.err{border-color:var(--red);color:var(--red);}
 
 .statusbar{height:28px;background:#020810;border-top:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:20px;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);position:fixed;bottom:0;left:0;right:0;}
-.sb-item span{color:var(--green);}
+.sb-item span{color:var(--blue);}
 .sb-item.warn span{color:var(--amber);}
 .sb-item.crit span{color:var(--red);}
 </style>
 </head>
-<body data-vertical="advanced-detection-incident" data-page-role="warroom">
+<body data-vertical="aerospace-maintenance-readiness" data-page-role="warroom">
 
 <!-- TOP BAR -->
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:16px">
-    <span class="tb-brand">🔥 TSM ENTERPRISE</span>
-    <span class="tb-stat">VERTICAL <span>ADVANCED DETECTION</span></span>
+    <span class="tb-brand">✈ TSM ENTERPRISE</span>
+    <span class="tb-stat">VERTICAL <span>AEROSPACE MAINTENANCE READINESS</span></span>
     <span class="tb-stat crit">ALERT <span>ACTIVE</span></span>
     <span class="tb-stat">API <span>/api/war-room/stream</span></span>
   </div>
@@ -133,7 +133,7 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
 <!-- ALERT BAR -->
 <div class="alert-bar">
   <div class="alert-dot"></div>
-  EARLY-WARNING DETECTION ALERT — VESDA / LI-ION TAMER SENSOR NETWORK — COMMAND CENTER ENGAGED — ALL ENGINES STANDBY
+  FLEET MAINTENANCE READINESS ALERT — HONEYWELL AEROSPACE SYSTEMS — COMMAND CENTER ENGAGED — ALL ENGINES STANDBY
 </div>
 
 <!-- NAV -->
@@ -141,8 +141,10 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
   <div class="nav-tab" onclick="window.location='/html/plant-incident.html'">⚡ PLANT</div>
   <div class="nav-tab" onclick="window.location='/html/supplier-shutdown.html'">📦 SUPPLIER</div>
   <div class="nav-tab" onclick="window.location='/html/cyber-incident.html'">🛡 CYBER</div>
-  <div class="nav-tab active">🔥 DETECTION</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/bess-gigafactory-incident.html'">🔋 BESS</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/advanced-detection-incident.html'">📡 DETECTION</div>
   <div class="nav-tab" onclick="window.location='/html/war-rooms/healthcare-thermal-continuity.html'">🏥 HEALTHCARE</div>
+  <div class="nav-tab active">✈ AEROSPACE</div>
   <div class="nav-tab" onclick="goToStrategist()">→ STRATEGIST</div>
   <div class="nav-tab" onclick="window.location='/html/war-rooms/honeywell-executive-portal.html'">↑ EXECUTIVE</div>
 </div>
@@ -153,23 +155,23 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div>
-      <div class="sb-section">DETECTION EVENT INTAKE</div>
-      <textarea class="doc-input" id="docInput" placeholder="Paste sensor alert log, off-gas/particulate readings, or facility incident notes here...
+      <div class="sb-section">MAINTENANCE EVENT INTAKE</div>
+      <textarea class="doc-input" id="docInput" placeholder="Paste an aircraft/component AOG alert, parts-shortage report, or fleet maintenance log here...
 
 Example:
-Facility: BESS Room 3, Substation B
-Sensor: Li-ion Tamer off-gas array, zone 3-B
-Reading: DMC/EMC signature detected, rising trend over 4 min
-Status: Pre-alarm — no smoke or thermal event yet"></textarea>
+Fleet: Regional Cargo Wing — 14 aircraft, mixed fleet
+Aircraft: N4471Q (Fleet #7) — AOG at MSP
+System: Honeywell APU (131-9A) — fault code indicates starter-generator failure
+Status: No serviceable spare in regional parts pool; nearest unit is 3 days out"></textarea>
       <div class="doc-type-row">
-        <div class="doc-tag active" onclick="setDocType(this,'bess_offgas')">BESS Off-Gas Alert</div>
-        <div class="doc-tag" onclick="setDocType(this,'gigafactory_offgas')">Gigafactory Off-Gas Alert</div>
-        <div class="doc-tag" onclick="setDocType(this,'vesda_particulate')">VESDA Particulate Alert</div>
-        <div class="doc-tag" onclick="setDocType(this,'shutdown_log')">Facility Shutdown Log</div>
+        <div class="doc-tag active" onclick="setDocType(this,'aog_alert')">Aircraft AOG Alert</div>
+        <div class="doc-tag" onclick="setDocType(this,'parts_shortage')">Critical Parts Shortage</div>
+        <div class="doc-tag" onclick="setDocType(this,'fleet_readiness')">Fleet Readiness Log</div>
+        <div class="doc-tag" onclick="setDocType(this,'avionics_fault')">Avionics/Component Fault</div>
       </div>
-      <button class="fire-btn" id="fireBtn" onclick="fireAllEngines()">🔥 FIRE ALL 6 ENGINES</button>
-      <button class="fire-btn" id="sampleBtnBess" onclick="loadSampleBess()" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px;">⤓ Load BESS Sample</button>
-      <button class="fire-btn" id="sampleBtnGiga" onclick="loadSampleGiga()" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px;">⤓ Load Gigafactory Sample</button>
+      <button class="fire-btn" id="fireBtn" onclick="fireAllEngines()">✈ FIRE ALL 6 ENGINES</button>
+      <button class="fire-btn" id="sampleBtnAog" onclick="loadSampleAog()" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px;">⤓ Load AOG Sample</button>
+      <button class="fire-btn" id="sampleBtnParts" onclick="loadSampleParts()" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px;">⤓ Load Parts Shortage Sample</button>
     </div>
 
     <div>
@@ -177,7 +179,7 @@ Status: Pre-alarm — no smoke or thermal event yet"></textarea>
       <div class="kpi-grid">
         <div class="kpi"><div class="kpi-val red" id="kpiRisk">—</div><div class="kpi-lbl">RISK SCORE</div></div>
         <div class="kpi"><div class="kpi-val red" id="kpiExposure">—</div><div class="kpi-lbl">$ EXPOSURE</div></div>
-        <div class="kpi"><div class="kpi-val" id="kpiLeadTime">—</div><div class="kpi-lbl">DETECTION LEAD TIME</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpiLeadTime">—</div><div class="kpi-lbl">READINESS WINDOW</div></div>
         <div class="kpi"><div class="kpi-val" id="kpiEngines">0/6</div><div class="kpi-lbl">ENGINES</div></div>
       </div>
     </div>
@@ -185,9 +187,9 @@ Status: Pre-alarm — no smoke or thermal event yet"></textarea>
     <div>
       <div class="sb-section">ENGINE STATUS</div>
       <div class="engine-status">
-        <div class="eng-row"><span class="eng-name">01 · Detection Intel</span><span class="eng-badge idle" id="es0">IDLE</span></div>
-        <div class="eng-row"><span class="eng-name">02 · Facility Impact</span><span class="eng-badge idle" id="es1">IDLE</span></div>
-        <div class="eng-row"><span class="eng-name">03 · Failure Progression</span><span class="eng-badge idle" id="es2">IDLE</span></div>
+        <div class="eng-row"><span class="eng-name">01 · Maintenance Signal Intel</span><span class="eng-badge idle" id="es0">IDLE</span></div>
+        <div class="eng-row"><span class="eng-name">02 · Fleet Readiness Impact</span><span class="eng-badge idle" id="es1">IDLE</span></div>
+        <div class="eng-row"><span class="eng-name">03 · Parts/Supply Risk</span><span class="eng-badge idle" id="es2">IDLE</span></div>
         <div class="eng-row"><span class="eng-name">04 · Exposure Calc</span><span class="eng-badge idle" id="es3">IDLE</span></div>
         <div class="eng-row"><span class="eng-name">05 · Response Plan</span><span class="eng-badge idle" id="es4">IDLE</span></div>
         <div class="eng-row"><span class="eng-name">06 · Exec Dispatch</span><span class="eng-badge idle" id="es5">IDLE</span></div>
@@ -199,14 +201,14 @@ Status: Pre-alarm — no smoke or thermal event yet"></textarea>
   <div class="content">
 
     <div class="disclaimer-bar">
-      ⚠ TRAINING / DECISION-SUPPORT SIMULATION — this war room documents and reasons about a detection event narrative you provide. It is not a live sensor feed and does not command, arm, or trigger any real facility suppression, isolation, or shutdown system. Always follow your site's actual fire/life-safety control system and AHJ-approved procedures.
+      ⚠ TRAINING / DECISION-SUPPORT SIMULATION — this war room documents and reasons about a maintenance-event narrative you provide. It is not a live MRO/maintenance-tracking feed and does not command, dispatch, or authorize any real maintenance, parts order, or flight-release action. Always follow your organization's actual airworthiness, maintenance-control, and FAA/EASA-approved procedures.
     </div>
 
     <!-- INCIDENT HEADER -->
     <div class="incident-header">
       <div>
-        <div class="inc-title" id="incTitle">⚠ AWAITING DETECTION EVENT</div>
-        <div class="inc-meta" id="incMeta">Paste sensor/incident data and fire engines to begin command center analysis</div>
+        <div class="inc-title" id="incTitle">⚠ AWAITING MAINTENANCE EVENT</div>
+        <div class="inc-meta" id="incMeta">Paste an AOG/parts/fleet-readiness report and fire engines to begin command center analysis</div>
       </div>
       <div class="inc-badge" id="incBadge">STANDBY</div>
     </div>
@@ -216,26 +218,26 @@ Status: Pre-alarm — no smoke or thermal event yet"></textarea>
       <div class="engine-card">
         <div class="eng-card-header">
           <span class="eng-card-num">ENGINE 01</span>
-          <span class="eng-card-title">DETECTION INTELLIGENCE</span>
+          <span class="eng-card-title">MAINTENANCE SIGNAL INTELLIGENCE</span>
           <span class="eng-card-status status-idle" id="ec0">IDLE</span>
         </div>
-        <div class="eng-card-body" id="eo0">Awaiting detection event — paste sensor alert logs or off-gas/particulate readings to begin.</div>
+        <div class="eng-card-body" id="eo0">Awaiting maintenance event — paste an AOG alert, parts-shortage report, or fleet maintenance log to begin.</div>
       </div>
       <div class="engine-card">
         <div class="eng-card-header">
           <span class="eng-card-num">ENGINE 02</span>
-          <span class="eng-card-title">FACILITY IMPACT</span>
+          <span class="eng-card-title">FLEET READINESS IMPACT</span>
           <span class="eng-card-status status-idle" id="ec1">IDLE</span>
         </div>
-        <div class="eng-card-body" id="eo1">Facility impact assessment will estimate affected zone, occupancy/process impact, and evacuation or isolation scope.</div>
+        <div class="eng-card-body" id="eo1">Fleet readiness impact will estimate aircraft affected, readiness percentage, and time-to-operational-threshold.</div>
       </div>
       <div class="engine-card">
         <div class="eng-card-header">
           <span class="eng-card-num">ENGINE 03</span>
-          <span class="eng-card-title">FAILURE PROGRESSION</span>
+          <span class="eng-card-title">PARTS &amp; SUPPLY RISK PROGRESSION</span>
           <span class="eng-card-status status-idle" id="ec2">IDLE</span>
         </div>
-        <div class="eng-card-body" id="eo2">Failure progression engine will estimate how far from thermal runaway / visible smoke the event is, and the detection lead-time margin.</div>
+        <div class="eng-card-body" id="eo2">Parts/supply risk engine will estimate how far this is from a fleet-wide grounding event and backlog escalation risk.</div>
       </div>
       <div class="engine-card">
         <div class="eng-card-header">
@@ -243,7 +245,7 @@ Status: Pre-alarm — no smoke or thermal event yet"></textarea>
           <span class="eng-card-title">FINANCIAL EXPOSURE</span>
           <span class="eng-card-status status-idle" id="ec3">IDLE</span>
         </div>
-        <div class="eng-card-body" id="eo3">Financial exposure engine will calculate asset-at-risk value, downtime cost, and insurance/business-interruption exposure.</div>
+        <div class="eng-card-body" id="eo3">Financial exposure engine will calculate AOG cost, expedite/charter cost, and contractual delivery/SLA exposure.</div>
       </div>
       <div class="engine-card">
         <div class="eng-card-header">
@@ -251,7 +253,7 @@ Status: Pre-alarm — no smoke or thermal event yet"></textarea>
           <span class="eng-card-title">RESPONSE PLAN</span>
           <span class="eng-card-status status-idle" id="ec4">IDLE</span>
         </div>
-        <div class="eng-card-body" id="eo4">Response plan engine will generate ranked response steps with owners, timelines, and notification/isolation checkpoints.</div>
+        <div class="eng-card-body" id="eo4">Response plan engine will generate ranked response steps with owners, timelines, and maintenance-control checkpoints.</div>
       </div>
       <div class="engine-card">
         <div class="eng-card-header">
@@ -265,13 +267,13 @@ Status: Pre-alarm — no smoke or thermal event yet"></textarea>
 
     <!-- RANKED ACTIONS -->
     <div class="action-panel" id="actionPanel" style="display:none">
-      <div class="action-title">🔥 RANKED EXECUTIVE DECISIONS — AUTHORIZATION REQUIRED</div>
+      <div class="action-title">✈ RANKED EXECUTIVE DECISIONS — AUTHORIZATION REQUIRED</div>
       <div class="action-list" id="actionList"></div>
     </div>
 
     <!-- ESCALATE -->
     <div class="escalate-bar">
-      <button class="esc-btn" id="escalateBtn" onclick="escalateToStrategist()" disabled>🔥 ESCALATE TO OPERATIONS STRATEGIST →</button>
+      <button class="esc-btn" id="escalateBtn" onclick="escalateToStrategist()" disabled>✈ ESCALATE TO OPERATIONS STRATEGIST →</button>
       <button class="esc-btn secondary" onclick="exportReport()">↓ EXPORT INCIDENT REPORT</button>
     </div>
 
@@ -281,7 +283,7 @@ Status: Pre-alarm — no smoke or thermal event yet"></textarea>
 <div class="toast" id="toast"></div>
 
 <div class="statusbar">
-  <span class="sb-item">TSM · Advanced Detection Command Center</span>
+  <span class="sb-item">TSM · Aerospace Maintenance Readiness Command Center</span>
   <span class="sb-item crit">ALERT <span>ACTIVE</span></span>
   <span class="sb-item">ENGINES <span id="sbEngines">0 / 6</span></span>
   <span class="sb-item">MODEL <span>openai/gpt-oss-120b</span></span>
@@ -295,17 +297,19 @@ function tick() { document.getElementById('clock').textContent = new Date().toLo
 setInterval(tick, 1000); tick();
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-// New 4th Honeywell domain, added alongside plant/cyber/supplier without
-// touching any of their code paths — own INCIDENT_TYPE, own RELAY_DOMAIN,
-// own RELAY_KEY. honeywell-strategist.html / honeywell-executive-portal.html
-// pick this domain up purely by reading RELAY_KEYS/SOURCE_META, which were
-// extended with a 'detection' entry — see those files' change history.
-const INCIDENT_TYPE = 'detection';
-const RELAY_DOMAIN = 'HONEYWELL_DETECTION';
-const RELAY_KEY = 'TSM_HONEYWELL_DETECTION_RELAY';
+// 7th Honeywell domain (Aerospace Maintenance Readiness), added alongside
+// plant/cyber/supplier/bess/detection/healthcare without touching any of
+// their code paths — own INCIDENT_TYPE, own RELAY_DOMAIN, own RELAY_KEY.
+// This is the vertical/industry-scenario layer over the same Honeywell
+// War Room -> Strategist -> Executive Portal chain: honeywell-strategist.html /
+// honeywell-executive-portal.html pick this domain up purely by reading
+// RELAY_KEYS/SOURCE_META, which were extended with an 'aerospace' entry.
+const INCIDENT_TYPE = 'aerospace';
+const RELAY_DOMAIN = 'HONEYWELL_AEROSPACE';
+const RELAY_KEY = 'TSM_HONEYWELL_AEROSPACE_RELAY';
 const STRATEGIST_URL = '/html/war-rooms/honeywell-strategist.html';
 
-let docType = 'bess_offgas';
+let docType = 'aog_alert';
 let enginesComplete = 0;
 let sessionData = { source: INCIDENT_TYPE, outputs: [], docText: '', timestamp: null };
 
@@ -315,36 +319,36 @@ function setDocType(el, type) {
   docType = type;
 }
 
-const SAMPLE_BESS = `Facility: Data Center Campus 2 — BESS Room 3, Substation B
-Sensor network: Li-ion Tamer off-gas array, 6 sensing zones (3-A through 3-F)
-Reading: Zone 3-B reports a rising DMC/EMC (dimethyl carbonate / ethyl methyl carbonate) off-gas signature over the last 4 minutes — electrolyte solvent vapor consistent with early-stage cell stress, not yet thermal runaway.
-Status: PRE-ALARM — no smoke, no thermal event, no visible flame. Rack-level temperature sensors in 3-B show a 6°C rise above baseline over the same window.
-Facility state: BESS room ventilation running at normal cycle. Adjacent racks (3-A, 3-C) reading nominal. Zone 3-B breaker not yet isolated — awaiting facilities confirmation.
-Asset context: BESS Room 3 holds 8 MWh of installed capacity across 12 racks; Zone 3-B covers 2 of those racks (~1.3 MWh).
-Downstream: This BESS bank provides UPS ride-through and peak-shaving for two adjacent data halls currently at 78% utilization.
-Response so far: On-site facilities technician notified at first alert; isolation procedure initiated but not yet confirmed complete.`;
+const SAMPLE_AOG = `Fleet: Regional Cargo Wing — 14 aircraft, mixed fleet (11x ATR-72, 3x ERJ-145)
+Aircraft: N4471Q (Fleet #7, ATR-72) — Aircraft On Ground (AOG) at MSP since 03:40 local
+System: Honeywell 131-9A Auxiliary Power Unit — fault code points to starter-generator failure, confirmed by line maintenance visual/borescope inspection
+Status: No serviceable starter-generator in the regional parts pool (MSP, ORD, MKE all checked). Nearest serviceable unit is at the OEM depot, 3-day standard ship, 18-hour AOG-expedite ship available at premium freight cost.
+Fleet state: N4471Q was scheduled for 3 cargo rotations today (MSP-ORD-MSP-MKE); all 3 have been reassigned to other fleet aircraft, absorbing available schedule slack. Remaining fleet (13 aircraft) at 100% dispatch reliability, no other open AOG or MEL items of this severity.
+Asset context: N4471Q is a leased airframe under a wet-lease-adjacent capacity agreement; the lease/capacity contract carries an on-time-performance penalty clause if utilization drops below a stated threshold this month.
+Downstream: Two customer cargo commitments (a regional e-commerce contract and a mail-carrier contract) are at risk if N4471Q remains AOG beyond 48 hours, since remaining fleet slack is already fully absorbed by today's reassignment.
+Response so far: Maintenance control opened an AOG ticket at 03:45; parts desk is sourcing both standard and expedite freight quotes; no expedite order placed yet pending cost approval.`;
 
-const SAMPLE_GIGA = `Facility: Gigafactory Line 4 — Cell Assembly & Formation Bay
-Sensor network: Li-ion Tamer off-gas array (formation bay) + VESDA aspirating smoke detection (high-bay ceiling, 14m clear height)
-Reading: Off-gas array on Formation Rack 22 detects a DEC (diethyl carbonate) signature spike, isolated to one rack of 40 in the bay. VESDA aspirating system has not yet crossed its alarm threshold — no particulate detected at ceiling level, consistent with an early, still-localized event.
-Status: PRE-ALARM at the rack level. Formation Rack 22 automatically de-energized per PLC interlock logic when the off-gas threshold was crossed; adjacent racks (21, 23) unaffected and still in normal formation cycle.
-Facility state: Bay ventilation at elevated setting per standard response protocol. No evacuation triggered — pre-alarm threshold does not require full-bay evacuation per site procedure, only isolation of the affected rack and a facilities walk-down.
-Asset context: Formation Rack 22 represents ~2.5% of the bay's daily cell throughput; a full bay shutdown would affect the remaining 97.5% of in-process cells across 39 racks.
-Downstream: Line 4 supplies cells to two vehicle programs with weekly delivery commitments; a full-bay stoppage beyond 4 hours would put this week's delivery at risk.
-Response so far: Facilities and EHS notified per standard pre-alarm protocol; rack-level isolation confirmed, bay-level walk-down in progress.`;
+const SAMPLE_PARTS = `Fleet: Regional Cargo Wing — 14 aircraft, mixed fleet (11x ATR-72, 3x ERJ-145)
+System: Honeywell 131-9A APU starter-generator — fleet-wide parts pool
+Alert: Fleet maintenance tracking flags that 4 of 11 ATR-72 starter-generators are now past their recommended overhaul interval, with 2 already showing early-stage fault trending (elevated start-cycle current draw) in recent engine-health-monitoring data.
+Status: Regional parts pool holds only 1 serviceable spare starter-generator against a fleet-wide requirement that maintenance control now assesses at 3-4 units over the next 60 days as the aging units reach failure or forced overhaul.
+Fleet state: All 11 ATR-72 aircraft are currently dispatching normally; no aircraft is AOG yet. This is a forward-looking parts-backlog risk identified by trend analysis, not a confirmed failure.
+Asset context: OEM standard lead time for a new starter-generator is 45-60 days; overhaul-exchange lead time for a core-return unit is 21-30 days if a core is available to send. Regional Cargo Wing has 2 depot-exchange cores eligible to send now.
+Downstream: If 2 more units fail before replacements arrive, fleet-wide dispatch reliability for the ATR-72 sub-fleet (11 of 14 aircraft) would be at risk, given only 1 spare currently on the shelf.
+Response so far: Maintenance control has flagged the trend to the parts desk; no purchase order or core-exchange order has been placed yet pending budget approval and confirmation of overhaul provider capacity.`;
 
-function loadSampleBess() {
-  document.getElementById('docInput').value = SAMPLE_BESS;
-  const tag = Array.from(document.querySelectorAll('.doc-tag')).find(t => t.textContent.trim() === 'BESS Off-Gas Alert');
-  if (tag) setDocType(tag, 'bess_offgas');
-  showToast('BESS off-gas sample loaded — hit FIRE ALL 6 ENGINES.');
+function loadSampleAog() {
+  document.getElementById('docInput').value = SAMPLE_AOG;
+  const tag = Array.from(document.querySelectorAll('.doc-tag')).find(t => t.textContent.trim() === 'Aircraft AOG Alert');
+  if (tag) setDocType(tag, 'aog_alert');
+  showToast('Aircraft AOG sample loaded — hit FIRE ALL 6 ENGINES.');
 }
 
-function loadSampleGiga() {
-  document.getElementById('docInput').value = SAMPLE_GIGA;
-  const tag = Array.from(document.querySelectorAll('.doc-tag')).find(t => t.textContent.trim() === 'Gigafactory Off-Gas Alert');
-  if (tag) setDocType(tag, 'gigafactory_offgas');
-  showToast('Gigafactory off-gas sample loaded — hit FIRE ALL 6 ENGINES.');
+function loadSampleParts() {
+  document.getElementById('docInput').value = SAMPLE_PARTS;
+  const tag = Array.from(document.querySelectorAll('.doc-tag')).find(t => t.textContent.trim() === 'Critical Parts Shortage');
+  if (tag) setDocType(tag, 'parts_shortage');
+  showToast('Critical parts shortage sample loaded — hit FIRE ALL 6 ENGINES.');
 }
 
 function showToast(msg, isErr) {
@@ -357,29 +361,29 @@ function showToast(msg, isErr) {
 
 // ── ENGINE PROMPTS ────────────────────────────────────────────────────────────
 function getPrompts(doc, brief) {
-  const full = `You are an advanced fire/life-safety detection intelligence engine for TSM Command, specializing in aspirating smoke detection (VESDA) and lithium-ion battery off-gas sensing (Li-ion Tamer). Analyze this detection event narrative with precision. Focus on facility impact, failure progression, financial exposure, and ranked executive actions. Be specific with numbers and timelines. This is a documentation and decision-support exercise, not a live control system — do not claim to arm, trigger, or command any physical suppression or isolation equipment.\n\nDETECTION EVENT REPORT:\n${doc}\n\n`;
+  const full = `You are an aerospace fleet-maintenance intelligence engine for TSM Command, specializing in Honeywell airborne systems (APUs, avionics, environmental/mechanical components) and fleet maintenance readiness. Analyze this maintenance event narrative with precision. Focus on fleet readiness impact, parts/supply risk progression, financial exposure, and ranked executive actions. Be specific with numbers and timelines. This is a documentation and decision-support exercise, not a live MRO/dispatch system — do not claim to command, order, or authorize any physical maintenance, parts movement, or flight-release action.\n\nMAINTENANCE EVENT REPORT:\n${doc}\n\n`;
   const base = brief
-    ? `You are an advanced fire/life-safety detection intelligence engine for TSM Command. Continue analyzing this event using the extracted intelligence below — do not ask for the original report, this is the complete factual basis. This remains a documentation and decision-support exercise, not a live control system.\n\nEXTRACTED DETECTION INTELLIGENCE:\n${brief}\n\n`
+    ? `You are an aerospace fleet-maintenance intelligence engine for TSM Command. Continue analyzing this event using the extracted intelligence below — do not ask for the original report, this is the complete factual basis. This remains a documentation and decision-support exercise, not a live MRO/dispatch system.\n\nEXTRACTED MAINTENANCE INTELLIGENCE:\n${brief}\n\n`
     : full;
   return [
-    base + `ENGINE 01 — DETECTION INTELLIGENCE\nExtract and structure:\n▸ DETECTION TECHNOLOGY — VESDA aspirating smoke, Li-ion Tamer off-gas sensing, or both\n▸ SIGNATURE DETECTED — specific gas species or particulate signature reported, and what it typically indicates\n▸ ALARM STAGE — pre-alarm, alarm, or action stage per the narrative\n▸ AFFECTED ZONE/ASSET — specific rack, room, bay, or line segment impacted\n▸ KEY PARTIES — facilities, EHS, operations, safety involved\n▸ KEY FIGURES & NAMES — every specific quantity, dollar figure, timeframe, and named party/vendor stated in the document, verbatim\nCRITICAL — GROUNDING RULE: this extraction is the ONLY source of truth every later engine will see (they do not re-read the original document). Copy every stated number, name, and quote verbatim. Never invent, round, or substitute a plausible-sounding figure or name for one the source does not provide — write "NOT SPECIFIED IN SOURCE" instead. Omitting or fabricating a detail here means it is permanently lost or corrupted for every downstream engine.`,
+    base + `ENGINE 01 — MAINTENANCE SIGNAL INTELLIGENCE\nExtract and structure:\n▸ SYSTEM/COMPONENT — specific Honeywell system or component reported (APU, avionics line-replaceable unit, environmental system, etc.)\n▸ FAULT/SIGNAL DETECTED — specific fault code, trend, or shortage reported, and what it typically indicates\n▸ EVENT STAGE — confirmed AOG, forward-looking parts-backlog risk, or fleet readiness trend per the narrative\n▸ AFFECTED AIRCRAFT/FLEET — specific tail number(s), fleet type, and count of aircraft in scope\n▸ KEY PARTIES — maintenance control, parts desk, dispatch, leasing/contracts involved\n▸ KEY FIGURES & NAMES — every specific quantity, dollar figure, timeframe, and named party/vendor stated in the document, verbatim\nCRITICAL — GROUNDING RULE: this extraction is the ONLY source of truth every later engine will see (they do not re-read the original document). Copy every stated number, name, and quote verbatim. Never invent, round, or substitute a plausible-sounding figure or name for one the source does not provide — write "NOT SPECIFIED IN SOURCE" instead. Omitting or fabricating a detail here means it is permanently lost or corrupted for every downstream engine.`,
 
-    base + `ENGINE 02 — FACILITY IMPACT\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"leadTimeEstimate": "<short string>"}\n\nPART 2 — Calculate and structure:\n▸ AFFECTED CAPACITY — percentage and absolute output/asset value in the affected zone\n▸ ISOLATION STATUS — confirmed, in progress, or not yet started\n▸ OCCUPANCY/EVACUATION IMPACT — per the narrative's stated response, not invented\n▸ DOWNSTREAM RISK — customer commitments, adjacent systems, or production lines at risk\n▸ UNAFFECTED CAPACITY — what continues operating normally\n▸ FACILITY IMPACT SCORE — 1-10 severity\nQuantify everything with specific numbers from the narrative. The leadTimeEstimate in PART 1 must match your stated restoration/replacement timeline in PART 2 exactly — this is the figure the executive dashboard displays.`,
+    base + `ENGINE 02 — FLEET READINESS IMPACT\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"leadTimeEstimate": "<short string>"}\n\nPART 2 — Calculate and structure:\n▸ AIRCRAFT AFFECTED — count and percentage of fleet/sub-fleet in scope\n▸ READINESS STATUS — current dispatch reliability / readiness percentage per the narrative\n▸ SCHEDULE/ROTATION IMPACT — reassignments, cancellations, or slack absorbed per the narrative's stated response, not invented\n▸ DOWNSTREAM RISK — customer commitments, contractual utilization thresholds, or adjacent fleet aircraft at risk\n▸ UNAFFECTED CAPACITY — what continues dispatching normally\n▸ FLEET IMPACT SCORE — 1-10 severity\nQuantify everything with specific numbers from the narrative. The leadTimeEstimate in PART 1 (label it as the readiness window before the next aircraft is forced out of service or the fleet threshold is breached) must match your stated timeline in PART 2 exactly — this is the figure the executive dashboard displays.`,
 
-    base + `ENGINE 03 — FAILURE PROGRESSION\nAnalyze and structure:\n▸ CURRENT STAGE — where this sits on the off-gas/particulate → thermal runaway → smoke/flame progression\n▸ DETECTION LEAD TIME — how much earlier this was caught versus a conventional spot smoke detector, based on the narrative\n▸ CONTRIBUTING FACTORS — what enabled the event (cell stress, airflow, ventilation, etc.)\n▸ ESCALATION RISK — probability and timeline of progressing to the next stage if unaddressed\n▸ SIMILAR ASSETS AT RISK — other racks/zones that may share the same exposure\nBe direct about probable trajectory even with limited data.`,
+    base + `ENGINE 03 — PARTS &amp; SUPPLY RISK PROGRESSION\nAnalyze and structure:\n▸ CURRENT STAGE — where this sits on the trend/shortage → AOG → fleet-wide grounding progression\n▸ PARTS POOL STATUS — spares on hand versus projected requirement, lead times for standard/expedite/exchange replenishment\n▸ CONTRIBUTING FACTORS — what enabled the event (overhaul-interval aging, single-source supply, depot capacity, etc.)\n▸ ESCALATION RISK — probability and timeline of progressing to the next stage (additional AOG events or fleet-wide dispatch impact) if unaddressed\n▸ SIMILAR ASSETS AT RISK — other tail numbers or components that may share the same exposure\nBe direct about probable trajectory even with limited data.`,
 
-    base + `ENGINE 04 — FINANCIAL EXPOSURE CALCULATION\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\nCRITICAL — UNITS: both numbers MUST be whole-dollar integers (e.g. 6830000 for $6.83M). NEVER write the number in millions (e.g. never write 6.83) and never include a $ sign, comma, or abbreviation inside KPI_JSON.\n\nPART 2 — Calculate and structure:\n▸ ASSET AT RISK — dollar value of the affected zone/rack/asset\n▸ DOWNTIME COST — $/hour of lost production or capacity if isolation/shutdown extends\n▸ REPLACEMENT/REMEDIATION COST — cell/rack replacement, inspection, requalification\n▸ CUSTOMER/DELIVERY IMPACT — penalty clauses, expedite costs, delayed commitments\n▸ INSURANCE APPLICABILITY — what losses may be recoverable\n▸ TOTAL FINANCIAL RISK — combined exposure range\nProvide dollar amounts. Estimate if exact figures not available.`,
+    base + `ENGINE 04 — FINANCIAL EXPOSURE CALCULATION\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\nCRITICAL — UNITS: both numbers MUST be whole-dollar integers (e.g. 340000 for $340K). NEVER write the number in millions/thousands (e.g. never write 0.34) and never include a $ sign, comma, or abbreviation inside KPI_JSON.\n\nPART 2 — Calculate and structure:\n▸ AOG/DOWNTIME COST — $/day of grounded-aircraft cost, including lost utilization\n▸ EXPEDITE/CHARTER COST — premium freight, expedite parts shipping, or charter/lease-backfill cost implied by the narrative\n▸ REPAIR/EXCHANGE COST — component repair, overhaul-exchange, or replacement cost\n▸ CONTRACTUAL/SLA EXPOSURE — lease utilization penalties, customer on-time-performance penalties, or delivery-commitment exposure\n▸ INSURANCE APPLICABILITY — what losses may be recoverable\n▸ TOTAL FINANCIAL RISK — combined exposure range\nProvide dollar amounts. Estimate if exact figures not available.`,
 
-    base + `ENGINE 05 — RESPONSE PLAN\nGenerate ranked response with owners and deadlines:\n1. IMMEDIATE (0-2 hours) — isolation confirmation, area walk-down, EHS notification\n2. SHORT-TERM (2-24 hours) — root-cause inspection, affected-asset quarantine, customer notification if needed\n3. MEDIUM-TERM (1-7 days) — remediation, requalification, restoration to service\n4. PREVENTIVE — sensor threshold review, procedure updates to prevent recurrence\n\nFor each action include: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME\nRank by urgency and impact. Do not recommend or describe commanding any physical control system directly — recommend the human action (e.g., "confirm isolation with facilities," not "trigger shutdown").`,
+    base + `ENGINE 05 — RESPONSE PLAN\nGenerate ranked response with owners and deadlines:\n1. IMMEDIATE (0-2 hours) — expedite-quote confirmation, affected-aircraft schedule reassignment, maintenance-control notification\n2. SHORT-TERM (2-24 hours) — parts order/core-exchange placement, customer-commitment risk notification if needed\n3. MEDIUM-TERM (1-7 days) — repair/overhaul completion, return-to-service inspection, fleet parts-pool replenishment\n4. PREVENTIVE — overhaul-interval/trend-monitoring review, parts-pool stocking-level updates to prevent recurrence\n\nFor each action include: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME\nRank by urgency and impact. Do not recommend or describe commanding any physical maintenance or dispatch system directly — recommend the human action (e.g., "confirm expedite order with parts desk," not "trigger parts shipment").`,
 
-    base + `ENGINE 06 — EXECUTIVE DISPATCH\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"riskScore": <0-100 integer>}\nThen, in under 180 words, generate a concise executive decision package:\n▸ INCIDENT SUMMARY — 2 sentences for C-suite\n▸ FINANCIAL IMPACT — total exposure in dollars\n▸ DECISIONS REQUIRED — up to 3, ranked, each formatted exactly as:\n  1. AUTHORIZE/ESCALATE/REVIEW: [decision] · Owner: [role] · Deadline: [timeframe] · Cost: $[amount]\n▸ BNCA — Best Next Course of Action in one sentence\n▸ ESCALATION TRIGGER — one sentence on what requires CEO/Board or AHJ notification\nThis goes directly to the executive team. Be decisive and brief.`
+    base + `ENGINE 06 — EXECUTIVE DISPATCH\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"riskScore": <0-100 integer>}\nThen, in under 180 words, generate a concise executive decision package:\n▸ INCIDENT SUMMARY — 2 sentences for C-suite\n▸ FINANCIAL IMPACT — total exposure in dollars\n▸ DECISIONS REQUIRED — up to 3, ranked, each formatted exactly as:\n  1. AUTHORIZE/ESCALATE/REVIEW: [decision] · Owner: [role] · Deadline: [timeframe] · Cost: $[amount]\n▸ BNCA — Best Next Course of Action in one sentence\n▸ ESCALATION TRIGGER — one sentence on what requires CEO/Board or customer/lessor notification\nThis goes directly to the executive team. Be decisive and brief.`
   ];
 }
 
 // ── FIRE ENGINES ─────────────────────────────────────────────────────────────
 async function fireAllEngines() {
   const doc = document.getElementById('docInput').value.trim();
-  if (!doc) { showToast('Paste a detection event report first.', true); return; }
+  if (!doc) { showToast('Paste a maintenance event report first.', true); return; }
 
   enginesComplete = 0;
   sessionData = { source: INCIDENT_TYPE, outputs: [], docText: doc, timestamp: new Date().toISOString(), docType, kpis: {} };
@@ -387,7 +391,7 @@ async function fireAllEngines() {
   document.getElementById('escalateBtn').disabled = true;
   document.getElementById('actionPanel').style.display = 'none';
 
-  document.getElementById('incTitle').textContent = '🔥 DETECTION ANALYSIS IN PROGRESS';
+  document.getElementById('incTitle').textContent = '✈ READINESS ANALYSIS IN PROGRESS';
   document.getElementById('incMeta').textContent = `Doc type: ${docType} · ${doc.length} chars · ${new Date().toLocaleTimeString()}`;
   document.getElementById('incBadge').textContent = 'ANALYZING';
   document.getElementById('kpiRisk').textContent = '—';
@@ -415,12 +419,9 @@ async function fireAllEngines() {
       enginesComplete++;
       document.getElementById('kpiEngines').textContent = `${enginesComplete}/6`;
       document.getElementById('sbEngines').textContent = `${enginesComplete} / 6`;
-      sessionData.outputs.push({ engine: i + 1, title: ['Detection Intel','Facility Impact','Failure Progression','Financial Exposure','Response Plan','Exec Dispatch'][i], text });
+      sessionData.outputs.push({ engine: i + 1, title: ['Maintenance Signal Intel','Fleet Readiness Impact','Parts/Supply Risk','Financial Exposure','Response Plan','Exec Dispatch'][i], text });
 
       if (i === 3) extractFinancialKPI(text);
-      // FIX: this previously read i===2 (Engine 03, "Failure Progression"),
-      // which never carries lead-time data — Engine 02 ("Facility Impact")
-      // is the one whose prompt now emits the leadTimeEstimate KPI_JSON.
       if (i === 1) extractLeadTimeKPI(text);
       if (i === 4) extractDeadlineSignal(text);
       if (i === 5) { buildActionPanel(text); buildRiskKPI(text); }
@@ -434,12 +435,12 @@ async function fireAllEngines() {
   }
 
   if (hadError) {
-    document.getElementById('incTitle').textContent = '⚠ ANALYSIS COMPLETE WITH ERRORS — DETECTION EVENT';
+    document.getElementById('incTitle').textContent = '⚠ ANALYSIS COMPLETE WITH ERRORS — MAINTENANCE EVENT';
     document.getElementById('incBadge').textContent = 'PARTIAL';
     document.getElementById('incBadge').style.borderColor = '#f5a623';
     document.getElementById('incBadge').style.color = '#f5a623';
   } else {
-    document.getElementById('incTitle').textContent = '✓ 6-ENGINE ANALYSIS COMPLETE — DETECTION EVENT';
+    document.getElementById('incTitle').textContent = '✓ 6-ENGINE ANALYSIS COMPLETE — MAINTENANCE EVENT';
     document.getElementById('incBadge').textContent = 'COMPLETE';
     document.getElementById('incBadge').style.borderColor = '#22c55e';
     document.getElementById('incBadge').style.color = '#22c55e';
@@ -448,14 +449,14 @@ async function fireAllEngines() {
   document.getElementById('escalateBtn').disabled = !sessionData.outputs.length;
 
   saveRelay();
-  registerDetectionAnomalies();
+  registerAerospaceAnomalies();
 }
 
 // ===== TSM MEMORY: REGISTER CROSS-MODULE ANOMALIES =====
-// Same pattern as plant-incident.html's registerPlantAnomalies() — self-dedupes
-// against TSM_OPERATIONAL_MEMORY_V3, sector 'honeywell', so this never double
-// -fires against whatever the strategist/exec portal also register.
-function registerDetectionAnomalies() {
+// Same pattern as healthcare-thermal-continuity.html's registerHealthcareThermalAnomalies()
+// — self-dedupes against TSM_OPERATIONAL_MEMORY_V3, sector 'honeywell', so this
+// never double-fires against whatever the strategist/exec portal also register.
+function registerAerospaceAnomalies() {
   if (!window.TSMMemory || typeof window.TSMMemory.registerAnomaly !== 'function') return;
 
   function alreadyOpen(code) {
@@ -474,10 +475,10 @@ function registerDetectionAnomalies() {
   const exposureStr = document.getElementById('kpiExposure').textContent;
   if (exposureStr && exposureStr !== '—' && exposureStr !== 'N/A') {
     fire({
-      entityType: 'honeywell-incident', entityId: 'detection',
-      anomalyCode: 'HW_DETECTION_EXPOSURE', severity: 'HIGH',
-      title: `ADVANCED DETECTION — EARLY WARNING — ${exposureStr} exposure`,
-      source: 'advanced-detection-incident',
+      entityType: 'honeywell-incident', entityId: 'aerospace',
+      anomalyCode: 'HW_AEROSPACE_EXPOSURE', severity: 'HIGH',
+      title: `AEROSPACE MAINTENANCE READINESS — ${exposureStr} exposure`,
+      source: 'aerospace-maintenance-readiness',
       meta: { exposure: sessionData.kpis.exposure }
     });
   }
@@ -485,10 +486,10 @@ function registerDetectionAnomalies() {
   const leadTimeStr = document.getElementById('kpiLeadTime').textContent;
   if (leadTimeStr && leadTimeStr !== '—' && leadTimeStr !== 'N/A') {
     fire({
-      entityType: 'honeywell-incident', entityId: 'detection',
-      anomalyCode: 'HW_DETECTION_LEADTIME', severity: 'MEDIUM',
-      title: `ADVANCED DETECTION — EARLY WARNING — lead time ${leadTimeStr}`,
-      source: 'advanced-detection-incident',
+      entityType: 'honeywell-incident', entityId: 'aerospace',
+      anomalyCode: 'HW_AEROSPACE_READINESS_WINDOW', severity: 'MEDIUM',
+      title: `AEROSPACE MAINTENANCE READINESS — readiness window ${leadTimeStr}`,
+      source: 'aerospace-maintenance-readiness',
       meta: { value: sessionData.kpis.containment }
     });
   }
@@ -617,12 +618,10 @@ function extractFinancialKPI(text) {
     return;
   }
   // Last-resort scrape when Engine 04 didn't lead with a parseable
-  // KPI_JSON line at all. Now captures an optional M/MM/B/K suffix and
-  // scales it the same way tsmNormalizeExposurePair() would, instead of
-  // silently dropping the unit and displaying bare digits (e.g. was
-  // rendering "$6.83" for a stated "$6.83M" exposure). Mirrors the same
-  // fix applied to supplier-shutdown.html / plant-incident.html /
-  // cyber-incident.html's extractExposureKPI()/extractFinancialKPI().
+  // KPI_JSON line at all. Captures an optional M/MM/B/K suffix and scales
+  // it the same way tsmNormalizeExposurePair() would, instead of silently
+  // dropping the unit and displaying bare digits. Mirrors the same fix
+  // applied across the other war rooms' extractFinancialKPI()/extractExposureKPI().
   const m = text.match(/\$[\d,.]+\s*(MM|[MBK])?(?:\s*[-–]\s*\$[\d,.]+\s*(MM|[MBK])?)?/i);
   if (m) {
     const SCALE = { M: 1e6, MM: 1e6, B: 1e9, K: 1e3 };
@@ -649,10 +648,6 @@ function extractFinancialKPI(text) {
 }
 
 function extractLeadTimeKPI(text) {
-  // Structured JSON path first (matches plant's containment fix) — the old
-  // regex-only version here only ever matched minutes/hours and silently
-  // missed multi-week replacement lead times, which is exactly what a
-  // sensor/module lead-time figure usually looks like.
   const json = parseKpiJson(text);
   if (json && json.leadTimeEstimate) {
     document.getElementById('kpiLeadTime').textContent = json.leadTimeEstimate;
@@ -685,8 +680,8 @@ function buildRiskKPI(text) {
   sessionData.kpis.risk = { raw: m ? (m[1]||m[2]) : null, source: 'regex-fallback' };
 }
 
-// Real deadline signal for the BNCA "if ignored" projection (see plant
-// war room's extractDeadlineSignal for the full rationale).
+// Real deadline signal for the BNCA "if ignored" projection (see
+// advanced-detection-incident.html's extractDeadlineSignal for the full rationale).
 function extractDeadlineSignal(text) {
   const matches = [...text.matchAll(/Deadline:\s*([^\n·]+)/gi)];
   let minDays = null;
@@ -705,7 +700,7 @@ function extractDeadlineSignal(text) {
 }
 
 // Ground Engine 06 in Engine 04's already-computed financial figures so it
-// can't drift to a conflicting repair/remediation cost.
+// can't drift to a conflicting cost figure.
 function groundExecDispatchPrompt(prompt, financialKpi, financialText) {
   if (!financialKpi || (!financialKpi.totalExposureLow && !financialKpi.totalExposureHigh)) return prompt;
   const fmt = n => '$' + Number(n).toLocaleString();
@@ -721,10 +716,10 @@ function buildActionPanel(text) {
   panel.style.display = 'block';
 
   const fallback = [
-    { rank: 1, label: 'AUTHORIZE', text: 'Confirm isolation of affected rack/zone with facilities — verify breaker/interlock state', owner: 'Facilities Lead', deadline: '0–2 hrs' },
-    { rank: 2, label: 'ESCALATE', text: 'Notify EHS and site safety officer — begin area walk-down per pre-alarm procedure', owner: 'EHS', deadline: '0–2 hrs' },
-    { rank: 3, label: 'REVIEW', text: 'Assess customer/delivery impact if isolation extends beyond planned window', owner: 'Ops Director', deadline: '2–8 hrs' },
-    { rank: 4, label: 'AUTHORIZE', text: 'Schedule root-cause inspection and requalification of affected asset', owner: 'Engineering', deadline: '1–3 days' },
+    { rank: 1, label: 'AUTHORIZE', text: 'Confirm expedite freight/parts order with the parts desk — verify serviceable-unit availability and lead time', owner: 'Parts Desk Lead', deadline: '0–2 hrs' },
+    { rank: 2, label: 'ESCALATE', text: 'Notify maintenance control and dispatch — confirm schedule/rotation reassignment for affected aircraft', owner: 'Maintenance Control', deadline: '0–2 hrs' },
+    { rank: 3, label: 'REVIEW', text: 'Assess customer/lease-utilization commitment risk if the aircraft remains out of service beyond the planned window', owner: 'Ops Director', deadline: '2–8 hrs' },
+    { rank: 4, label: 'AUTHORIZE', text: 'Schedule fleet parts-pool replenishment and overhaul-interval trend review for the affected component', owner: 'Engineering / Reliability', deadline: '1–3 days' },
   ];
 
   const actions = parseDecisionActions(text) || fallback;
@@ -747,7 +742,7 @@ function buildActionPanel(text) {
 
 // ── API CALL ──────────────────────────────────────────────────────────────────
 async function callAPI(prompt) {
-  return callWarRoomAPI(prompt, 'You are an advanced fire/life-safety detection intelligence engine for TSM Command, specializing in VESDA aspirating smoke detection and Li-ion Tamer off-gas sensing for lithium-ion battery installations. Be specific with dollar amounts and timelines. This is a documentation and decision-support exercise, not a live control system.', { maxTokens: 700 });
+  return callWarRoomAPI(prompt, 'You are an aerospace fleet-maintenance intelligence engine for TSM Command, specializing in Honeywell airborne systems and fleet maintenance readiness. Be specific with dollar amounts and timelines. This is a documentation and decision-support exercise, not a live MRO/dispatch system.', { maxTokens: 700 });
 }
 
 function goToStrategist() {
@@ -766,12 +761,12 @@ function exportReport() {
   const blob = new Blob([text], { type: 'text/plain' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `TSM-Advanced-Detection-${new Date().toISOString().slice(0,10)}.txt`;
+  a.download = `TSM-Aerospace-Maintenance-Readiness-${new Date().toISOString().slice(0,10)}.txt`;
   a.click();
 }
 </script>
   <script src="/html/shared/tsm-memory-engine.js"></script>
   <script src="js/tsm-guide-engine.js" defer></script>
-  <script src="/shared/tsm-generic-relay-loader.js" data-relay-key="tsm_hw_detection_docsearch_relay" data-auto-key="TSM_HW_DETECTION_WAR_RELAY"></script>
+  <script src="/shared/tsm-generic-relay-loader.js" data-relay-key="tsm_hw_aerospace_docsearch_relay" data-auto-key="TSM_HW_AEROSPACE_WAR_RELAY"></script>
 </body>
 </html>

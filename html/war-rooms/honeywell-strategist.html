@@ -95,6 +95,7 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;mi
   <div class="nav-tab" onclick="window.location='/html/cyber-incident.html'">🛡 CYBER</div>
   <div class="nav-tab" onclick="window.location='/html/war-rooms/bess-gigafactory-incident.html'">🔋 BESS</div>
   <div class="nav-tab" onclick="window.location='/html/war-rooms/advanced-detection-incident.html'">📡 DETECTION</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/healthcare-thermal-continuity.html'">🏥 HEALTHCARE</div>
   <div class="nav-tab active">→ STRATEGIST</div>
   <div class="nav-tab" onclick="window.location='/html/war-rooms/honeywell-executive-portal.html'">↑ EXECUTIVE</div>
 </div>
@@ -128,7 +129,8 @@ const RELAY_KEYS = {
   cyber:     'TSM_HONEYWELL_CYBER_RELAY',
   supplier:  'TSM_HONEYWELL_SUPPLIER_RELAY',
   bess:      'TSM_HONEYWELL_BESS_RELAY',
-  detection: 'TSM_HONEYWELL_DETECTION_RELAY'
+  detection: 'TSM_HONEYWELL_DETECTION_RELAY',
+  healthcare:'TSM_HONEYWELL_HEALTHCARE_RELAY'
 };
 // Legacy key, kept as a fallback read only — nothing writes to it anymore
 // post-split, but any old in-flight session data still sitting in a
@@ -140,7 +142,8 @@ const SOURCE_META = {
   cyber:    { label: 'CYBER — SECURITY INCIDENT',          icon: '🛡', war: '/html/cyber-incident.html',                        color: 'var(--red)' },
   supplier: { label: 'SUPPLIER SHUTDOWN — SUPPLY CHAIN',   icon: '📦', war: '/html/supplier-shutdown.html',                     color: 'var(--amber)' },
   bess:     { label: 'BESS/GIGAFACTORY — THERMAL EVENT',   icon: '🔋', war: '/html/war-rooms/bess-gigafactory-incident.html',   color: 'var(--red)' },
-  detection:{ label: 'ADVANCED DETECTION — PRE-ALARM',     icon: '📡', war: '/html/war-rooms/advanced-detection-incident.html', color: 'var(--amber)' }
+  detection:{ label: 'ADVANCED DETECTION — PRE-ALARM',     icon: '📡', war: '/html/war-rooms/advanced-detection-incident.html', color: 'var(--amber)' },
+  healthcare:{ label: 'HEALTHCARE — THERMAL CONTINUITY',   icon: '🏥', war: '/html/war-rooms/healthcare-thermal-continuity.html', color: 'var(--green)' }
 };
 
 function showToast(msg, isErr){
@@ -294,6 +297,7 @@ function hwBncaSeverity(src){
   if(src === 'cyber') return 'CRIT';
   if(src === 'bess') return 'CRIT'; // thermal runaway — same top tier as cyber
   if(src === 'plant') return 'HIGH';
+  if(src === 'healthcare') return 'CRIT'; // patient-safety-adjacent thermal continuity — same top tier as cyber/bess
   return 'MED'; // includes supplier and detection (pre-alarm, not yet a confirmed event)
 }
 function computeHoneywellBNCA(data){
@@ -432,7 +436,7 @@ function registerHoneywellAnomalies(data){
 
   const exposureStr = kpiExposure(k.exposure);
   if(exposureStr !== '—'){
-    const severity = (src === 'cyber' || src === 'bess') ? 'CRITICAL' : (src === 'plant' ? 'HIGH' : 'MEDIUM');
+    const severity = (src === 'cyber' || src === 'bess' || src === 'healthcare') ? 'CRITICAL' : (src === 'plant' ? 'HIGH' : 'MEDIUM');
     fire({
       entityType: 'honeywell-incident', entityId: src,
       anomalyCode: 'HW_' + codeSrc + '_EXPOSURE', severity,
@@ -447,7 +451,7 @@ function registerHoneywellAnomalies(data){
   if(secVal !== '—'){
     fire({
       entityType: 'honeywell-incident', entityId: src,
-      anomalyCode: 'HW_' + codeSrc + '_' + (k.buffer ? 'BUFFER' : 'CONTAINMENT'), severity: (src === 'cyber' || src === 'bess') ? 'HIGH' : 'MEDIUM',
+      anomalyCode: 'HW_' + codeSrc + '_' + (k.buffer ? 'BUFFER' : 'CONTAINMENT'), severity: (src === 'cyber' || src === 'bess' || src === 'healthcare') ? 'HIGH' : 'MEDIUM',
       title: `${meta.label} — ${secondaryLabel(src)} at ${secVal}`,
       source: 'honeywell-strategist',
       meta: { value: secKpi, incidentSource: src }
@@ -480,6 +484,7 @@ function renderEmpty(){
         <a class="hbtn primary" href="/html/cyber-incident.html">🛡 Cyber</a>
         <a class="hbtn primary" href="/html/war-rooms/bess-gigafactory-incident.html">🔋 BESS</a>
         <a class="hbtn primary" href="/html/war-rooms/advanced-detection-incident.html">📡 Detection</a>
+        <a class="hbtn primary" href="/html/war-rooms/healthcare-thermal-continuity.html">🏥 Healthcare</a>
       </div>
     </div>`;
 }

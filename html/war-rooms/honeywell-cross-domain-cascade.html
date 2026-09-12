@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TSM · Cross-Domain Cascade Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050a0f;--bg2:#0a1020;--bg3:#0d1528;
+  --cyan:#00d4d4;--amber:#f5a623;--green:#22c55e;
+  --red:#ef4444;--purple:#a855f7;--blue:#3b82f6;
+  --orange:#f97316;--text:#e2e8f0;--muted:#64748b;--border:#1e293b;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;}
+
+.topbar{height:42px;background:#020810;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;}
+.tb-brand{font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--cyan);letter-spacing:.15em;}
+.tb-stat{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);}
+.tb-stat span{color:var(--cyan);}
+.tb-stat.crit span{color:var(--red);}
+.tb-time{font-family:'Orbitron',sans-serif;font-size:.75rem;color:var(--cyan);}
+
+.alert-bar{height:32px;background:rgba(0,212,212,.08);border-bottom:1px solid rgba(0,212,212,.3);display:flex;align-items:center;padding:0 20px;gap:12px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cyan);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.alert-dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+.nav-tabs{display:flex;align-items:center;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;gap:2px;flex-wrap:wrap;}
+.nav-tab{padding:10px 18px;font-family:'Orbitron',sans-serif;font-size:.58rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.08em;transition:.2s;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+
+.main{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 110px);}
+
+/* SIDEBAR */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:16px;}
+.sb-section{font-family:'Orbitron',sans-serif;font-size:.55rem;color:var(--muted);letter-spacing:.15em;margin-bottom:8px;}
+
+.relay-card{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px;margin-bottom:8px;}
+.relay-card.ok{border-color:rgba(34,197,94,.4);}
+.relay-card.missing{border-color:rgba(239,68,68,.3);}
+.relay-card-hdr{display:flex;align-items:center;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.62rem;}
+.relay-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px;}
+.relay-dot.ok{background:var(--green);}
+.relay-dot.missing{background:var(--red);}
+.relay-status-lbl{font-size:.55rem;padding:2px 7px;border-radius:2px;font-family:'JetBrains Mono',monospace;}
+.relay-status-lbl.ok{background:rgba(34,197,94,.15);color:var(--green);}
+.relay-status-lbl.missing{background:rgba(239,68,68,.12);color:var(--red);}
+.relay-meta{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--muted);margin-top:6px;line-height:1.5;}
+.relay-link{display:inline-block;margin-top:6px;font-family:'Orbitron',sans-serif;font-size:.55rem;letter-spacing:.06em;color:var(--cyan);cursor:pointer;text-decoration:underline;}
+
+.fire-btn{width:100%;background:var(--cyan);color:#04181c;border:none;border-radius:4px;padding:12px;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.1em;cursor:pointer;transition:.2s;margin-top:8px;font-weight:700;}
+.fire-btn:hover{opacity:.85;}
+.fire-btn:disabled{opacity:.35;cursor:not-allowed;}
+
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.kpi{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px;text-align:center;}
+.kpi-val{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700;color:var(--cyan);}
+.kpi-val.red{color:var(--red);}
+.kpi-val.green{color:var(--green);}
+.kpi-lbl{font-size:.58rem;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace;}
+
+.engine-status{display:flex;flex-direction:column;gap:6px;}
+.eng-row{display:flex;align-items:center;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.62rem;}
+.eng-name{color:var(--muted);}
+.eng-badge{padding:2px 8px;border-radius:2px;font-size:.55rem;font-weight:700;}
+.eng-badge.idle{background:rgba(100,116,139,.15);color:var(--muted);}
+.eng-badge.running{background:rgba(0,212,212,.15);color:var(--cyan);}
+.eng-badge.done{background:rgba(34,197,94,.15);color:var(--green);}
+
+/* MAIN PANEL */
+.content{padding:20px;display:flex;flex-direction:column;gap:20px;}
+
+.incident-header{background:rgba(0,212,212,.06);border:1px solid rgba(0,212,212,.2);border-radius:6px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
+.inc-title{font-family:'Orbitron',sans-serif;font-size:.9rem;color:var(--cyan);letter-spacing:.05em;}
+.inc-meta{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);}
+.inc-badge{padding:4px 12px;background:rgba(0,212,212,.15);border:1px solid var(--cyan);border-radius:3px;font-family:'Orbitron',sans-serif;font-size:.6rem;color:var(--cyan);letter-spacing:.1em;}
+
+.disclaimer-bar{background:rgba(245,166,35,.06);border:1px solid rgba(245,166,35,.25);border-radius:6px;padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--amber);line-height:1.6;}
+
+.cascade-chain{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:14px 20px;font-family:'JetBrains Mono',monospace;font-size:.62rem;}
+.cascade-node{padding:6px 12px;border-radius:4px;border:1px solid var(--border);color:var(--muted);}
+.cascade-node.supplier{border-color:rgba(245,166,35,.4);color:var(--amber);}
+.cascade-node.plant{border-color:rgba(249,115,22,.4);color:var(--orange);}
+.cascade-node.customer{border-color:rgba(0,212,212,.4);color:var(--cyan);}
+.cascade-arrow{color:var(--muted);}
+
+.engines-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.engine-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.eng-card-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.eng-card-num{font-family:'Orbitron',sans-serif;font-size:.6rem;color:var(--cyan);}
+.eng-card-title{font-family:'Orbitron',sans-serif;font-size:.62rem;color:var(--text);letter-spacing:.05em;}
+.eng-card-status{font-size:.55rem;padding:2px 8px;border-radius:2px;font-family:'JetBrains Mono',monospace;}
+.status-idle{background:rgba(100,116,139,.1);color:var(--muted);}
+.status-run{background:rgba(0,212,212,.15);color:var(--cyan);}
+.status-done{background:rgba(34,197,94,.15);color:var(--green);}
+.eng-card-body{padding:14px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);line-height:1.7;min-height:100px;white-space:pre-wrap;}
+.eng-card-body.active{color:var(--text);}
+.eng-card-body table.md-table{border-collapse:collapse;width:100%;margin:8px 0;white-space:normal;}
+.eng-card-body table.md-table th,.eng-card-body table.md-table td{border:1px solid var(--border);padding:4px 6px;text-align:left;vertical-align:top;}
+.eng-card-body table.md-table th{color:var(--muted);text-transform:uppercase;font-size:.6rem;}
+
+.action-panel{background:var(--bg2);border:1px solid rgba(0,212,212,.3);border-radius:6px;padding:16px 20px;}
+.action-title{font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--cyan);margin-bottom:12px;letter-spacing:.08em;}
+.action-list{display:flex;flex-direction:column;gap:8px;}
+.action-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg3);border-radius:4px;border:1px solid var(--border);}
+.action-rank{font-family:'Orbitron',sans-serif;font-size:.7rem;font-weight:700;color:var(--cyan);width:24px;text-align:center;flex-shrink:0;}
+.action-text{flex:1;font-size:.75rem;color:var(--text);}
+.action-owner{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);}
+.action-deadline{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--amber);}
+.action-btn{padding:4px 12px;border-radius:3px;font-family:'Orbitron',sans-serif;font-size:.55rem;letter-spacing:.08em;cursor:pointer;border:none;}
+.btn-authorize{background:var(--cyan);color:#04181c;}
+.btn-escalate{background:transparent;border:1px solid var(--cyan) !important;color:var(--cyan);}
+.btn-review{background:transparent;border:1px solid var(--amber) !important;color:var(--amber);}
+
+.escalate-bar{display:flex;gap:12px;align-items:center;}
+.esc-btn{flex:1;padding:12px;background:var(--cyan);color:#04181c;border:none;border-radius:4px;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.1em;cursor:pointer;transition:.2s;}
+.esc-btn:hover{opacity:.85;}
+.esc-btn:disabled{opacity:.4;cursor:not-allowed;}
+.esc-btn.secondary{background:transparent;border:1px solid var(--cyan);color:var(--cyan);}
+
+.toast{position:fixed;bottom:44px;right:20px;background:var(--bg2);border:1px solid var(--cyan);border-radius:6px;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cyan);box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:999;opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.err{border-color:var(--red);color:var(--red);}
+
+.statusbar{height:28px;background:#020810;border-top:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:20px;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);position:fixed;bottom:0;left:0;right:0;}
+.sb-item span{color:var(--cyan);}
+.sb-item.warn span{color:var(--amber);}
+.sb-item.crit span{color:var(--red);}
+</style>
+</head>
+<body data-vertical="honeywell-cross-domain-cascade" data-page-role="warroom">
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:16px">
+    <span class="tb-brand">🔗 TSM ENTERPRISE</span>
+    <span class="tb-stat">VERTICAL <span>CROSS-DOMAIN CASCADE</span></span>
+    <span class="tb-stat crit">ALERT <span>ACTIVE</span></span>
+    <span class="tb-stat">API <span>/api/war-room/stream</span></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span class="tb-time" id="clock">--:--:--</span>
+  </div>
+</div>
+
+<!-- ALERT BAR -->
+<div class="alert-bar">
+  <div class="alert-dot"></div>
+  CROSS-DOMAIN CASCADE — SUPPLIER → PLANT → CUSTOMER IMPACT CHAIN — SYNTHESIZING TWO WAR-ROOM RELAYS — NOT A NEW DOCUMENT INTAKE
+</div>
+
+<!-- NAV -->
+<div class="nav-tabs">
+  <div class="nav-tab" onclick="window.location='/html/plant-incident.html'">⚡ PLANT</div>
+  <div class="nav-tab" onclick="window.location='/html/supplier-shutdown.html'">📦 SUPPLIER</div>
+  <div class="nav-tab" onclick="window.location='/html/cyber-incident.html'">🛡 CYBER</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/bess-gigafactory-incident.html'">🔋 BESS</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/advanced-detection-incident.html'">📡 DETECTION</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/healthcare-thermal-continuity.html'">🏥 HEALTHCARE</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/aerospace-maintenance-readiness.html'">✈ AEROSPACE</div>
+  <div class="nav-tab active">🔗 CASCADE</div>
+  <div class="nav-tab" onclick="goToStrategist()">→ STRATEGIST</div>
+  <div class="nav-tab" onclick="window.location='/html/war-rooms/honeywell-executive-portal.html'">↑ EXECUTIVE</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div>
+      <div class="sb-section">SOURCE RELAY STATUS</div>
+
+      <div class="relay-card" id="supplierCard">
+        <div class="relay-card-hdr">
+          <span><span class="relay-dot missing" id="supplierDot"></span>📦 SUPPLIER</span>
+          <span class="relay-status-lbl missing" id="supplierStatus">MISSING</span>
+        </div>
+        <div class="relay-meta" id="supplierMeta">No supplier war-room analysis found yet.</div>
+        <div class="relay-link" onclick="window.location='/html/supplier-shutdown.html'">→ Run Supplier War Room</div>
+      </div>
+
+      <div class="relay-card" id="plantCard">
+        <div class="relay-card-hdr">
+          <span><span class="relay-dot missing" id="plantDot"></span>⚡ PLANT</span>
+          <span class="relay-status-lbl missing" id="plantStatus">MISSING</span>
+        </div>
+        <div class="relay-meta" id="plantMeta">No plant war-room analysis found yet.</div>
+        <div class="relay-link" onclick="window.location='/html/plant-incident.html'">→ Run Plant War Room</div>
+      </div>
+
+      <button class="fire-btn" id="fireBtn" onclick="fireAllEngines()" disabled>🔗 RUN CASCADE ANALYSIS (6 ENGINES)</button>
+      <button class="fire-btn" id="refreshRelaysBtn" onclick="loadRelays()" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px;">↻ Re-check Relay Sources</button>
+    </div>
+
+    <div>
+      <div class="sb-section">LIVE KPIs</div>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-val red" id="kpiRisk">—</div><div class="kpi-lbl">RISK SCORE</div></div>
+        <div class="kpi"><div class="kpi-val red" id="kpiExposure">—</div><div class="kpi-lbl">COMBINED $ EXPOSURE</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpiLeadTime">—</div><div class="kpi-lbl">CASCADE WINDOW</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpiEngines">0/6</div><div class="kpi-lbl">ENGINES</div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sb-section">ENGINE STATUS</div>
+      <div class="engine-status">
+        <div class="eng-row"><span class="eng-name">01 · Cascade Signal Intel</span><span class="eng-badge idle" id="es0">IDLE</span></div>
+        <div class="eng-row"><span class="eng-name">02 · Plant Dependency Impact</span><span class="eng-badge idle" id="es1">IDLE</span></div>
+        <div class="eng-row"><span class="eng-name">03 · Compounding Risk</span><span class="eng-badge idle" id="es2">IDLE</span></div>
+        <div class="eng-row"><span class="eng-name">04 · Combined Exposure</span><span class="eng-badge idle" id="es3">IDLE</span></div>
+        <div class="eng-row"><span class="eng-name">05 · Response Plan</span><span class="eng-badge idle" id="es4">IDLE</span></div>
+        <div class="eng-row"><span class="eng-name">06 · Exec Dispatch</span><span class="eng-badge idle" id="es5">IDLE</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <div class="disclaimer-bar">
+      ⚠ TRAINING / DECISION-SUPPORT SIMULATION — this war room synthesizes the Supplier Shutdown and Plant Incident war rooms' own already-computed analysis. It does not re-read a pasted document, does not independently re-score either source, and does not command, dispatch, or authorize any real procurement, production, or shutdown action. Always follow your organization's actual operational and supply-chain procedures.
+    </div>
+
+    <div class="cascade-chain">
+      <span class="cascade-node supplier">📦 SUPPLIER SIGNAL</span>
+      <span class="cascade-arrow">→</span>
+      <span class="cascade-node">CRITICAL COMPONENT DEPENDENCY</span>
+      <span class="cascade-arrow">→</span>
+      <span class="cascade-node plant">⚡ PLANT IMPACT</span>
+      <span class="cascade-arrow">→</span>
+      <span class="cascade-node">PRODUCTION EXPOSURE</span>
+      <span class="cascade-arrow">→</span>
+      <span class="cascade-node customer">CUSTOMER IMPACT</span>
+      <span class="cascade-arrow">→</span>
+      <span class="cascade-node">EXECUTIVE DECISION</span>
+    </div>
+
+    <!-- INCIDENT HEADER -->
+    <div class="incident-header">
+      <div>
+        <div class="inc-title" id="incTitle">⚠ AWAITING BOTH SOURCE RELAYS</div>
+        <div class="inc-meta" id="incMeta">Run the Supplier and Plant war rooms first — this page reasons across both, it doesn't take a pasted document</div>
+      </div>
+      <div class="inc-badge" id="incBadge">STANDBY</div>
+    </div>
+
+    <!-- ENGINE OUTPUTS -->
+    <div class="engines-grid">
+      <div class="engine-card">
+        <div class="eng-card-header">
+          <span class="eng-card-num">ENGINE 01</span>
+          <span class="eng-card-title">CASCADE SIGNAL INTELLIGENCE</span>
+          <span class="eng-card-status status-idle" id="ec0">IDLE</span>
+        </div>
+        <div class="eng-card-body" id="eo0">Awaiting both source relays — will synthesize the Supplier and Plant war rooms' own extracted intelligence into one grounded cascade brief.</div>
+      </div>
+      <div class="engine-card">
+        <div class="eng-card-header">
+          <span class="eng-card-num">ENGINE 02</span>
+          <span class="eng-card-title">PLANT DEPENDENCY IMPACT</span>
+          <span class="eng-card-status status-idle" id="ec1">IDLE</span>
+        </div>
+        <div class="eng-card-body" id="eo1">Plant dependency impact will map the supplier shortage to specific plant-level component needs, production exposure, and the cascade window before plant impact becomes unavoidable.</div>
+      </div>
+      <div class="engine-card">
+        <div class="eng-card-header">
+          <span class="eng-card-num">ENGINE 03</span>
+          <span class="eng-card-title">COMPOUNDING RISK PROGRESSION</span>
+          <span class="eng-card-status status-idle" id="ec2">IDLE</span>
+        </div>
+        <div class="eng-card-body" id="eo2">Compounding risk engine will analyze how the supplier and plant risks compound each other rather than simply add — e.g. inventory buffer depletion accelerating downtime risk.</div>
+      </div>
+      <div class="engine-card">
+        <div class="eng-card-header">
+          <span class="eng-card-num">ENGINE 04</span>
+          <span class="eng-card-title">COMBINED FINANCIAL EXPOSURE</span>
+          <span class="eng-card-status status-idle" id="ec3">IDLE</span>
+        </div>
+        <div class="eng-card-body" id="eo3">Combined exposure engine will reconcile both sources' financial figures into one total, explicitly avoiding double-counting shared cost categories, plus customer/delivery impact downstream of plant output.</div>
+      </div>
+      <div class="engine-card">
+        <div class="eng-card-header">
+          <span class="eng-card-num">ENGINE 05</span>
+          <span class="eng-card-title">RESPONSE PLAN</span>
+          <span class="eng-card-status status-idle" id="ec4">IDLE</span>
+        </div>
+        <div class="eng-card-body" id="eo4">Response plan engine will generate ranked cross-functional actions spanning procurement and plant operations, with owners, timelines, and checkpoints.</div>
+      </div>
+      <div class="engine-card">
+        <div class="eng-card-header">
+          <span class="eng-card-num">ENGINE 06</span>
+          <span class="eng-card-title">EXECUTIVE DISPATCH</span>
+          <span class="eng-card-status status-idle" id="ec5">IDLE</span>
+        </div>
+        <div class="eng-card-body" id="eo5">Executive dispatch will package ranked cross-domain decisions with owners and deadlines for C-suite authorization.</div>
+      </div>
+    </div>
+
+    <!-- RANKED ACTIONS -->
+    <div class="action-panel" id="actionPanel" style="display:none">
+      <div class="action-title">🔗 RANKED EXECUTIVE DECISIONS — AUTHORIZATION REQUIRED</div>
+      <div class="action-list" id="actionList"></div>
+    </div>
+
+    <!-- ESCALATE -->
+    <div class="escalate-bar">
+      <button class="esc-btn" id="escalateBtn" onclick="escalateToStrategist()" disabled>🔗 ESCALATE TO OPERATIONS STRATEGIST →</button>
+      <button class="esc-btn secondary" onclick="exportReport()">↓ EXPORT INCIDENT REPORT</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="statusbar">
+  <span class="sb-item">TSM · Cross-Domain Cascade Command Center</span>
+  <span class="sb-item crit">ALERT <span>ACTIVE</span></span>
+  <span class="sb-item">ENGINES <span id="sbEngines">0 / 6</span></span>
+  <span class="sb-item">MODEL <span>openai/gpt-oss-120b</span></span>
+  <span class="sb-item" style="margin-left:auto">TSM OS v4.1 · Fly.io</span>
+</div>
+
+<script src="../js/war-room-stream.js"></script>
+<script>
+// ── CLOCK ─────────────────────────────────────────────────────────────────────
+function tick() { document.getElementById('clock').textContent = new Date().toLocaleTimeString(); }
+setInterval(tick, 1000); tick();
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+// Cross-domain synthesis layer, not a new industry vertical: this page does
+// NOT take a pasted document. It reads the Supplier Shutdown and Plant
+// Incident war rooms' OWN relay payloads (their sessionData, same shape
+// every other war room already writes) and reasons across both. It writes
+// its own relay under a 9th source key so the Strategist/Exec Portal can
+// pick it up exactly like every other domain, via RELAY_KEYS/SOURCE_META
+// entries added there for 'cascade'.
+const SUPPLIER_RELAY_KEY = 'TSM_HONEYWELL_SUPPLIER_RELAY';
+const PLANT_RELAY_KEY = 'TSM_HONEYWELL_PLANT_RELAY';
+const INCIDENT_TYPE = 'cascade';
+const RELAY_DOMAIN = 'HONEYWELL_CASCADE';
+const RELAY_KEY = 'TSM_HONEYWELL_CASCADE_RELAY';
+const STRATEGIST_URL = '/html/war-rooms/honeywell-strategist.html';
+
+let enginesComplete = 0;
+let sessionData = { source: INCIDENT_TYPE, outputs: [], docText: '', timestamp: null };
+let supplierRelay = null;
+let plantRelay = null;
+
+function readRelay(key) {
+  try {
+    const raw = localStorage.getItem(key) || sessionStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function fmtMoney(n) { return '$' + Number(n).toLocaleString(); }
+
+function relayExposureSummary(relay) {
+  const exp = relay && relay.kpis && relay.kpis.exposure;
+  if (!exp) return null;
+  const lo = exp.totalExposureLow, hi = exp.totalExposureHigh;
+  if (lo || hi) return (lo && hi && lo !== hi) ? `${fmtMoney(lo)}–${fmtMoney(hi)}` : fmtMoney(hi || lo);
+  return exp.raw || null;
+}
+
+function loadRelays() {
+  supplierRelay = readRelay(SUPPLIER_RELAY_KEY);
+  plantRelay = readRelay(PLANT_RELAY_KEY);
+  renderRelayCard('supplier', supplierRelay);
+  renderRelayCard('plant', plantRelay);
+  const ready = !!(supplierRelay && plantRelay && supplierRelay.outputs && supplierRelay.outputs.length && plantRelay.outputs && plantRelay.outputs.length);
+  document.getElementById('fireBtn').disabled = !ready;
+  if (ready) {
+    document.getElementById('incTitle').textContent = '✓ BOTH SOURCE RELAYS LOADED';
+    document.getElementById('incMeta').textContent = 'Ready to run the 6-engine cascade synthesis.';
+  } else {
+    document.getElementById('incTitle').textContent = '⚠ AWAITING BOTH SOURCE RELAYS';
+    document.getElementById('incMeta').textContent = 'Run the Supplier and Plant war rooms first — this page reasons across both, it doesn\u2019t take a pasted document';
+  }
+  showToast(ready ? 'Both source relays found — ready to run cascade analysis.' : 'Waiting on one or both source relays.', !ready);
+}
+
+function renderRelayCard(which, relay) {
+  const card = document.getElementById(which + 'Card');
+  const dot = document.getElementById(which + 'Dot');
+  const status = document.getElementById(which + 'Status');
+  const meta = document.getElementById(which + 'Meta');
+  const ok = !!(relay && relay.outputs && relay.outputs.length);
+  card.className = 'relay-card ' + (ok ? 'ok' : 'missing');
+  dot.className = 'relay-dot ' + (ok ? 'ok' : 'missing');
+  status.className = 'relay-status-lbl ' + (ok ? 'ok' : 'missing');
+  status.textContent = ok ? 'LOADED' : 'MISSING';
+  if (ok) {
+    const expStr = relayExposureSummary(relay) || 'N/A';
+    const when = relay.timestamp ? new Date(relay.timestamp).toLocaleString() : 'unknown time';
+    meta.textContent = `${relay.outputs.length} engine outputs · exposure ${expStr} · relayed ${when}`;
+  } else {
+    meta.textContent = `No ${which} war-room analysis found yet.`;
+  }
+}
+
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(showToast._h);
+  showToast._h = setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+// ── ENGINE PROMPTS ────────────────────────────────────────────────────────────
+// Unlike every other war room, there is no pasted document here — the
+// "source" is the Engine 01 (signal intelligence) and Engine 04 (financial
+// exposure) text each of the two upstream war rooms already computed, plus
+// their structured KPI figures. This keeps the same grounding discipline:
+// downstream engines never re-read raw text, only the extracted brief.
+function buildCascadeBrief() {
+  const supplierIntel = supplierRelay.outputs[0] ? supplierRelay.outputs[0].text : 'NOT AVAILABLE';
+  const supplierFinancial = supplierRelay.outputs[3] ? supplierRelay.outputs[3].text : 'NOT AVAILABLE';
+  const plantIntel = plantRelay.outputs[0] ? plantRelay.outputs[0].text : 'NOT AVAILABLE';
+  const plantFinancial = plantRelay.outputs[3] ? plantRelay.outputs[3].text : 'NOT AVAILABLE';
+  const supplierExp = relayExposureSummary(supplierRelay) || 'NOT SPECIFIED';
+  const plantExp = relayExposureSummary(plantRelay) || 'NOT SPECIFIED';
+  return `SUPPLIER WAR ROOM — SIGNAL INTELLIGENCE (Engine 01 output):\n${supplierIntel}\n\nSUPPLIER WAR ROOM — FINANCIAL EXPOSURE (Engine 04 output, structured exposure: ${supplierExp}):\n${supplierFinancial}\n\nPLANT WAR ROOM — SIGNAL INTELLIGENCE (Engine 01 output):\n${plantIntel}\n\nPLANT WAR ROOM — FINANCIAL EXPOSURE (Engine 04 output, structured exposure: ${plantExp}):\n${plantFinancial}`;
+}
+
+function getPrompts(brief) {
+  const base = `You are a cross-domain operational-intelligence engine for TSM Command, synthesizing a Supplier Shutdown war room and a Plant Incident war room into one Supplier → Plant → Customer cascade analysis. Both sources below are already-extracted intelligence from their own 6-engine pipelines — treat them as ground truth, do not ask for original documents. This is a documentation and decision-support exercise, not a live control system — do not claim to command, order, or authorize any physical procurement, production, or shutdown action.\n\nSOURCE INTELLIGENCE:\n${brief}\n\n`;
+  return [
+    base + `ENGINE 01 — CASCADE SIGNAL INTELLIGENCE\nSynthesize the two sources into one combined brief. Extract and structure:\n▸ SUPPLIER SIGNAL — the core supplier disruption/shortage, verbatim figures from the supplier source\n▸ PLANT SIGNAL — the core plant incident/impact, verbatim figures from the plant source\n▸ SHARED/OVERLAPPING ASSET — the specific component, part, or material that links the two (if the two sources do not explicitly share one, say so plainly — do not invent a link)\n▸ KEY PARTIES — procurement, plant operations, customer-facing teams involved across both\n▸ KEY FIGURES & NAMES — every specific quantity, dollar figure, timeframe, and named party/vendor stated in EITHER source, verbatim\nCRITICAL — GROUNDING RULE: this extraction is the ONLY source of truth every later engine will see. Copy every stated number, name, and quote verbatim from the two sources above. Never invent, round, or substitute a plausible-sounding figure or name for one the sources do not provide — write "NOT SPECIFIED IN SOURCE" instead. Never assume the two incidents are linked unless the sources support it.`,
+
+    base + `ENGINE 02 — PLANT DEPENDENCY IMPACT\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"leadTimeEstimate": "<short string>"}\n\nPART 2 — Calculate and structure:\n▸ DEPENDENCY MAPPING — specifically how the supplier disruption translates into plant-level component or material risk, per the two sources\n▸ PRODUCTION EXPOSURE — percentage/value of plant output at risk if the supplier disruption is not resolved before the plant's own buffer/inventory runs out\n▸ TIMING ALIGNMENT — how the supplier's stated timeline (e.g. inventory buffer, shutdown duration) lines up against the plant's own downtime/recovery timeline\n▸ UNAFFECTED CAPACITY — what continues operating normally on the plant side\n▸ CASCADE IMPACT SCORE — 1-10 severity\nQuantify everything with specific numbers from the two sources. The leadTimeEstimate in PART 1 (label it as the cascade window — time until the supplier disruption forces a plant-level production impact) must match your stated timeline in PART 2 exactly — this is the figure the executive dashboard displays.`,
+
+    base + `ENGINE 03 — COMPOUNDING RISK PROGRESSION\nAnalyze and structure:\n▸ CURRENT STAGE — where this cascade sits on the supplier-disruption → inventory-depletion → plant-impact → customer-impact progression\n▸ COMPOUNDING FACTORS — specifically how the two risks amplify each other rather than simply add (e.g. a supplier delay that accelerates as plant inventory draws down, alternate-sourcing options narrowing over time)\n▸ ESCALATION RISK — probability and timeline of the cascade reaching customer-facing impact if unaddressed\n▸ SIMILAR EXPOSURE ELSEWHERE — other plant lines, products, or customers that may share the same supplier dependency\nBe direct about probable trajectory even with limited data. If the two sources do not clearly compound (e.g. unrelated components), say so plainly rather than forcing a narrative.`,
+
+    base + `ENGINE 04 — COMBINED FINANCIAL EXPOSURE CALCULATION\nRespond in exactly two parts, in this order:\n\nPART 1 — On its own line, output exactly:\nKPI_JSON: {"totalExposureLow": <number>, "totalExposureHigh": <number>}\nCRITICAL — UNITS: both numbers MUST be whole-dollar integers. NEVER write the number in millions/thousands and never include a $ sign, comma, or abbreviation inside KPI_JSON. This figure is the RECONCILED combined total — do not simply add the two sources' totals if any cost category (e.g. downtime cost) would double-count the same lost time; note explicitly in PART 2 where you deduplicated versus summed.\n\nPART 2 — Calculate and structure:\n▸ SUPPLIER-SIDE EXPOSURE — restated from the supplier source\n▸ PLANT-SIDE EXPOSURE — restated from the plant source\n▸ DOUBLE-COUNTING CHECK — explicitly state which cost categories overlap between the two sources (if any) and how you reconciled them\n▸ CUSTOMER/DELIVERY IMPACT — penalty clauses, expedite costs, or delayed commitments downstream of the plant impact\n▸ TOTAL COMBINED FINANCIAL RISK — the reconciled range from PART 1, explained\nProvide dollar amounts. Estimate if exact figures not available, but always show your reconciliation logic.`,
+
+    base + `ENGINE 05 — RESPONSE PLAN\nGenerate ranked response with owners and deadlines, spanning BOTH procurement and plant operations:\n1. IMMEDIATE (0-2 hours) — cross-functional notification between procurement and plant ops, confirm shared-asset status\n2. SHORT-TERM (2-24 hours) — alternate sourcing or inventory reallocation, customer notification if needed\n3. MEDIUM-TERM (1-7 days) — supplier remediation, plant production plan adjustment, restoration to normal operations\n4. PREVENTIVE — supply-chain/dependency mapping review to catch this cascade pattern earlier next time\n\nFor each action include: OWNER · DEADLINE · ESTIMATED COST · EXPECTED OUTCOME\nRank by urgency and impact. Do not recommend or describe commanding any physical system directly — recommend the human action.`,
+
+    base + `ENGINE 06 — EXECUTIVE DISPATCH\nIMPORTANT: Your response MUST start with this exact first line (non-negotiable -- first, not last): KPI_JSON: {"riskScore": <0-100 integer>}\nThen, in under 180 words, generate a concise executive decision package:\n▸ INCIDENT SUMMARY — 2 sentences for C-suite, naming BOTH the supplier and plant sides of the cascade\n▸ FINANCIAL IMPACT — total combined exposure in dollars\n▸ DECISIONS REQUIRED — up to 3, ranked, each formatted exactly as:\n  1. AUTHORIZE/ESCALATE/REVIEW: [decision] · Owner: [role] · Deadline: [timeframe] · Cost: $[amount]\n▸ BNCA — Best Next Course of Action in one sentence\n▸ ESCALATION TRIGGER — one sentence on what requires CEO/Board or customer notification\nThis goes directly to the executive team. Be decisive and brief.`
+  ];
+}
+
+// ── FIRE ENGINES ─────────────────────────────────────────────────────────────
+async function fireAllEngines() {
+  if (!supplierRelay || !plantRelay) { showToast('Both source relays are required — run Supplier and Plant war rooms first.', true); return; }
+
+  const brief = buildCascadeBrief();
+  enginesComplete = 0;
+  sessionData = { source: INCIDENT_TYPE, outputs: [], docText: brief, timestamp: new Date().toISOString(), docType: 'cross_domain_synthesis', kpis: {} };
+  document.getElementById('fireBtn').disabled = true;
+  document.getElementById('escalateBtn').disabled = true;
+  document.getElementById('actionPanel').style.display = 'none';
+
+  document.getElementById('incTitle').textContent = '🔗 CASCADE ANALYSIS IN PROGRESS';
+  document.getElementById('incMeta').textContent = `Synthesizing supplier + plant relays · ${new Date().toLocaleTimeString()}`;
+  document.getElementById('incBadge').textContent = 'ANALYZING';
+  document.getElementById('kpiRisk').textContent = '—';
+  document.getElementById('kpiExposure').textContent = '—';
+  document.getElementById('kpiLeadTime').textContent = '—';
+
+  let prompts = getPrompts(brief);
+  let hadError = false;
+
+  for (let i = 0; i < prompts.length; i++) {
+    if (i > 0) await new Promise(r => setTimeout(r, 600));
+    if (i === 5) {
+      prompts[5] = groundExecDispatchPrompt(prompts[5], sessionData.kpis.exposure, sessionData.outputs[3]?.text);
+    }
+    setEngineStatus(i, 'running');
+    try {
+      const text = await callAPI(prompts[i]);
+      document.getElementById(`eo${i}`).innerHTML = renderEngineOutput(text);
+      document.getElementById(`eo${i}`).classList.add('active');
+      setEngineStatus(i, 'done');
+      enginesComplete++;
+      document.getElementById('kpiEngines').textContent = `${enginesComplete}/6`;
+      document.getElementById('sbEngines').textContent = `${enginesComplete} / 6`;
+      sessionData.outputs.push({ engine: i + 1, title: ['Cascade Signal Intel','Plant Dependency Impact','Compounding Risk','Combined Exposure','Response Plan','Exec Dispatch'][i], text });
+
+      if (i === 3) extractFinancialKPI(text);
+      if (i === 1) extractLeadTimeKPI(text);
+      if (i === 4) extractDeadlineSignal(text);
+      if (i === 5) { buildActionPanel(text); buildRiskKPI(text); }
+    } catch(e) {
+      hadError = true;
+      document.getElementById(`eo${i}`).textContent = `Engine ${i+1} error: ${e.message}`;
+      document.getElementById(`eo${i}`).classList.add('active');
+      setEngineStatus(i, 'error');
+      showToast(`Engine ${i+1} failed — ${e.message}`, true);
+    }
+  }
+
+  if (hadError) {
+    document.getElementById('incTitle').textContent = '⚠ ANALYSIS COMPLETE WITH ERRORS — CROSS-DOMAIN CASCADE';
+    document.getElementById('incBadge').textContent = 'PARTIAL';
+    document.getElementById('incBadge').style.borderColor = '#f5a623';
+    document.getElementById('incBadge').style.color = '#f5a623';
+  } else {
+    document.getElementById('incTitle').textContent = '✓ 6-ENGINE CASCADE ANALYSIS COMPLETE';
+    document.getElementById('incBadge').textContent = 'COMPLETE';
+    document.getElementById('incBadge').style.borderColor = '#22c55e';
+    document.getElementById('incBadge').style.color = '#22c55e';
+  }
+  document.getElementById('fireBtn').disabled = false;
+  document.getElementById('escalateBtn').disabled = !sessionData.outputs.length;
+
+  saveRelay();
+  registerCascadeAnomalies();
+}
+
+// ===== TSM MEMORY: REGISTER CROSS-MODULE ANOMALIES =====
+// Same self-dedupe pattern as every other war room's registerXAnomalies().
+function registerCascadeAnomalies() {
+  if (!window.TSMMemory || typeof window.TSMMemory.registerAnomaly !== 'function') return;
+
+  function alreadyOpen(code) {
+    try {
+      const all = JSON.parse(localStorage.getItem('TSM_OPERATIONAL_MEMORY_V3') || '{}');
+      const bucket = all.honeywell;
+      return !!(bucket && Array.isArray(bucket.anomalies) &&
+        bucket.anomalies.some(a => a.anomalyCode === code && a.status === 'open'));
+    } catch (e) { return false; }
+  }
+  function fire(a) {
+    if (alreadyOpen(a.anomalyCode)) return;
+    window.TSMMemory.registerAnomaly(a);
+  }
+
+  const exposureStr = document.getElementById('kpiExposure').textContent;
+  if (exposureStr && exposureStr !== '—' && exposureStr !== 'N/A') {
+    fire({
+      entityType: 'honeywell-incident', entityId: 'cascade',
+      anomalyCode: 'HW_CASCADE_EXPOSURE', severity: 'CRITICAL',
+      title: `CROSS-DOMAIN CASCADE — ${exposureStr} combined exposure`,
+      source: 'honeywell-cross-domain-cascade',
+      meta: { exposure: sessionData.kpis.exposure }
+    });
+  }
+
+  const leadTimeStr = document.getElementById('kpiLeadTime').textContent;
+  if (leadTimeStr && leadTimeStr !== '—' && leadTimeStr !== 'N/A') {
+    fire({
+      entityType: 'honeywell-incident', entityId: 'cascade',
+      anomalyCode: 'HW_CASCADE_WINDOW', severity: 'HIGH',
+      title: `CROSS-DOMAIN CASCADE — cascade window ${leadTimeStr}`,
+      source: 'honeywell-cross-domain-cascade',
+      meta: { value: sessionData.kpis.containment }
+    });
+  }
+}
+
+function saveRelay() {
+  const relay = JSON.stringify(sessionData);
+  try {
+    localStorage.setItem(RELAY_KEY, relay);
+    sessionStorage.setItem(RELAY_KEY, relay);
+    if (window.TSM && window.TSM.relay && window.TSM.relay.write) {
+      try { window.TSM.relay.write(RELAY_DOMAIN, sessionData); } catch (e) { /* noop */ }
+    }
+  } catch (e) {
+    showToast('Could not save relay data locally.', true);
+  }
+}
+
+function setEngineStatus(i, status) {
+  const badge = document.getElementById(`es${i}`);
+  const card  = document.getElementById(`ec${i}`);
+  const cls   = status === 'running' ? 'running' : status === 'done' ? 'done' : 'idle';
+  const lbl   = status === 'running' ? 'RUNNING' : status === 'done' ? 'COMPLETE ✓' : status === 'error' ? 'ERROR' : 'IDLE';
+  badge.className = `eng-badge ${cls}`;
+  badge.textContent = lbl;
+  card.className = `eng-card-status status-${status === 'done' ? 'done' : status === 'running' ? 'run' : 'idle'}`;
+  card.textContent = lbl;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderEngineOutput(text) {
+  const clean = text.replace(/KPI_JSON:\s*\{[^}]*\}\n*/i, '').trim();
+  const lines = clean.split('\n');
+  const isTableSep = l => /^\s*\|?[\s:|-]+\|?\s*$/.test(l) && l.includes('-');
+  const inlineFmt = s => escapeHtml(s).replace(/&lt;br\s*\/?&gt;/gi, '<br>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  const tables = [];
+  const outLines = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (/^\s*\|.*\|\s*$/.test(line) && lines[i + 1] !== undefined && isTableSep(lines[i + 1])) {
+      const headers = line.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      let t = '<table class="md-table"><thead><tr>' + headers.map(c => `<th>${inlineFmt(c)}</th>`).join('') + '</tr></thead><tbody>';
+      i += 2;
+      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) {
+        const cells = lines[i].trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+        t += '<tr>' + cells.map(c => `<td>${inlineFmt(c)}</td>`).join('') + '</tr>';
+        i++;
+      }
+      t += '</tbody></table>';
+      outLines.push(`@@TABLE${tables.length}@@`);
+      tables.push(t);
+      continue;
+    }
+    outLines.push(line);
+    i++;
+  }
+  let html = escapeHtml(outLines.join('\n'));
+  html = html.replace(/&lt;br\s*\/?&gt;/gi, '<br>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/^▸\s*(.+)$/gm, '<div style="margin:4px 0">▸ $1</div>');
+  html = html.replace(/^(\d+)\.\s+(.+)$/gm, '<div style="margin:4px 0 4px 8px"><strong>$1.</strong> $2</div>');
+  html = html.replace(/\n{2,}/g, '<br><br>').replace(/\n/g, '<br>');
+  tables.forEach((t, idx) => { html = html.replace(`@@TABLE${idx}@@`, t); });
+  return html;
+}
+
+function parseDecisionActions(text) {
+  const startIdx = text.search(/DECISIONS REQUIRED/i);
+  if (startIdx === -1) return null;
+  let block = text.slice(startIdx);
+  const nextSection = block.slice(20).search(/\n\s*▸/);
+  if (nextSection !== -1) block = block.slice(0, nextSection + 20);
+
+  const stripMd = s => s.replace(/\*\*/g, '').replace(/^[\*_]+|[\*_]+$/g, '').trim();
+
+  const lineRe = /(\d+)\.\s*([^\n·]+?)\s*·\s*Owner:\s*([^·\n]+?)(?:\s*·\s*Deadline:\s*([^·\n]+?))?(?:\s*·\s*(?:Cost|Budget):\s*\$?([^\n]+))?\s*(?=\n|$)/gi;
+  const defaultLabels = ['AUTHORIZE','ESCALATE','REVIEW','AUTHORIZE'];
+  const results = [];
+  let m;
+  while ((m = lineRe.exec(block)) !== null) {
+    let decisionText = stripMd(m[2]);
+    const labelMatch = decisionText.match(/^(AUTHORIZE|ESCALATE|REVIEW)\b[:\-]?\s*/i);
+    const label = labelMatch ? labelMatch[1].toUpperCase() : (defaultLabels[results.length] || 'REVIEW');
+    if (labelMatch) decisionText = decisionText.slice(labelMatch[0].length).trim();
+    results.push({
+      rank: Number(m[1]),
+      label,
+      text: decisionText,
+      owner: stripMd(m[3] || 'Unassigned'),
+      deadline: stripMd(m[4] || 'TBD'),
+    });
+  }
+  return results.length ? results : null;
+}
+
+function parseKpiJson(text) {
+  const m = text.match(/KPI_JSON:\s*(\{[^}]*\})/);
+  if (!m) return null;
+  try { return JSON.parse(m[1]); } catch (e) { return null; }
+}
+
+function tsmNormalizeExposurePair(lo, hi) {
+  const bothPresent = lo != null && hi != null;
+  if (bothPresent && lo > 0 && hi > 0 && lo < 1000 && hi < 1000) {
+    return [lo * 1e6, hi * 1e6];
+  }
+  return [lo, hi];
+}
+function extractFinancialKPI(text) {
+  const json = parseKpiJson(text);
+  if (json && (json.totalExposureLow || json.totalExposureHigh)) {
+    let [lo, hi] = tsmNormalizeExposurePair(json.totalExposureLow, json.totalExposureHigh);
+    const fmt = n => '$' + Number(n).toLocaleString();
+    document.getElementById('kpiExposure').textContent = (lo && hi && lo !== hi) ? `${fmt(lo)}–${fmt(hi)}` : fmt(hi || lo);
+    sessionData.kpis.exposure = Object.assign({}, json, { totalExposureLow: lo, totalExposureHigh: hi });
+    return;
+  }
+  const m = text.match(/\$[\d,.]+\s*(MM|[MBK])?(?:\s*[-–]\s*\$[\d,.]+\s*(MM|[MBK])?)?/i);
+  if (m) {
+    const SCALE = { M: 1e6, MM: 1e6, B: 1e9, K: 1e3 };
+    const parsePart = (numStr, unitStr) => {
+      const n = Number(numStr.replace(/[$,]/g, ''));
+      const u = unitStr ? unitStr.toUpperCase() : null;
+      return u && SCALE[u] ? n * SCALE[u] : n;
+    };
+    const parts = m[0].match(/\$[\d,.]+\s*(?:MM|[MBK])?/gi) || [];
+    if (parts.length) {
+      const fmt = n => '$' + Number(n).toLocaleString();
+      const vals = parts.map(p => {
+        const pm = p.match(/\$([\d,.]+)\s*(MM|[MBK])?/i);
+        return parsePart(pm[1], pm[2]);
+      });
+      const lo = vals[0], hi = vals.length > 1 ? vals[1] : vals[0];
+      document.getElementById('kpiExposure').textContent = (lo && hi && lo !== hi) ? `${fmt(lo)}\u2013${fmt(hi)}` : fmt(hi || lo);
+      sessionData.kpis.exposure = { totalExposureLow: lo, totalExposureHigh: hi, source: 'regex-fallback-scaled' };
+      return;
+    }
+  }
+  document.getElementById('kpiExposure').textContent = m ? m[0].slice(0,16) : 'N/A';
+  sessionData.kpis.exposure = { raw: m ? m[0] : null, source: 'regex-fallback' };
+}
+
+function extractLeadTimeKPI(text) {
+  const json = parseKpiJson(text);
+  if (json && json.leadTimeEstimate) {
+    document.getElementById('kpiLeadTime').textContent = json.leadTimeEstimate;
+    sessionData.kpis.containment = { leadTimeEstimate: json.leadTimeEstimate, source: 'structured-json' };
+    return;
+  }
+  const m = text.match(/(\d+[-–]\d+\s*(?:min|minutes?|hours?|days?|weeks?|months?)|\d+\s*(?:min|minutes?|hours?|days?|weeks?|months?))/i);
+  document.getElementById('kpiLeadTime').textContent = m ? m[0] : 'N/A';
+  sessionData.kpis.containment = { raw: m ? m[0] : null, source: 'regex-fallback' };
+}
+
+function buildRiskKPI(text) {
+  const json = parseKpiJson(text);
+  if (json && typeof json.riskScore === 'number') {
+    document.getElementById('kpiRisk').textContent = json.riskScore + '/100';
+    sessionData.kpis.risk = json;
+    return;
+  }
+  const fieldM = text.match(/"riskScore"\s*:\s*(\d{1,3})/i);
+  if (fieldM) {
+    const score = Number(fieldM[1]);
+    document.getElementById('kpiRisk').textContent = score + '/100';
+    sessionData.kpis.risk = { riskScore: score, source: 'partial-json-fallback' };
+    return;
+  }
+  const m = text.match(/(\d{2,3})\/100|RISK[:\s]+(\d{2,3})/i);
+  document.getElementById('kpiRisk').textContent = m ? (m[1]||m[2]) + '/100' : 'N/A';
+  sessionData.kpis.risk = { raw: m ? (m[1]||m[2]) : null, source: 'regex-fallback' };
+}
+
+function extractDeadlineSignal(text) {
+  const matches = [...text.matchAll(/Deadline:\s*([^\n·]+)/gi)];
+  let minDays = null;
+  for (const m of matches) {
+    const raw = m[1].trim();
+    const hrM = raw.match(/(\d+(?:\.\d+)?)\s*(?:-|–)?\s*(\d+(?:\.\d+)?)?\s*(hour|hr)/i);
+    const dayM = raw.match(/(\d+(?:\.\d+)?)\s*(?:-|–)?\s*(\d+(?:\.\d+)?)?\s*(day)/i);
+    let days = null;
+    if (hrM) days = Number(hrM[2] || hrM[1]) / 24;
+    else if (dayM) days = Number(dayM[2] || dayM[1]);
+    if (days !== null && (minDays === null || days < minDays)) minDays = days;
+  }
+  if (minDays !== null) {
+    sessionData.kpis.deadline = { daysUntilDeadline: Math.max(minDays, 0.01), source: 'action-plan' };
+  }
+}
+
+function groundExecDispatchPrompt(prompt, financialKpi, financialText) {
+  if (!financialKpi || (!financialKpi.totalExposureLow && !financialKpi.totalExposureHigh)) return prompt;
+  const fmt = n => '$' + Number(n).toLocaleString();
+  const lo = financialKpi.totalExposureLow, hi = financialKpi.totalExposureHigh;
+  const range = (lo && hi && lo !== hi) ? `${fmt(lo)}–${fmt(hi)}` : fmt(hi || lo);
+  const snippet = (financialText || '').slice(0, 600);
+  return prompt + `\n\nGROUNDING — Engine 04 already calculated this cascade's combined financial exposure as ${range}. Your FINANCIAL IMPACT line and any dollar figures MUST be consistent with Engine 04's analysis below, not independently re-estimated:\n${snippet}`;
+}
+
+function buildActionPanel(text) {
+  const panel = document.getElementById('actionPanel');
+  const list  = document.getElementById('actionList');
+  panel.style.display = 'block';
+
+  const fallback = [
+    { rank: 1, label: 'AUTHORIZE', text: 'Confirm shared-component status between procurement and plant operations — verify current inventory buffer', owner: 'Procurement Lead', deadline: '0–2 hrs' },
+    { rank: 2, label: 'ESCALATE', text: 'Notify plant operations director of supplier-side timeline — align production plan to inventory runway', owner: 'Plant Operations Director', deadline: '0–2 hrs' },
+    { rank: 3, label: 'REVIEW', text: 'Assess customer/delivery commitment risk if plant impact extends beyond the supplier\'s stated resolution window', owner: 'Ops Director', deadline: '2–8 hrs' },
+    { rank: 4, label: 'AUTHORIZE', text: 'Evaluate alternate sourcing and cross-domain dependency mapping to prevent recurrence', owner: 'Supply Chain / Engineering', deadline: '1–3 days' },
+  ];
+
+  const actions = parseDecisionActions(text) || fallback;
+  sessionData.kpis.actions = { parsed: parseDecisionActions(text) !== null };
+
+  list.innerHTML = actions.map(a => `
+    <div class="action-item">
+      <div class="action-rank">${a.rank}</div>
+      <div style="flex:1">
+        <div class="action-text">${a.text}</div>
+        <div style="display:flex;gap:16px;margin-top:4px">
+          <span class="action-owner">OWNER: ${a.owner}</span>
+          <span class="action-deadline">DEADLINE: ${a.deadline}</span>
+        </div>
+      </div>
+      <button class="action-btn btn-${a.label.toLowerCase()}">${a.label}</button>
+    </div>
+  `).join('');
+}
+
+// ── API CALL ──────────────────────────────────────────────────────────────────
+async function callAPI(prompt) {
+  return callWarRoomAPI(prompt, 'You are a cross-domain operational-intelligence engine for TSM Command, synthesizing supplier and plant war-room analysis into one cascade view. Be specific with dollar amounts and timelines, and explicit about what is versus is not supported by the two sources. This is a documentation and decision-support exercise, not a live control system.', { maxTokens: 700 });
+}
+
+function goToStrategist() {
+  window.location.href = STRATEGIST_URL;
+}
+
+function escalateToStrategist() {
+  saveRelay();
+  showToast('Relay packaged — opening Operations Strategist…');
+  setTimeout(() => { window.location.href = STRATEGIST_URL; }, 600);
+}
+
+function exportReport() {
+  if (!sessionData.outputs.length) { showToast('Run analysis first.', true); return; }
+  const text = sessionData.outputs.map(o => `=== ENGINE ${o.engine}: ${o.title} ===\n\n${o.text}`).join('\n\n' + '─'.repeat(60) + '\n\n');
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `TSM-Cross-Domain-Cascade-${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadRelays();
+window.addEventListener('storage', e => {
+  if (e.key === SUPPLIER_RELAY_KEY || e.key === PLANT_RELAY_KEY) loadRelays();
+});
+</script>
+  <script src="/html/shared/tsm-memory-engine.js"></script>
+  <script src="js/tsm-guide-engine.js" defer></script>
+  <script src="/shared/tsm-generic-relay-loader.js" data-relay-key="tsm_hw_cascade_docsearch_relay" data-auto-key="TSM_HW_CASCADE_WAR_RELAY"></script>
+</body>
+</html>
