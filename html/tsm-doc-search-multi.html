@@ -1228,6 +1228,18 @@ const VERTICALS = {
       // incident command center once an event is confirmed.
       "hw-bess":      { label:"BESS/Gigafactory War Room",            route:"/html/war-rooms/bess-gigafactory-incident.html" },
       "hw-detection": { label:"Advanced Detection War Room",          route:"/html/war-rooms/advanced-detection-incident.html" },
+      // Healthcare/Aerospace (already live war rooms, wired into the
+      // Strategist/Exec Portal relay chain) + Life Sciences/Capital Project
+      // (new 2026-09-12 verticals) were never actually given a doc-search
+      // node or WAR_ROOM_ROUTES entry — same "route exists, nothing routes
+      // to it" gap already fixed once for Plant/Cyber/Supplier. All four
+      // already ship /shared/tsm-generic-relay-loader.js with the exact
+      // relay-key/auto-key pair below, so only the doc-search side needed
+      // adding — nothing on the target pages required any change.
+      "hw-healthcare":    { label:"Healthcare Thermal Continuity War Room", route:"/html/war-rooms/healthcare-thermal-continuity.html" },
+      "hw-aerospace":     { label:"Aerospace Maintenance Readiness War Room", route:"/html/war-rooms/aerospace-maintenance-readiness.html" },
+      "hw-lifesciences":  { label:"Life Sciences Production Continuity War Room", route:"/html/war-rooms/life-sciences-production-continuity.html" },
+      "hw-capitalproject":{ label:"Capital Project Recovery War Room",   route:"/html/war-rooms/industrial-capital-project-recovery.html" },
     },
     seed: [
       { fileName:"Plant_Incident_LineB_Report.record",   documentType:"INCIDENT",       vendor:"",              invoiceNo:"HW-PLT-001", exclusionCode:"",       amount:0, sourceNode:"hw-plant",    routing:["hw-plant"],    timestamp:Date.now()-2*3600000, _ext:{client:"Honeywell", ref:"HW-PLT-001"} },
@@ -1235,6 +1247,8 @@ const VERTICALS = {
       { fileName:"Cyber_OT_Incident_Report.record",       documentType:"SECURITY",       vendor:"",              invoiceNo:"HW-CYB-001", exclusionCode:"",       amount:0, sourceNode:"hw-cyber",    routing:["hw-cyber"],    timestamp:Date.now()-6*3600000, _ext:{client:"Honeywell", ref:"HW-CYB-001"} },
       { fileName:"BESS_Thermal_Event_CasaGrande.record",  documentType:"INCIDENT",       vendor:"",              invoiceNo:"HW-BESS-001", exclusionCode:"",      amount:0, sourceNode:"hw-bess",     routing:["hw-bess"],     timestamp:Date.now()-1*3600000, _ext:{client:"Honeywell", ref:"HW-BESS-001"} },
       { fileName:"OffGas_PreAlarm_Zone3B.record",         documentType:"SENSOR ALERT",   vendor:"",              invoiceNo:"HW-DET-001", exclusionCode:"",      amount:0, sourceNode:"hw-detection",routing:["hw-detection"], timestamp:Date.now()-30*60000, _ext:{client:"Honeywell", ref:"HW-DET-001"} },
+      { fileName:"Cold_Chain_Excursion_ColdStore4.record", documentType:"DEVIATION",     vendor:"",              invoiceNo:"HW-LSC-001", exclusionCode:"",      amount:0, sourceNode:"hw-lifesciences", routing:["hw-lifesciences"], timestamp:Date.now()-3*3600000, _ext:{client:"Honeywell", ref:"HW-LSC-001"} },
+      { fileName:"Contractor_Nonperformance_SiteB.record", documentType:"SCHEDULE SLIP", vendor:"General Contractor", invoiceNo:"HW-CAP-001", exclusionCode:"", amount:0, sourceNode:"hw-capitalproject", routing:["hw-capitalproject"], timestamp:Date.now()-5*3600000, _ext:{client:"Honeywell", ref:"HW-CAP-001"} },
     ]
   },
   fo: {
@@ -2667,6 +2681,18 @@ const WAR_ROOM_ROUTES = {
   'hw-bess':              { label:'Honeywell BESS/Gigafactory War Room',    url:'/html/war-rooms/bess-gigafactory-incident.html',      relay:'tsm_hw_bess_docsearch_relay',      autoKey:'TSM_HW_BESS_WAR_RELAY' },
   'hw-detection-war-room':{ label:'Honeywell Advanced Detection War Room',  url:'/html/war-rooms/advanced-detection-incident.html',     relay:'tsm_hw_detection_docsearch_relay', autoKey:'TSM_HW_DETECTION_WAR_RELAY' },
   'hw-detection':         { label:'Honeywell Advanced Detection War Room',  url:'/html/war-rooms/advanced-detection-incident.html',     relay:'tsm_hw_detection_docsearch_relay', autoKey:'TSM_HW_DETECTION_WAR_RELAY' },
+  // Healthcare/Aerospace/Life Sciences/Capital Project — relay/autoKey below
+  // match exactly what /shared/tsm-generic-relay-loader.js is already
+  // configured to read on each of these four pages (data-relay-key /
+  // data-auto-key attributes), so no target-page change was needed here.
+  'hw-healthcare-war-room':    { label:'Honeywell Healthcare Thermal Continuity War Room', url:'/html/war-rooms/healthcare-thermal-continuity.html',      relay:'tsm_hw_healthcare_docsearch_relay',    autoKey:'TSM_HW_HEALTHCARE_WAR_RELAY' },
+  'hw-healthcare':             { label:'Honeywell Healthcare Thermal Continuity War Room', url:'/html/war-rooms/healthcare-thermal-continuity.html',      relay:'tsm_hw_healthcare_docsearch_relay',    autoKey:'TSM_HW_HEALTHCARE_WAR_RELAY' },
+  'hw-aerospace-war-room':     { label:'Honeywell Aerospace Maintenance Readiness War Room', url:'/html/war-rooms/aerospace-maintenance-readiness.html',   relay:'tsm_hw_aerospace_docsearch_relay',     autoKey:'TSM_HW_AEROSPACE_WAR_RELAY' },
+  'hw-aerospace':              { label:'Honeywell Aerospace Maintenance Readiness War Room', url:'/html/war-rooms/aerospace-maintenance-readiness.html',   relay:'tsm_hw_aerospace_docsearch_relay',     autoKey:'TSM_HW_AEROSPACE_WAR_RELAY' },
+  'hw-lifesciences-war-room':  { label:'Honeywell Life Sciences Production Continuity War Room', url:'/html/war-rooms/life-sciences-production-continuity.html', relay:'tsm_hw_lifesciences_docsearch_relay', autoKey:'TSM_HW_LIFESCIENCES_WAR_RELAY' },
+  'hw-lifesciences':           { label:'Honeywell Life Sciences Production Continuity War Room', url:'/html/war-rooms/life-sciences-production-continuity.html', relay:'tsm_hw_lifesciences_docsearch_relay', autoKey:'TSM_HW_LIFESCIENCES_WAR_RELAY' },
+  'hw-capitalproject-war-room':{ label:'Honeywell Capital Project Recovery War Room',       url:'/html/war-rooms/industrial-capital-project-recovery.html', relay:'tsm_hw_capitalproject_docsearch_relay', autoKey:'TSM_HW_CAPITALPROJECT_WAR_RELAY' },
+  'hw-capitalproject':         { label:'Honeywell Capital Project Recovery War Room',       url:'/html/war-rooms/industrial-capital-project-recovery.html', relay:'tsm_hw_capitalproject_docsearch_relay', autoKey:'TSM_HW_CAPITALPROJECT_WAR_RELAY' },
   'hotelops-war-room':    { label:'HotelOps War Room',                      url:'/html/hotelops/hotelops-war-room.html', relay:'tsm_hotelops_docsearch_relay', autoKey:'TSM_HOTELOPS_WAR_RELAY' },
   'hotel':                { label:'HotelOps War Room',                      url:'/html/hotelops/hotelops-war-room.html', relay:'tsm_hotelops_docsearch_relay', autoKey:'TSM_HOTELOPS_WAR_RELAY' },
   // rcmos-war-room / propertyrevenue-war-room / l1-war-room: navigation-only
