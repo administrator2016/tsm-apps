@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ServiceNow PDI Practice Drills · TSM Career Training</title>
+<style>
+:root {
+  --bg: #0a0c10; --surface: #111318; --surface2: #181b22;
+  --border: #1e2230; --border2: #2a2f42;
+  --text: #e8eaf0; --text2: #8890a8; --text3: #4a5068;
+  --green: #00d4aa; --green-dim: rgba(0,212,170,0.08); --green-border: rgba(0,212,170,0.2);
+  --cyan: #00d4d4; --cyan-dim: rgba(0,212,212,0.07); --cyan-border: rgba(0,212,212,0.2);
+  --amber: #f59e0b; --amber-dim: rgba(245,158,11,0.08); --amber-border: rgba(245,158,11,0.2);
+  --red: #ef4444; --red-dim: rgba(239,68,68,0.08); --red-border: rgba(239,68,68,0.2);
+  --purple: #a78bfa; --purple-dim: rgba(167,139,250,0.08); --purple-border: rgba(167,139,250,0.2);
+  --mono: 'Courier New', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--mono); min-height: 100vh; }
+header {
+  border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center;
+  justify-content: space-between; height: 56px; position: sticky; top: 0; background: var(--bg); z-index: 200;
+}
+.logo { font-size: 11px; letter-spacing: .18em; color: var(--text2); }
+.logo span { color: var(--purple); }
+.back-link { font-size: 10px; letter-spacing: .08em; color: var(--cyan); text-decoration: none; border: 1px solid var(--cyan-border); padding: 6px 12px; }
+.back-link:hover { background: var(--cyan-dim); }
+.wrap { max-width: 860px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+.eyebrow { font-size: 10px; letter-spacing: .14em; color: var(--purple); margin-bottom: 8px; }
+.title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.sub { font-size: 12.5px; color: var(--text2); max-width: 680px; margin-bottom: 20px; line-height: 1.6; }
+
+.score-row { display: flex; gap: 20px; margin-bottom: 24px; }
+.score-cell { background: var(--surface); border: 1px solid var(--border); padding: 12px 18px; flex: 1; text-align: center; }
+.score-val { font-size: 20px; font-weight: 700; color: var(--green); }
+.score-lbl { font-size: 9px; letter-spacing: .08em; color: var(--text3); margin-top: 4px; }
+
+.pdi-callout {
+  background: var(--cyan-dim); border: 1px solid var(--cyan-border); padding: 14px 16px;
+  font-size: 12px; color: var(--text2); line-height: 1.7; margin-bottom: 24px;
+}
+.pdi-callout b { color: var(--cyan); }
+
+.drill-card { background: var(--surface); border: 1px solid var(--border); padding: 1.6rem; margin-bottom: 1.2rem; }
+.drill-card.done { border-color: var(--green-border); }
+.drill-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.dc-tag { display: inline-block; font-size: 9px; letter-spacing: .08em; padding: 3px 8px; background: var(--purple-dim); border: 1px solid var(--purple-border); color: var(--purple); margin-bottom: 10px; }
+.dc-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.dc-check { display: flex; align-items: center; gap: 6px; font-size: 9px; letter-spacing: .06em; color: var(--text3); white-space: nowrap; cursor: pointer; }
+.dc-check input { width: 14px; height: 14px; accent-color: var(--green); cursor: pointer; }
+
+.dc-field { margin-bottom: 10px; font-size: 12.5px; line-height: 1.6; }
+.dc-field .fl { color: var(--text3); font-size: 9px; letter-spacing: .08em; display: block; margin-bottom: 3px; }
+.dc-field .fv { color: var(--text); }
+.dc-field .fv.mono { font-family: var(--mono); background: var(--surface2); padding: 6px 10px; border: 1px solid var(--border2); display: inline-block; }
+
+.dc-practice { margin-top: 14px; padding: 12px 14px; background: var(--surface2); border-left: 3px solid var(--amber); font-size: 12.5px; color: var(--text2); line-height: 1.7; }
+.dc-practice b { color: var(--amber); }
+
+.footer-links { display: flex; gap: 10px; margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.footer-links a {
+  font-size: 10px; letter-spacing: .06em; color: var(--text2); text-decoration: none;
+  border: 1px solid var(--border2); padding: 8px 14px;
+}
+.footer-links a:hover { color: var(--cyan); border-color: var(--cyan-border); }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">TSM <span>SHELL</span> · SERVICENOW PDI PRACTICE DRILLS</div>
+  <a class="back-link" href="/html/tsm-career-training-platform.html">← BACK TO PLATFORM</a>
+</header>
+
+<div class="wrap">
+  <div class="eyebrow">IT · SERVICE DESK · LIVE INSTANCE DRILL</div>
+  <div class="title">ServiceNow PDI Practice Drills</div>
+  <div class="sub">The Scenario Engine tests judgment on paper. This is the follow-up: create these four records for real in your own Personal Developer Instance, and work each one using keyboard shortcuts instead of the mouse. Check one off once you've actually built and worked it — not just read it.</div>
+
+  <div class="pdi-callout"><b>No PDI yet?</b> Request one free at developer.servicenow.com — sign up, verify your email, then "Request Instance." Assignment can take anywhere from a few minutes to a few days depending on demand; requesting an older release (rather than the newest) tends to clear faster.</div>
+
+  <div class="score-row">
+    <div class="score-cell"><div class="score-val" id="score-val">0/4</div><div class="score-lbl">DRILLS DONE</div></div>
+    <div class="score-cell"><div class="score-val" id="score-pct" style="color:var(--cyan)">0%</div><div class="score-lbl">COMPLETE</div></div>
+  </div>
+
+  <div id="drill-container"></div>
+
+  <div class="footer-links">
+    <a href="/html/l1-copilot/servicenow-fundamentals.html">← FUNDAMENTALS</a>
+    <a href="/html/l1-copilot/servicenow-scenarios.html">SCENARIO ENGINE</a>
+    <a href="/html/l1-copilot/servicenow-study-guide.html">STUDY GUIDE</a>
+    <a href="/html/l1-copilot/servicenow-exam-sim.html">TIMED EXAM SIM →</a>
+  </div>
+</div>
+
+<script>
+const drills = [
+  {
+    key: 'tsm_sn_pdi_01',
+    domain: 'INCIDENT MANAGEMENT · MAJOR INCIDENT CHECK',
+    title: 'Duplicate report / Major Incident check',
+    fields: [
+      { label: 'SHORT DESCRIPTION', value: 'Email outage - VP Finance + 3 users, Building 2', mono: true },
+      { label: 'DESCRIPTION', value: 'Multiple users in the same building reporting email inaccessible within a 10-minute window.' },
+      { label: 'PRIORITY / CATEGORY', value: '1 - Critical  ·  Software  ·  Assignment group: Service Desk' }
+    ],
+    practice: 'Create it via <b>incident.list</b> in the nav filter, then create a second incident for the same outage and practice <b>linking/relating</b> them instead of closing the duplicate outright.'
+  },
+  {
+    key: 'tsm_sn_pdi_02',
+    domain: 'CHANGE ENABLEMENT · STANDARD VS NORMAL',
+    title: 'Standard vs Normal change judgment call',
+    fields: [
+      { label: 'SHORT DESCRIPTION', value: 'Routine firewall rule update - pre-approved template', mono: true },
+      { label: 'DESCRIPTION', value: 'Junior admin applying the same rule change performed 40+ times before with no incidents.' },
+      { label: 'CATEGORY', value: 'Network' }
+    ],
+    practice: 'This one\'s actually a <b>Change</b> record, not an Incident — create it in <b>change_request.list</b>, pick the Standard change template, and try navigating to it with <b>Ctrl+Alt+F</b> and no mouse at all.'
+  },
+  {
+    key: 'tsm_sn_pdi_03',
+    domain: 'CMDB & ASSETS · DEPENDENCY TRACE',
+    title: 'CMDB dependency trace before approval',
+    fields: [
+      { label: 'SHORT DESCRIPTION', value: 'Approve DB server patch - need downstream impact', mono: true },
+      { label: 'DESCRIPTION', value: 'Change proposed against a database server; need to confirm what else depends on it before approving.' }
+    ],
+    practice: 'Open the CI record and use <b>Ctrl+left-click</b> on the "Depends on" / "Used by" related list to filter and trace real relationships instead of guessing at impact.'
+  },
+  {
+    key: 'tsm_sn_pdi_04',
+    domain: 'PROBLEM MANAGEMENT · RECURRING ISSUE',
+    title: 'Recurring issue escalated to a Problem record',
+    fields: [
+      { label: 'SHORT DESCRIPTION', value: 'Printer driver failure - 6th occurrence in 2 weeks', mono: true },
+      { label: 'DESCRIPTION', value: 'Same driver issue recurring across multiple users, each time resolved with the same manual workaround.' }
+    ],
+    practice: 'Create the Incident, then practice the actual escalation path: spin up a linked <b>Problem</b> record and document the workaround as a <b>Known Error</b>.'
+  }
+];
+
+function render() {
+  const container = document.getElementById('drill-container');
+  let html = '';
+  let doneCount = 0;
+
+  drills.forEach((d) => {
+    const done = localStorage.getItem(d.key) === '1';
+    if (done) doneCount++;
+
+    let fieldsHtml = '';
+    d.fields.forEach(f => {
+      fieldsHtml += `<div class="dc-field"><span class="fl">${f.label}</span><span class="fv${f.mono ? ' mono' : ''}">${f.value}</span></div>`;
+    });
+
+    html += `<div class="drill-card${done ? ' done' : ''}">
+      <div class="drill-top">
+        <div>
+          <div class="dc-tag">${d.domain}</div>
+          <div class="dc-title">${d.title}</div>
+        </div>
+        <label class="dc-check">
+          <input type="checkbox" ${done ? 'checked' : ''} onchange="toggle('${d.key}')"> BUILT &amp; WORKED IT
+        </label>
+      </div>
+      ${fieldsHtml}
+      <div class="dc-practice"><b>Practice move — </b>${d.practice}</div>
+    </div>`;
+  });
+
+  container.innerHTML = html;
+  document.getElementById('score-val').textContent = doneCount + '/' + drills.length;
+  document.getElementById('score-pct').textContent = Math.round((doneCount/drills.length)*100) + '%';
+}
+
+function toggle(key) {
+  const current = localStorage.getItem(key) === '1';
+  localStorage.setItem(key, current ? '0' : '1');
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
