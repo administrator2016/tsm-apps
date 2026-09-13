@@ -115,7 +115,11 @@ textarea{background:var(--bg3);border:1px solid var(--border);color:var(--text);
 .kb-conf.low{color:var(--text-dim);border:1px solid var(--border);background:rgba(255,255,255,.03)}
 .kb-match-reason{font-size:11px;color:var(--text-dim);margin-bottom:8px;line-height:1.5}
 .kb-match-steps{margin:0;padding-left:18px}
-.kb-match-steps li{font-size:11px;color:var(--text);line-height:1.7}
+.kb-match-steps li{font-size:11px;color:var(--text);line-height:1.7;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.kb-step-text{flex:1}
+.kb-step-copy{flex:0 0 auto;font-size:9px;letter-spacing:.03em;text-transform:uppercase;color:var(--text-dim);background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:2px 7px;cursor:pointer;white-space:nowrap}
+.kb-step-copy:hover{color:var(--text);border-color:var(--cyan)}
+.kb-step-copy.copied{color:var(--green);border-color:rgba(0,255,80,.35)}
 .kb-match-empty{font-size:11px;color:var(--text-dim)}
 .kb-match-loading{font-size:11px;color:var(--cyan)}
 .kb-match-low-warn{font-size:10px;color:var(--amber);margin-top:8px;border-top:1px solid var(--border);padding-top:8px}
@@ -2424,10 +2428,40 @@ TICKET DESCRIPTION</div>
         </span>
       </div>
       ${m.reasoning ? `<div class="kb-match-reason">${escapeHtml(m.reasoning)}</div>` : ''}
-      <ol class="kb-match-steps">${steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ol>
+      <ol class="kb-match-steps">${steps.map((s, i) => `<li><span class="kb-step-text">${escapeHtml(s)}</span><button type="button" class="kb-step-copy" data-step-index="${i}">Copy as Work Note</button></li>`).join('')}</ol>
       ${lowWarn}
     `;
+    body.dataset.steps = JSON.stringify(steps);
   }
+
+  function copyStepAsWorkNote(btn){
+    const container = btn.closest('[data-steps]');
+    if (!container) return;
+    let steps = [];
+    try { steps = JSON.parse(container.dataset.steps || '[]'); } catch (e) { steps = []; }
+    const idx = Number(btn.dataset.stepIndex);
+    const text = steps[idx];
+    if (text === undefined) return;
+    navigator.clipboard.writeText(text).then(() => {
+      const original = btn.textContent;
+      btn.textContent = 'Copied ✓';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1200);
+      const status = document.getElementById('navStatus');
+      if (status) {
+        status.textContent = 'ENGINE: STEP COPIED TO CLIPBOARD';
+        setTimeout(() => status.textContent = 'ENGINE: IDLE', 1500);
+      }
+    });
+  }
+
+  // Delegated on document so it covers both the KB-match panel (#kbMatchBody)
+  // and the Top-15 quick reference panel (#q15PlaybookSteps), including the
+  // fallback-built version of the latter that may not exist at parse time.
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.kb-step-copy');
+    if (btn) copyStepAsWorkNote(btn);
+  });
 
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -4396,7 +4430,12 @@ TICKET DESCRIPTION</div>
     { id: "scen-12", name: "Application Crash", icon: "🪟", system: "Device Software", category: "Software", severity: "Low", kb: "KB-SW-044", team: "Desktop Support L1", keywords: ["app crash", "stopped working", "event id 1000"], steps: ["Inspect Event Viewer Application log.", "Repair app binaries.", "Clear `%localappdata%` cache.", "Check .NET runtimes."], escalate: ["App bug.", "Database server drop."] },
     { id: "scen-13", name: "Patch Failure", icon: "🔄", system: "SCCM / Intune", category: "Patching", severity: "Medium", kb: "KB-SEC-019", team: "Endpoint Engineering", keywords: ["patch fail", "update error", "0x80070002"], steps: ["Run Windows Update Troubleshooter.", "Reset WU components.", "Force SCCM cycle.", "Check `WUAHandler.log`."], escalate: ["Distribution Point down.", "WMI corruption."] },
     { id: "scen-14", name: "VMware VM Down", icon: "☁️", system: "VMware Infrastructure", category: "Virtualization", severity: "High", kb: "KB-VMW-010", team: "VMware SME", keywords: ["vm down", "vcenter", "esxi", "unresponsive vm"], steps: ["Check vCenter power state.", "Check ESXi host heartbeats.", "Restart VM via vSphere.", "Inspect HA logs."], escalate: ["Host PSOD.", "Storage APD condition."] },
-    { id: "scen-15", name: "VMware Datastore Full", icon: "🗄", system: "VMware Infrastructure", category: "Storage", severity: "High", kb: "KB-VMW-033", team: "VMware SME", keywords: ["datastore full", "vmfs full", "snapshot storage"], steps: ["Locate open VM snapshots.", "Consolidate stale delta disks.", "Storage vMotion non-critical VMs.", "Audit vDK growth."], escalate: ["Capacity >98%.", "SAN LUN expansion required."] }
+    { id: "scen-15", name: "VMware Datastore Full", icon: "🗄", system: "VMware Infrastructure", category: "Storage", severity: "High", kb: "KB-VMW-033", team: "VMware SME", keywords: ["datastore full", "vmfs full", "snapshot storage"], steps: ["Locate open VM snapshots.", "Consolidate stale delta disks.", "Storage vMotion non-critical VMs.", "Audit vDK growth."], escalate: ["Capacity >98%.", "SAN LUN expansion required."] },
+    { id: "scen-16", name: "Onboarding: New Hire Provisioning", icon: "🧑‍💻", system: "Active Directory / M365 / Endpoint Mgmt", category: "Onboarding", severity: "Medium", kb: "KB-ONB-001", team: "Service Desk / Identity", keywords: ["onboarding", "new hire", "new employee", "provisioning", "start date"], steps: ["Create AD account per naming convention.", "Provision M365 license; test email send/receive.", "Image and assign laptop; record asset tag.", "Configure VPN access; test connection.", "Add to required distribution/security groups."], escalate: ["Naming convention conflict.", "License pool exhausted.", "Hardware unavailable before start date."] },
+    { id: "scen-17", name: "Offboarding: Urgent / Involuntary Termination", icon: "🚨", system: "Active Directory / Identity Platform", category: "Offboarding", severity: "High", kb: "KB-OFB-001", team: "Security / IAM SME", keywords: ["offboarding", "termination", "terminated", "involuntary", "immediate disable"], steps: ["Disable AD account immediately.", "Revoke VPN certificate and force logout of active sessions.", "Disable email access.", "Remove from all security/distribution groups.", "Timestamp each action in work notes as it happens."], escalate: ["Access still active after disable action.", "Shared/service account entanglement.", "Legal hold on mailbox."] },
+    { id: "scen-18", name: "Offboarding: Standard 2-Week Notice", icon: "📋", system: "Active Directory / Asset Mgmt", category: "Offboarding", severity: "Low", kb: "KB-OFB-002", team: "Service Desk", keywords: ["offboarding", "resignation", "last day", "two weeks notice", "standard departure"], steps: ["Confirm last working day with manager.", "Disable access on last day, not before.", "Collect and wipe laptop/hardware.", "Archive mailbox per retention policy."], escalate: ["Last day changes unexpectedly.", "Hardware not returned on schedule."] },
+    { id: "scen-19", name: "Offboarding: Scoped Access Revocation", icon: "🎯", system: "Network / VPN", category: "Offboarding", severity: "Medium", kb: "KB-OFB-003", team: "Network / Security Team", keywords: ["contractor offboarding", "vpn revoke", "remote access removal", "scoped offboarding"], steps: ["Confirm exact scope requested (e.g. VPN + remote desktop only).", "Revoke VPN certificate.", "Remove remote desktop access.", "Document explicitly what was NOT touched, to prevent scope assumptions."], escalate: ["Scope unclear or conflicts with a parent case.", "Contractor has additional undocumented access."] },
+    { id: "scen-20", name: "Offboarding: Exception Request", icon: "⚠️", system: "Email / Messaging", category: "Offboarding", severity: "Low", kb: "KB-OFB-004", team: "Service Desk", keywords: ["email forwarding", "offboarding exception", "manager approval", "auto-forward"], steps: ["Verify manager approval BEFORE any action.", "Configure auto-forward per the approved duration.", "Document the approval reference in resolution notes.", "Set a reminder to disable the forward after the approved window."], escalate: ["No documented approval provided.", "Requested duration exceeds policy."] }
   ];
 
   let copilotChannel = null;
@@ -4565,9 +4604,11 @@ window.selectQ15Scenario = function(id) {
   // Populate remediation steps.
   const steps = document.getElementById("q15PlaybookSteps");
   if (steps) {
-    steps.innerHTML = Array.isArray(scenario.steps)
-      ? scenario.steps.map(st => `<li>${st}</li>`).join("")
-      : "";
+    const stepList = Array.isArray(scenario.steps) ? scenario.steps : [];
+    steps.innerHTML = stepList
+      .map((st, i) => `<li><span class="kb-step-text">${st}</span><button type="button" class="kb-step-copy" data-step-index="${i}">Copy as Work Note</button></li>`)
+      .join("");
+    steps.dataset.steps = JSON.stringify(stepList);
   }
 
   // Populate escalation triggers.
