@@ -213,9 +213,14 @@ async function recordTrainingEvent(candidateId, event) {
 
   const candidate = await getCandidate(candidateId);
 
+  const priorOperational =
+    candidate && candidate.readinessEvidence && candidate.readinessEvidence.operational;
+
   const latestEvidence =
     event.type === 'readiness_assessment'
-      ? (event.meta || null)
+      ? (event.meta || priorOperational
+          ? { ...(event.meta || {}), ...(priorOperational ? { operational: priorOperational } : {}) }
+          : null)
       : buildOperationalEvidence(event, candidate && candidate.readinessEvidence);
 
   const update = {
