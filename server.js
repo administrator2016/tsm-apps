@@ -405,6 +405,29 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// Staff or admin — manager/analyst/admin, never a client and never the
+// requireAnyAuth dev bypass. Scoped guard for routes carrying real business
+// data (e.g. staffing employer contacts, fee terms) that shouldn't ride on
+// requireAnyAuth's `{ role: 'admin' }` fallback for missing sessions.
+// Attaches req.tsmSession like the other two auth functions.
+function requireStaffAuth(req, res, next) {
+  const session = verifySession(getCookie(req, 'tsm_session'));
+  if (!session) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  const role = session.role || 'admin';
+  if (!['admin', 'manager', 'analyst'].includes(role)) {
+    return res.status(403).json({ ok: false, error: 'Staff access required' });
+  }
+  req.tsmSession = {
+    role,
+    clientId: session.clientId || null,
+    staffId: session.staffId || null,
+    label: session.label || null,
+    tenantId: session.tenantId || null,
+  };
+  next();
+}
+
+
 // ── CLIENT MANAGEMENT (admin only) ──────────────────────────────────────────
 // List clients (no codes returned — codes are shown once, at creation/rotation).
 app.get('/api/admin/clients', requireAdmin, (req, res) => {
@@ -2981,6 +3004,22 @@ app.use(require('./routes/training-intelligence'));
 // Platform and the Staffing Readiness Assessment. Mongo-backed via
 // server/candidate-registry-service.js (same MONGODB_URI as tsm-ledger-service.js).
 app.use(require('./routes/candidate-registry'));
+
+// Staffing Engine — employers, job orders, and the submit -> place pipeline
+// that turns a ready candidate from the registry above into an actual paid
+// placement with a server-computed fee. Gated behind requireAnyAuth (unlike
+// the candidate registry) since employer contact info and fee terms are
+// real business data, not training/demo content.
+// Staffing Engine — employers, job orders, placements. Real employer
+// contact info and fee terms, so gated behind requireStaffAuth
+// (admin/manager/analyst, real session required) instead of requireAnyAuth,
+// which currently falls back to an admin session when there's no cookie.
+// Scoped to /api/staffing only — requireAnyAuth itself is untouched.
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/staffing')) return requireStaffAuth(req, res, next);
+  next();
+}, require('./routes/staffing-engine'));
+
 
 // ── ENTERPRISE CAPABILITY BRIDGE ───────────────────────────────────────────────
 // Session-persisted stores for O2C/CRM/CPQ/Catalog/Approval (previously
