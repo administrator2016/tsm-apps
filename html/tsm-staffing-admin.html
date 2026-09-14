@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSM — Staffing Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black:#0a0800; --deep:#0d0b00; --panel:#0d0b00; --border:#2a1e00; --border2:#3a2a00;
+  --gold:#c8960c; --gold-dim:#6a5010; --green:#3fbf7f; --red:#ff6b6b; --amber:#e0a930;
+  --dim:#6a5010; --muted:#888; --text:#ccc;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--black);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;}
+.mono{font-family:'Share Tech Mono',monospace;}
+
+.header{background:var(--deep);border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Share Tech Mono',monospace;font-size:.85rem;font-weight:700;color:#eee;letter-spacing:.15em;}
+.logo span{color:var(--gold);}
+.badge{font-size:.58rem;letter-spacing:.2em;color:var(--gold);border:1px solid rgba(200,150,12,.35);padding:3px 8px;border-radius:3px;text-transform:uppercase;}
+
+.main{max-width:1200px;margin:0 auto;padding:2rem;}
+
+.tabs{display:flex;gap:.5rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);}
+.tab{background:none;border:none;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:.7rem 1.1rem;cursor:pointer;border-bottom:2px solid transparent;}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+.toolbar{display:flex;gap:.75rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;}
+.btn{background:rgba(200,150,12,.08);border:1px solid var(--gold);color:var(--gold);font-family:inherit;font-size:.72rem;font-weight:600;letter-spacing:.06em;padding:.55rem 1rem;border-radius:5px;cursor:pointer;text-transform:uppercase;}
+.btn:hover{background:rgba(200,150,12,.18);}
+.btn.secondary{border-color:var(--border2);color:var(--muted);}
+.btn.danger{border-color:rgba(255,107,107,.4);color:var(--red);}
+.btn.danger:hover{background:rgba(255,107,107,.08);}
+.btn.small{font-size:.65rem;padding:.4rem .7rem;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+.section-head{font-size:.62rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:.5rem;margin-bottom:1.2rem;}
+
+.error-banner{background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.3);color:var(--red);padding:.8rem 1rem;border-radius:6px;font-size:.75rem;margin-bottom:1.5rem;display:none;}
+.error-banner.show{display:block;}
+.toast-banner{background:rgba(63,191,127,.08);border:1px solid rgba(63,191,127,.3);color:var(--green);padding:.8rem 1rem;border-radius:6px;font-size:.75rem;margin-bottom:1.5rem;display:none;}
+.toast-banner.show{display:block;}
+.loading{color:var(--dim);font-size:.75rem;padding:1rem 0;}
+.empty-state{text-align:center;padding:3rem;color:var(--dim);font-size:.78rem;letter-spacing:.08em;border:1px dashed var(--border);border-radius:6px;}
+
+.form-panel{display:none;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:1.2rem;margin-bottom:1.5rem;}
+.form-panel.show{display:block;}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.8rem;margin-bottom:1rem;}
+.form-field label{display:block;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:.3rem;}
+.form-field input, .form-field select{width:100%;background:var(--black);border:1px solid var(--border2);color:var(--text);font-family:inherit;font-size:.8rem;padding:.5rem .65rem;border-radius:5px;}
+.form-field .hint{font-size:.62rem;color:var(--muted);margin-top:.3rem;line-height:1.4;}
+.form-actions{display:flex;gap:.6rem;}
+
+.card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:1.1rem 1.3rem;margin-bottom:.9rem;}
+.card.dim{opacity:.55;}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:.6rem;}
+.card-name{font-size:.9rem;color:#fff;font-weight:600;}
+.card-id{font-size:.62rem;color:var(--dim);margin-top:.15rem;}
+.pill{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:2px 9px;border-radius:12px;border:1px solid;white-space:nowrap;}
+.pill.active,.pill.open,.pill.placed{color:var(--green);border-color:rgba(63,191,127,.4);}
+.pill.prospect,.pill.submitted{color:var(--amber);border-color:rgba(224,169,48,.4);}
+.pill.inactive,.pill.closed,.pill.declined,.pill.ended{color:var(--dim);border-color:var(--border2);}
+.pill.interviewing,.pill.offered{color:var(--gold);border-color:rgba(200,150,12,.4);}
+.pill.filled{color:#7ab8ff;border-color:rgba(122,184,255,.4);}
+
+.meta-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.5rem;margin-bottom:.8rem;}
+.meta-item{font-size:.72rem;}
+.meta-label{color:var(--dim);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.15rem;}
+.meta-value{color:var(--text);}
+.meta-value.gold{color:var(--gold);font-weight:600;}
+
+.card-actions{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;}
+.status-flow{display:flex;gap:.35rem;flex-wrap:wrap;}
+
+.fee-box{background:rgba(200,150,12,.06);border:1px solid rgba(200,150,12,.3);border-radius:5px;padding:.6rem .8rem;margin-bottom:.7rem;font-size:.75rem;color:var(--gold);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">TSM <span>STAFFING ADMIN</span></div>
+  <div class="badge">Employers · Job Orders · Placements</div>
+</div>
+
+<div class="main">
+
+  <div class="error-banner" id="errorBanner"></div>
+  <div class="toast-banner" id="toastBanner"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="employers">Employers</button>
+    <button class="tab" data-tab="jobOrders">Job Orders</button>
+    <button class="tab" data-tab="placements">Placements</button>
+  </div>
+
+  <!-- ===================== EMPLOYERS ===================== -->
+  <div class="tab-panel active" id="panel-employers">
+    <div class="toolbar">
+      <button class="btn" id="toggleAddEmployerBtn">+ New Employer</button>
+      <button class="btn secondary" id="refreshEmployersBtn">Refresh</button>
+    </div>
+
+    <div class="form-panel" id="addEmployerForm">
+      <div class="section-head">New Employer</div>
+      <div class="form-grid">
+        <div class="form-field"><label>Name *</label><input type="text" id="empName" placeholder="Acme Health Systems"></div>
+        <div class="form-field"><label>Sector</label>
+          <select id="empSector">
+            <option value="">— none —</option>
+            <option>Healthcare</option><option>IT</option><option>Real Estate</option>
+            <option>FinOps</option><option>Construction</option><option>Insurance</option>
+          </select>
+        </div>
+        <div class="form-field"><label>Contact Name</label><input type="text" id="empContactName" placeholder="Jane Doe"></div>
+        <div class="form-field"><label>Contact Email</label><input type="text" id="empContactEmail" placeholder="jane@acme.com"></div>
+        <div class="form-field"><label>Contact Phone</label><input type="text" id="empContactPhone" placeholder="(555) 555-1234"></div>
+        <div class="form-field"><label>Status</label>
+          <select id="empStatus"><option value="prospect">Prospect</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" id="createEmployerBtn">Create Employer</button>
+        <button class="btn secondary" id="cancelAddEmployerBtn">Cancel</button>
+      </div>
+    </div>
+
+    <div class="section-head">Employers</div>
+    <div id="employerList"><div class="loading">Loading employers…</div></div>
+  </div>
+
+  <!-- ===================== JOB ORDERS ===================== -->
+  <div class="tab-panel" id="panel-jobOrders">
+    <div class="toolbar">
+      <button class="btn" id="toggleAddJobOrderBtn">+ New Job Order</button>
+      <button class="btn secondary" id="refreshJobOrdersBtn">Refresh</button>
+    </div>
+
+    <div class="form-panel" id="addJobOrderForm">
+      <div class="section-head">New Job Order</div>
+      <div class="form-grid">
+        <div class="form-field"><label>Employer *</label><select id="jobEmployer"></select></div>
+        <div class="form-field"><label>Title *</label><input type="text" id="jobTitle" placeholder="Medical Billing Specialist"></div>
+        <div class="form-field"><label>Sector</label><input type="text" id="jobSector" placeholder="Healthcare"></div>
+        <div class="form-field"><label>Openings</label><input type="number" id="jobOpenings" value="1" min="1"></div>
+        <div class="form-field"><label>Pay Rate ($/hr) *</label><input type="number" id="jobPayRate" placeholder="22" step="0.01"></div>
+        <div class="form-field"><label>Fee Model</label>
+          <select id="jobFeeType">
+            <option value="contingency">Contingency (% of annualized pay)</option>
+            <option value="markup">Markup (hourly bill/pay spread)</option>
+          </select>
+        </div>
+        <div class="form-field" id="jobFeeValueWrap"><label>Contingency %</label><input type="number" id="jobFeeValue" placeholder="25" value="25"></div>
+        <div class="form-field" id="jobBillRateWrap" style="display:none;"><label>Bill Rate ($/hr)</label><input type="number" id="jobBillRate" placeholder="38" step="0.01"></div>
+      </div>
+      <div class="form-field hint" style="margin-bottom:1rem;">Contingency defaults to 25%, matching TSM's standard 20–30% band. Markup pays the fee as the hourly spread between bill rate and pay rate instead of a one-time fee.</div>
+      <div class="form-actions">
+        <button class="btn" id="createJobOrderBtn">Create Job Order</button>
+        <button class="btn secondary" id="cancelAddJobOrderBtn">Cancel</button>
+      </div>
+    </div>
+
+    <div class="section-head">Job Orders</div>
+    <div id="jobOrderList"><div class="loading">Loading job orders…</div></div>
+  </div>
+
+  <!-- ===================== PLACEMENTS ===================== -->
+  <div class="tab-panel" id="panel-placements">
+    <div class="toolbar">
+      <button class="btn" id="toggleAddPlacementBtn">+ Submit Candidate</button>
+      <button class="btn secondary" id="refreshPlacementsBtn">Refresh</button>
+    </div>
+
+    <div class="form-panel" id="addPlacementForm">
+      <div class="section-head">Submit Candidate to a Job Order</div>
+      <div class="form-grid">
+        <div class="form-field"><label>Candidate *</label><select id="placCandidateId"></select></div>
+        <div class="form-field"><label>Job Order *</label><select id="placJobOrder"></select></div>
+        <div class="form-field"><label>Pay Rate override ($/hr)</label><input type="number" id="placPayRate" placeholder="leave blank to use job order rate" step="0.01"></div>
+      </div>
+      <div class="form-field hint" style="margin-bottom:1rem;">Candidates are pulled live from the Career Training / Candidate Registry, sorted by readiness score.</div>
+      <div class="form-actions">
+        <button class="btn" id="createPlacementBtn">Submit</button>
+        <button class="btn secondary" id="cancelAddPlacementBtn">Cancel</button>
+      </div>
+    </div>
+
+    <div class="section-head">Placements</div>
+    <div id="placementList"><div class="loading">Loading placements…</div></div>
+  </div>
+
+</div>
+
+<script>
+const STATUS_FLOW = ['submitted', 'interviewing', 'offered', 'placed'];
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtMoney(n) {
+  if (n == null || isNaN(n)) return '—';
+  return '$' + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+async function apiFetch(url, opts) {
+  const res = await fetch(url, opts);
+  const ct = res.headers.get('content-type') || '';
+  let data = null;
+  if (ct.includes('application/json')) data = await res.json();
+  if (!res.ok) {
+    if (res.status === 302 || res.redirected || ct.includes('text/html')) {
+      throw new Error('Session expired or not authenticated — please reload and log in.');
+    }
+    throw new Error((data && data.error) || `Unexpected response (${res.status}) from ${url}`);
+  }
+  return data || {};
+}
+
+function setError(msg) {
+  const el = document.getElementById('errorBanner');
+  if (!msg) { el.classList.remove('show'); el.textContent = ''; return; }
+  el.textContent = msg;
+  el.classList.add('show');
+  document.getElementById('toastBanner').classList.remove('show');
+}
+function setToast(msg) {
+  const el = document.getElementById('toastBanner');
+  if (!msg) { el.classList.remove('show'); el.textContent = ''; return; }
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ---- Tabs -----------------------------------------------------------
+document.querySelectorAll('.tab').forEach(tabBtn => {
+  tabBtn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    tabBtn.classList.add('active');
+    document.getElementById('panel-' + tabBtn.dataset.tab).classList.add('active');
+    setError(null);
+  });
+});
+
+// ---- Employers --------------------------------------------------------
+let _employers = [];
+
+async function loadEmployers() {
+  const list = document.getElementById('employerList');
+  list.innerHTML = '<div class="loading">Loading employers…</div>';
+  setError(null);
+  try {
+    const data = await apiFetch('/api/staffing/employers', { credentials: 'same-origin' });
+    _employers = data.employers || [];
+    renderEmployers(_employers);
+    populateEmployerSelect();
+  } catch (e) {
+    list.innerHTML = '';
+    setError('Could not load employers: ' + e.message);
+  }
+}
+
+function renderEmployers(employers) {
+  const list = document.getElementById('employerList');
+  if (!employers.length) {
+    list.innerHTML = '<div class="empty-state">No employers yet — create one above.</div>';
+    return;
+  }
+  list.innerHTML = employers.map(employerCardHtml).join('');
+  employers.forEach(e => {
+    const delBtn = document.getElementById(`del-emp-${e.employerId}`);
+    if (delBtn) delBtn.addEventListener('click', () => deleteEmployer(e));
+  });
+}
+
+function employerCardHtml(e) {
+  return `
+    <div class="card${e.status === 'inactive' ? ' dim' : ''}">
+      <div class="card-top">
+        <div><div class="card-name">${esc(e.name)}</div><div class="card-id mono">${esc(e.employerId)}</div></div>
+        <span class="pill ${esc(e.status)}">${esc(e.status)}</span>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-item"><div class="meta-label">Sector</div><div class="meta-value">${esc(e.sector || '—')}</div></div>
+        <div class="meta-item"><div class="meta-label">Contact</div><div class="meta-value">${esc(e.contactName || '—')}</div></div>
+        <div class="meta-item"><div class="meta-label">Email</div><div class="meta-value">${esc(e.contactEmail || '—')}</div></div>
+        <div class="meta-item"><div class="meta-label">Phone</div><div class="meta-value">${esc(e.contactPhone || '—')}</div></div>
+      </div>
+      <div class="card-actions">
+        <button class="btn small danger" id="del-emp-${esc(e.employerId)}">Delete</button>
+      </div>
+    </div>`;
+}
+
+function populateEmployerSelect() {
+  const opts = ['<option value="">— select employer —</option>']
+    .concat(_employers.map(e => `<option value="${esc(e.employerId)}">${esc(e.name)}</option>`))
+    .join('');
+  document.getElementById('jobEmployer').innerHTML = opts;
+}
+
+async function deleteEmployer(e) {
+  if (!confirm(`Delete employer "${e.name}"? This does not delete its job orders.`)) return;
+  setError(null);
+  try {
+    await apiFetch(`/api/staffing/employers/${encodeURIComponent(e.employerId)}`, { method: 'DELETE', credentials: 'same-origin' });
+    setToast(`${e.name} deleted.`);
+    await loadEmployers();
+  } catch (err) {
+    setError('Could not delete employer: ' + err.message);
+  }
+}
+
+document.getElementById('refreshEmployersBtn').addEventListener('click', loadEmployers);
+document.getElementById('toggleAddEmployerBtn').addEventListener('click', () => {
+  document.getElementById('addEmployerForm').classList.toggle('show');
+});
+document.getElementById('cancelAddEmployerBtn').addEventListener('click', () => {
+  document.getElementById('addEmployerForm').classList.remove('show');
+});
+document.getElementById('createEmployerBtn').addEventListener('click', async () => {
+  const name = document.getElementById('empName').value.trim();
+  if (!name) { setError('Employer name is required.'); return; }
+  setError(null);
+  try {
+    const data = await apiFetch('/api/staffing/employers', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        sector: document.getElementById('empSector').value || null,
+        contactName: document.getElementById('empContactName').value.trim(),
+        contactEmail: document.getElementById('empContactEmail').value.trim(),
+        contactPhone: document.getElementById('empContactPhone').value.trim(),
+        status: document.getElementById('empStatus').value,
+      }),
+    });
+    document.getElementById('addEmployerForm').classList.remove('show');
+    ['empName','empContactName','empContactEmail','empContactPhone'].forEach(id => document.getElementById(id).value = '');
+    setToast(`${data.employer.name} created.`);
+    await loadEmployers();
+  } catch (e) {
+    setError('Could not create employer: ' + e.message);
+  }
+});
+
+// ---- Job Orders -------------------------------------------------------
+let _jobOrders = [];
+
+document.getElementById('jobFeeType').addEventListener('change', (ev) => {
+  const isMarkup = ev.target.value === 'markup';
+  document.getElementById('jobFeeValueWrap').style.display = isMarkup ? 'none' : '';
+  document.getElementById('jobBillRateWrap').style.display = isMarkup ? '' : 'none';
+});
+
+async function loadJobOrders() {
+  const list = document.getElementById('jobOrderList');
+  list.innerHTML = '<div class="loading">Loading job orders…</div>';
+  setError(null);
+  try {
+    if (!_employers.length) await loadEmployers();
+    const data = await apiFetch('/api/staffing/job-orders', { credentials: 'same-origin' });
+    _jobOrders = data.jobOrders || [];
+    renderJobOrders(_jobOrders);
+    populateJobOrderSelect();
+  } catch (e) {
+    list.innerHTML = '';
+    setError('Could not load job orders: ' + e.message);
+  }
+}
+
+function employerNameFor(employerId) {
+  const e = _employers.find(x => x.employerId === employerId);
+  return e ? e.name : employerId;
+}
+
+function renderJobOrders(jobOrders) {
+  const list = document.getElementById('jobOrderList');
+  if (!jobOrders.length) {
+    list.innerHTML = '<div class="empty-state">No job orders yet — create one above.</div>';
+    return;
+  }
+  list.innerHTML = jobOrders.map(jobOrderCardHtml).join('');
+  jobOrders.forEach(j => {
+    const delBtn = document.getElementById(`del-job-${j.jobOrderId}`);
+    if (delBtn) delBtn.addEventListener('click', () => deleteJobOrder(j));
+  });
+}
+
+function jobOrderCardHtml(j) {
+  const feeDesc = j.feeType === 'markup'
+    ? `Markup — bill $${j.billRate ?? '—'}/hr vs pay $${j.payRate ?? '—'}/hr`
+    : `Contingency — ${j.feeValue}% of annualized pay`;
+  return `
+    <div class="card${j.status === 'closed' ? ' dim' : ''}">
+      <div class="card-top">
+        <div><div class="card-name">${esc(j.title)}</div><div class="card-id mono">${esc(j.jobOrderId)}</div></div>
+        <span class="pill ${esc(j.status)}">${esc(j.status)}</span>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-item"><div class="meta-label">Employer</div><div class="meta-value">${esc(employerNameFor(j.employerId))}</div></div>
+        <div class="meta-item"><div class="meta-label">Sector</div><div class="meta-value">${esc(j.sector || '—')}</div></div>
+        <div class="meta-item"><div class="meta-label">Openings</div><div class="meta-value">${esc(j.openings)}</div></div>
+        <div class="meta-item"><div class="meta-label">Pay Rate</div><div class="meta-value">$${esc(j.payRate ?? '—')}/hr</div></div>
+        <div class="meta-item"><div class="meta-label">Fee</div><div class="meta-value gold">${esc(feeDesc)}</div></div>
+      </div>
+      <div class="card-actions">
+        <button class="btn small danger" id="del-job-${esc(j.jobOrderId)}">Delete</button>
+      </div>
+    </div>`;
+}
+
+function populateJobOrderSelect() {
+  const opts = ['<option value="">— select job order —</option>']
+    .concat(_jobOrders.filter(j => j.status === 'open').map(j =>
+      `<option value="${esc(j.jobOrderId)}">${esc(j.title)} — ${esc(employerNameFor(j.employerId))}</option>`))
+    .join('');
+  document.getElementById('placJobOrder').innerHTML = opts;
+}
+
+async function deleteJobOrder(j) {
+  if (!confirm(`Delete job order "${j.title}"?`)) return;
+  setError(null);
+  try {
+    await apiFetch(`/api/staffing/job-orders/${encodeURIComponent(j.jobOrderId)}`, { method: 'DELETE', credentials: 'same-origin' });
+    setToast(`${j.title} deleted.`);
+    await loadJobOrders();
+  } catch (err) {
+    setError('Could not delete job order: ' + err.message);
+  }
+}
+
+document.getElementById('refreshJobOrdersBtn').addEventListener('click', loadJobOrders);
+document.getElementById('toggleAddJobOrderBtn').addEventListener('click', async () => {
+  if (!_employers.length) await loadEmployers();
+  populateEmployerSelect();
+  document.getElementById('addJobOrderForm').classList.toggle('show');
+});
+document.getElementById('cancelAddJobOrderBtn').addEventListener('click', () => {
+  document.getElementById('addJobOrderForm').classList.remove('show');
+});
+document.getElementById('createJobOrderBtn').addEventListener('click', async () => {
+  const employerId = document.getElementById('jobEmployer').value;
+  const title = document.getElementById('jobTitle').value.trim();
+  const payRate = document.getElementById('jobPayRate').value;
+  if (!employerId) { setError('Pick an employer first.'); return; }
+  if (!title) { setError('Job title is required.'); return; }
+  if (!payRate) { setError('Pay rate is required.'); return; }
+  setError(null);
+  const feeType = document.getElementById('jobFeeType').value;
+  try {
+    const data = await apiFetch('/api/staffing/job-orders', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        employerId, title,
+        sector: document.getElementById('jobSector').value.trim() || null,
+        openings: Number(document.getElementById('jobOpenings').value) || 1,
+        payRate: Number(payRate),
+        feeType,
+        feeValue: feeType === 'contingency' ? Number(document.getElementById('jobFeeValue').value) || 25 : null,
+        billRate: feeType === 'markup' ? Number(document.getElementById('jobBillRate').value) || null : null,
+      }),
+    });
+    document.getElementById('addJobOrderForm').classList.remove('show');
+    ['jobTitle','jobSector','jobOpenings','jobPayRate','jobFeeValue','jobBillRate'].forEach(id => {
+      const el = document.getElementById(id);
+      if (id !== 'jobOpenings') el.value = id === 'jobFeeValue' ? '25' : '';
+    });
+    setToast(`${data.jobOrder.title} created.`);
+    await loadJobOrders();
+  } catch (e) {
+    setError('Could not create job order: ' + e.message);
+  }
+});
+
+// ---- Placements ---------------------------------------------------------
+let _placements = [];
+let _candidates = [];
+
+// Candidate registry is a separate, unauthenticated endpoint
+// (routes/candidate-registry.js) — shared with the Career Training
+// Platform and Staffing Readiness Demo, not gated like /api/staffing/*.
+async function loadCandidates() {
+  try {
+    const data = await apiFetch('/api/candidates', { credentials: 'same-origin' });
+    _candidates = (data.candidates || []).slice().sort((a, b) => (b.readinessScore || 0) - (a.readinessScore || 0));
+  } catch (e) {
+    _candidates = [];
+  }
+  populateCandidateSelect();
+}
+
+function populateCandidateSelect() {
+  const el = document.getElementById('placCandidateId');
+  if (!el) return;
+  if (!_candidates.length) {
+    el.innerHTML = '<option value="">— no candidates in registry —</option>';
+    return;
+  }
+  const opts = ['<option value="">— select candidate —</option>']
+    .concat(_candidates.map(c => {
+      const score = c.readinessScore != null ? `${c.readinessScore}` : '—';
+      return `<option value="${esc(c.candidateId)}">${esc(c.name)} — ${esc(c.role || 'no role')} (readiness ${esc(score)}, ${esc(c.status)})</option>`;
+    }))
+    .join('');
+  el.innerHTML = opts;
+}
+
+async function loadPlacements() {
+  const list = document.getElementById('placementList');
+  list.innerHTML = '<div class="loading">Loading placements…</div>';
+  setError(null);
+  try {
+    if (!_employers.length) await loadEmployers();
+    if (!_jobOrders.length) await loadJobOrders();
+    const data = await apiFetch('/api/staffing/placements', { credentials: 'same-origin' });
+    _placements = data.placements || [];
+    renderPlacements(_placements);
+  } catch (e) {
+    list.innerHTML = '';
+    setError('Could not load placements: ' + e.message);
+  }
+}
+
+function jobOrderFor(jobOrderId) {
+  return _jobOrders.find(j => j.jobOrderId === jobOrderId);
+}
+
+function renderPlacements(placements) {
+  const list = document.getElementById('placementList');
+  if (!placements.length) {
+    list.innerHTML = '<div class="empty-state">No placements yet — submit a candidate above.</div>';
+    return;
+  }
+  list.innerHTML = placements.map(placementCardHtml).join('');
+  placements.forEach(p => {
+    STATUS_FLOW.forEach((s, i) => {
+      const btn = document.getElementById(`advance-${p.placementId}-${s}`);
+      if (btn) btn.addEventListener('click', () => advanceStatus(p, s));
+    });
+    const declineBtn = document.getElementById(`decline-${p.placementId}`);
+    if (declineBtn) declineBtn.addEventListener('click', () => advanceStatus(p, 'declined'));
+    const delBtn = document.getElementById(`del-plc-${p.placementId}`);
+    if (delBtn) delBtn.addEventListener('click', () => deletePlacement(p));
+  });
+}
+
+function placementCardHtml(p) {
+  const job = jobOrderFor(p.jobOrderId);
+  const currentIdx = STATUS_FLOW.indexOf(p.status);
+  const isTerminal = p.status === 'declined' || p.status === 'ended' || p.status === 'placed';
+
+  const flowButtons = STATUS_FLOW.map((s, i) => {
+    const isPast = currentIdx >= 0 && i <= currentIdx;
+    const isNext = i === currentIdx + 1;
+    if (isPast) return `<span class="pill ${s}">${s}</span>`;
+    if (isNext) return `<button class="btn small" id="advance-${esc(p.placementId)}-${s}">Advance → ${s}</button>`;
+    return `<span class="pill" style="opacity:.3;">${s}</span>`;
+  }).join(' ');
+
+  const feeHtml = p.computedFee
+    ? `<div class="fee-box">${p.computedFee.type === 'contingency'
+        ? `Contingency fee: <strong>${fmtMoney(p.computedFee.amount)}</strong> (${p.computedFee.percentage}% of ${fmtMoney(p.computedFee.annualizedPay)} annualized)`
+        : `Markup: <strong>$${p.computedFee.hourlySpread}/hr</strong> spread`}</div>`
+    : '';
+
+  return `
+    <div class="card${isTerminal && p.status !== 'placed' ? ' dim' : ''}">
+      <div class="card-top">
+        <div><div class="card-name">${esc(job ? job.title : p.jobOrderId)}</div><div class="card-id mono">${esc(p.placementId)} · candidate ${esc(p.candidateId)}</div></div>
+        <span class="pill ${esc(p.status)}">${esc(p.status)}</span>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-item"><div class="meta-label">Employer</div><div class="meta-value">${esc(employerNameFor(p.employerId))}</div></div>
+        <div class="meta-item"><div class="meta-label">Pay Rate</div><div class="meta-value">$${esc(p.payRate ?? '—')}/hr</div></div>
+      </div>
+      ${feeHtml}
+      <div class="card-actions">
+        <div class="status-flow">${!isTerminal ? flowButtons : ''}</div>
+        ${!isTerminal ? `<button class="btn small danger" id="decline-${esc(p.placementId)}">Decline</button>` : ''}
+        <button class="btn small danger" id="del-plc-${esc(p.placementId)}">Delete</button>
+      </div>
+    </div>`;
+}
+
+async function advanceStatus(p, status) {
+  setError(null);
+  try {
+    await apiFetch(`/api/staffing/placements/${encodeURIComponent(p.placementId)}/status`, {
+      method: 'PUT', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    setToast(`Moved to ${status}.`);
+    await loadJobOrders();
+    await loadPlacements();
+  } catch (e) {
+    setError('Could not update status: ' + e.message);
+  }
+}
+
+async function deletePlacement(p) {
+  if (!confirm('Delete this placement record?')) return;
+  setError(null);
+  try {
+    await apiFetch(`/api/staffing/placements/${encodeURIComponent(p.placementId)}`, { method: 'DELETE', credentials: 'same-origin' });
+    setToast('Placement deleted.');
+    await loadPlacements();
+  } catch (e) {
+    setError('Could not delete placement: ' + e.message);
+  }
+}
+
+document.getElementById('refreshPlacementsBtn').addEventListener('click', loadPlacements);
+document.getElementById('toggleAddPlacementBtn').addEventListener('click', async () => {
+  if (!_jobOrders.length) await loadJobOrders();
+  populateJobOrderSelect();
+  await loadCandidates();
+  document.getElementById('addPlacementForm').classList.toggle('show');
+});
+document.getElementById('cancelAddPlacementBtn').addEventListener('click', () => {
+  document.getElementById('addPlacementForm').classList.remove('show');
+});
+document.getElementById('createPlacementBtn').addEventListener('click', async () => {
+  const candidateId = document.getElementById('placCandidateId').value;
+  const jobOrderId = document.getElementById('placJobOrder').value;
+  if (!candidateId) { setError('Pick a candidate first.'); return; }
+  if (!jobOrderId) { setError('Pick a job order first.'); return; }
+  setError(null);
+  const payRateVal = document.getElementById('placPayRate').value;
+  try {
+    await apiFetch('/api/staffing/placements', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        candidateId, jobOrderId,
+        payRate: payRateVal ? Number(payRateVal) : undefined,
+      }),
+    });
+    document.getElementById('addPlacementForm').classList.remove('show');
+    ['placCandidateId','placPayRate'].forEach(id => document.getElementById(id).value = '');
+    setToast('Candidate submitted.');
+    await loadPlacements();
+  } catch (e) {
+    setError('Could not submit candidate: ' + e.message);
+  }
+});
+
+// ---- Init -----------------------------------------------------------
+loadEmployers().then(loadJobOrders).then(loadPlacements).then(loadCandidates);
+</script>
+</body>
+</html>
