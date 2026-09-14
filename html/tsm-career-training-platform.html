@@ -7042,7 +7042,10 @@ function candidateReadinessEvidence(candidate) {
     strengths: Array.isArray(e.strengths) ? e.strengths : [],
     gaps: Array.isArray(e.gaps) ? e.gaps : [],
     recommendation: e.recommendation || null,
-    source: e.source || null
+    source: e.source || null,
+    operational: e.operational && typeof e.operational === 'object'
+      ? e.operational
+      : null
   };
 }
 
@@ -7077,10 +7080,19 @@ function renderRegistryTable(candidates) {
               const e = candidateReadinessEvidence(c);
               const strengths = e.strengths.slice(0,2).join(' · ');
               const gaps = e.gaps.slice(0,2).join(' · ');
-              return e.strengths.length || e.gaps.length
+              const l1 = e.operational && e.operational.l1 ? e.operational.l1 : null;
+              const operationalLines = l1
+                ? [
+                    l1.resolution ? `✓ Resolution: ${Number(l1.resolution.attempts || 0)} attempt${Number(l1.resolution.attempts || 0) === 1 ? '' : 's'}` : '',
+                    l1.escalation ? `↗ Escalation: ${Number(l1.escalation.attempts || 0)} attempt${Number(l1.escalation.attempts || 0) === 1 ? '' : 's'}` : ''
+                  ].filter(Boolean)
+                : [];
+
+              return e.strengths.length || e.gaps.length || operationalLines.length
                 ? `<div style="margin-top:4px;font-size:8px;color:var(--text3);line-height:1.4">
                     ${strengths ? `✓ ${escapeHtml(strengths)}` : ''}
                     ${gaps ? `<br>△ ${escapeHtml(gaps)}` : ''}
+                    ${operationalLines.length ? `<br><span style="color:var(--cyan)">L1 Operational Evidence</span>${operationalLines.map(line => `<br>${escapeHtml(line)}`).join('')}` : ''}
                   </div>`
                 : '';
             })()}

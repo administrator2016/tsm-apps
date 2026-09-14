@@ -150,6 +150,48 @@ async function upsertCandidate(payload) {
   return getCandidate(candidateId);
 }
 
+function buildOperationalEvidence(event, existingEvidence) {
+  const type = event && event.type;
+
+  if (type !== 'l1_resolution' && type !== 'l1_escalation') {
+    return existingEvidence || null;
+  }
+
+  const current = existingEvidence && typeof existingEvidence === 'object'
+    ? existingEvidence
+    : {};
+
+  const operational = current.operational && typeof current.operational === 'object'
+    ? current.operational
+    : {};
+
+  const l1 = operational.l1 && typeof operational.l1 === 'object'
+    ? operational.l1
+    : {};
+
+  const key = type === 'l1_resolution' ? 'resolution' : 'escalation';
+
+  const previous = l1[key] && typeof l1[key] === 'object'
+    ? l1[key]
+    : {};
+
+  return {
+    ...current,
+    operational: {
+      ...operational,
+      l1: {
+        ...l1,
+        [key]: {
+          attempts: Number(previous.attempts || 0) + 1,
+          lastScore: Number(event.score) || 0,
+          lastRecordedAt: event.recordedAt || new Date().toISOString(),
+          lastMeta: event.meta || {},
+        },
+      },
+    },
+  };
+}
+
 async function recordTrainingEvent(candidateId, event) {
   const database = await connect();
   const doc = {
@@ -169,10 +211,12 @@ async function recordTrainingEvent(candidateId, event) {
     .toArray();
   const readiness = computeReadinessScore(events);
 
+  const candidate = await getCandidate(candidateId);
+
   const latestEvidence =
     event.type === 'readiness_assessment'
       ? (event.meta || null)
-      : null;
+      : buildOperationalEvidence(event, candidate && candidate.readinessEvidence);
 
   const update = {
     readinessScore: readiness.score,
