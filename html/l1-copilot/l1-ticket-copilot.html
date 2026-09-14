@@ -2175,8 +2175,13 @@ TICKET DESCRIPTION</div>
   initTrainingMode();
 
   function syncL1ResultToRegistry(type, meta){
-    if (!trainingModeEnabled) return;
     const statusEl = document.getElementById('tmStatus');
+    if (!trainingModeEnabled) {
+      const label = type === 'l1_resolution' ? 'resolution' : 'escalation';
+      console.warn('L1 Copilot Registry sync skipped (Training Mode is off):', { type });
+      if (statusEl) statusEl.textContent = `Not recorded: enable Training Mode with a trainee name before generating ${label}s.`;
+      return;
+    }
     getOrCreateCandidateId()
       .then((candidateId) => {
         return fetch('/api/candidates/' + encodeURIComponent(candidateId) + '/training-events', {
