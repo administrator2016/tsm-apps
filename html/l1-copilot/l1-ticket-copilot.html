@@ -2093,6 +2093,62 @@ TICKET DESCRIPTION</div>
   let candidateInfo = { fname: '', lname: '', email: '' };
   let trainingModeEnabled = false;
 
+  // /api/candidates always mints a NEW candidateId unless one is passed
+  // back in — there's no server-side find-or-create by name/email. A
+  // trainee can generate many resolutions/escalations in one session, so
+  // without caching, each generate would spawn a separate candidate row
+  // instead of accumulating training events (and readiness) on one record.
+  // Cache the created candidateId per trainee (keyed on name+email) and
+  // reuse it for the rest of the session; only re-create if the trainee
+  // fields change (i.e. a different person typed in).
+  let registryCandidateId = null;
+  let registryCandidateKey = null;
+  let registryCandidatePromise = null;
+
+  function candidateKey(){
+    return candidateInfo.fname + '|' + candidateInfo.lname + '|' + candidateInfo.email;
+  }
+
+  function getOrCreateCandidateId(){
+    const key = candidateKey();
+    if (registryCandidateId && registryCandidateKey === key) {
+      return Promise.resolve(registryCandidateId);
+    }
+    if (registryCandidatePromise && registryCandidateKey === key) {
+      return registryCandidatePromise;
+    }
+    registryCandidateKey = key;
+    registryCandidatePromise = fetch('/api/candidates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: (candidateInfo.fname + ' ' + candidateInfo.lname).trim(),
+        role: 'IT / L1 Help Desk',
+        email: candidateInfo.email || null,
+        status: 'in_training',
+        source: 'l1_ticket_copilot',
+        isSampleData: false
+      })
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Candidate Registry create failed (' + res.status + ')');
+        return res.json();
+      })
+      .then((data) => {
+        const candidateId = data && data.candidate && data.candidate.candidateId;
+        if (!candidateId) throw new Error('Candidate Registry response missing candidateId');
+        registryCandidateId = candidateId;
+        return candidateId;
+      })
+      .catch((e) => {
+        // Don't leave a failed lookup cached — let the next sync retry.
+        registryCandidatePromise = null;
+        registryCandidateId = null;
+        throw e;
+      });
+    return registryCandidatePromise;
+  }
+
   function initTrainingMode(){
     const enabledEl = document.getElementById('tmEnabled');
     const fnameEl = document.getElementById('tmFname');
@@ -2121,25 +2177,8 @@ TICKET DESCRIPTION</div>
   function syncL1ResultToRegistry(type, meta){
     if (!trainingModeEnabled) return;
     const statusEl = document.getElementById('tmStatus');
-    fetch('/api/candidates', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: (candidateInfo.fname + ' ' + candidateInfo.lname).trim(),
-        role: 'IT / L1 Help Desk',
-        email: candidateInfo.email || null,
-        status: 'in_training',
-        source: 'l1_ticket_copilot',
-        isSampleData: false
-      })
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error('Candidate Registry create failed (' + res.status + ')');
-        return res.json();
-      })
-      .then((data) => {
-        const candidateId = data && data.candidate && data.candidate.candidateId;
-        if (!candidateId) throw new Error('Candidate Registry response missing candidateId');
+    getOrCreateCandidateId()
+      .then((candidateId) => {
         return fetch('/api/candidates/' + encodeURIComponent(candidateId) + '/training-events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
