@@ -48,6 +48,10 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 .nav-links a:hover{color:var(--cyan)}
 .nav-right{margin-left:auto;display:flex;align-items:center;gap:16px;color:var(--text-dim);font-size:10px}
 .nav-clock{color:var(--cyan-dim)}
+.training-mode-bar{display:flex;align-items:center;gap:10px;padding:6px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:11px}
+.training-mode-bar .tm-toggle{display:flex;align-items:center;gap:6px;color:var(--purple);font-weight:700;letter-spacing:1px;cursor:pointer}
+.training-mode-bar .tm-field{background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:11px;padding:4px 8px;border-radius:4px;width:150px}
+.training-mode-bar .tm-status{color:var(--text-dim);font-size:10px}
 
 .exec-strip{display:flex;gap:0;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto}
 .exec-item{padding:8px 16px;border-right:1px solid var(--border);white-space:nowrap;min-width:110px}
@@ -675,6 +679,17 @@ window.loadInphusionAnomaly = function() {
     <span id="navStatus">ENGINE: IDLE</span>
     <span class="nav-clock" id="navClock">--:--:--</span>
   </div>
+</div>
+
+<!-- TRAINING MODE — when enabled, generated resolutions/escalations are
+     recorded as training events on this trainee's Candidate Registry
+     record (same registry the Career Training Platform reads from). -->
+<div class="training-mode-bar" id="trainingModeBar">
+  <label class="tm-toggle"><input type="checkbox" id="tmEnabled"> TRAINING MODE</label>
+  <input id="tmFname" class="tm-field" placeholder="Trainee first name" style="display:none">
+  <input id="tmLname" class="tm-field" placeholder="Trainee last name" style="display:none">
+  <input id="tmEmail" class="tm-field" placeholder="Email (optional)" style="display:none">
+  <span id="tmStatus" class="tm-status"></span>
 </div>
 
 <div class="exec-strip">
@@ -2061,6 +2076,97 @@ TICKET DESCRIPTION</div>
     'tkAsset','tkMfr','tkModel','tkWarranty','tkDescription','vManufacturer','vServiceTag','vWarranty',
     'escReason','escEvidence'];
   let currentAnalysis = null;
+
+  // ── Training Mode / Candidate Registry sync ──────────────────────────────
+  // Mirrors the candidateInfo pattern in html/reo-pro/mlo-exam-prep.html and
+  // servicenow-exam-sim.html. Registry is the source of truth for readiness;
+  // this page does not keep a competing local record. Fire-and-forget: a
+  // registry failure never blocks the resolution/escalation output from
+  // rendering.
+  //
+  // NOTE on scoring: unlike the MLO/ServiceNow quizzes, resolution and
+  // escalation generation here have no inherent right/wrong grade. Each
+  // event is recorded as score:100 (task completed) rather than a fabricated
+  // quality score — do not read readinessScore from this source as a
+  // correctness measure, only as a completion/volume signal, until a real
+  // grading rubric exists.
+  let candidateInfo = { fname: '', lname: '', email: '' };
+  let trainingModeEnabled = false;
+
+  function initTrainingMode(){
+    const enabledEl = document.getElementById('tmEnabled');
+    const fnameEl = document.getElementById('tmFname');
+    const lnameEl = document.getElementById('tmLname');
+    const emailEl = document.getElementById('tmEmail');
+    const statusEl = document.getElementById('tmStatus');
+
+    function updateVisibility(){
+      const show = enabledEl.checked ? 'inline-block' : 'none';
+      fnameEl.style.display = show; lnameEl.style.display = show; emailEl.style.display = show;
+    }
+    function updateCandidateInfo(){
+      candidateInfo = { fname: fnameEl.value.trim(), lname: lnameEl.value.trim(), email: emailEl.value.trim() };
+      trainingModeEnabled = enabledEl.checked && !!(candidateInfo.fname && candidateInfo.lname);
+      statusEl.textContent = !enabledEl.checked ? ''
+        : trainingModeEnabled
+          ? `Recording resolutions/escalations to Candidate Registry for ${candidateInfo.fname} ${candidateInfo.lname}.`
+          : 'Enter trainee first & last name to record results.';
+    }
+    enabledEl.addEventListener('change', () => { updateVisibility(); updateCandidateInfo(); });
+    [fnameEl, lnameEl, emailEl].forEach(el => el.addEventListener('input', updateCandidateInfo));
+    updateVisibility();
+  }
+  initTrainingMode();
+
+  function syncL1ResultToRegistry(type, meta){
+    if (!trainingModeEnabled) return;
+    const statusEl = document.getElementById('tmStatus');
+    fetch('/api/candidates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: (candidateInfo.fname + ' ' + candidateInfo.lname).trim(),
+        role: 'IT / L1 Help Desk',
+        email: candidateInfo.email || null,
+        status: 'in_training',
+        source: 'l1_ticket_copilot',
+        isSampleData: false
+      })
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Candidate Registry create failed (' + res.status + ')');
+        return res.json();
+      })
+      .then((data) => {
+        const candidateId = data && data.candidate && data.candidate.candidateId;
+        if (!candidateId) throw new Error('Candidate Registry response missing candidateId');
+        return fetch('/api/candidates/' + encodeURIComponent(candidateId) + '/training-events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type,
+            score: 100,
+            weight: 1,
+            meta: Object.assign({ source: 'l1_ticket_copilot' }, meta || {})
+          })
+        }).then((res) => {
+          if (!res.ok) throw new Error('Candidate Registry training event failed (' + res.status + ')');
+          return res.json();
+        });
+      })
+      .then((eventData) => {
+        const readiness = eventData && eventData.candidate && eventData.candidate.readinessScore;
+        console.log('L1 Copilot Registry sync PASS:', { type, readinessScore: readiness });
+        if (statusEl) {
+          const label = type === 'l1_resolution' ? 'resolution' : 'escalation';
+          statusEl.textContent = `Recorded ${label} to Candidate Registry (readiness: ${readiness}).`;
+        }
+      })
+      .catch((e) => {
+        console.error('L1 Copilot Registry sync failed:', e);
+        if (statusEl) statusEl.textContent = 'Candidate Registry sync failed: ' + e.message;
+      });
+  }
   let checklistState = {};
   let selectedTeam = null;
 
@@ -3376,6 +3482,11 @@ TICKET DESCRIPTION</div>
       out.className = 'ai-output';
       out.textContent = data.answer || 'No resolution returned.';
       recordHistoryEntry();
+      syncL1ResultToRegistry('l1_resolution', {
+        incident: document.getElementById('tkIncident').value || null,
+        severity: (currentAnalysis && currentAnalysis.severity) || null,
+        requiresHumanReview: !!(currentAnalysis && currentAnalysis.priority_alignment && currentAnalysis.priority_alignment.requires_human_review)
+      });
     } catch (e) {
       out.className = 'ai-output';
       out.innerHTML = `<span class="err">Build failed: ${e.message}. Confirm /api/l1-copilot/resolution is wired server-side.</span>`;
@@ -3448,6 +3559,11 @@ TICKET DESCRIPTION</div>
       if (!data.ok) throw new Error(data.error || 'escalation build failed');
       out.className = 'ai-output';
       out.textContent = data.answer || 'No escalation package returned.';
+      syncL1ResultToRegistry('l1_escalation', {
+        incident: document.getElementById('tkIncident').value || null,
+        severity: (currentAnalysis && currentAnalysis.severity) || null,
+        recommendedTeam: selectedTeam || null
+      });
     } catch (e) {
       out.className = 'ai-output';
       out.innerHTML = `<span class="err">Build failed: ${e.message}. Confirm /api/l1-copilot/escalation is wired server-side.</span>`;
