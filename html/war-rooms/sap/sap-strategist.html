@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SAP Strategist — Commerce → CRM → CPQ → SD</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0b0f14; --panel: #121821; --border: #223042; --text: #e6edf3;
+    --muted: #8ea0b5; --accent: #4da3ff; --high: #ff5d5d; --med: #ffb547; --low: #4caf6f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, Segoe UI, Roboto, sans-serif; }
+  header { padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 18px; margin: 0; }
+  header .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  main { padding: 24px 28px; max-width: 1200px; margin: 0 auto; }
+  .domain-nav { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .domain-nav a { color: var(--muted); text-decoration: none; font-size: 12px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; }
+  .domain-nav a:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Cross-system flow banner — SAP chain is sequential, unlike Honeywell's
+     independent-incident domains, so this renders as a left-to-right chain
+     with arrows rather than an unordered card grid. */
+  .flow-banner { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; }
+  .flow-banner .flow-title { font-size: 12px; letter-spacing: .06em; color: var(--muted); margin-bottom: 12px; }
+  .flow-chain { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .flow-node { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12px; font-weight: 700; opacity: .45; }
+  .flow-node.live { opacity: 1; }
+  .flow-arrow { color: var(--muted); font-size: 16px; }
+
+  .coverage-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 20px; font-size: 12.5px; }
+  .coverage-panel .cov-title { font-size: 12px; letter-spacing: .06em; color: var(--muted); margin-bottom: 10px; }
+  .coverage-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+  .coverage-row .mark.ok { color: var(--low); }
+  .coverage-row .mark.pending { color: var(--muted); }
+
+  .cross-check-banner { background: rgba(255,93,93,.08); border: 1px solid var(--high); border-radius: 10px; padding: 16px 18px; margin-bottom: 20px; }
+  .cross-check-banner .cc-title { font-weight: 700; font-size: 12.5px; color: var(--high); margin-bottom: 8px; letter-spacing: .02em; }
+  .cross-check-banner .cc-item { font-size: 12.5px; margin-bottom: 8px; line-height: 1.5; }
+  .cross-check-banner .cc-item:last-child { margin-bottom: 0; }
+
+  .support-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin: 20px 0; font-size: 12.5px; }
+  .support-row { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .support-row:last-child { border-bottom: none; }
+  .support-row .sr-label { font-weight: 700; }
+  .support-row .sr-detail { color: var(--muted); font-size: 11.5px; text-align: right; }
+
+  .alert-card { background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--muted); border-radius: 8px; padding: 16px 18px; margin-bottom: 14px; }
+  .alert-card.stale { opacity: 0.55; }
+  .alert-card.empty-domain { opacity: .5; border-left-style: dashed; }
+  .alert-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .alert-domain { font-weight: 700; font-size: 13px; letter-spacing: 0.04em; }
+  .alert-module { color: var(--muted); font-size: 11px; margin-bottom: 8px; }
+  .alert-ts { color: var(--muted); font-size: 11px; }
+  .alert-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; font-size: 13px; }
+  .alert-body .metric-val { font-weight: 700; }
+  .alert-body .metric-lbl { color: var(--muted); font-size: 11px; }
+  .actions { display: flex; gap: 10px; margin-top: 20px; }
+  button { background: var(--accent); border: none; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
+  button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  #toast { position: fixed; bottom: 20px; right: 20px; background: var(--panel); border: 1px solid var(--border); padding: 12px 18px; border-radius: 8px; opacity: 0; transition: opacity .2s; font-size: 13px; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>SAP Strategist</h1>
+    <div class="sub">Reads the Commerce Cloud, CRM/C4C, CPQ, and SD (O2C) relay payloads — every stage shown at once, in SAP process order, not just the latest</div>
+  </div>
+  <div class="sub" id="clock"></div>
+</header>
+<main>
+  <div class="domain-nav">
+    <a href="/html/war-rooms/catalog/catalog-war-room.html">SAP Commerce Cloud</a>
+    <a href="/html/war-rooms/crm/crm-war-room.html">SAP CRM / C4C</a>
+    <a href="/html/war-rooms/cpq/cpq-war-room.html">SAP CPQ</a>
+    <a href="/html/war-rooms/o2c/o2c-war-room.html">SAP SD — O2C</a>
+    <a href="/html/war-rooms/mdm/mdm-war-room.html">MDM</a>
+    <a href="/html/war-rooms/approval/approval-war-room.html">Approval Center</a>
+    <a href="/html/war-rooms/integration-hub/integration-hub.html">Integration Hub</a>
+    <a href="/html/war-rooms/sap/sap-executive-portal.html">↑ Executive Portal</a>
+  </div>
+
+  <div class="flow-banner">
+    <div class="flow-title">SAP CROSS-SYSTEM FLOW</div>
+    <div class="flow-chain" id="flowChain"></div>
+  </div>
+
+  <div class="coverage-panel">
+    <div class="cov-title">SAP COMPETENCY COVERAGE</div>
+    <div id="coverageList"></div>
+  </div>
+
+  <div id="mdmCrossCheck"></div>
+
+  <div id="alertList"></div>
+
+  <div class="support-panel">
+    <div class="cov-title">SUPPORTING SIGNALS — MDM · APPROVAL · INTEGRATION HUB</div>
+    <div id="supportList"></div>
+  </div>
+
+  <div class="actions">
+    <button id="relayExecBtn">Relay to Executive Portal</button>
+    <button class="secondary" id="refreshBtn">Refresh</button>
+  </div>
+</main>
+<div id="toast"></div>
+
+<script src="/html/war-rooms/_relay_control_plane/relay.core.js"></script>
+<script>
+(function () {
+  // Fixed SAP process order — this strategist renders the chain in the
+  // order the business flow actually happens (Commerce -> CRM/C4C -> CPQ ->
+  // SD), unlike college-strategist.html's "most recently relayed first"
+  // sort, because a SAP reviewer needs to see WHERE in the chain a deal
+  // currently sits, not which system happened to post last.
+  const DOMAINS = [
+    { key: 'CATALOG', label: 'SAP COMMERCE CLOUD', module: 'Web Channel / Product Master (MM01/MM02)', color: 'var(--low)', moneyKeys: [] },
+    { key: 'CRM',     label: 'SAP CRM / C4C',       module: 'Lead, Opportunity, Account, Service Ticket', color: 'var(--med)', moneyKeys: ['pipeline_value'] },
+    { key: 'CPQ',     label: 'SAP CPQ',             module: 'Configure, Price, Quote', color: 'var(--accent)', moneyKeys: ['quote_value'] },
+    { key: 'O2C',     label: 'SAP SD — ORDER-TO-CASH', module: 'Sales Order → Delivery → Billing', color: 'var(--high)', moneyKeys: ['order_value'] }
+  ];
+
+  // Supporting engines — not part of the sequential order flow itself, but
+  // the systems that make it trustworthy: MDM (master data quality behind
+  // the customer/product records CRM & CPQ read), Approval (the actual
+  // release-strategy engine behind CPQ's "Approval Workflow" and O2C's
+  // "Discount Approval" stages), and Integration Hub (the interface
+  // monitoring layer — SAP PI/PO/CPI analog — that would show WHERE a
+  // Commerce->CRM or CPQ->SD handoff broke).
+  const SUPPORT_DOMAINS = [
+    { key: 'MDM',         label: 'MDM — Master Data', module: 'Golden Record / Duplicate Management' },
+    { key: 'APPROVAL',    label: 'Approval Center',   module: 'Release Strategy behind CPQ & O2C approval stages' },
+    { key: 'INTEGRATION', label: 'Integration Hub',   module: 'Interface monitoring (SAP PI/PO/CPI analog)' }
+  ];
+
+  const STALE_MS = 1000 * 60 * 60 * 12; // 12h — flags a payload as stale rather than hiding it
+
+  function tick() { document.getElementById('clock').textContent = new Date().toLocaleTimeString(); }
+  setInterval(tick, 1000); tick();
+
+  function showToast(msg, isErr) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.color = isErr ? 'var(--high)' : 'var(--text)';
+    t.classList.add('show');
+    clearTimeout(showToast._h);
+    showToast._h = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function tsMs(payload) {
+    // Domains here write ISO strings (new Date().toISOString()) rather
+    // than college's epoch-number Date.now() — normalize both.
+    if (!payload || payload.timestamp == null) return 0;
+    const t = payload.timestamp;
+    return typeof t === 'number' ? t : new Date(t).getTime() || 0;
+  }
+
+  function readDomain(domainKey) {
+    if (window.TSM && window.TSM.relay && window.TSM.relay.read) {
+      try {
+        const v = window.TSM.relay.read(domainKey);
+        if (v) return v;
+      } catch (e) { /* fall through to raw read */ }
+    }
+    const fallbackKey = 'TSM_' + domainKey + '_RELAY';
+    try {
+      const raw = localStorage.getItem(fallbackKey) || sessionStorage.getItem(fallbackKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function collectAll() {
+    return DOMAINS.map(d => ({ meta: d, payload: readDomain(d.key) }));
+  }
+
+  function collectSupport() {
+    return SUPPORT_DOMAINS.map(d => ({ meta: d, payload: readDomain(d.key) }));
+  }
+
+  // Same explain[].severity convention confirmed across O2C/CPQ/CRM/
+  // APPROVAL/GOVERNANCE/INTEGRATION/MDM in digital-twin.html — reused here
+  // rather than re-deriving a different tiering rule.
+  function countBySeverity(explain) {
+    const c = { high: 0, med: 0, low: 0 };
+    (explain || []).forEach(item => {
+      if (item && c.hasOwnProperty(item.severity)) c[item.severity]++;
+    });
+    return c;
+  }
+
+  function renderSupportSignals(support) {
+    const list = document.getElementById('supportList');
+    if (!list) return;
+    list.innerHTML = support.map(s => {
+      if (!s.payload) {
+        return `
+          <div class="support-row">
+            <span class="sr-label">${escapeHtml(s.meta.label)}</span>
+            <span class="sr-detail">no relay yet — ${escapeHtml(s.meta.module)}</span>
+          </div>`;
+      }
+      const { high, med, low } = countBySeverity(s.payload.explain);
+      let status;
+      if (high > 0) status = `${high} high-severity item${high === 1 ? '' : 's'} flagged`;
+      else if (med + low > 0) status = `${med + low} item${(med + low) === 1 ? '' : 's'} need attention`;
+      else status = 'clean — no open items';
+      return `
+        <div class="support-row">
+          <span class="sr-label">${escapeHtml(s.meta.label)}</span>
+          <span class="sr-detail">${escapeHtml(status)}</span>
+        </div>`;
+    }).join('');
+  }
+
+  // Cross-checks MDM's own records/duplicates against what CPQ (and
+  // Catalog) are actively quoting. This surfaces a real, already-present
+  // link in the sample data rather than inventing one: MDM's sample
+  // customer duplicate ("Phoenix Convention Center" / "Phoenix Conv.
+  // Ctr.") and its INCOMPLETE product record ("BMS-CORE-002") both match
+  // CPQ's sample quote Q-2026-0041, which uses that exact SKU for that
+  // exact customer. Matching stays deliberately simple (exact SKU match,
+  // first-two-token name match) since this is demo/sample data, not a
+  // production fuzzy-matching pipeline.
+  function firstTwoTokens(name) {
+    return String(name || '').toLowerCase().split(/\s+/).slice(0, 2).join(' ').trim();
+  }
+
+  function renderMdmCrossCheck(all) {
+    const el = document.getElementById('mdmCrossCheck');
+    if (!el) return;
+    const mdmPayload = readDomain('MDM');
+    const cpq = all.find(a => a.meta.key === 'CPQ');
+    const cpqPayload = cpq && cpq.payload;
+    if (!mdmPayload || !cpqPayload || !Array.isArray(cpqPayload.quotes)) {
+      el.innerHTML = '';
+      return;
+    }
+
+    const records = Array.isArray(mdmPayload.records) ? mdmPayload.records : [];
+    const findings = [];
+
+    cpqPayload.quotes.forEach(q => {
+      const qNameKey = firstTwoTokens(q.name);
+      records.forEach(r => {
+        const isRisky = (r.quality != null && r.quality < 85) || (r.duplicates > 0) ||
+          ['DUPLICATE', 'INCOMPLETE', 'STALE'].includes(String(r.status || '').toUpperCase());
+        if (!isRisky) return;
+
+        // Product-domain match: MDM record name equals a SKU on the quote.
+        const skuMatch = r.domain === 'Product' && Array.isArray(q.skus) && q.skus.includes(r.name);
+
+        // Customer-domain match: first two tokens of the MDM record name
+        // appear in the quote name (e.g. "phoenix convention" in
+        // "Phoenix Convention Center — Full BMS").
+        const nameMatch = r.domain === 'Customer' && qNameKey && String(q.name || '').toLowerCase().includes(qNameKey);
+
+        if (skuMatch || nameMatch) {
+          findings.push({
+            quote: q, record: r,
+            reason: skuMatch
+              ? `SKU ${r.name} on this quote is flagged ${r.status} in MDM (quality ${r.quality})`
+              : `Customer record for this quote is flagged ${r.status} in MDM (quality ${r.quality})`
+          });
+        }
+      });
+    });
+
+    if (!findings.length) {
+      el.innerHTML = '';
+      return;
+    }
+
+    el.innerHTML = `
+      <div class="cross-check-banner">
+        <div class="cc-title">⚠ MDM DATA QUALITY RISK — LIVE QUOTE EXPOSURE</div>
+        ${findings.map(f => `
+          <div class="cc-item">
+            Quote <b>${escapeHtml(f.quote.quote_id)}</b> — "${escapeHtml(f.quote.name)}" ($${Number(f.quote.net_value || 0).toLocaleString()}):
+            ${escapeHtml(f.reason)}. Resolve in the
+            <a href="/html/war-rooms/mdm/mdm-war-room.html" style="color:var(--high)">MDM war room</a> before this quote converts to a Sales Order.
+          </div>
+        `).join('')}
+      </div>`;
+  }
+
+  function metricsFor(meta, payload) {
+    const out = [];
+    if (payload && payload.kpis) {
+      Object.entries(payload.kpis).forEach(([k, v]) => {
+        const label = k.replace(/_/g, ' ');
+        const isMoney = /value|amount|disbursed/.test(k);
+        out.push({ label, value: isMoney ? '$' + Number(v || 0).toLocaleString() : v });
+      });
+    }
+    return out;
+  }
+
+  // Catalog's model has no dollar KPI directly — compute revenue-at-risk
+  // from the actual products array (low-stock / compliance-flagged / EOL
+  // items) rather than inventing a figure, so this stays grounded in the
+  // same data the war room itself reads.
+  function catalogExposure(payload) {
+    if (!payload || !Array.isArray(payload.products)) return 0;
+    const flags = payload.attention_flags || {};
+    const flaggedSkus = new Set([
+      ...(flags.low_stock || []).map(p => p.sku),
+      ...(flags.compliance || []).map(p => p.sku)
+    ]);
+    return payload.products.reduce((sum, p) => {
+      const atRisk = flaggedSkus.has(p.sku) || ['EOL Announced', 'End of Life'].includes(p.stage);
+      return sum + (atRisk ? Number(p.list_price || 0) * Number(p.stock_qty || 0) : 0);
+    }, 0);
+  }
+
+  function exposureFor(meta, payload) {
+    if (!payload) return 0;
+    if (meta.key === 'CATALOG') return catalogExposure(payload);
+    const kpis = payload.kpis || {};
+    return meta.moneyKeys.reduce((sum, k) => sum + Number(kpis[k] || 0), 0);
+  }
+
+  function renderFlow(all) {
+    const chain = document.getElementById('flowChain');
+    chain.innerHTML = all.map((a, i) => {
+      const node = `<div class="flow-node${a.payload ? ' live' : ''}" style="border-color:${a.meta.color}">${escapeHtml(a.meta.label)}</div>`;
+      return i < all.length - 1 ? node + '<span class="flow-arrow">&rarr;</span>' : node;
+    }).join('');
+  }
+
+  function renderCoverage(all) {
+    const list = document.getElementById('coverageList');
+    list.innerHTML = all.map(a => `
+      <div class="coverage-row">
+        <span class="mark ${a.payload ? 'ok' : 'pending'}">${a.payload ? '✓' : '○'}</span>
+        <span>${escapeHtml(a.meta.label)} <span style="color:var(--muted)">— ${escapeHtml(a.meta.module)}</span></span>
+      </div>
+    `).join('') + `
+      <div class="coverage-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+        <span>CROSS-SYSTEM FLOW: Commerce &rarr; CRM/C4C &rarr; CPQ &rarr; SD</span>
+      </div>`;
+  }
+
+  function render() {
+    const all = collectAll();
+    renderFlow(all);
+    renderCoverage(all);
+    renderMdmCrossCheck(all);
+    renderSupportSignals(collectSupport());
+
+    const list = document.getElementById('alertList');
+    list.innerHTML = all.map(a => {
+      if (!a.payload) {
+        return `
+          <div class="alert-card empty-domain" style="border-left-color:${a.meta.color}">
+            <div class="alert-head">
+              <span class="alert-domain">${escapeHtml(a.meta.label)}</span>
+              <span class="alert-ts">no relay yet</span>
+            </div>
+            <div class="alert-module">${escapeHtml(a.meta.module)}</div>
+          </div>`;
+      }
+      const ageMs = Date.now() - tsMs(a.payload);
+      const isStale = ageMs > STALE_MS;
+      const metrics = metricsFor(a.meta, a.payload);
+      const exposure = exposureFor(a.meta, a.payload);
+      return `
+        <div class="alert-card${isStale ? ' stale' : ''}" style="border-left-color:${a.meta.color}">
+          <div class="alert-head">
+            <span class="alert-domain">${escapeHtml(a.meta.label)}</span>
+            <span class="alert-ts">${a.payload.timestamp ? new Date(a.payload.timestamp).toLocaleString() : 'no timestamp'}${isStale ? ' — STALE' : ''}</span>
+          </div>
+          <div class="alert-module">${escapeHtml(a.meta.module)}${exposure ? ' · exposure $' + Number(exposure).toLocaleString() : ''}</div>
+          <div class="alert-body">
+            ${metrics.map(m => `<div><div class="metric-val">${escapeHtml(m.value)}</div><div class="metric-lbl">${escapeHtml(m.label)}</div></div>`).join('')}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function severityFor(all, totalExposure) {
+    const o2c = all.find(a => a.meta.key === 'O2C');
+    const cpq = all.find(a => a.meta.key === 'CPQ');
+    const creditHolds = o2c && o2c.payload && o2c.payload.kpis ? Number(o2c.payload.kpis.credit_holds || 0) : 0;
+    const slaBreaches = cpq && cpq.payload && cpq.payload.kpis ? Number(cpq.payload.kpis.sla_breach_count || 0) : 0;
+    if (totalExposure >= 1000000 || creditHolds > 0) return 'CRITICAL';
+    if (totalExposure >= 250000 || slaBreaches > 0) return 'HIGH';
+    if (totalExposure > 0) return 'MODERATE';
+    return 'UNKNOWN';
+  }
+
+  function relayToExec() {
+    const all = collectAll();
+    const support = collectSupport();
+    const activeCount = all.filter(a => !!a.payload).length;
+    const totalExposure = all.reduce((sum, a) => sum + exposureFor(a.meta, a.payload), 0);
+    const combined = {
+      vertical: 'sap',
+      timestamp: Date.now(),
+      domain_count: activeCount,
+      total_exposure: totalExposure,
+      severity: severityFor(all, totalExposure),
+      domains: all.map(a => ({
+        domain: a.meta.key,
+        label: a.meta.label,
+        module: a.meta.module,
+        exposure: exposureFor(a.meta, a.payload),
+        payload: a.payload
+      })),
+      support: support.map(s => ({
+        domain: s.meta.key,
+        label: s.meta.label,
+        module: s.meta.module,
+        payload: s.payload
+      }))
+    };
+    const json = JSON.stringify(combined);
+    const EXEC_KEY = 'TSM_SAP_EXEC_RELAY';
+    try { sessionStorage.setItem(EXEC_KEY, json); } catch (e) { /* noop */ }
+    try { localStorage.setItem(EXEC_KEY, json); } catch (e) { /* noop */ }
+    showToast('Relayed ' + activeCount + ' of ' + all.length + ' SAP stage(s) to Executive Portal.');
+  }
+
+  document.getElementById('relayExecBtn').addEventListener('click', relayToExec);
+  document.getElementById('refreshBtn').addEventListener('click', render);
+  window.addEventListener('storage', e => {
+    if (DOMAINS.some(d => e.key === ('TSM_' + d.key + '_RELAY'))) render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
