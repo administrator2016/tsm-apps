@@ -61,5 +61,265 @@
     "expectedSkills": ["risk identification", "stakeholder communication", "regulatory awareness"],
     "evidencePrompt": "Use your RE War Room experience — describe the escalation path the way you would in that tool.",
     "scoring": { "technical": 25, "reasoning": 25, "communication": 25, "businessImpact": 25 }
+  },
+
+  {
+    "id": "rcm-k1",
+    "sector": "healthcare-rcm",
+    "competency": "Revenue cycle fundamentals",
+    "difficulty": "foundational",
+    "type": "knowledge",
+    "question": "Walk me through the major stages of the healthcare revenue cycle from patient registration through final payment.",
+    "expectedSkills": ["revenue cycle fundamentals", "claims processing", "documentation"],
+    "evidencePrompt": "Use your CRCR Study Mode or RCM training material where applicable.",
+    "scoring": { "technical": 25, "reasoning": 25, "communication": 25, "businessImpact": 25 }
+  },
+  {
+    "id": "rcm-k2",
+    "sector": "healthcare-rcm",
+    "competency": "Denial management",
+    "difficulty": "intermediate",
+    "type": "knowledge",
+    "question": "What is the difference between identifying a denial, correcting a denial, and preventing the denial from recurring?",
+    "expectedSkills": ["denial management", "root cause analysis", "process improvement"],
+    "evidencePrompt": "Use the HC Denial War Room to explain how you would move from an individual denial to a systemic pattern.",
+    "scoring": { "technical": 25, "reasoning": 25, "communication": 25, "businessImpact": 25 }
+  },
+  {
+    "id": "rcm-s1",
+    "sector": "healthcare-rcm",
+    "competency": "Denial management",
+    "difficulty": "intermediate",
+    "type": "scenario",
+    "question": "A high-dollar claim is denied for missing documentation. Walk me through how you would investigate, recover the claim, and determine whether the issue could affect other claims.",
+    "expectedSkills": ["denial management", "documentation", "root cause analysis", "prioritization"],
+    "evidencePrompt": "Use the HC Denial War Room workflow as evidence if applicable.",
+    "scoring": { "technical": 25, "reasoning": 30, "communication": 20, "businessImpact": 25 }
+  },
+  {
+    "id": "rcm-s2",
+    "sector": "healthcare-rcm",
+    "competency": "Accounts receivable",
+    "difficulty": "intermediate",
+    "type": "scenario",
+    "question": "Your aging AR report shows a growing bucket of claims approaching timely filing limits. What do you do first, and how do you prioritize the recovery queue?",
+    "expectedSkills": ["accounts receivable", "prioritization", "risk identification", "business impact"],
+    "evidencePrompt": "Use your Revenue Recovery workflows or TSM AR analysis where applicable.",
+    "scoring": { "technical": 20, "reasoning": 30, "communication": 20, "businessImpact": 30 }
+  },
+  {
+    "id": "rcm-b1",
+    "sector": "healthcare-rcm",
+    "competency": "Prioritization",
+    "difficulty": "advanced",
+    "type": "business",
+    "question": "You have 1,000 open claims but limited recovery capacity. How would you build a prioritized work queue using aging, dollar value, payer behavior, denial reason, and probability of recovery?",
+    "expectedSkills": ["prioritization", "accounts receivable", "payer analysis", "business impact"],
+    "evidencePrompt": "Describe how your RCM War Room would turn the population into an actionable recovery queue.",
+    "scoring": { "technical": 20, "reasoning": 30, "communication": 20, "businessImpact": 30 }
+  },
+  {
+    "id": "rcm-b2",
+    "sector": "healthcare-rcm",
+    "competency": "Revenue leakage",
+    "difficulty": "advanced",
+    "type": "business",
+    "question": "Leadership asks why reimbursement is declining even though claim volume is stable. How would you investigate the problem and present the findings?",
+    "expectedSkills": ["root cause analysis", "payer analysis", "business impact", "stakeholder communication"],
+    "evidencePrompt": "Use the Revenue Leakage and Denial War Room concepts where applicable.",
+    "scoring": { "technical": 20, "reasoning": 30, "communication": 20, "businessImpact": 30 }
+  },
+
+  {
+    "id": "insurance-k1",
+    "sector": "insurance",
+    "competency": "Insurance fundamentals",
+    "difficulty": "foundational",
+    "type": "knowledge",
+    "question": "Walk me through the basic lifecycle of an insurance claim from first notice of loss through settlement or closure.",
+    "expectedSkills": ["insurance fundamentals", "claims processing", "documentation"],
+    "scoring": { "technical": 25, "reasoning": 25, "communication": 25, "businessImpact": 25 }
+  },
+  {
+    "id": "insurance-k2",
+    "sector": "insurance",
+    "competency": "Policy interpretation",
+    "difficulty": "intermediate",
+    "type": "knowledge",
+    "question": "When reviewing a claim, how do you determine whether the reported loss appears consistent with the policy terms and available documentation?",
+    "expectedSkills": ["policy interpretation", "risk identification", "documentation"],
+    "evidencePrompt": "Use Claims Pro or Insurance War Room concepts where applicable.",
+    "scoring": { "technical": 25, "reasoning": 25, "communication": 25, "businessImpact": 25 }
+  },
+  {
+    "id": "insurance-s1",
+    "sector": "insurance",
+    "competency": "Exception handling",
+    "difficulty": "intermediate",
+    "type": "scenario",
+    "question": "A claim contains conflicting documentation about the date and circumstances of the loss. How would you investigate and determine the next action?",
+    "expectedSkills": ["documentation", "exception handling", "risk identification", "root cause analysis"],
+    "scoring": { "technical": 25, "reasoning": 30, "communication": 20, "businessImpact": 25 }
+  },
+  {
+    "id": "insurance-s2",
+    "sector": "insurance",
+    "competency": "Claims processing",
+    "difficulty": "intermediate",
+    "type": "scenario",
+    "question": "A high-severity claim has been sitting in an exception queue while the customer continues requesting updates. How do you balance investigation, escalation, and customer communication?",
+    "expectedSkills": ["claims processing", "customer communication", "prioritization", "risk identification"],
+    "scoring": { "technical": 20, "reasoning": 30, "communication": 25, "businessImpact": 25 }
+  },
+  {
+    "id": "insurance-b1",
+    "sector": "insurance",
+    "competency": "Risk identification",
+    "difficulty": "advanced",
+    "type": "business",
+    "question": "You identify a pattern of similar claims with unusual documentation. How would you determine whether this is an isolated exception or a broader risk signal?",
+    "expectedSkills": ["risk identification", "root cause analysis", "data interpretation", "business impact"],
+    "evidencePrompt": "Describe how an Insurance War Room could surface and prioritize the pattern.",
+    "scoring": { "technical": 20, "reasoning": 30, "communication": 20, "businessImpact": 30 }
+  },
+  {
+    "id": "insurance-b2",
+    "sector": "insurance",
+    "competency": "Compliance",
+    "difficulty": "advanced",
+    "type": "business",
+    "question": "A potential compliance exception is identified in a claim workflow. What information would you gather, who would you escalate to, and how would you preserve the audit trail?",
+    "expectedSkills": ["compliance", "documentation", "stakeholder communication", "risk identification"],
+    "scoring": { "technical": 25, "reasoning": 25, "communication": 25, "businessImpact": 25 }
+  },
+
+  {
+    "id": "finops-k1",
+    "sector": "finops-ai",
+    "competency": "Operational analysis",
+    "difficulty": "foundational",
+    "type": "knowledge",
+    "question": "How do you distinguish a process problem, a people problem, a technology problem, and a data problem when analyzing an operational issue?",
+    "expectedSkills": ["operational analysis", "root cause analysis", "systems thinking"],
+    "scoring": { "technical": 20, "reasoning": 35, "communication": 20, "businessImpact": 25 }
+  },
+  {
+    "id": "finops-k2",
+    "sector": "finops-ai",
+    "competency": "AI workflow design",
+    "difficulty": "intermediate",
+    "type": "knowledge",
+    "question": "What factors would you evaluate before recommending that an organization automate a manual business process with AI?",
+    "expectedSkills": ["AI workflow design", "automation", "risk identification", "business impact"],
+    "evidencePrompt": "Use the TSM Operational Mesh as an example of how you would connect detection, analysis, recommendation, and decision.",
+    "scoring": { "technical": 20, "reasoning": 30, "communication": 20, "businessImpact": 30 }
+  },
+  {
+    "id": "finops-s1",
+    "sector": "finops-ai",
+    "competency": "Process improvement",
+    "difficulty": "intermediate",
+    "type": "scenario",
+    "question": "A team spends several hours each week manually moving information between systems and correcting errors. How would you determine whether the process should be automated?",
+    "expectedSkills": ["process improvement", "automation", "data interpretation", "business impact"],
+    "evidencePrompt": "Use a TSM workflow as evidence if applicable.",
+    "scoring": { "technical": 20, "reasoning": 30, "communication": 20, "businessImpact": 30 }
+  },
+  {
+    "id": "finops-s2",
+    "sector": "finops-ai",
+    "competency": "Risk identification",
+    "difficulty": "intermediate",
+    "type": "scenario",
+    "question": "An AI-assisted workflow produces a recommendation that conflicts with the source data. What do you check before allowing the recommendation to influence a business decision?",
+    "expectedSkills": ["risk identification", "data interpretation", "AI workflow design", "documentation"],
+    "scoring": { "technical": 25, "reasoning": 30, "communication": 20, "businessImpact": 25 }
+  },
+  {
+    "id": "finops-b1",
+    "sector": "finops-ai",
+    "competency": "Business impact",
+    "difficulty": "advanced",
+    "type": "business",
+    "question": "Leadership gives you three automation opportunities but resources are available for only one. How would you rank them and build the business case?",
+    "expectedSkills": ["prioritization", "business impact", "financial analysis", "automation"],
+    "scoring": { "technical": 15, "reasoning": 30, "communication": 25, "businessImpact": 30 }
+  },
+  {
+    "id": "finops-b2",
+    "sector": "finops-ai",
+    "competency": "Executive decision support",
+    "difficulty": "advanced",
+    "type": "business",
+    "question": "An operational issue has moderate financial exposure today but could become a major problem if ignored. How would you communicate the risk and recommended course of action to an executive?",
+    "expectedSkills": ["business impact", "stakeholder communication", "risk identification", "prioritization"],
+    "evidencePrompt": "Use the TSM War Room → Strategist → Executive Portal pattern as an example without overstating production experience.",
+    "scoring": { "technical": 15, "reasoning": 30, "communication": 25, "businessImpact": 30 }
+  },
+
+  {
+    "id": "automation-k1",
+    "sector": "automation-it",
+    "competency": "IT support fundamentals",
+    "difficulty": "foundational",
+    "type": "knowledge",
+    "question": "Walk me through your troubleshooting process when a user reports that an application they need is not working.",
+    "expectedSkills": ["IT support fundamentals", "troubleshooting", "documentation"],
+    "evidencePrompt": "Use your L1 Ticket Copilot workflow where applicable.",
+    "scoring": { "technical": 30, "reasoning": 30, "communication": 20, "businessImpact": 20 }
+  },
+  {
+    "id": "automation-k2",
+    "sector": "automation-it",
+    "competency": "Incident management",
+    "difficulty": "intermediate",
+    "type": "knowledge",
+    "question": "What information should be captured in an incident record so that another technician or support team can continue the investigation without repeating your work?",
+    "expectedSkills": ["incident management", "documentation", "escalation", "communication"],
+    "evidencePrompt": "Use your L1 escalation package workflow as evidence where applicable.",
+    "scoring": { "technical": 25, "reasoning": 25, "communication": 25, "businessImpact": 25 }
+  },
+  {
+    "id": "automation-s1",
+    "sector": "automation-it",
+    "competency": "Troubleshooting",
+    "difficulty": "intermediate",
+    "type": "scenario",
+    "question": "A user cannot access a shared drive that worked yesterday. How would you determine whether the issue is with the user's permissions, their endpoint, the network, or the file service?",
+    "expectedSkills": ["troubleshooting", "root cause analysis", "systems thinking", "escalation"],
+    "evidencePrompt": "Use the L1 Ticket Copilot shared-drive scenario if applicable.",
+    "scoring": { "technical": 30, "reasoning": 30, "communication": 20, "businessImpact": 20 }
+  },
+  {
+    "id": "automation-s2",
+    "sector": "automation-it",
+    "competency": "Automation",
+    "difficulty": "intermediate",
+    "type": "scenario",
+    "question": "You notice the same incident occurring repeatedly and technicians are performing the same manual diagnostic steps each time. How would you evaluate whether automation is appropriate?",
+    "expectedSkills": ["automation", "root cause analysis", "process improvement", "business impact"],
+    "evidencePrompt": "Use a TSM automation workflow as evidence where applicable.",
+    "scoring": { "technical": 20, "reasoning": 30, "communication": 20, "businessImpact": 30 }
+  },
+  {
+    "id": "automation-b1",
+    "sector": "automation-it",
+    "competency": "Business impact",
+    "difficulty": "advanced",
+    "type": "business",
+    "question": "A recurring IT issue affects a production team and costs several hours of productivity each week. How would you decide whether to fix, automate, escalate, or redesign the process?",
+    "expectedSkills": ["prioritization", "business impact", "root cause analysis", "automation"],
+    "scoring": { "technical": 20, "reasoning": 30, "communication": 20, "businessImpact": 30 }
+  },
+  {
+    "id": "automation-b2",
+    "sector": "automation-it",
+    "competency": "Systems thinking",
+    "difficulty": "advanced",
+    "type": "business",
+    "question": "A supplier or system dependency begins showing disruption signals that could affect production. How would you move from detection to impact assessment, escalation, and an executive recommendation?",
+    "expectedSkills": ["systems thinking", "risk identification", "business impact", "stakeholder communication"],
+    "evidencePrompt": "Use the Honeywell supplier-shutdown, BESS, or Advanced Detection War Room concepts as evidence, clearly distinguishing simulation from production experience.",
+    "scoring": { "technical": 20, "reasoning": 30, "communication": 20, "businessImpact": 30 }
   }
 ]

@@ -30,5 +30,158 @@
       "RE War Room",
       "TSM projects"
     ]
+  },
+
+  "healthcare-rcm": {
+    "name": "Healthcare Revenue Cycle Management",
+    "roles": [
+      { "id": "rcm-analyst", "name": "RCM Analyst" },
+      { "id": "denial-recovery", "name": "Denial Recovery Specialist" },
+      { "id": "revenue-cycle-specialist", "name": "Revenue Cycle Specialist" },
+      { "id": "rcm-operations", "name": "RCM Operations Analyst" }
+    ],
+    "competencies": [
+      "Revenue cycle fundamentals",
+      "Claims processing",
+      "Denial management",
+      "Accounts receivable",
+      "Payer analysis",
+      "Root cause analysis",
+      "Prioritization",
+      "Documentation",
+      "Compliance",
+      "Stakeholder communication"
+    ],
+    "scenarios": [
+      "High-dollar claim denial",
+      "Aging AR backlog",
+      "Repeated payer denial pattern",
+      "Missing documentation",
+      "Authorization-related denial",
+      "Revenue leakage",
+      "Escalated patient balance",
+      "Payer underpayment"
+    ],
+    "evidenceSources": [
+      "HC Denial War Room",
+      "CRCR Study Mode",
+      "Revenue Recovery workflows",
+      "TSM projects"
+    ]
+  },
+
+  "insurance": {
+    "name": "Insurance Operations",
+    "roles": [
+      { "id": "claims-analyst", "name": "Claims Analyst" },
+      { "id": "insurance-operations", "name": "Insurance Operations Analyst" },
+      { "id": "claims-specialist", "name": "Claims Specialist" },
+      { "id": "insurance-tech-ops", "name": "Insurance Technology / Operations" }
+    ],
+    "competencies": [
+      "Insurance fundamentals",
+      "Claims processing",
+      "Policy interpretation",
+      "Documentation",
+      "Risk identification",
+      "Compliance",
+      "Exception handling",
+      "Root cause analysis",
+      "Customer communication",
+      "Technology"
+    ],
+    "scenarios": [
+      "Coverage discrepancy",
+      "Claim documentation gap",
+      "Suspicious claim pattern",
+      "Policy exception",
+      "High-severity claim",
+      "Customer escalation",
+      "Processing backlog",
+      "Compliance exception"
+    ],
+    "evidenceSources": [
+      "Insurance War Room",
+      "Claims Pro",
+      "CE Command",
+      "TSM projects"
+    ]
+  },
+
+  "finops-ai": {
+    "name": "FinOps / AI / Career Operations",
+    "roles": [
+      { "id": "operations-analyst", "name": "Operations Analyst" },
+      { "id": "ai-operations-analyst", "name": "AI Operations Analyst" },
+      { "id": "business-analyst", "name": "Business Analyst" },
+      { "id": "finops-analyst", "name": "FinOps Analyst" }
+    ],
+    "competencies": [
+      "Operational analysis",
+      "Process improvement",
+      "Financial analysis",
+      "AI workflow design",
+      "Automation",
+      "Data interpretation",
+      "Risk identification",
+      "Prioritization",
+      "Stakeholder communication",
+      "Business impact"
+    ],
+    "scenarios": [
+      "Manual process bottleneck",
+      "Operational cost increase",
+      "Automation opportunity",
+      "Data quality issue",
+      "Process exception",
+      "AI workflow failure",
+      "Competing operational priorities",
+      "Executive decision request"
+    ],
+    "evidenceSources": [
+      "FinOps Suite",
+      "TSM Operational Mesh",
+      "TSM projects",
+      "Career Command Center"
+    ]
+  },
+
+  "automation-it": {
+    "name": "Automation / IT Operations",
+    "roles": [
+      { "id": "l1-support", "name": "L1 IT Support Technician" },
+      { "id": "automation-ops", "name": "Automation Operations Analyst" },
+      { "id": "solutions-implementation", "name": "Solutions / Implementation Analyst" },
+      { "id": "it-operations", "name": "IT Operations Analyst" }
+    ],
+    "competencies": [
+      "IT support fundamentals",
+      "Incident management",
+      "Troubleshooting",
+      "Root cause analysis",
+      "Escalation",
+      "Automation",
+      "Systems thinking",
+      "Business impact",
+      "Documentation",
+      "Stakeholder communication"
+    ],
+    "scenarios": [
+      "User access failure",
+      "Network connectivity issue",
+      "Endpoint failure",
+      "Application outage",
+      "Recurring incident",
+      "Automation opportunity",
+      "Supplier or system dependency",
+      "Production-impacting incident"
+    ],
+    "evidenceSources": [
+      "L1 Ticket Copilot",
+      "Automation War Rooms",
+      "Honeywell scenarios",
+      "TSM Operational Mesh",
+      "TSM projects"
+    ]
   }
 }

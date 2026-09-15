@@ -1392,6 +1392,7 @@ nav {
       <div class="assign-item assigned"><input type="checkbox" checked> HC Denial War Room</div>
       <div class="assign-item"><input type="checkbox"> CRC Practice Hub</div>
       <div class="assign-item"><input type="checkbox"> CRCR Scenarios</div>
+      <div class="assign-item"><input type="checkbox" id="healthcareRcmInterviewPrepCheckbox" onchange="handleInterviewPrepToggle('healthcare-rcm', this)"> Interview Prep</div>
     </div>
     <div class="assign-cell">
       <div class="assign-sector">INSURANCE</div>
@@ -1399,6 +1400,7 @@ nav {
       <div class="assign-item"><input type="checkbox"> Claims Pro</div>
       <div class="assign-item"><input type="checkbox"> CE Command</div>
       <div class="assign-item"><input type="checkbox"> CE Study Prep</div>
+      <div class="assign-item"><input type="checkbox" id="insuranceInterviewPrepCheckbox" onchange="handleInterviewPrepToggle('insurance', this)"> Interview Prep</div>
     </div>
     <div class="assign-cell">
       <div class="assign-sector">REAL ESTATE · MORTGAGE</div>
@@ -1412,11 +1414,20 @@ nav {
       <div class="assign-item"><input type="checkbox" id="mortgageInterviewPrepCheckbox" onchange="handleMortgageInterviewPrepToggle(this)"> Interview Prep</div>
     </div>
     <div class="assign-cell">
+      <div class="assign-sector">AUTOMATION · IT</div>
+      <div class="assign-item"><input type="checkbox"> L1 Support Fundamentals</div>
+      <div class="assign-item"><input type="checkbox"> Incident Management</div>
+      <div class="assign-item"><input type="checkbox"> Automation Practice</div>
+      <div class="assign-item"><input type="checkbox"> Systems Troubleshooting</div>
+      <div class="assign-item"><input type="checkbox" id="automationInterviewPrepCheckbox" onchange="handleInterviewPrepToggle('automation-it', this)"> Interview Prep</div>
+    </div>
+    <div class="assign-cell">
       <div class="assign-sector">FINOPS · AI · CAREER</div>
       <div class="assign-item"><input type="checkbox"> Accounting Study Guide</div>
       <div class="assign-item"><input type="checkbox"> FinOps Interview Prep</div>
       <div class="assign-item"><input type="checkbox"> AB-100 Command</div>
       <div class="assign-item assigned"><input type="checkbox" checked> Interview Prep</div>
+      <div class="assign-item"><input type="checkbox" id="finopsInterviewPrepCheckbox" onchange="handleInterviewPrepToggle('finops-ai', this)"> Interview Prep</div>
     </div>
   </div>
 
@@ -7083,7 +7094,7 @@ function selectCareerCandidate(candidateId) {
 //    loads the real plan for the mortgage sector; other sectors don't
 //    have this wired up yet.
 //
-async function handleMortgageInterviewPrepToggle(checkbox) {
+async function handleInterviewPrepToggle(sectorId, checkbox) {
   const panel = document.getElementById('mortgageInterviewIntel');
   if (!panel) return;
 
@@ -7093,22 +7104,245 @@ async function handleMortgageInterviewPrepToggle(checkbox) {
   }
 
   panel.style.display = 'block';
-  panel.innerHTML = '<div style="color:var(--text3);font-size:11px;">Loading interview plan…</div>';
+  panel.innerHTML =
+    '<div style="color:var(--text3);font-size:11px;">Loading interview plan…</div>';
 
   try {
-    const res = await fetch('/api/interview/sectors/mortgage/plan?roleId=ops-analyst');
+    const roleId = getInterviewRoleId(sectorId);
+
+    if (!roleId) {
+      throw new Error('No interview role mapped for ' + sectorId);
+    }
+
+    const res = await fetch(
+      '/api/interview/sectors/' +
+      encodeURIComponent(sectorId) +
+      '/plan?roleId=' +
+      encodeURIComponent(roleId)
+    );
+
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || `Interview plan request failed (${res.status})`);
+      throw new Error(
+        data.error || `Interview plan request failed (${res.status})`
+      );
     }
+
     const data = await res.json();
-    renderMortgageInterviewIntel(data.plan);
+
+    renderInterviewIntel(data.plan, sectorId);
+
   } catch (e) {
     console.warn('Interview plan load failed:', e);
-    panel.innerHTML = '<div style="color:var(--red);font-size:11px;">Unable to load interview plan — check server connection.</div>';
+
+    panel.innerHTML =
+      '<div style="color:var(--red);font-size:11px;">' +
+      'Unable to load interview plan — check server connection.' +
+      '</div>';
   }
 }
 
+function getInterviewRoleId(sectorId) {
+  const roleMap = {
+    'mortgage': 'ops-analyst',
+    'healthcare-rcm': 'rcm-analyst',
+    'insurance': 'claims-analyst',
+    'finops-ai': 'operations-analyst',
+    'automation-it': 'l1-support'
+  };
+
+  return roleMap[sectorId] || null;
+}
+
+function getInterviewSectorLabel(sectorId) {
+  const labels = {
+    'mortgage': 'REAL ESTATE · MORTGAGE',
+    'healthcare-rcm': 'HEALTHCARE RCM',
+    'insurance': 'INSURANCE',
+    'finops-ai': 'FINOPS · AI · CAREER',
+    'automation-it': 'AUTOMATION · IT'
+  };
+
+  return labels[sectorId] || sectorId;
+}
+
+function renderInterviewIntel(plan, sectorId) {
+  const panel = document.getElementById('mortgageInterviewIntel');
+  if (!panel || !plan) return;
+
+  const levelLabel = {
+    knowledge: 'KNOWLEDGE',
+    scenario: 'SCENARIO',
+    business: 'BUSINESS / EXECUTIVE'
+  };
+
+  const grouped = {};
+
+  (plan.questions || []).forEach(q => {
+    (grouped[q.type] = grouped[q.type] || []).push(q);
+  });
+
+  const questionsHtml = Object.keys(levelLabel).map(level => {
+    const qs = grouped[level] || [];
+
+    if (!qs.length) return '';
+
+    return `
+      <div style="margin-top:.6rem;">
+        <div style="font-size:9px;color:var(--text3);letter-spacing:.05em;">
+          ${levelLabel[level]}
+        </div>
+
+        ${qs.map(q => `
+          <div style="font-size:11px;color:var(--text);padding:.3rem 0;border-bottom:1px solid var(--border);">
+            ${escapeHtml(q.question)}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }).join('');
+
+  const selectedCandidateId = window._selectedCandidateId;
+  const selectedCandidateName = window._selectedCandidateName;
+
+  panel.innerHTML = `
+    <div style="font-size:9px;color:var(--text3);letter-spacing:.05em;margin-bottom:.3rem;">
+      INTERVIEW READY
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.5rem;">
+      <div>
+        <span style="font-size:9px;color:var(--text3);">CANDIDATE</span><br>
+        <span style="font-size:12px;color:var(--text);font-weight:700;">
+          ${selectedCandidateId
+            ? escapeHtml(selectedCandidateName)
+            : 'No candidate selected'}
+        </span>
+      </div>
+
+      <div style="text-align:right;">
+        <span style="font-size:9px;color:var(--text3);">SECTOR</span><br>
+        <span style="font-size:12px;color:var(--text);font-weight:700;">
+          ${escapeHtml(getInterviewSectorLabel(sectorId))}
+        </span>
+      </div>
+    </div>
+
+    <div style="font-size:9px;color:var(--text3);margin-bottom:.5rem;">
+      ${selectedCandidateId
+        ? `Candidate ID: ${escapeHtml(selectedCandidateId)}`
+        : 'Select a candidate from Candidate Registry before starting practice.'}
+    </div>
+
+    <div style="text-align:right;margin-bottom:.5rem;">
+      <span style="font-size:9px;color:var(--text3);">TARGET ROLE</span><br>
+      <span style="font-size:12px;color:var(--text);font-weight:700;">
+        ${escapeHtml(plan.role ? plan.role.name : 'Interview Role')}
+      </span>
+    </div>
+
+    <div style="text-align:right;margin-bottom:.5rem;">
+      <span style="font-size:9px;color:var(--text3);">READINESS</span><br>
+      <span style="font-size:12px;color:var(--amber);">
+        Not yet assessed
+      </span>
+    </div>
+
+    ${questionsHtml}
+
+    <button
+      class="footer-btn"
+      style="margin-top:.8rem;"
+      onclick="startInterviewSession('${sectorId}')">
+      ▶ Start Practice Session
+    </button>
+
+    <div
+      id="mortgageInterviewSessionStatus"
+      style="font-size:10px;color:var(--text3);margin-top:.4rem;">
+    </div>
+  `;
+}
+
+async function startInterviewSession(sectorId) {
+  const status =
+    document.getElementById('mortgageInterviewSessionStatus');
+
+  const candidateId = window._selectedCandidateId;
+  const roleId = getInterviewRoleId(sectorId);
+
+  if (!candidateId) {
+    if (status) {
+      status.innerHTML =
+        '<span style="color:var(--amber);">' +
+        'Select a candidate from Candidate Registry first.' +
+        '</span>';
+    }
+    return;
+  }
+
+  if (!roleId) {
+    if (status) {
+      status.innerHTML =
+        '<span style="color:var(--red);">' +
+        'No interview role mapped for this sector.' +
+        '</span>';
+    }
+    return;
+  }
+
+  if (status) status.textContent = 'Starting session…';
+
+  try {
+    const res = await fetch('/api/interview/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        candidateId,
+        sectorId,
+        roleId
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(
+        data.error || `Session create failed (${res.status})`
+      );
+    }
+
+    if (status) {
+      status.innerHTML =
+        `Session <span style="color:var(--green);">${escapeHtml(data.session.sessionId)}</span>` +
+        ` started — guided Q&amp;A flow is the next piece to build.`;
+    }
+
+  } catch (e) {
+    console.warn('Interview session create failed:', e);
+
+    if (status) {
+      status.innerHTML =
+        '<span style="color:var(--red);font-size:11px;">' +
+        'Unable to start session — check server connection.' +
+        '</span>';
+    }
+  }
+}
+
+/* Compatibility aliases for the existing Mortgage Interview Prep tests. */
+
+async function handleMortgageInterviewPrepToggle(checkbox) {
+  return handleInterviewPrepToggle('mortgage', checkbox);
+}
+
+function renderMortgageInterviewIntel(plan) {
+  return renderInterviewIntel(plan, 'mortgage');
+}
+
+async function startMortgageInterviewSession() {
+  return startInterviewSession('mortgage');
+}
 function renderMortgageInterviewIntel(plan) {
   const panel = document.getElementById('mortgageInterviewIntel');
   if (!panel || !plan) return;
