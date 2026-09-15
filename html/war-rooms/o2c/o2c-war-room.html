@@ -382,6 +382,14 @@ const O2C_MODEL_FALLBACK = {
       body.innerHTML = '<div class="empty-state">No SLA breaches in current pipeline.</div>';
       return;
     }
+    // Cross-link: a stalled stage here is just a static label with no
+    // backend behind it. Point the reviewer at the war room that actually
+    // owns resolving it — credit/discount stages route to the Approval
+    // Center (Release Strategy analog); other stalls are more likely an
+    // interface/handoff issue, so point those at Integration Hub.
+    const stallLink = stage => stage === 'credit'
+      ? '<div style="margin-top:3px;font-size:10px"><a href="/html/war-rooms/approval/approval-war-room.html" style="color:var(--accent,#4da3ff)">&rarr; Approval Center</a></div>'
+      : '<div style="margin-top:3px;font-size:10px"><a href="/html/war-rooms/integration-hub/integration-hub.html" style="color:var(--accent,#4da3ff)">&rarr; Integration Hub</a></div>';
     let rows = breaches.map(b => `
       <tr>
         <td>${b.order_id}</td>
@@ -389,7 +397,7 @@ const O2C_MODEL_FALLBACK = {
         <td>${b.stage}</td>
         <td>$${Number(b.value || 0).toLocaleString()}</td>
         <td><span class="tag ${b.hours_over > 48 ? 'tag-high' : 'tag-medium'}">+${b.hours_over}H</span></td>
-        <td>${b.notes}</td>
+        <td>${b.notes}${stallLink(b.stage)}</td>
       </tr>`).join('');
     body.innerHTML = `<table>
       <thead><tr><th>ORDER</th><th>CUSTOMER</th><th>STAGE</th><th>VALUE</th><th>OVER SLA</th><th>NOTES</th></tr></thead>

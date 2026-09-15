@@ -168,7 +168,9 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     CRM: 'TSM_CRM_RELAY',
     APPROVAL: 'TSM_APPROVAL_RELAY',
     GOVERNANCE: 'TSM_GOVERNANCE_RELAY',
-    INTEGRATION: 'TSM_INTEGRATION_HUB_RELAY' // fixed: was 'TSM_INTEGRATION_RELAY'
+    INTEGRATION: 'TSM_INTEGRATION_HUB_RELAY', // fixed: was 'TSM_INTEGRATION_RELAY'
+    CATALOG: 'TSM_CATALOG_RELAY',
+    MDM: 'TSM_MDM_RELAY'
   };
 
   // ── BPO's custom evaluator. BPO's payload has no `explain` array;
@@ -201,7 +203,9 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     { key: 'CRM',         label: 'CRM',         tsField: 'ts',          okText: 'CRM: cases and opportunities on track' },
     { key: 'APPROVAL',    label: 'APPROVALS',   tsField: 'timestamp',   okText: 'Approvals: queue clear — no SLA breaches' },
     { key: 'GOVERNANCE',  label: 'GOVERNANCE',  tsField: 'timestamp',   okText: 'Governance: controls passing — no open risks' },
-    { key: 'INTEGRATION', label: 'INTEGRATION', tsField: 'timestamp',   okText: 'Integration Hub: systems and queues nominal' }
+    { key: 'INTEGRATION', label: 'INTEGRATION', tsField: 'timestamp',   okText: 'Integration Hub: systems and queues nominal' },
+    { key: 'CATALOG',     label: 'CATALOG',     tsField: 'timestamp',   okText: 'Catalog: SKUs healthy — no compliance or stock risk' },
+    { key: 'MDM',         label: 'MDM',         tsField: 'timestamp',   okText: 'MDM: master data quality nominal — no duplicates or anomalies' }
   ];
 
   function buildLiveSignal(cfg){

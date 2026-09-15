@@ -405,6 +405,12 @@ tr:hover td{background:rgba(0,255,80,.03)}
       ? '<div><span class="tag tag-ok">COMPATIBLE</span> All selected SKUs are compatible.</div>'
       : '<div><span class="tag tag-high">CONFLICT</span> ' + compat.conflicts.map(c => `${c.sku}: ${c.reason}`).join('; ') + '</div>';
     html += `<div style="margin-top:8px">Discount: <b>${discount.discount_pct}%</b> ${discount.needs_approval ? '<span class="tag tag-medium">NEEDS APPROVAL</span>' : '<span class="tag tag-ok">AUTO-APPROVED</span>'}</div>`;
+    // Cross-link: this "NEEDS APPROVAL" state is a static label today with
+    // no backend behind it. Point at the Approval Center (SAP Release
+    // Strategy analog) rather than pretending the stage resolves itself.
+    if (discount.needs_approval) {
+      html += `<div style="margin-top:4px;font-size:12px"><a href="/html/war-rooms/approval/approval-war-room.html" style="color:var(--accent,#4da3ff)">&rarr; Check Approval Center for release status</a></div>`;
+    }
     if (discount.margin_pct != null) {
       html += `<div style="margin-top:4px">Margin: <b>${discount.margin_pct}%</b> ${discount.below_margin_floor ? '<span class="tag tag-high">BELOW FLOOR</span>' : '<span class="tag tag-ok">OK</span>'}</div>`;
     }
