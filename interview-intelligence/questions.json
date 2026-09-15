@@ -1,0 +1,65 @@
+[
+  {
+    "id": "mortgage-k1",
+    "sector": "mortgage",
+    "competency": "Mortgage fundamentals",
+    "difficulty": "foundational",
+    "type": "knowledge",
+    "question": "What is the difference between pre-qualification and pre-approval in the mortgage process?",
+    "expectedSkills": ["mortgage fundamentals", "loan lifecycle"],
+    "scoring": { "technical": 25, "reasoning": 25, "communication": 25, "businessImpact": 25 }
+  },
+  {
+    "id": "mortgage-k2",
+    "sector": "mortgage",
+    "competency": "Regulatory awareness",
+    "difficulty": "intermediate",
+    "type": "knowledge",
+    "question": "What does TRID (TILA-RESPA Integrated Disclosure) require lenders to provide, and when?",
+    "expectedSkills": ["regulatory awareness", "documentation"],
+    "scoring": { "technical": 25, "reasoning": 25, "communication": 25, "businessImpact": 25 }
+  },
+  {
+    "id": "mortgage-s1",
+    "sector": "mortgage",
+    "competency": "Documentation",
+    "difficulty": "intermediate",
+    "type": "scenario",
+    "question": "A borrower submits pay stubs that don't match the income stated on their application. What do you do?",
+    "expectedSkills": ["documentation", "risk identification", "borrower communication"],
+    "evidencePrompt": "Use your SAFE MLO Exam Prep material on income verification if it's applicable here.",
+    "scoring": { "technical": 25, "reasoning": 25, "communication": 25, "businessImpact": 25 }
+  },
+  {
+    "id": "mortgage-s2",
+    "sector": "mortgage",
+    "competency": "Problem solving",
+    "difficulty": "intermediate",
+    "type": "scenario",
+    "question": "A loan is stuck in underwriting three days past its lock expiration because a condition wasn't cleared. Walk me through how you'd handle it.",
+    "expectedSkills": ["problem solving", "loan lifecycle", "borrower communication"],
+    "evidencePrompt": "If you've handled a similar bottleneck in the RE War Room, use that as your example.",
+    "scoring": { "technical": 25, "reasoning": 25, "communication": 25, "businessImpact": 25 }
+  },
+  {
+    "id": "mortgage-b1",
+    "sector": "mortgage",
+    "competency": "Problem solving",
+    "difficulty": "advanced",
+    "type": "business",
+    "question": "You have five loans in your pipeline all needing attention today, but only time for three. How do you decide which to prioritize, and why?",
+    "expectedSkills": ["prioritization", "business impact", "risk identification"],
+    "scoring": { "technical": 20, "reasoning": 30, "communication": 20, "businessImpact": 30 }
+  },
+  {
+    "id": "mortgage-b2",
+    "sector": "mortgage",
+    "competency": "Risk identification",
+    "difficulty": "advanced",
+    "type": "business",
+    "question": "A processor flags a possible compliance issue with a loan file. Who do you escalate to, and what do you tell them?",
+    "expectedSkills": ["risk identification", "stakeholder communication", "regulatory awareness"],
+    "evidencePrompt": "Use your RE War Room experience — describe the escalation path the way you would in that tool.",
+    "scoring": { "technical": 25, "reasoning": 25, "communication": 25, "businessImpact": 25 }
+  }
+]

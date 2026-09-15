@@ -3005,6 +3005,11 @@ app.use(require('./routes/training-intelligence'));
 // server/candidate-registry-service.js (same MONGODB_URI as tsm-ledger-service.js).
 app.use(require('./routes/candidate-registry'));
 
+// Interview Engine — sectors, plans, interview sessions. Internal-only
+// tool, unguarded like routes/candidate-registry.js (not gated like
+// routes/staffing-engine.js, which carries real employer/fee data).
+app.use(require('./routes/interview-engine'));
+
 // Staffing Engine — employers, job orders, and the submit -> place pipeline
 // that turns a ready candidate from the registry above into an actual paid
 // placement with a server-computed fee. Gated behind requireAnyAuth (unlike

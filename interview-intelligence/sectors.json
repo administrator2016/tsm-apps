@@ -1,0 +1,34 @@
+{
+  "mortgage": {
+    "name": "Real Estate / Mortgage",
+    "roles": [
+      { "id": "mlo", "name": "Mortgage Loan Originator" },
+      { "id": "ops-analyst", "name": "Mortgage Operations Analyst" },
+      { "id": "loan-processor", "name": "Loan Processing Specialist" },
+      { "id": "mortgage-tech-ops", "name": "Mortgage Technology / Operations" }
+    ],
+    "competencies": [
+      "Mortgage fundamentals",
+      "Regulatory awareness",
+      "Loan lifecycle",
+      "Borrower communication",
+      "Documentation",
+      "Risk identification",
+      "Problem solving",
+      "Technology"
+    ],
+    "scenarios": [
+      "Incomplete borrower documentation",
+      "Income verification discrepancy",
+      "Loan processing delay",
+      "Potential compliance issue",
+      "Borrower escalation",
+      "Pipeline backlog"
+    ],
+    "evidenceSources": [
+      "SAFE MLO Exam Prep",
+      "RE War Room",
+      "TSM projects"
+    ]
+  }
+}
