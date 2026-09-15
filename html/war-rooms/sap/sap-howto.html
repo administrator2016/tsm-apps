@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSM | SAP Suite — How-To Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050a0f;--bg2:#0a1020;--bg3:#0d1528;
+  --cyan:#00d4d4;--amber:#f5a623;--green:#22c55e;
+  --red:#ef4444;--purple:#a855f7;--blue:#3b82f6;
+  --orange:#fb923c;--gold:#c9a84c;--text:#e2e8f0;--muted:#64748b;--border:#1e293b;
+  --border2:rgba(251,146,60,.08);--accent3:rgba(251,146,60,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;padding-bottom:60px;}
+a{color:var(--orange);}
+#topnav{background:#020810;border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:10px;height:44px;position:sticky;top:0;z-index:50;}
+#logo-mark{width:32px;height:32px;background:linear-gradient(135deg,var(--orange),#c2410c);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-weight:900;font-size:.7rem;color:#000;flex-shrink:0;}
+#logo-text{font-family:'Orbitron',sans-serif;font-weight:700;font-size:.68rem;letter-spacing:.06em;}
+#logo-sub{font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--muted);}
+.nav-links{margin-left:auto;display:flex;gap:16px;font-family:'JetBrains Mono',monospace;font-size:.55rem;flex-wrap:wrap;}
+.nav-links a{text-decoration:none;color:var(--muted);}
+.nav-links a:hover{color:var(--orange);}
+.wrap{max-width:920px;margin:0 auto;padding:28px 20px;}
+.hero{margin-bottom:26px;}
+.hero h1{font-family:'Orbitron',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:8px;letter-spacing:.02em;}
+.hero p{color:var(--muted);font-size:.85rem;max-width:660px;line-height:1.6;}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 30px;}
+.toc a{font-family:'JetBrains Mono',monospace;font-size:.55rem;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;text-decoration:none;color:var(--text);}
+.toc a:hover{border-color:var(--orange);color:var(--orange);}
+.section{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:16px;scroll-margin-top:56px;}
+.section h2{font-family:'Orbitron',sans-serif;font-size:.8rem;color:var(--orange);letter-spacing:.03em;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.section .tag{font-family:'JetBrains Mono',monospace;font-size:.45rem;color:var(--muted);background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:2px 6px;}
+.section p{font-size:.78rem;line-height:1.65;color:var(--text);margin-bottom:8px;}
+.section ul{margin:8px 0 0 18px;}
+.section li{font-size:.75rem;line-height:1.7;color:var(--muted);}
+.section li b{color:var(--text);}
+.chain{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.chain .node{border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:700;background:var(--bg3);}
+.chain .arrow{color:var(--muted);font-size:.9rem;}
+.how{background:var(--accent3);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--orange);}
+.assist-note{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin:26px 0;}
+.assist-note h2{font-family:'Orbitron',sans-serif;font-size:.8rem;color:var(--orange);margin-bottom:8px;}
+.assist-note p{font-size:.78rem;line-height:1.65;color:var(--text);margin-bottom:6px;}
+@media(max-width:700px){.chain{flex-direction:column;align-items:stretch;}.chain .arrow{transform:rotate(90deg);text-align:center;}}
+</style>
+</head>
+<body data-vertical="sap" data-page-role="strategist">
+
+<div id="topnav">
+  <div id="logo-mark">TSM</div>
+  <div>
+    <div id="logo-text">SAP SUITE — HOW-TO GUIDE</div>
+    <div id="logo-sub">FOR END USERS &middot; WHAT'S HERE &amp; HOW TO GET TO IT</div>
+  </div>
+  <div class="nav-links">
+    <a href="/html/war-rooms/catalog/catalog-war-room.html">Catalog</a>
+    <a href="/html/war-rooms/crm/crm-war-room.html">CRM</a>
+    <a href="/html/war-rooms/cpq/cpq-war-room.html">CPQ</a>
+    <a href="/html/war-rooms/o2c/o2c-war-room.html">O2C</a>
+    <a href="/html/war-rooms/mdm/mdm-war-room.html">MDM</a>
+    <a href="sap-strategist.html">SAP Strategist &rarr;</a>
+    <a href="/html/war-rooms/digital-twin/digital-twin.html">Digital Twin &rarr;</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>What's in the SAP suite, and how to use it</h1>
+    <p>Unlike a single-property vertical, the SAP suite is a <b>sequential business flow</b> — Commerce &rarr; CRM &rarr; CPQ &rarr; SD — not a set of independent domains. Master Data, Approval, Governance, and Integration Hub sit underneath and around that flow rather than inside it. This guide covers each war room, how they relay into the SAP Strategist, and how that connects up into the enterprise-wide Digital Twin.</p>
+  </div>
+
+  <div class="toc">
+    <a href="#chain">The Business Flow</a>
+    <a href="#catalog">Catalog</a>
+    <a href="#crm">CRM</a>
+    <a href="#cpq">CPQ</a>
+    <a href="#o2c">O2C</a>
+    <a href="#support">Approval / Governance / Integration / MDM</a>
+    <a href="#strategist">SAP Strategist</a>
+    <a href="#twin">Digital Twin</a>
+    <a href="#flow">Data &amp; Relay Flow</a>
+    <a href="#value">Why This Matters</a>
+  </div>
+
+  <div class="section" id="chain">
+    <h2>The Business Flow <span class="tag">order-to-cash, not independent demos</span></h2>
+    <p>Each SAP war room represents a real stage in a quote-to-cash process. A problem at one stage — a duplicate customer record, an incomplete product record — can propagate downstream into a live quote or order. The Strategist renders this as a chain, not a grid, because that's how the business actually experiences it.</p>
+    <div class="chain">
+      <div class="node">MDM</div><div class="arrow">&rarr;</div>
+      <div class="node">CATALOG</div><div class="arrow">&rarr;</div>
+      <div class="node">CRM</div><div class="arrow">&rarr;</div>
+      <div class="node">CPQ</div><div class="arrow">&rarr;</div>
+      <div class="node">APPROVAL</div><div class="arrow">&rarr;</div>
+      <div class="node">O2C / SD</div>
+    </div>
+    <div class="how">Governance and Integration Hub don't sit on the chain itself — they watch it. Governance checks controls/risk/audit; Integration Hub monitors the handoffs between stages.</div>
+  </div>
+
+  <div class="section" id="catalog">
+    <h2>Catalog <span class="tag">/html/war-rooms/catalog/catalog-war-room.html</span></h2>
+    <p>Represents SAP Commerce Cloud / Hybris — the product and pricing front end. Tracks SKUs, stock levels, compliance flags, and end-of-life items. This is the front of the SAP chain: bad data here (or in MDM underneath it) is the earliest point a downstream quote can go wrong.</p>
+  </div>
+
+  <div class="section" id="crm">
+    <h2>CRM <span class="tag">/html/war-rooms/crm/crm-war-room.html</span></h2>
+    <p>Represents SAP CRM / C4C — customer and opportunity management. Cases and opportunities flow from here into CPQ once a customer is ready to be quoted.</p>
+  </div>
+
+  <div class="section" id="cpq">
+    <h2>CPQ <span class="tag">/html/war-rooms/cpq/cpq-war-room.html</span></h2>
+    <p>Configure-Price-Quote. Tracks open quotes, pipeline value, discount levels, and SLA breaches. When a discount needs sign-off, the quote is tagged <b>NEEDS APPROVAL</b> — that tag now links straight to the Approval Center instead of being a dead-end label.</p>
+  </div>
+
+  <div class="section" id="o2c">
+    <h2>O2C — SD <span class="tag">/html/war-rooms/o2c/o2c-war-room.html</span></h2>
+    <p>Order-to-Cash / Sales &amp; Distribution. Tracks orders through credit check, fulfillment, shipping, and AR. When an order stalls past its SLA, the breach now links out to whichever war room actually owns fixing it — the Approval Center for a credit-check stall, or Integration Hub for anything that looks like a system/carrier handoff issue.</p>
+  </div>
+
+  <div class="section" id="support">
+    <h2>Approval / Governance / Integration Hub / MDM <span class="tag">supporting engines</span></h2>
+    <ul>
+      <li><b>Approval Center</b> — the real backend behind CPQ's "Approval Workflow (Release Strategy)" and O2C's credit-check stage. Maps to SAP's Release Strategy engine.</li>
+      <li><b>Governance</b> — maps to SAP GRC (controls, risk, audit). Not central to the order-flow narrative, but part of enterprise-readiness coverage.</li>
+      <li><b>Integration Hub</b> — the one place that shows which system-to-system interface actually broke, rather than the chain just going quiet. Maps to SAP PI/PO or CPI monitoring.</li>
+      <li><b>MDM</b> — Master Data Management. The data-quality layer underneath Catalog and CRM. This is where the flagship scenario (see below) originates.</li>
+    </ul>
+  </div>
+
+  <div class="section" id="strategist">
+    <h2>SAP Strategist <span class="tag">sap-strategist.html</span></h2>
+    <p>One aggregator view across Catalog, CRM, CPQ, and O2C, rendered as a left-to-right chain rather than an unordered grid. It surfaces a flagship scenario already present in the sample data: MDM's duplicate customer record ("Phoenix Convention Center" / "Phoenix Conv. Ctr.") and incomplete product record ("BMS-CORE-002") both trace to CPQ's live sample quote <code>Q-2026-0041</code> — a $142K quote flagged <code>needs_approval: true</code>. That's a realistic SAP failure mode: bad master data quietly threatening a live quote, one of the most common real-world SAP pain points.</p>
+    <div class="how">The Strategist links up to Digital Twin (not a separate SAP-only executive portal) — Digital Twin is the genuine top-of-house view; the Strategist is the detail screen a reviewer drills into from there.</div>
+  </div>
+
+  <div class="section" id="twin">
+    <h2>Digital Twin <span class="tag">/html/war-rooms/digital-twin/digital-twin.html</span></h2>
+    <p>The enterprise-wide health aggregator. It already watched BPO, O2C, CPQ, CRM, Approval, Governance, and Integration Hub — it now also watches <b>Catalog</b> and <b>MDM</b>, closing the gap at both ends of the SAP chain: the front-end commerce layer and the data-quality layer underneath everything. Same aggregator pattern as the SAP Strategist, wider scope.</p>
+  </div>
+
+  <div class="section" id="flow">
+    <h2>Data &amp; Relay Flow <span class="tag">how it connects</span></h2>
+    <ul>
+      <li><b>War room &rarr; Strategist/Digital Twin:</b> each war room writes its own domain-scoped relay payload (KPIs, an <code>explain[]</code> array with a per-item <code>severity</code> of <code>high</code>/<code>med</code>/<code>low</code>, and a <code>timestamp</code>) via <code>window.TSM.relay.write(domain, payload)</code>, which lands under a shared storage key from <code>relay.core.js</code>'s <code>RELAY_REGISTRY</code> (e.g. <code>TSM_CATALOG_RELAY</code>, <code>TSM_MDM_RELAY</code>).</li>
+      <li><b>Aggregators just read, never recreate:</b> the SAP Strategist and Digital Twin both read those same relay keys rather than re-deriving the data, so a war room's live analysis shows up in both views without extra wiring.</li>
+      <li><b>Cross-links, not dead ends:</b> stage-stall states (CPQ's "Needs Approval," O2C's SLA breaches) now link directly to the war room that owns resolving them, instead of sitting as static labels.</li>
+    </ul>
+  </div>
+
+  <div class="assist-note" id="value">
+    <h2>Why This Matters</h2>
+    <p>The SAP suite isn't four independent demos plus a dashboard — it's a connected operational intelligence layer: war rooms produce signals, the Strategist and Digital Twin consume them from different vantage points, and stalled stages point to whoever actually owns the fix. The point isn't to recreate SAP; it's to give a decision-maker a cross-system view of where a problem originates, how it propagates, and which system or team should act next.</p>
+  </div>
+
+</div>
+
+  <script src="../../../js/tsm-guide-engine.js" defer></script>
+</body>
+</html>

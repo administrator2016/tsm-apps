@@ -528,6 +528,44 @@ Every section above stops at the Executive Portal — the internal employee-faci
 
 ---
 
+## 14.6 SAP Suite (Commerce → CRM → CPQ → SD)
+
+**Path:** four sequential war rooms — `html/war-rooms/catalog/catalog-war-room.html`, `html/war-rooms/crm/crm-war-room.html`, `html/war-rooms/cpq/cpq-war-room.html`, `html/war-rooms/o2c/o2c-war-room.html` — plus four supporting engines (`mdm/mdm-war-room.html`, `approval/approval-war-room.html`, `governance/governance-war-room.html`, `integration-hub/integration-hub.html`) all converging into one shared `html/war-rooms/sap/sap-strategist.html`, which points up into the enterprise-wide `html/war-rooms/digital-twin/digital-twin.html` rather than a separate SAP-only executive portal.
+
+**Structural note:** unlike a typical three-tier vertical, the SAP suite's four core war rooms are a **sequential business flow** (Commerce → CRM → CPQ → SD), not independent domains — a problem at one stage can propagate into a live quote or order downstream. Approval, Governance, and Integration Hub sit around the chain rather than on it: Approval is the real backend behind CPQ's "Needs Approval" and O2C's credit-check stages; Governance maps to SAP GRC; Integration Hub is where a broken system-to-system handoff actually shows up.
+
+### War Room — Catalog / CRM / CPQ / O2C
+
+- All four use the identical pattern: **RELAY TO STRATEGIST →** (`#btnRelay`) → `relayToStrategist()` → `TSM.relay.write("<DOMAIN>", payload, {caseId, stage:'war-room'})`, landing on a shared storage key from `relay.core.js`'s `RELAY_REGISTRY` (`TSM_CATALOG_RELAY`, `TSM_CRM_RELAY`, `TSM_CPQ_RELAY`, `TSM_O2C_RELAY`).
+- Each payload carries `explain[]` (severity-tagged risk items: `high`/`med`/`low`) and a `timestamp` — the same shape Digital Twin already expects from every other vertical.
+- **CPQ-specific:** the compatibility/discount checker tags a quote `NEEDS APPROVAL` when a discount requires sign-off; that tag now links directly to the Approval Center instead of being a dead-end label.
+- **O2C-specific:** the SLA-breach table now links each stalled order to whichever war room owns fixing it — Approval Center for a credit-check stall, Integration Hub for anything else (carrier/interface-shaped issues).
+
+### Supporting engines — MDM / Approval / Governance / Integration Hub
+
+- **MDM** (`mdm-war-room.html`) relays the same way (`TSM.relay.write("MDM", ...)`), and its sample data holds the suite's flagship scenario (see below).
+- Approval, Governance, and Integration Hub each have their own War Room → Strategist → Executive Portal chain (see the platform hub's SAP-Centric Core group); the SAP Strategist and Digital Twin both read their relay output rather than duplicating it.
+
+### SAP Strategist — `html/war-rooms/sap/sap-strategist.html`
+
+- Renders Catalog → CRM → CPQ → O2C as a left-to-right chain (not a grid), reflecting SAP process order.
+- **Flagship scenario:** MDM's duplicate customer record ("Phoenix Convention Center" / "Phoenix Conv. Ctr.", quality 91) and incomplete product record ("BMS-CORE-002", quality 72) both trace to CPQ's live sample quote `Q-2026-0041` — a $142K quote flagged `needs_approval: true`. This wasn't invented — it was already sitting in the existing MDM/CPQ sample data, just never connected across systems until now.
+- Links up to Digital Twin rather than a standalone SAP executive portal — the Strategist is the detail screen a reviewer drills into from the enterprise view, the same relationship BPO already has to Digital Twin.
+- **How-to guide:** `html/war-rooms/sap/sap-howto.html`.
+
+### Digital Twin — `html/war-rooms/digital-twin/digital-twin.html`
+
+- Enterprise-wide health aggregator; already watched BPO, O2C, CPQ, CRM, Approval, Governance, Integration Hub. Now also watches **Catalog** and **MDM** (`VERTICAL_SIGNAL_CONFIG` / `RELAY_STORAGE_KEYS`), closing the gap at both ends of the SAP chain — the front-end commerce layer and the data-quality layer underneath everything.
+
+**Talk points:**
+- "The SAP suite isn't four independent demos plus a dashboard — it's a connected operational intelligence layer. War rooms produce signals; the Strategist and Digital Twin consume the same signals from different vantage points."
+- "Bad master data quietly threatening a live six-figure quote is one of the most common real-world SAP pain points — Available-to-Promise and credit checks breaking because MDM upstream is dirty. That's the flagship scenario here, and it cost nothing to build because the data already existed in the repo."
+- "A stalled quote or order doesn't dead-end anymore — it points you at whoever actually owns the fix."
+
+**Client-facing status:** internal build/demo vertical — verify current build status before representing it as pilot-ready.
+
+---
+
 ## RCM-OS (standalone — not part of the War Room chain)
 
 **Path:** `html/finops-suite/tsm-rcm-os.html` (single self-contained page), with `tsm-rcm-os-howto.html` and `rcm-os-presentation.html` as companion docs/demo.
