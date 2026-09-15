@@ -1406,6 +1406,10 @@ nav {
       <div class="assign-item assigned"><input type="checkbox" checked> RE War Room</div>
       <div class="assign-item"><input type="checkbox"> Pack Engine</div>
       <div class="assign-item"><input type="checkbox"> Pack Library</div>
+      <!-- Pilot: only mortgage is wired to the real Interview Engine
+           (routes/interview-engine.js) so far — other sectors' checkboxes
+           above are still the original static mockup. -->
+      <div class="assign-item"><input type="checkbox" id="mortgageInterviewPrepCheckbox" onchange="handleMortgageInterviewPrepToggle(this)"> Interview Prep</div>
     </div>
     <div class="assign-cell">
       <div class="assign-sector">FINOPS · AI · CAREER</div>
@@ -1415,6 +1419,11 @@ nav {
       <div class="assign-item assigned"><input type="checkbox" checked> Interview Prep</div>
     </div>
   </div>
+
+  <!-- Live panel for the mortgage Interview Prep pilot — populated from
+       GET /api/interview/sectors/mortgage/plan, not hardcoded. Hidden
+       until the checkbox above is checked. -->
+  <div id="mortgageInterviewIntel" style="display:none;background:var(--surface);border:1px solid var(--border);padding:1rem;margin-bottom:1.5rem;"></div>
 
   <div class="section-head cyan">AUTO-GENERATED LEARNING PATH</div>
   <div class="deploy-pipeline">
@@ -7014,6 +7023,16 @@ async function loadCandidateRegistry() {
       ])
     );
 
+    // Canonical candidate lookup used by Career Command Center selection.
+    // Downstream surfaces receive only the candidateId, then resolve the
+    // current candidate from this registry snapshot.
+    window._candidateRegistryById = Object.fromEntries(
+      candidates.map(candidate => [
+        candidate.candidateId,
+        candidate
+      ])
+    );
+
     renderRegistryTable(candidates);
     renderManagerTable(candidates);
     renderManagerKPIs(candidates);
@@ -7024,6 +7043,156 @@ async function loadCandidateRegistry() {
     if (reg) reg.innerHTML = failMsg(7);
     const mgr = document.getElementById('managerCandidateTbody');
     if (mgr) mgr.innerHTML = failMsg(5);
+  }
+}
+
+// ── CAREER COMMAND CENTER · SELECTED CANDIDATE ──────────────────────
+// Candidate Registry is the canonical candidate source. Downstream
+// training/interview surfaces reuse this selected candidate ID rather
+// than creating their own candidate identity.
+window._selectedCandidateId = window._selectedCandidateId || null;
+window._selectedCandidateName = window._selectedCandidateName || null;
+
+function selectCareerCandidate(candidateId) {
+  const candidate = window._candidateRegistryById
+    ? window._candidateRegistryById[candidateId]
+    : null;
+
+  if (!candidate || !candidate.candidateId) return;
+
+  window._selectedCandidateId = candidate.candidateId;
+  window._selectedCandidateName = candidate.name || 'Unnamed candidate';
+
+  console.log('Career Command Center candidate selected:', {
+    candidateId: window._selectedCandidateId,
+    name: window._selectedCandidateName
+  });
+
+  // Keep the existing registry navigation behavior.
+  switchTo('profile');
+
+  // If Interview Prep is already open, refresh its candidate context.
+  const checkbox = document.getElementById('mortgageInterviewPrepCheckbox');
+  if (checkbox && checkbox.checked) {
+    handleMortgageInterviewPrepToggle(checkbox);
+  }
+}
+
+// ── MORTGAGE INTERVIEW PREP (live data from /api/interview/*, see
+//    routes/interview-engine.js) — pilot sector only. The checkbox above
+//    loads the real plan for the mortgage sector; other sectors don't
+//    have this wired up yet.
+//
+async function handleMortgageInterviewPrepToggle(checkbox) {
+  const panel = document.getElementById('mortgageInterviewIntel');
+  if (!panel) return;
+
+  if (!checkbox.checked) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  panel.style.display = 'block';
+  panel.innerHTML = '<div style="color:var(--text3);font-size:11px;">Loading interview plan…</div>';
+
+  try {
+    const res = await fetch('/api/interview/sectors/mortgage/plan?roleId=ops-analyst');
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || `Interview plan request failed (${res.status})`);
+    }
+    const data = await res.json();
+    renderMortgageInterviewIntel(data.plan);
+  } catch (e) {
+    console.warn('Interview plan load failed:', e);
+    panel.innerHTML = '<div style="color:var(--red);font-size:11px;">Unable to load interview plan — check server connection.</div>';
+  }
+}
+
+function renderMortgageInterviewIntel(plan) {
+  const panel = document.getElementById('mortgageInterviewIntel');
+  if (!panel || !plan) return;
+
+  const levelLabel = { knowledge: 'KNOWLEDGE', scenario: 'SCENARIO', business: 'BUSINESS / EXECUTIVE' };
+  const grouped = {};
+  (plan.questions || []).forEach(q => {
+    (grouped[q.type] = grouped[q.type] || []).push(q);
+  });
+
+  const questionsHtml = Object.keys(levelLabel).map(level => {
+    const qs = grouped[level] || [];
+    if (!qs.length) return '';
+    return `
+      <div style="margin-top:.6rem;">
+        <div style="font-size:9px;color:var(--text3);letter-spacing:.05em;">${levelLabel[level]}</div>
+        ${qs.map(q => `<div style="font-size:11px;color:var(--text);padding:.3rem 0;border-bottom:1px solid var(--border);">${escapeHtml(q.question)}</div>`).join('')}
+      </div>`;
+  }).join('');
+
+  // READINESS intentionally reads "Not yet assessed" rather than a
+  // number — the engine only reports a readiness score once answers
+  // have actually been scored (see computeReadiness() in
+  // server/interview-engine-service.js), and scoring isn't wired in yet.
+  const selectedCandidateId = window._selectedCandidateId;
+  const selectedCandidateName = window._selectedCandidateName;
+
+  panel.innerHTML = `
+    <div style="font-size:9px;color:var(--text3);letter-spacing:.05em;margin-bottom:.3rem;">INTERVIEW READY</div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.5rem;">
+      <div>
+        <span style="font-size:9px;color:var(--text3);">CANDIDATE</span><br>
+        <span style="font-size:12px;color:var(--text);font-weight:700;">
+          ${selectedCandidateId ? escapeHtml(selectedCandidateName) : 'No candidate selected'}
+        </span>
+      </div>
+      <div style="text-align:right;">
+        <span style="font-size:9px;color:var(--text3);">TARGET</span><br>
+        <span style="font-size:12px;color:var(--text);font-weight:700;">${escapeHtml(plan.role ? plan.role.name : plan.sectorName)}</span>
+      </div>
+    </div>
+    <div style="font-size:9px;color:var(--text3);margin-bottom:.5rem;">
+      ${selectedCandidateId ? `Candidate ID: ${escapeHtml(selectedCandidateId)}` : 'Select a candidate from Candidate Registry before starting practice.'}
+    </div>
+    <div style="text-align:right;margin-bottom:.5rem;">
+      <span style="font-size:9px;color:var(--text3);">READINESS</span><br>
+      <span style="font-size:12px;color:var(--amber);">Not yet assessed</span>
+    </div>
+    ${questionsHtml}
+    <button class="footer-btn" style="margin-top:.8rem;" onclick="startMortgageInterviewSession()">▶ Start Practice Session</button>
+    <div id="mortgageInterviewSessionStatus" style="font-size:10px;color:var(--text3);margin-top:.4rem;"></div>
+  `;
+}
+
+async function startMortgageInterviewSession() {
+  const status = document.getElementById('mortgageInterviewSessionStatus');
+  const candidateId = window._selectedCandidateId;
+
+  if (!candidateId) {
+    if (status) {
+      status.innerHTML = '<span style="color:var(--amber);">Select a candidate from Candidate Registry first.</span>';
+    }
+    return;
+  }
+
+  if (status) status.textContent = 'Starting session…';
+
+  try {
+    const res = await fetch('/api/interview/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ candidateId, sectorId: 'mortgage', roleId: 'ops-analyst' }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Session create failed (${res.status})`);
+    // Session creation and the question plan are real and persisted —
+    // there's just no guided one-question-at-a-time UI to hand off to
+    // yet, so say so rather than implying more happened than did.
+    if (status) {
+      status.innerHTML = `Session <span style="color:var(--green);">${escapeHtml(data.session.sessionId)}</span> started — guided Q&amp;A flow is the next piece to build.`;
+    }
+  } catch (e) {
+    console.warn('Interview session create failed:', e);
+    if (status) status.innerHTML = '<span style="color:var(--red);">Unable to start session — check server connection.</span>';
   }
 }
 
@@ -7072,7 +7241,7 @@ function renderRegistryTable(candidates) {
     const scoreColor = score >= 70 ? 'var(--green)' : score >= 40 ? 'var(--amber)' : 'var(--red)';
     const barBg = score < 30 ? ';background:var(--red)' : '';
     return `
-        <tr onclick="switchTo('profile')">
+        <tr onclick="selectCareerCandidate('${escapeHtml(c.candidateId)}')" style="cursor:pointer">
           <td><span class="reg-name">${escapeHtml(c.name || 'Unnamed')}${c.isSampleData ? ' <span style="font-size:8px;color:var(--text3)">(sample data)</span>' : ''}</span></td>
           <td>
             ${escapeHtml(c.role || '—')}
