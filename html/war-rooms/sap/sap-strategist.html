@@ -294,6 +294,7 @@
         <button class="secondary" id="architectureBtn">ARCHITECTURE VIEW</button>
         <button class="secondary" id="otherAppsBtn">SHOW OTHER TSM APPLICATIONS</button>
         <button class="secondary" id="challengeBtn">START ARCHITECT INTERVIEW CHALLENGE</button>
+      <button class="secondary" id="s4FicoChallengeBtn">START S/4HANA + FICO CHALLENGE</button>
       </div>
     </div>
 
@@ -965,6 +966,52 @@
       }
     };
 
+
+    const S4_FICO_CHALLENGES = [
+      {
+        title: 'S/4HANA — END-TO-END PROCESS',
+        stage: 'S/4HANA',
+        scenario:
+          'A customer order is accepted in S/4HANA, but the expected downstream financial result is missing. Explain how you would trace the business object from the order through fulfillment and financial posting.',
+        expected: ['sales order', 'delivery', 'billing', 'financial document']
+      },
+      {
+        title: 'S/4HANA — SALES ORDER',
+        stage: 'Sales Order',
+        scenario:
+          'A sales order exists, but fulfillment is not progressing. Explain which business objects and master-data relationships you would validate before assuming the problem is purely technical.',
+        expected: ['sales order', 'customer', 'material', 'delivery']
+      },
+      {
+        title: 'S/4HANA — BILLING → FI',
+        stage: 'Billing → FI',
+        scenario:
+          'The delivery is completed, but the expected financial posting is missing. Trace the transition from logistics execution into billing and financial accounting.',
+        expected: ['delivery', 'billing', 'FI', 'accounting document']
+      },
+      {
+        title: 'SAP FICO — AR / GENERAL LEDGER',
+        stage: 'AR / General Ledger',
+        scenario:
+          'A customer has been billed, but Accounts Receivable does not show the expected open item. Explain how you would trace the accounting document, AR posting and General Ledger relationship.',
+        expected: ['accounting document', 'AR', 'open item', 'general ledger']
+      },
+      {
+        title: 'SAP FICO — CO / COST CENTER',
+        stage: 'CO / Cost Center',
+        scenario:
+          'Finance can see revenue, but management cannot explain the operational cost associated with the transaction. Explain how you would trace the cost assignment and its relationship to the financial result.',
+        expected: ['cost center', 'CO', 'cost posting', 'financial result']
+      },
+      {
+        title: 'S/4HANA + FICO — BUSINESS IMPACT',
+        stage: 'Business Impact',
+        scenario:
+          'A relatively small order-processing issue has now delayed billing and changed the financial picture. Explain how you would connect the operational condition to AR, GL and measurable business impact.',
+        expected: ['sales order', 'billing', 'AR', 'GL', 'business impact']
+      }
+    ];
+
     const INTERVIEW_CHALLENGES = [
       {
         stage: 'SAP COMMERCE CLOUD / HYBRIS',
@@ -1038,6 +1085,134 @@
         .replace(/[^a-z0-9\s/.-]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
+    }
+
+
+    function renderS4FicoChallenge(index) {
+      const challenge = S4_FICO_CHALLENGES[index];
+      if (!challenge) return;
+
+      const panel = document.getElementById('challengePanel');
+
+      panel.innerHTML = `
+        <div class="panel-kicker">SPECIALIZED SAP ARCHITECT TRACK</div>
+        <h2>S/4HANA + FICO ARCHITECT CHALLENGE</h2>
+
+        <div class="challenge-stage">
+          Stage ${index + 1} of ${S4_FICO_CHALLENGES.length}
+          · ${challenge.stage}
+        </div>
+
+        <div class="trace-chain">
+          S/4HANA → Sales Order → Delivery → Billing → FI → AR / GL → CO → Business Impact
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-title">${challenge.title}</div>
+          <p>${challenge.scenario}</p>
+        </div>
+
+        <textarea
+          id="s4FicoAnswer"
+          class="challenge-answer"
+          placeholder="Explain your reasoning. Trace the business object, document relationship, dependency, and business consequence."
+        ></textarea>
+
+        <div class="demo-buttons">
+          <button id="s4FicoSubmitBtn">SUBMIT REASONING</button>
+          <button class="secondary" id="s4FicoHintBtn">SHOW HINT</button>
+          <button class="secondary" id="s4FicoReasoningBtn">SHOW REASONING FRAME</button>
+        </div>
+
+        <div class="feedback-panel" id="s4FicoFeedbackPanel"></div>
+
+        <div class="demo-buttons">
+          ${index > 0
+            ? '<button class="secondary" id="s4FicoPrevBtn">PREVIOUS</button>'
+            : ''}
+          ${index < S4_FICO_CHALLENGES.length - 1
+            ? '<button class="secondary" id="s4FicoNextBtn">NEXT STAGE</button>'
+            : ''}
+          <button class="secondary" id="s4FicoReturnBtn">RETURN TO SAP JOURNEY</button>
+        </div>
+
+        <div class="challenge-principle">
+          <strong>READINESS PRINCIPLE</strong><br>
+          Do not answer from application names alone. Trace the business object,
+          document relationship, dependency and measurable business consequence.
+        </div>
+      `;
+
+      const answer = document.getElementById('s4FicoAnswer');
+      const feedback = document.getElementById('s4FicoFeedbackPanel');
+
+      document.getElementById('s4FicoSubmitBtn').addEventListener('click', () => {
+        const response = normalizeInterviewText(answer.value);
+
+        if (!response) {
+          feedback.innerHTML = '<strong>ENTER YOUR REASONING</strong><br>Provide a short architecture explanation before submitting.';
+          return;
+        }
+
+        const matched = challenge.expected.filter(term =>
+          response.includes(normalizeInterviewText(term))
+        );
+
+        const coverage = Math.round(
+          (matched.length / challenge.expected.length) * 100
+        );
+
+        feedback.innerHTML = `
+          <strong>TRACE COVERAGE: ${coverage}%</strong><br>
+          Evidence terms identified: ${matched.length} / ${challenge.expected.length}
+          <br><br>
+          ${matched.length
+            ? `Matched: ${matched.join(', ')}`
+            : 'No expected trace terms identified yet.'}
+          <br><br>
+          This is a deterministic practice aid, not an assessment of real-world SAP experience.
+        `;
+      });
+
+      document.getElementById('s4FicoHintBtn').addEventListener('click', () => {
+        feedback.innerHTML = `
+          <strong>HINT</strong><br>
+          Start with the business object. Then identify the document created or
+          consumed at each boundary, the dependency that could break the chain,
+          and the measurable business consequence.
+        `;
+      });
+
+      document.getElementById('s4FicoReasoningBtn').addEventListener('click', () => {
+        feedback.innerHTML = `
+          <strong>REASONING FRAME</strong><br>
+          1. Identify the originating business object.<br>
+          2. Trace the next operational document.<br>
+          3. Validate master-data and process dependencies.<br>
+          4. Identify the FI/CO document relationship.<br>
+          5. Connect the technical condition to financial or management impact.
+        `;
+      });
+
+      const prevBtn = document.getElementById('s4FicoPrevBtn');
+      if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+          renderS4FicoChallenge(Math.max(index - 1, 0));
+        });
+      }
+
+      const nextBtn = document.getElementById('s4FicoNextBtn');
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          renderS4FicoChallenge(
+            Math.min(index + 1, S4_FICO_CHALLENGES.length - 1)
+          );
+        });
+      }
+
+      document.getElementById('s4FicoReturnBtn').addEventListener('click', () => {
+        document.getElementById('challengeBtn').click();
+      });
     }
 
     function renderInterviewChallenge(index) {
@@ -1517,6 +1692,16 @@ Detect → Scope → Trace → Isolate → Resolve → Learn
         </div>
       </div>
     `);
+  });
+
+  document.getElementById('s4FicoChallengeBtn').addEventListener('click', () => {
+    setDemoState(
+      'S/4HANA + FICO ARCHITECT JOURNEY',
+      'Trace the business object from S/4HANA order processing through delivery, billing, FI, AR/GL and CO to measurable business impact.',
+      'trace'
+    );
+
+    renderS4FicoChallenge(0);
   });
 
   document.getElementById('challengeBtn').addEventListener('click', () => {
