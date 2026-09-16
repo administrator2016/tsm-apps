@@ -946,21 +946,114 @@
 
     showDemoPanel('architecturePanel', `
       <div class="architecture-flow">
-<strong>BUSINESS DOMAIN</strong>
+<strong>SAP COMMERCE CLOUD / HYBRIS</strong>
         ↓
-<strong>WAR ROOMS</strong>
+<strong>SAP WEB CHANNEL</strong>
         ↓
-<strong>DOMAIN RELAYS</strong>
+<strong>SAP CRM / C4C</strong>
         ↓
-<strong>STRATEGIST</strong>
+<strong>MDM — CUSTOMER + PRODUCT MASTER DATA</strong>
         ↓
-<strong>DIGITAL TWIN / EXECUTIVE</strong>
+<strong>SAP CPQ — CONFIGURE → PRICE → QUOTE</strong>
         ↓
-<strong>DECISION</strong>
+<strong>APPROVAL / GOVERNANCE</strong>
+        ↓
+<strong>INTEGRATION — CROSS-SYSTEM HANDOFFS</strong>
+        ↓
+<strong>SAP SD / O2C — ORDER → DELIVERY → BILLING → CASH</strong>
+        ↓
+<strong>TSM DOMAIN RELAYS</strong>
+        ↓
+<strong>TSM STRATEGIST</strong>
+        ↓
+<strong>DIGITAL TWIN / EXECUTIVE DECISION</strong>
         ↓
 <strong>ACTION / FEEDBACK</strong>
+      </div>
 
-Signal → Context → Impact → Risk → Recommendation → Decision
+      <div class="decision-grid" style="margin-top:16px;">
+        <div class="decision-item">
+          <div class="label">COMMERCE CLOUD / WEB CHANNEL</div>
+          Digital commerce entry point. Customer interaction,
+          product discovery, catalog and web-channel transaction context.
+        </div>
+
+        <div class="decision-item">
+          <div class="label">CRM / C4C</div>
+          Customer, account, opportunity and service context.
+          C4C represents the cloud customer-experience layer.
+        </div>
+
+        <div class="decision-item">
+          <div class="label">MDM</div>
+          Customer and product master-data integrity.
+          Duplicate, incomplete or stale records can become upstream causes
+          of downstream process failures.
+        </div>
+
+        <div class="decision-item">
+          <div class="label">SAP CPQ</div>
+          Configuration, pricing and quoting.
+          Quote validity depends on trustworthy customer, product and pricing
+          context.
+        </div>
+
+        <div class="decision-item">
+          <div class="label">APPROVAL</div>
+          Governance and release workflow.
+          A quote or commercial transaction may require approval before
+          downstream execution.
+        </div>
+
+        <div class="decision-item">
+          <div class="label">INTEGRATION</div>
+          Cross-system handoffs.
+          The architect asks whether the source system, interface or receiving
+          system owns the failure.
+        </div>
+
+        <div class="decision-item">
+          <div class="label">SAP SD / O2C</div>
+          Order-to-Cash execution:
+          sales order → delivery → billing → cash.
+          This is where upstream failures can become operational and financial
+          exposure.
+        </div>
+
+        <div class="decision-item">
+          <div class="label">TSM INTELLIGENCE LAYER</div>
+          Domain relays collect evidence → Strategist correlates context and
+          dependencies → Digital Twin / Executive layer supports the decision.
+        </div>
+      </div>
+
+      <div class="demo-state" style="margin-top:16px;">
+        <strong>INTERVIEW EXPLANATION</strong><br>
+        “I would not treat Commerce, CRM, CPQ and SD as isolated applications.
+        I would trace the business object across the process. A customer or
+        product-data problem can begin upstream in MDM, surface in CRM or CPQ,
+        block approval, fail at an integration boundary, and ultimately affect
+        SD / Order-to-Cash. My architecture approach is to identify the signal,
+        establish scope, trace dependencies, isolate the source from the
+        symptom, resolve the handoff, and capture the lesson for future
+        decisions.”
+      </div>
+
+      <div class="architecture-flow" style="margin-top:16px;">
+<strong>REQUIREMENT → ARCHITECTURE CONCEPT</strong>
+
+SAP Commerce Cloud / Hybris → Digital Commerce
+SAP Web Channel            → Commerce-facing channel/process
+SAP CRM                     → Customer / Account / Opportunity context
+SAP C4C                     → Cloud customer experience / CRM context
+SAP CPQ                     → Configuration / Pricing / Quoting
+SAP SD                      → Sales + Order-to-Cash execution
+MDM                         → Customer / Product master-data integrity
+Integration                 → Enterprise handoff + interface dependency
+
+<strong>TSM REASONING PATTERN</strong>
+
+Signal → Context → Dependency → Business Impact → Risk → Recommendation → Decision
 
 Detect → Scope → Trace → Isolate → Resolve → Learn
       </div>
