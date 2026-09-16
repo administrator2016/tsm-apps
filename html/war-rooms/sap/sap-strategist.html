@@ -222,7 +222,7 @@
 </header>
 <main>
   <div class="domain-nav">
-    <a href="/html/war-rooms/catalog/catalog-war-room.html">SAP Commerce Cloud</a>
+    <a href="/html/war-rooms/catalog/catalog-war-room.html">SAP Commerce Cloud / Web Channel</a>
     <a href="/html/war-rooms/crm/crm-war-room.html">SAP CRM / C4C</a>
     <a href="/html/war-rooms/cpq/cpq-war-room.html">SAP CPQ</a>
     <a href="/html/war-rooms/o2c/o2c-war-room.html">SAP SD — O2C</a>
@@ -237,8 +237,8 @@
   <div class="demo-panel" id="architectDemo">
     <div class="demo-title">SAP ARCHITECT INTERVIEW MODE</div>
     <div class="demo-subtitle">
-      Demonstrate enterprise process reasoning across Commerce Cloud, CRM/C4C,
-      MDM, CPQ, Approval, Integration, and SD/O2C.
+      Demonstrate enterprise process reasoning across Commerce Cloud / Hybris,
+      Web Channel, CRM/C4C, MDM, CPQ, Approval, Integration, and SD/O2C.
       The controls below drive a simulated interview narrative without altering
       the underlying SAP relay payloads.
     </div>
@@ -257,6 +257,7 @@
       <div class="demo-buttons">
         <button id="startJourneyBtn">START JOURNEY</button>
         <button class="secondary" id="openCommerceBtn">OPEN COMMERCE</button>
+        <button class="secondary" id="traceWebChannelBtn">TRACE WEB CHANNEL</button>
         <button class="secondary" id="traceCustomerBtn">TRACE CUSTOMER</button>
         <button class="secondary" id="inspectCustomerBtn">INSPECT CUSTOMER DATA</button>
         <button class="secondary" id="traceMdmBtn">TRACE TO MDM</button>
@@ -730,14 +731,221 @@
     openDemoTab(DEMO_LINKS.commerce, 'tsm-sap-commerce');
   });
 
-  document.getElementById('traceCustomerBtn').addEventListener('click', () => {
+  document.getElementById('traceWebChannelBtn').addEventListener('click', () => {
+    const traceStageIndex = 1;
+
     setDemoState(
-      'CUSTOMER TRACE',
-      'Customer: <strong>Phoenix Convention Center</strong>. ' +
-      'Next question: is the customer record itself trustworthy?',
+      'BUSINESS OBJECT TRACE',
+      'Tracing Phoenix Convention Center through SAP Web Channel ...',
       'trace'
     );
-    openDemoTab(DEMO_LINKS.crm, 'tsm-sap-crm');
+
+    // Reuse the existing TRACE CUSTOMER implementation and activate
+    // the SAP WEB CHANNEL stage directly.
+    const traceButton = document.getElementById('traceCustomerBtn');
+
+    if (traceButton) {
+      traceButton.dataset.traceStartIndex = String(traceStageIndex);
+      traceButton.click();
+    }
+  });
+
+  document.getElementById('traceCustomerBtn').addEventListener('click', () => {
+    const trace = [
+      {
+        key: 'commerce',
+        label: 'SAP COMMERCE CLOUD / HYBRIS',
+        object: 'Customer interaction / commerce context',
+        question: 'Is the customer and product context entering the process correctly?',
+        evidence: 'Phoenix Convention Center identified as the business customer.',
+        dependency: 'Web Channel → CRM / C4C',
+        stage: 'DETECT'
+      },
+      {
+        key: 'web',
+        label: 'SAP WEB CHANNEL',
+        object: 'Commerce-facing transaction channel',
+        question: 'Is the transaction carrying the correct customer and product context downstream?',
+        evidence: 'Commerce context is available for downstream customer processing.',
+        dependency: 'CRM / C4C',
+        stage: 'SCOPE'
+      },
+      {
+        key: 'crm',
+        label: 'SAP CRM / C4C',
+        object: 'Account / opportunity / service context',
+        question: 'Does the customer record resolve to a trustworthy account?',
+        evidence: 'Duplicate customer context detected for Phoenix Convention Center.',
+        dependency: 'CRM / C4C → MDM',
+        stage: 'TRACE'
+      },
+      {
+        key: 'mdm',
+        label: 'MDM — CUSTOMER + PRODUCT MASTER DATA',
+        object: 'Golden customer / product record',
+        question: 'Is master data complete, unique and current?',
+        evidence: 'Customer duplicate signal and incomplete BMS-CORE-002 product signal.',
+        dependency: 'MDM → CPQ',
+        stage: 'TRACE'
+      },
+      {
+        key: 'cpq',
+        label: 'SAP CPQ',
+        object: 'Quote Q-2026-0041',
+        question: 'Can configuration, pricing and quote context be trusted?',
+        evidence: '$142,000 quote requires approval.',
+        dependency: 'CPQ → Approval',
+        stage: 'ISOLATE'
+      },
+      {
+        key: 'approval',
+        label: 'APPROVAL / GOVERNANCE',
+        object: 'Commercial release decision',
+        question: 'Can the transaction proceed through its required approval gate?',
+        evidence: 'Q-2026-0041 is currently marked NEEDS APPROVAL.',
+        dependency: 'Approval → Integration',
+        stage: 'RESOLVE'
+      },
+      {
+        key: 'integration',
+        label: 'INTEGRATION — CROSS-SYSTEM HANDOFF',
+        object: 'CPQ → SD / O2C handoff',
+        question: 'Did the source, interface or receiving system create the failure?',
+        evidence: 'Integration boundary is the control point for downstream handoff validation.',
+        dependency: 'Integration → SAP SD / O2C',
+        stage: 'ISOLATE'
+      },
+      {
+        key: 'o2c',
+        label: 'SAP SD / O2C',
+        object: 'Sales Order → Delivery → Billing → Cash',
+        question: 'Where does the upstream condition become measurable business impact?',
+        evidence: 'A blocked or invalid handoff can delay order execution and financial realization.',
+        dependency: 'Operational + financial impact',
+        stage: 'LEARN'
+      }
+    ];
+
+    let activeIndex = Number(
+      document.getElementById('traceCustomerBtn')?.dataset.traceStartIndex || 0
+    );
+
+    setDemoState(
+      'BUSINESS OBJECT TRACE',
+      'Tracing <strong>Phoenix Convention Center</strong> across the SAP process. Select a stage to inspect the business object, evidence, dependency and architect question.',
+      'trace'
+    );
+
+    const renderTrace = () => {
+      const node = trace[activeIndex];
+
+      showDemoPanel('decisionPanel', `
+        <div class="demo-title">SAP BUSINESS OBJECT TRACE</div>
+        <div class="demo-subtitle">
+          CUSTOMER: <strong>Phoenix Convention Center</strong>
+          · OBJECT: <strong>Customer / Commercial Transaction</strong>
+        </div>
+
+        <div class="demo-buttons" style="margin-top:16px;">
+          ${trace.map((item, index) => `
+            <button
+              class="${index === activeIndex ? '' : 'secondary'}"
+              data-sap-trace-index="${index}"
+              style="flex:1 1 210px;min-width:210px;text-align:left;"
+            >
+              ${String(index + 1).padStart(2, '0')} · ${item.label}
+            </button>
+          `).join('')}
+        </div>
+
+        <div class="demo-state" style="margin-top:16px;">
+          <strong>${String(activeIndex + 1).padStart(2, '0')} · ${node.label}</strong><br>
+          <span style="opacity:.7;">ARCHITECT STAGE:</span> ${node.stage}
+        </div>
+
+        <div class="decision-grid" style="margin-top:12px;">
+          <div class="decision-item">
+            <div class="label">BUSINESS OBJECT</div>
+            ${node.object}
+          </div>
+
+          <div class="decision-item">
+            <div class="label">ARCHITECT QUESTION</div>
+            ${node.question}
+          </div>
+
+          <div class="decision-item">
+            <div class="label">EVIDENCE</div>
+            ${node.evidence}
+          </div>
+
+          <div class="decision-item">
+            <div class="label">NEXT DEPENDENCY</div>
+            ${node.dependency}
+          </div>
+        </div>
+
+        <div class="demo-state" style="margin-top:12px;">
+          <strong>TRACE POSITION</strong><br>
+          ${trace.slice(0, activeIndex + 1).map(item => item.label).join(' → ')}
+        </div>
+
+        <div class="demo-buttons" style="margin-top:12px;">
+          <button class="secondary" id="tracePrevBtn" ${activeIndex === 0 ? 'disabled' : ''}>
+            ← PREVIOUS STAGE
+          </button>
+          <button id="traceNextBtn" ${activeIndex === trace.length - 1 ? 'disabled' : ''}>
+            NEXT STAGE →
+          </button>
+        </div>
+
+        <div class="demo-state" style="margin-top:16px;">
+          <strong>ARCHITECT INTERVIEW QUESTION</strong><br>
+          Where did the signal originate, what business object is affected,
+          which dependency carries it downstream, and where does the business
+          impact become measurable?
+        </div>
+
+        <div class="demo-state" style="margin-top:12px;">
+          <strong>INTERVIEW ANSWER</strong><br>
+          “I would trace the business object rather than investigate each
+          application in isolation. I start with the signal, identify the
+          affected object, validate the master-data source, follow the
+          dependency into CPQ and approval, then inspect the integration
+          boundary before concluding where the SD / O2C impact occurs.”
+        </div>
+      `);
+
+      document.querySelectorAll('[data-sap-trace-index]').forEach(button => {
+        button.addEventListener('click', () => {
+          activeIndex = Number(button.dataset.sapTraceIndex);
+          renderTrace();
+        });
+      });
+
+      const prev = document.getElementById('tracePrevBtn');
+      const next = document.getElementById('traceNextBtn');
+
+      if (prev) {
+        prev.addEventListener('click', () => {
+          if (activeIndex > 0) {
+            activeIndex -= 1;
+            renderTrace();
+          }
+        });
+      }
+
+      if (next) {
+        next.addEventListener('click', () => {
+          if (activeIndex < trace.length - 1) {
+            activeIndex += 1;
+            renderTrace();
+          }
+        });
+      }
+    };
+
+    renderTrace();
   });
 
   document.getElementById('inspectCustomerBtn').addEventListener('click', () => {
