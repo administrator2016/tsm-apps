@@ -2128,6 +2128,7 @@ async function exportExecutiveReport() {
       taxPrepGrants: 'TAX PREP / GRANTS'
     };
     const engineOutputs = d.stratReports || d.engineOutputs || {};
+    const engineEntries = Object.entries(engineOutputs).filter(([, v]) => v && v.length > 10);
 
     // Pull whatever denial pack text actually rendered, if any — this is
     // real generated content sitting in the DOM, not re-fetched.
@@ -2135,6 +2136,25 @@ async function exportExecutiveReport() {
     const denialPackText = dpEl && !dpEl.querySelector('span[style*="blink"]')
       ? dpEl.innerText.trim()
       : '';
+
+    // TSM FIX: an empty/near-empty relay (nothing has escalated yet, or a
+    // stale sessionId-only payload) used to fall through silently to a
+    // near-blank downloaded file that looks like a real export. Bail out
+    // with a clear alert instead — a sessionId alone is not "real data".
+    const execNotesForGuard = [...document.querySelectorAll('.decision-item[data-note-key]')]
+      .map(item => (sessionStorage.getItem(NOTE_NS + item.dataset.noteKey) ||
+        localStorage.getItem(NOTE_NS + item.dataset.noteKey) || '').trim())
+      .filter(Boolean);
+    const hasRealData = Boolean(
+      d.warRoomBrief || d.aiSummary || stratAnalysis || denialIntel || strategistSummary ||
+      decisions.length || urgent.length || engineEntries.length || denialPackText ||
+      execNotesForGuard.length
+    );
+    if (!hasRealData) {
+      alert('Nothing to export yet — no war room brief, engine findings, decisions, alerts, or notes are on file for this session.');
+      if (btn) { btn.innerHTML = origLabel; btn.style.pointerEvents = 'auto'; }
+      return;
+    }
 
     const lines = [
       'TSM HC EXECUTIVE REPORT — SESSION EXPORT',
@@ -2180,10 +2200,11 @@ async function exportExecutiveReport() {
       lines.push('EXECUTIVE NOTES', '---------------');
       execNotes.forEach(n => lines.push(`${n.action}:`, n.text, ''));
     }
-    const engineEntries = Object.entries(engineOutputs).filter(([, v]) => v && v.length > 10);
     if (engineEntries.length) {
       lines.push('ENGINE FINDINGS', '---------------');
-      engineEntries.forEach(([label, text]) => lines.push(`${ENGINE_LABELS[label] || label.toUpperCase()}:`, text.slice(0, 500), ''));
+      // TSM FIX: was text.slice(0, 500) — silently clipping real engine
+      // findings out of the actual report HonorHealth receives. Full text now.
+      engineEntries.forEach(([label, text]) => lines.push(`${ENGINE_LABELS[label] || label.toUpperCase()}:`, text, ''));
     }
     if (denialPackText) {
       lines.push('DENIAL PACK OUTPUT', '-------------------', denialPackText, '');
