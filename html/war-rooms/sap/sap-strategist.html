@@ -305,6 +305,7 @@
     <div class="demo-panel-inner" id="decisionPanel"></div>
     <div class="demo-panel-inner" id="architecturePanel"></div>
     <div class="demo-panel-inner" id="appsPanel"></div>
+    <div class="demo-panel-inner" id="interviewPanel"></div>
     <div class="demo-panel-inner" id="challengePanel"></div>
   </div>
 
@@ -830,6 +831,8 @@
       document.getElementById('traceCustomerBtn')?.dataset.traceStartIndex || 0
     );
 
+    DEMO.traceIndex = activeIndex;
+
     setDemoState(
       'BUSINESS OBJECT TRACE',
       'Tracing <strong>Phoenix Convention Center</strong> across the SAP process. Select a stage to inspect the business object, evidence, dependency and architect question.',
@@ -838,6 +841,7 @@
 
     const renderTrace = () => {
       const node = trace[activeIndex];
+      DEMO.traceIndex = activeIndex;
 
       showDemoPanel('decisionPanel', `
         <div class="demo-title">SAP BUSINESS OBJECT TRACE</div>
@@ -914,6 +918,12 @@
           dependency into CPQ and approval, then inspect the integration
           boundary before concluding where the SD / O2C impact occurs.”
         </div>
+
+        <div class="demo-buttons" style="margin-top:12px;">
+          <button id="challengeTraceStageBtn">
+            CHALLENGE ME ON THIS STAGE
+          </button>
+        </div>
       `);
 
       document.querySelectorAll('[data-sap-trace-index]').forEach(button => {
@@ -923,6 +933,14 @@
         });
       });
 
+      const stageChallenge = document.getElementById('challengeTraceStageBtn');
+
+      if (stageChallenge) {
+        stageChallenge.addEventListener('click', () => {
+          renderInterviewChallenge(activeIndex);
+        });
+      }
+
       const prev = document.getElementById('tracePrevBtn');
       const next = document.getElementById('traceNextBtn');
 
@@ -930,6 +948,7 @@
         prev.addEventListener('click', () => {
           if (activeIndex > 0) {
             activeIndex -= 1;
+            DEMO.traceIndex = activeIndex;
             renderTrace();
           }
         });
@@ -939,11 +958,210 @@
         next.addEventListener('click', () => {
           if (activeIndex < trace.length - 1) {
             activeIndex += 1;
+            DEMO.traceIndex = activeIndex;
             renderTrace();
           }
         });
       }
     };
+
+    const INTERVIEW_CHALLENGES = [
+      {
+        stage: 'SAP COMMERCE CLOUD / HYBRIS',
+        question: 'A product is visible in the storefront, but the downstream commercial process cannot resolve the product context. What would you investigate first?',
+        hint: 'Separate storefront presentation from the canonical product/catalog source and verify the product identifier crossing the boundary.',
+        reasoning: 'Start with the product master/catalog object, verify SKU or product ID consistency, pricing and lifecycle state, then follow the object into the Web Channel and downstream systems.',
+        followUp: 'Assume the product exists in Commerce Cloud but the downstream system receives an unknown SKU. What boundary would you inspect next?',
+        expected: ['product identifier', 'catalog source', 'lifecycle', 'web channel']
+      },
+      {
+        stage: 'SAP WEB CHANNEL',
+        question: 'A customer can complete the Web Channel transaction, but CRM receives the transaction without the correct customer or product context. Where would you investigate?',
+        hint: 'Treat Web Channel as the transaction boundary and verify what context is actually being propagated downstream.',
+        reasoning: 'Validate the customer and product identifiers entering the channel, inspect the outbound transaction payload, then compare it with what CRM/C4C receives. The key is determining whether the loss occurs before, at, or after the channel boundary.',
+        followUp: 'Assume the Web Channel payload is correct, but CRM still has missing context. What would you inspect next?',
+        expected: ['transaction boundary', 'customer context', 'product context', 'downstream payload']
+      },
+      {
+        stage: 'SAP CRM / C4C',
+        question: 'The Web Channel identifies the customer, but CRM/C4C resolves the transaction to the wrong account. How would you isolate the problem?',
+        hint: 'Think account identity, duplicate records and the master-data relationship rather than the storefront.',
+        reasoning: 'Compare the customer identifier from the channel with the CRM/C4C account, check duplicate or conflicting records, then trace the master-data relationship into MDM before allowing downstream commercial processing to continue.',
+        followUp: 'If CRM contains two valid-looking accounts for the same customer, which system should become the source of truth?',
+        expected: ['account identity', 'duplicate', 'customer master', 'MDM']
+      },
+      {
+        stage: 'MDM — CUSTOMER + PRODUCT MASTER DATA',
+        question: 'The customer is duplicated and the product master is incomplete. How could that affect CPQ?',
+        hint: 'CPQ depends on trustworthy customer and product context before configuration and pricing can be trusted.',
+        reasoning: 'Determine which customer and product records are authoritative, resolve duplicate or incomplete master data, then verify that the corrected identifiers flow into CPQ before treating the quote as reliable.',
+        followUp: 'If CPQ already generated a quote using the bad master data, would you simply correct MDM and continue?',
+        expected: ['golden record', 'duplicate', 'product master', 'CPQ']
+      },
+      {
+        stage: 'SAP CPQ',
+        question: 'A $142,000 quote contains the expected product and customer, but the configuration or pricing cannot be trusted. What would you validate?',
+        hint: 'Break the quote into configuration, pricing and commercial authority.',
+        reasoning: 'Validate product configuration rules, pricing inputs, customer-specific conditions and quote version, then determine whether the quote can proceed to the required approval gate.',
+        followUp: 'Assume the quote is technically valid but exceeds an approval threshold. What changes in your investigation?',
+        expected: ['configuration', 'pricing', 'quote', 'approval']
+      },
+      {
+        stage: 'APPROVAL / GOVERNANCE',
+        question: 'The CPQ quote is valid but is marked NEEDS APPROVAL. What would you verify before releasing it?',
+        hint: 'Approval is a governance boundary, not merely another application screen.',
+        reasoning: 'Identify the applicable approval rule, threshold, approver and quote state, then verify that the required decision has been recorded before allowing the commercial transaction to cross into downstream execution.',
+        followUp: 'What would you investigate if the approval is complete but the order remains blocked?',
+        expected: ['approval rule', 'threshold', 'approver', 'release']
+      },
+      {
+        stage: 'INTEGRATION — CROSS-SYSTEM HANDOFF',
+        question: 'CPQ shows a completed commercial transaction, but SD/O2C never receives a usable order. How do you isolate source, interface and target responsibility?',
+        hint: 'Treat the integration boundary as three testable points: source, transport/mapping and receiving system.',
+        reasoning: 'Confirm the CPQ source payload, inspect interface delivery and mapping, then verify whether SD/O2C accepted, rejected or transformed the message. Avoid assuming the source or target is at fault without boundary evidence.',
+        followUp: 'If the message left CPQ successfully but failed schema validation downstream, where does the remediation belong?',
+        expected: ['source payload', 'interface', 'mapping', 'receiving system']
+      },
+      {
+        stage: 'SAP SD / O2C',
+        question: 'An upstream commercial issue has now delayed order execution. Where does the technical condition become measurable business impact?',
+        hint: 'Follow the order lifecycle from sales order through delivery and billing.',
+        reasoning: 'Identify where the transaction is blocked in the O2C lifecycle, quantify the operational consequence, then connect that condition to delivery timing, billing and financial realization.',
+        followUp: 'What evidence would you use to explain the impact to an executive rather than a technical team?',
+        expected: ['sales order', 'delivery', 'billing', 'financial impact']
+      }
+    ];
+
+    function normalizeInterviewText(value) {
+      return String(value || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s/.-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function renderInterviewChallenge(index) {
+      const challenge = INTERVIEW_CHALLENGES[index];
+      if (!challenge) return;
+
+      const traceLabel = [
+        'SAP COMMERCE CLOUD / HYBRIS',
+        'SAP WEB CHANNEL',
+        'SAP CRM / C4C',
+        'MDM — CUSTOMER + PRODUCT MASTER DATA',
+        'SAP CPQ',
+        'APPROVAL / GOVERNANCE',
+        'INTEGRATION — CROSS-SYSTEM HANDOFF',
+        'SAP SD / O2C'
+      ][index];
+
+      showDemoPanel('interviewPanel', `
+        <div class="demo-title">ARCHITECT INTERVIEW CHALLENGE</div>
+        <div class="demo-subtitle">
+          CURRENT STAGE:
+          <strong>${traceLabel}</strong>
+        </div>
+
+        <div class="demo-state">
+          <strong>SCENARIO</strong><br>
+          ${challenge.question}
+        </div>
+
+        <div class="demo-section">
+          <div class="demo-section-title">YOUR ARCHITECT RESPONSE</div>
+          <textarea
+            id="interviewAnswer"
+            rows="5"
+            style="width:100%;resize:vertical;background:rgba(255,255,255,.02);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:10px;font:inherit;"
+            placeholder="Explain what you would investigate, what evidence you need, and how you would follow the business object downstream."
+          ></textarea>
+        </div>
+
+        <div class="demo-buttons" style="margin-top:12px;">
+          <button id="submitInterviewBtn">SUBMIT RESPONSE</button>
+          <button class="secondary" id="hintInterviewBtn">SHOW HINT</button>
+          <button class="secondary" id="reasoningInterviewBtn">EXPECTED REASONING</button>
+        </div>
+
+        <div class="demo-panel-inner" id="interviewFeedbackPanel"></div>
+
+        <div class="demo-state" style="margin-top:12px;">
+          <strong>FOLLOW-UP CHALLENGE</strong><br>
+          ${challenge.followUp}
+        </div>
+
+        <div class="demo-buttons" style="margin-top:12px;">
+          <button class="secondary" id="returnToTraceBtn">← RETURN TO TRACE</button>
+          ${index < INTERVIEW_CHALLENGES.length - 1
+            ? '<button id="nextInterviewStageBtn">NEXT SAP STAGE →</button>'
+            : ''}
+        </div>
+      `);
+
+      const answer = document.getElementById('interviewAnswer');
+      const feedback = document.getElementById('interviewFeedbackPanel');
+
+      document.getElementById('submitInterviewBtn').addEventListener('click', () => {
+        const response = normalizeInterviewText(answer.value);
+
+        if (!response) {
+          feedback.innerHTML = '<div class="demo-state"><strong>RESPONSE NEEDED</strong><br>Give your investigation path before submitting.</div>';
+          feedback.classList.add('show');
+          return;
+        }
+
+        const matched = challenge.expected.filter(term => response.includes(term)).length;
+        const coverage = Math.round((matched / challenge.expected.length) * 100);
+
+        feedback.innerHTML = `
+          <div class="demo-state">
+            <strong>ARCHITECT RESPONSE REVIEW</strong><br>
+            Your response identified <strong>${matched} of ${challenge.expected.length}</strong>
+            key reasoning signals (${coverage}% keyword coverage).
+            <br><br>
+            <span class="muted">
+              This is a deterministic practice aid, not an assessment of real-world SAP experience.
+            </span>
+          </div>
+        `;
+        feedback.classList.add('show');
+      });
+
+      document.getElementById('hintInterviewBtn').addEventListener('click', () => {
+        feedback.innerHTML = `
+          <div class="demo-state">
+            <strong>ARCHITECT HINT</strong><br>
+            ${challenge.hint}
+          </div>
+        `;
+        feedback.classList.add('show');
+      });
+
+      document.getElementById('reasoningInterviewBtn').addEventListener('click', () => {
+        feedback.innerHTML = `
+          <div class="demo-state">
+            <strong>EXPECTED REASONING</strong><br>
+            ${challenge.reasoning}
+          </div>
+        `;
+        feedback.classList.add('show');
+      });
+
+      document.getElementById('returnToTraceBtn').addEventListener('click', () => {
+        document.getElementById('traceCustomerBtn').dataset.traceStartIndex = String(index);
+        document.getElementById('traceCustomerBtn').click();
+      });
+
+      const nextStage = document.getElementById('nextInterviewStageBtn');
+
+      if (nextStage) {
+        nextStage.addEventListener('click', () => {
+          const nextIndex = Math.min(index + 1, INTERVIEW_CHALLENGES.length - 1);
+          document.getElementById('traceCustomerBtn').dataset.traceStartIndex = String(nextIndex);
+          document.getElementById('traceCustomerBtn').click();
+        });
+      }
+    }
 
     renderTrace();
   });
