@@ -133,7 +133,7 @@ async function main() {
     // 1. Registry reload + sector listing
     let r = await api(base, 'POST', '/api/interview/registry/reload');
     check('registry reload returns mortgage sector', r.data.sectors.includes('mortgage'));
-    check('registry reload reports 6 questions', r.data.questionCount === 6);
+    check('registry reload reports 30 questions across 5 sectors', r.data.questionCount === 30);
 
     r = await api(base, 'GET', '/api/interview/sectors');
     check('GET /sectors lists mortgage', r.data.sectors.some((s) => s.id === 'mortgage'));
