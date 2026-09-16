@@ -59,6 +59,155 @@
   .actions { display: flex; gap: 10px; margin-top: 20px; }
   button { background: var(--accent); border: none; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
   button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+
+  .demo-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+
+  .demo-title {
+    font-size: 12px;
+    letter-spacing: .08em;
+    color: var(--accent);
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+
+  .demo-subtitle {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+
+  .demo-section {
+    margin-top: 16px;
+  }
+
+  .demo-section-title {
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: .08em;
+    margin-bottom: 8px;
+  }
+
+  .demo-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .demo-buttons button {
+    font-size: 11px;
+    padding: 8px 11px;
+  }
+
+  .demo-buttons button.active {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .demo-progress {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(80px, 1fr));
+    gap: 6px;
+    margin: 16px 0;
+  }
+
+  .demo-step {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 5px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .demo-step.active {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+
+  .demo-step.complete {
+    color: var(--low);
+    border-color: var(--low);
+  }
+
+  .demo-state {
+    border-left: 3px solid var(--accent);
+    background: rgba(77,163,255,.06);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-top: 12px;
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+
+  .demo-state strong {
+    color: var(--text);
+  }
+
+  .demo-state .muted {
+    color: var(--muted);
+  }
+
+  .demo-panel-inner {
+    display: none;
+    margin-top: 12px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(255,255,255,.015);
+  }
+
+  .demo-panel-inner.show {
+    display: block;
+  }
+
+  .decision-grid,
+  .challenge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+
+  .decision-item,
+  .challenge-item {
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px;
+    font-size: 11px;
+  }
+
+  .decision-item .label,
+  .challenge-item .label {
+    color: var(--muted);
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+
+  .architecture-flow {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 2;
+    white-space: pre-wrap;
+  }
+
+  .architecture-flow strong {
+    color: var(--accent);
+  }
+
+  @media (max-width: 700px) {
+    .demo-progress {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
   #toast { position: fixed; bottom: 20px; right: 20px; background: var(--panel); border: 1px solid var(--border); padding: 12px 18px; border-radius: 8px; opacity: 0; transition: opacity .2s; font-size: 13px; }
   #toast.show { opacity: 1; }
 </style>
@@ -79,9 +228,83 @@
     <a href="/html/war-rooms/o2c/o2c-war-room.html">SAP SD — O2C</a>
     <a href="/html/war-rooms/mdm/mdm-war-room.html">MDM</a>
     <a href="/html/war-rooms/approval/approval-war-room.html">Approval Center</a>
-    <a href="/html/war-rooms/integration-hub/integration-hub.html">Integration Hub</a>
+    <a href="/html/war-rooms/integration-hub/integration-hub-strategist.html">Integration Hub</a>
     <a href="/html/war-rooms/sap/sap-howto.html">How-To Guide</a>
     <a href="/html/war-rooms/digital-twin/digital-twin.html">↑ Digital Twin (Enterprise View)</a>
+  </div>
+
+
+  <div class="demo-panel" id="architectDemo">
+    <div class="demo-title">SAP ARCHITECT INTERVIEW MODE</div>
+    <div class="demo-subtitle">
+      Demonstrate enterprise process reasoning across Commerce Cloud, CRM/C4C,
+      MDM, CPQ, Approval, Integration, and SD/O2C.
+      The controls below drive a simulated interview narrative without altering
+      the underlying SAP relay payloads.
+    </div>
+
+    <div class="demo-progress" id="demoProgress">
+      <div class="demo-step" data-step="detect">DETECT</div>
+      <div class="demo-step" data-step="scope">SCOPE</div>
+      <div class="demo-step" data-step="trace">TRACE</div>
+      <div class="demo-step" data-step="isolate">ISOLATE</div>
+      <div class="demo-step" data-step="resolve">RESOLVE</div>
+      <div class="demo-step" data-step="learn">LEARN</div>
+    </div>
+
+    <div class="demo-section">
+      <div class="demo-section-title">1 · START / TRACE</div>
+      <div class="demo-buttons">
+        <button id="startJourneyBtn">START JOURNEY</button>
+        <button class="secondary" id="openCommerceBtn">OPEN COMMERCE</button>
+        <button class="secondary" id="traceCustomerBtn">TRACE CUSTOMER</button>
+        <button class="secondary" id="inspectCustomerBtn">INSPECT CUSTOMER DATA</button>
+        <button class="secondary" id="traceMdmBtn">TRACE TO MDM</button>
+        <button class="secondary" id="downstreamBtn">TRACE DOWNSTREAM IMPACT</button>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <div class="demo-section-title">2 · CPQ / APPROVAL / INTEGRATION</div>
+      <div class="demo-buttons">
+        <button class="secondary" id="openCpqBtn">OPEN CPQ QUOTE</button>
+        <button class="secondary" id="dependenciesBtn">VIEW DEPENDENCIES</button>
+        <button class="secondary" id="approvalBtn">OPEN APPROVAL</button>
+        <button class="secondary" id="failureBtn">SIMULATE INTEGRATION FAILURE</button>
+        <button class="secondary" id="resolutionBtn">TRACE RESOLUTION PATH</button>
+        <button class="secondary" id="o2cBtn">OPEN O2C</button>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <div class="demo-section-title">3 · ENTERPRISE INTELLIGENCE</div>
+      <div class="demo-buttons">
+        <button class="secondary" id="impactBtn">VIEW ENTERPRISE IMPACT</button>
+        <button class="secondary" id="digitalTwinBtn">OPEN DIGITAL TWIN</button>
+        <button class="secondary" id="strategistBtn">OPEN STRATEGIST</button>
+        <button class="secondary" id="analysisBtn">STRATEGIST ANALYSIS</button>
+        <button class="secondary" id="decisionBtn">CREATE EXECUTIVE DECISION</button>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <div class="demo-section-title">4 · ARCHITECTURE / PORTFOLIO / INTERVIEW</div>
+      <div class="demo-buttons">
+        <button class="secondary" id="architectureBtn">ARCHITECTURE VIEW</button>
+        <button class="secondary" id="otherAppsBtn">SHOW OTHER TSM APPLICATIONS</button>
+        <button class="secondary" id="challengeBtn">START ARCHITECT INTERVIEW CHALLENGE</button>
+      </div>
+    </div>
+
+    <div class="demo-state" id="demoState">
+      <strong>READY</strong><br>
+      Select <strong>START JOURNEY</strong> to begin the enterprise-process walkthrough.
+    </div>
+
+    <div class="demo-panel-inner" id="decisionPanel"></div>
+    <div class="demo-panel-inner" id="architecturePanel"></div>
+    <div class="demo-panel-inner" id="appsPanel"></div>
+    <div class="demo-panel-inner" id="challengePanel"></div>
   </div>
 
   <div class="flow-banner">
@@ -431,6 +654,397 @@
     try { localStorage.setItem(EXEC_KEY, json); } catch (e) { /* noop */ }
     showToast('Relayed ' + activeCount + ' of ' + all.length + ' SAP stage(s) to Executive Portal.');
   }
+
+
+  /* ==========================================================
+     ARCHITECT INTERVIEW DEMO CONTROL LAYER
+     Keeps demo state local. Existing relay aggregation remains
+     unchanged.
+     ========================================================== */
+
+  const DEMO_LINKS = {
+    commerce: '/html/war-rooms/catalog/catalog-war-room.html',
+    crm: '/html/war-rooms/crm/crm-war-room.html',
+    mdm: '/html/war-rooms/mdm/mdm-war-room.html',
+    cpq: '/html/war-rooms/cpq/cpq-war-room.html',
+    approval: '/html/war-rooms/approval/approval-war-room.html',
+    integration: '/html/war-rooms/integration-hub/integration-hub-strategist.html',
+    o2c: '/html/war-rooms/o2c/o2c-war-room.html',
+    digitalTwin: '/html/war-rooms/digital-twin/digital-twin.html'
+  };
+
+  const DEMO = {
+    step: 'detect',
+    integrationFailure: false
+  };
+
+  function openDemoTab(url, name) {
+    const w = window.open(url, name);
+    if (!w) showToast('Browser blocked the new tab. Allow pop-ups for this site.', true);
+  }
+
+  function setDemoState(title, body, step) {
+    DEMO.step = step || DEMO.step;
+
+    const state = document.getElementById('demoState');
+    state.innerHTML = '<strong>' + title + '</strong><br>' + body;
+
+    const order = ['detect', 'scope', 'trace', 'isolate', 'resolve', 'learn'];
+    const current = order.indexOf(DEMO.step);
+
+    document.querySelectorAll('.demo-step').forEach(el => {
+      const idx = order.indexOf(el.dataset.step);
+      el.classList.toggle('active', idx === current);
+      el.classList.toggle('complete', idx >= 0 && idx < current);
+    });
+  }
+
+  function showDemoPanel(id, html) {
+    document.querySelectorAll('.demo-panel-inner').forEach(el => {
+      if (el.id !== id) el.classList.remove('show');
+    });
+
+    const panel = document.getElementById(id);
+    panel.innerHTML = html;
+    panel.classList.add('show');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  document.getElementById('startJourneyBtn').addEventListener('click', () => {
+    DEMO.integrationFailure = false;
+    setDemoState(
+      'CUSTOMER JOURNEY STARTED',
+      'Commerce → CRM/C4C → MDM → CPQ → Approval → SD/O2C. ' +
+      '<span class="muted">The objective is to follow the business process, not troubleshoot an isolated screen.</span>',
+      'detect'
+    );
+  });
+
+  document.getElementById('openCommerceBtn').addEventListener('click', () => {
+    setDemoState(
+      'COMMERCE',
+      'Starting point: SAP Commerce Cloud / Web Channel. ' +
+      'The customer and product context enters the enterprise process here.',
+      'detect'
+    );
+    openDemoTab(DEMO_LINKS.commerce, 'tsm-sap-commerce');
+  });
+
+  document.getElementById('traceCustomerBtn').addEventListener('click', () => {
+    setDemoState(
+      'CUSTOMER TRACE',
+      'Customer: <strong>Phoenix Convention Center</strong>. ' +
+      'Next question: is the customer record itself trustworthy?',
+      'trace'
+    );
+    openDemoTab(DEMO_LINKS.crm, 'tsm-sap-crm');
+  });
+
+  document.getElementById('inspectCustomerBtn').addEventListener('click', () => {
+    setDemoState(
+      'CUSTOMER DATA INTEGRITY',
+      'Detected duplicate customer context associated with the Phoenix Convention Center. ' +
+      'This becomes an upstream master-data signal rather than merely a CRM symptom.',
+      'trace'
+    );
+
+    showDemoPanel('decisionPanel', `
+      <div class="decision-grid">
+        <div class="decision-item">
+          <div class="label">CUSTOMER</div>
+          Phoenix Convention Center
+        </div>
+        <div class="decision-item">
+          <div class="label">DATA SIGNAL</div>
+          Duplicate customer record
+        </div>
+        <div class="decision-item">
+          <div class="label">PRODUCT SIGNAL</div>
+          BMS-CORE-002 incomplete
+        </div>
+        <div class="decision-item">
+          <div class="label">BUSINESS EFFECT</div>
+          Quote / approval / order flow may be affected
+        </div>
+      </div>
+    `);
+  });
+
+  document.getElementById('traceMdmBtn').addEventListener('click', () => {
+    setDemoState(
+      'TRACE TO MDM',
+      'The investigation moves upstream from CRM/CPQ to Master Data Management. ' +
+      'The question is now: what source condition is creating downstream symptoms?',
+      'trace'
+    );
+    openDemoTab(DEMO_LINKS.mdm, 'tsm-sap-mdm');
+  });
+
+  document.getElementById('downstreamBtn').addEventListener('click', () => {
+    setDemoState(
+      'DOWNSTREAM IMPACT',
+      'MDM → CRM/C4C → CPQ → Approval → SD/O2C. ' +
+      'The same data condition can propagate across multiple application boundaries.',
+      'scope'
+    );
+  });
+
+  document.getElementById('openCpqBtn').addEventListener('click', () => {
+    setDemoState(
+      'CPQ QUOTE',
+      'Quote <strong>Q-2026-0041</strong> · <strong>$142,000</strong> · ' +
+      '<strong>NEEDS APPROVAL</strong>.',
+      'scope'
+    );
+    openDemoTab(DEMO_LINKS.cpq, 'tsm-sap-cpq');
+  });
+
+  document.getElementById('dependenciesBtn').addEventListener('click', () => {
+    setDemoState(
+      'DEPENDENCY CHECK',
+      'Customer → MDM warning. Product BMS-CORE-002 → MDM warning. ' +
+      'Approval remains a required downstream handoff.',
+      'scope'
+    );
+  });
+
+  document.getElementById('approvalBtn').addEventListener('click', () => {
+    setDemoState(
+      'APPROVAL HANDOFF',
+      'The CPQ quote cannot be treated independently of its approval dependency. ' +
+      'Open the Approval Center to inspect that handoff.',
+      'scope'
+    );
+    openDemoTab(DEMO_LINKS.approval, 'tsm-sap-approval');
+  });
+
+  document.getElementById('failureBtn').addEventListener('click', () => {
+    DEMO.integrationFailure = true;
+
+    setDemoState(
+      'SIMULATED INTEGRATION FAILURE',
+      'Simulation only: CPQ → <strong>Integration Hub X</strong> → SD/O2C. ' +
+      '<span class="muted">This does not modify the underlying SAP relay payload.</span>',
+      'isolate'
+    );
+  });
+
+  document.getElementById('resolutionBtn').addEventListener('click', () => {
+    setDemoState(
+      'RESOLUTION PATH',
+      DEMO.integrationFailure
+        ? 'Evidence points to the Integration Hub handoff before SD/O2C. ' +
+          'Inspect interface health, then verify whether the order-to-cash SLA recovers.'
+        : 'Resolution path follows the evidence chain: verify MDM integrity → validate CPQ dependencies → verify approval → confirm SD/O2C processing.',
+      'resolve'
+    );
+
+    openDemoTab(DEMO_LINKS.integration, 'tsm-sap-integration');
+  });
+
+  document.getElementById('o2cBtn').addEventListener('click', () => {
+    setDemoState(
+      'SD / O2C',
+      'Inspect Order-to-Cash processing. ' +
+      (DEMO.integrationFailure
+        ? 'The simulated integration failure is the upstream dependency to investigate.'
+        : 'Validate whether downstream processing is receiving the expected upstream state.'),
+      'resolve'
+    );
+    openDemoTab(DEMO_LINKS.o2c, 'tsm-sap-o2c');
+  });
+
+  document.getElementById('impactBtn').addEventListener('click', () => {
+    setDemoState(
+      'ENTERPRISE IMPACT',
+      'Commerce → CRM/C4C → MDM → CPQ → Approval → SD/O2C, with Integration Hub as the cross-system dependency. ' +
+      'The purpose of the view is to show propagation, not just individual application health.',
+      'scope'
+    );
+  });
+
+  document.getElementById('digitalTwinBtn').addEventListener('click', () => {
+    setDemoState(
+      'DIGITAL TWIN',
+      'Open the enterprise view to see how application and dependency health are represented together.',
+      'scope'
+    );
+    openDemoTab(DEMO_LINKS.digitalTwin, 'tsm-sap-digital-twin');
+  });
+
+  document.getElementById('strategistBtn').addEventListener('click', () => {
+    setDemoState(
+      'STRATEGIST',
+      'You are already inside the SAP Strategist. ' +
+      'This is the reasoning layer that consumes the domain signals and turns them into an investigation path.',
+      'resolve'
+    );
+  });
+
+  document.getElementById('analysisBtn').addEventListener('click', () => {
+    setDemoState(
+      'STRATEGIST ANALYSIS',
+      '<strong>SIGNAL:</strong> customer/product master-data anomalies. ' +
+      '<strong>SEVERITY:</strong> high business-process exposure. ' +
+      '<strong>DEPENDENCY:</strong> MDM → CRM/CPQ → Approval → SD/O2C. ' +
+      '<strong>IMPACT:</strong> $142K quote and downstream order flow. ' +
+      '<strong>ACTION:</strong> investigate source data and validate downstream handoffs.',
+      'resolve'
+    );
+  });
+
+  document.getElementById('decisionBtn').addEventListener('click', () => {
+    try {
+      relayToExec();
+    } catch (e) {
+      console.warn('Executive relay unavailable:', e);
+    }
+
+    setDemoState(
+      'EXECUTIVE DECISION PACKAGE',
+      'The strategist has assembled the evidence needed for an executive decision. ' +
+      'The decision itself remains a business action: investigate, remediate, or escalate.',
+      'learn'
+    );
+
+    showDemoPanel('decisionPanel', `
+      <div class="decision-grid">
+        <div class="decision-item">
+          <div class="label">BUSINESS OBJECT</div>
+          Q-2026-0041
+        </div>
+        <div class="decision-item">
+          <div class="label">VALUE</div>
+          $142,000
+        </div>
+        <div class="decision-item">
+          <div class="label">ROOT SIGNAL</div>
+          MDM / integration dependency
+        </div>
+        <div class="decision-item">
+          <div class="label">DOWNSTREAM</div>
+          CPQ → Approval → SD/O2C
+        </div>
+        <div class="decision-item">
+          <div class="label">SEVERITY</div>
+          HIGH
+        </div>
+        <div class="decision-item">
+          <div class="label">AVAILABLE ACTIONS</div>
+          INVESTIGATE · REMEDIATE · ESCALATE
+        </div>
+      </div>
+    `);
+  });
+
+  document.getElementById('architectureBtn').addEventListener('click', () => {
+    setDemoState(
+      'ARCHITECTURE VIEW',
+      'This is the reusable TSM pattern underneath the SAP example.',
+      'learn'
+    );
+
+    showDemoPanel('architecturePanel', `
+      <div class="architecture-flow">
+<strong>BUSINESS DOMAIN</strong>
+        ↓
+<strong>WAR ROOMS</strong>
+        ↓
+<strong>DOMAIN RELAYS</strong>
+        ↓
+<strong>STRATEGIST</strong>
+        ↓
+<strong>DIGITAL TWIN / EXECUTIVE</strong>
+        ↓
+<strong>DECISION</strong>
+        ↓
+<strong>ACTION / FEEDBACK</strong>
+
+Signal → Context → Impact → Risk → Recommendation → Decision
+
+Detect → Scope → Trace → Isolate → Resolve → Learn
+      </div>
+    `);
+  });
+
+  document.getElementById('otherAppsBtn').addEventListener('click', () => {
+    setDemoState(
+      'TSM APPLICATION PORTFOLIO',
+      'The SAP implementation is one application of the same enterprise intelligence pattern.',
+      'learn'
+    );
+
+    showDemoPanel('appsPanel', `
+      <div class="decision-grid">
+        <div class="decision-item">
+          <div class="label">SAP</div>
+          Commerce · CRM/C4C · CPQ · MDM · SD/O2C
+        </div>
+        <div class="decision-item">
+          <div class="label">HONEYWELL</div>
+          Plant · Advanced Detection · BESS · Supplier Shutdown
+        </div>
+        <div class="decision-item">
+          <div class="label">HEALTHCARE</div>
+          Denial Recovery · Revenue Cycle · A/R
+        </div>
+        <div class="decision-item">
+          <div class="label">CONSTRUCTION</div>
+          Project exposure · PM exceptions · document intelligence
+        </div>
+        <div class="decision-item">
+          <div class="label">BPO</div>
+          Quality · compliance · exceptions · executive visibility
+        </div>
+      </div>
+    `);
+  });
+
+  document.getElementById('challengeBtn').addEventListener('click', () => {
+    setDemoState(
+      'ARCHITECT INTERVIEW CHALLENGE',
+      'Choose an incident. Then reason through DETECT → SCOPE → TRACE → ISOLATE → RESOLVE → LEARN.',
+      'detect'
+    );
+
+    showDemoPanel('challengePanel', `
+      <div class="challenge-grid">
+        <button class="secondary challenge-btn" data-incident="Commerce Outage">Commerce Outage</button>
+        <button class="secondary challenge-btn" data-incident="Customer Data Integrity">Customer Data Integrity</button>
+        <button class="secondary challenge-btn" data-incident="CPQ Failure">CPQ Failure</button>
+        <button class="secondary challenge-btn" data-incident="Approval Failure">Approval Failure</button>
+        <button class="secondary challenge-btn" data-incident="Integration Failure">Integration Failure</button>
+        <button class="secondary challenge-btn" data-incident="SD/O2C SLA Breach">SD/O2C SLA Breach</button>
+      </div>
+      <div id="challengeResult" class="demo-state" style="margin-top:12px;">
+        Select an incident to begin.
+      </div>
+    `);
+
+    document.querySelectorAll('.challenge-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const incident = btn.dataset.incident;
+        const result = document.getElementById('challengeResult');
+
+        result.innerHTML =
+          '<strong>' + incident + '</strong><br>' +
+          '<span class="muted">' +
+          'DETECT:</span> identify the observable signal.<br>' +
+          '<span class="muted">SCOPE:</span> determine affected business process and systems.<br>' +
+          '<span class="muted">TRACE:</span> follow dependencies upstream and downstream.<br>' +
+          '<span class="muted">ISOLATE:</span> distinguish source from symptom.<br>' +
+          '<span class="muted">RESOLVE:</span> select the evidence-supported resolution path.<br>' +
+          '<span class="muted">LEARN:</span> capture the decision and feed the pattern back into operations.';
+
+        setDemoState(
+          'CHALLENGE: ' + incident.toUpperCase(),
+          'Walk the interviewer through the six-step investigation framework.',
+          'detect'
+        );
+      });
+    });
+  });
+
 
   document.getElementById('relayExecBtn').addEventListener('click', relayToExec);
   document.getElementById('refreshBtn').addEventListener('click', render);
