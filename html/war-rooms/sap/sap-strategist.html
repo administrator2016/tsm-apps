@@ -1520,48 +1520,17 @@ Detect → Scope → Trace → Isolate → Resolve → Learn
   });
 
   document.getElementById('challengeBtn').addEventListener('click', () => {
+    const currentStageIndex = Number.isInteger(DEMO.traceIndex)
+      ? DEMO.traceIndex
+      : 0;
+
     setDemoState(
       'ARCHITECT INTERVIEW CHALLENGE',
-      'Choose an incident. Then reason through DETECT → SCOPE → TRACE → ISOLATE → RESOLVE → LEARN.',
-      'detect'
+      'Reason through the current SAP stage, then follow the business object downstream.',
+      'trace'
     );
 
-    showDemoPanel('challengePanel', `
-      <div class="challenge-grid">
-        <button class="secondary challenge-btn" data-incident="Commerce Outage">Commerce Outage</button>
-        <button class="secondary challenge-btn" data-incident="Customer Data Integrity">Customer Data Integrity</button>
-        <button class="secondary challenge-btn" data-incident="CPQ Failure">CPQ Failure</button>
-        <button class="secondary challenge-btn" data-incident="Approval Failure">Approval Failure</button>
-        <button class="secondary challenge-btn" data-incident="Integration Failure">Integration Failure</button>
-        <button class="secondary challenge-btn" data-incident="SD/O2C SLA Breach">SD/O2C SLA Breach</button>
-      </div>
-      <div id="challengeResult" class="demo-state" style="margin-top:12px;">
-        Select an incident to begin.
-      </div>
-    `);
-
-    document.querySelectorAll('.challenge-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const incident = btn.dataset.incident;
-        const result = document.getElementById('challengeResult');
-
-        result.innerHTML =
-          '<strong>' + incident + '</strong><br>' +
-          '<span class="muted">' +
-          'DETECT:</span> identify the observable signal.<br>' +
-          '<span class="muted">SCOPE:</span> determine affected business process and systems.<br>' +
-          '<span class="muted">TRACE:</span> follow dependencies upstream and downstream.<br>' +
-          '<span class="muted">ISOLATE:</span> distinguish source from symptom.<br>' +
-          '<span class="muted">RESOLVE:</span> select the evidence-supported resolution path.<br>' +
-          '<span class="muted">LEARN:</span> capture the decision and feed the pattern back into operations.';
-
-        setDemoState(
-          'CHALLENGE: ' + incident.toUpperCase(),
-          'Walk the interviewer through the six-step investigation framework.',
-          'detect'
-        );
-      });
-    });
+    renderInterviewChallenge(currentStageIndex);
   });
 
 
