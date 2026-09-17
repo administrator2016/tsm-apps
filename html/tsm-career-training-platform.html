@@ -7156,7 +7156,8 @@ function getInterviewRoleId(sectorId) {
     'healthcare-rcm': 'rcm-analyst',
     'insurance': 'claims-analyst',
     'finops-ai': 'operations-analyst',
-    'automation-it': 'l1-support'
+    'automation-it': 'l1-support',
+    'sap': 'sap-analyst'
   };
 
   return roleMap[sectorId] || null;
@@ -7168,7 +7169,8 @@ function getInterviewSectorLabel(sectorId) {
     'healthcare-rcm': 'HEALTHCARE RCM',
     'insurance': 'INSURANCE',
     'finops-ai': 'FINOPS · AI · CAREER',
-    'automation-it': 'AUTOMATION · IT'
+    'automation-it': 'AUTOMATION · IT',
+    'sap': 'SAP · ENTERPRISE APPLICATIONS'
   };
 
   return labels[sectorId] || sectorId;

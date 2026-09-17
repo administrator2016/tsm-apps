@@ -8,6 +8,7 @@ const CASES = [
   ['insurance', 'claims-analyst', 'Claims Analyst'],
   ['finops-ai', 'operations-analyst', 'Operations Analyst'],
   ['automation-it', 'l1-support', 'L1 IT Support Technician'],
+  ['sap', 'sap-analyst', 'SAP Analyst'],
 ];
 
 async function main() {
@@ -121,11 +122,11 @@ async function main() {
   console.log('\n=== RESULT ===');
 
   if (failures === 0) {
-    console.log('PASS — 5/5 interview plans healthy');
+    console.log('PASS — 6/6 interview plans healthy');
     process.exit(0);
   }
 
-  console.log(`FAIL — ${failures}/5 cases failed`);
+  console.log(`FAIL — ${failures}/6 cases failed`);
   process.exit(1);
 }
 

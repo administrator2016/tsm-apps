@@ -184,4 +184,48 @@
       "TSM projects"
     ]
   }
+,
+  "sap": {
+    "name": "SAP Enterprise Applications",
+    "roles": [
+      { "id": "sap-analyst", "name": "SAP Analyst" },
+      { "id": "sap-functional-analyst", "name": "SAP Functional Analyst" },
+      { "id": "sap-commerce-analyst", "name": "SAP Commerce / CRM Analyst" },
+      { "id": "sap-business-process-analyst", "name": "SAP Business Process Analyst" }
+    ],
+    "competencies": [
+      "SAP Commerce Cloud / Hybris",
+      "SAP CRM / C4C",
+      "SAP Web Channel",
+      "SAP SD / O2C",
+      "SAP CPQ",
+      "S/4HANA / FICO",
+      "BW/4HANA",
+      "SuccessFactors",
+      "Integration",
+      "Business process reasoning",
+      "Root cause analysis",
+      "Business impact"
+    ],
+    "scenarios": [
+      "Commerce Cloud order issue",
+      "CRM customer-data issue",
+      "CPQ quote dependency",
+      "SD / O2C process exception",
+      "S/4HANA billing-to-FI issue",
+      "FICO reconciliation issue",
+      "BW/4HANA reporting issue",
+      "SuccessFactors integration issue",
+      "Cross-system business process failure"
+    ],
+    "evidenceSources": [
+      "SAP Strategist",
+      "SAP How-To",
+      "SAP Architect Challenges",
+      "S/4HANA + FICO Challenge",
+      "Analytics + HXM Challenge",
+      "TSM SAP War Rooms",
+      "TSM projects"
+    ]
+  }
 }
