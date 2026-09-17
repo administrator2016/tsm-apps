@@ -364,25 +364,9 @@ textarea::placeholder{color:var(--faint)}
 .howto-section ul{padding-left:16px}
 .howto-close-btn{margin-top:20px;padding:8px 22px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:'Orbitron',sans-serif;font-size:.72rem;border-radius:4px;cursor:pointer;letter-spacing:.08em}
 .howto-close-btn:hover{background:var(--cyan);color:#000}
-/* ── DEFECT MANIFEST ─────────────────────────────────────── */
-.manifest-btn{position:fixed;bottom:18px;left:18px;z-index:7000;background:#0d1117;border:1px solid #ef4444;color:#ef4444;font-family:'Orbitron',sans-serif;font-size:.62rem;padding:7px 14px;border-radius:4px;cursor:pointer;letter-spacing:.08em;opacity:.7}
-.manifest-btn:hover{opacity:1}
 .pipeline-links{position:fixed;bottom:18px;right:18px;z-index:7000;display:flex;gap:8px}
 .pipeline-links a{background:#0d1117;border:1px solid var(--cyan3);color:var(--cyan);font-family:'Orbitron',sans-serif;font-size:.62rem;padding:7px 14px;border-radius:4px;text-decoration:none;letter-spacing:.06em;opacity:.75;transition:opacity .15s}
 .pipeline-links a:hover{opacity:1}
-.manifest-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9500;display:none;align-items:center;justify-content:center}
-.manifest-overlay.active{display:flex}
-.manifest-card{background:#0d1117;border:1px solid #ef4444;border-radius:8px;padding:28px 32px;max-width:600px;width:92%;max-height:78vh;overflow-y:auto}
-.manifest-card h2{font-family:'Orbitron',sans-serif;font-size:.9rem;color:#ef4444;margin-bottom:16px;letter-spacing:.1em}
-.manifest-table{width:100%;border-collapse:collapse;font-size:.8rem}
-.manifest-table th{text-align:left;color:#555;font-family:'Orbitron',sans-serif;font-size:.65rem;padding:6px 8px;border-bottom:1px solid #222;letter-spacing:.06em}
-.manifest-table td{padding:7px 8px;color:#aaa;border-bottom:1px solid #1a1a1a;vertical-align:top}
-.manifest-table tr:hover td{background:#111}
-.sev-crit{color:#ef4444;font-weight:700}
-.sev-med{color:var(--amber)}
-.sev-low{color:var(--cyan)}
-.manifest-close-btn{margin-top:18px;padding:7px 20px;background:transparent;border:1px solid #ef4444;color:#ef4444;font-family:'Orbitron',sans-serif;font-size:.7rem;border-radius:4px;cursor:pointer;letter-spacing:.08em}
-.manifest-close-btn:hover{background:#ef4444;color:#000}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://code.responsivevoice.org/responsivevoice.js?key=FREE"></script>
@@ -2270,8 +2254,8 @@ function buildHCStructuredCase(outputs, docText, claimDollar) {
 }
 
 // TSM RCM CAREER BRIDGE — read-only access to the canonical structured case.
-// The Career Adapter must consume the existing 13-field denial contract rather
-// than scrape the defect manifest or create a second denial dataset.
+// The Career Adapter must consume the existing 13-field denial contract
+// rather than create a second, competing denial dataset.
 window.TSMDenialWarRoom = window.TSMDenialWarRoom || {};
 window.TSMDenialWarRoom.getStructuredCase = function () {
   return lastStructuredCase || null;
@@ -2527,44 +2511,12 @@ function exportAll() {
   </div>
 </div>
 
-<!-- ── DEFECT MANIFEST ───────────────────────────────────────────── -->
-<button class="manifest-btn" id="manifestBtn" style="display:none" onclick="document.getElementById('manifestOverlay').classList.add('active')">⚠ DEFECT MANIFEST</button>
 <!-- Cases created in this war room sync to the Case Engine (tsm-case-manager.js,
      server-persisted in bpo_cases) — these jump to the same live views BPO
      Internal1 and the Enterprise Portal use, filtered to this vertical. -->
 <div class="pipeline-links">
   <a href="/html/war-rooms/bpo-war/bpo-executive-portal.html?vertical=healthcare" target="_blank" rel="noopener">CASE QUEUE →</a>
   <a href="/html/enterprise/enterprise-executive-portal.html?vertical=healthcare" target="_blank" rel="noopener">ENTERPRISE PORTAL →</a>
-</div>
-<script>
-// Internal-only: defect manifest is a dev/QA tool, never shown in a client-facing session
-// unless explicitly requested via ?debug=1 (or ?debug=true).
-(function(){
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const debugOn = params.get('debug') === '1' || params.get('debug') === 'true';
-    if (debugOn) document.getElementById('manifestBtn').style.display = '';
-  } catch(e) {}
-})();
-</script>
-<div class="manifest-overlay" id="manifestOverlay">
-  <div class="manifest-card">
-    <h2>⚠ HC DENIAL WAR ROOM — DEFECT MANIFEST</h2>
-    <table class="manifest-table">
-      <thead><tr><th>#</th><th>COMPONENT</th><th>DEFECT</th><th>SEV</th><th>STATUS</th></tr></thead>
-      <tbody>
-        <tr><td>D-01</td><td>Engine E3</td><td>Financial calc uses LARGE model — may time out on slow Groq keys; no retry logic</td><td class="sev-crit">CRIT</td><td>OPEN</td></tr>
-        <tr><td>D-02</td><td>File Drop Zone</td><td>PDF/DOCX extraction dependent on browser FileReader; binary formats may silently fail</td><td class="sev-crit">CRIT</td><td>OPEN</td></tr>
-        <tr><td>D-03</td><td>Engine E5</td><td>Nav container used as outId — clear() wipes nav HTML on re-run</td><td class="sev-med">MED</td><td>OPEN</td></tr>
-        <tr><td>D-04</td><td>API Key</td><td>Key stored in localStorage plaintext; no expiry or rotation mechanism</td><td class="sev-med">MED</td><td>ACCEPTED</td></tr>
-        <tr><td>D-05</td><td>Timely Filing</td><td>Deadline calculation is narrative only — no date math against actual service date</td><td class="sev-med">MED</td><td>OPEN</td></tr>
-        <tr><td>D-06</td><td>clearAll()</td><td>Does not reset E5 nav-container output — stale nav persists on re-run</td><td class="sev-med">MED</td><td>OPEN</td></tr>
-        <tr><td>D-07</td><td>Mobile Layout</td><td>Engine output panels overflow viewport on screens &lt;768px</td><td class="sev-low">LOW</td><td>OPEN</td></tr>
-        <tr><td>D-08</td><td>Sample Data</td><td>BCBS AZ sample uses future date (Apr 2026) — may confuse timely filing engine</td><td class="sev-low">LOW</td><td>OPEN</td></tr>
-      </tbody>
-    </table>
-    <button class="manifest-close-btn" onclick="document.getElementById('manifestOverlay').classList.remove('active')">CLOSE</button>
-  </div>
 </div>
 
 <script>
