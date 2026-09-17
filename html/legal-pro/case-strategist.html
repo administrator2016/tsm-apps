@@ -438,6 +438,7 @@ select option{background:#071220}
       <span class="badge purple">BNCA ENGINE</span>
       <span class="badge amber" id="risk-badge">RISK: ASSESSING</span>
       <span class="badge red" id="sla-badge">SLA: MONITORING</span>
+      <span class="badge red" id="sim-badge" style="display:none;">⚠ SIMULATED — GROQ UNAVAILABLE</span>
     </div>
   </div>
   <div class="cmd-stats">
@@ -869,6 +870,7 @@ const SCENARIOS = {
 
 let currentScenario = 'billing';
 let lastBNCA = '';
+let lastBNCADegraded = false;
 let lastMatterMeta = null;
 
 function escapeHtml(s) {
@@ -1051,13 +1053,15 @@ Generate the full BNCA report with cross-node synthesis, prioritized actions, ow
     const data = await response.json();
     const text = data.choices?.[0]?.message?.content || '';
     await streamText(text, outputEl);
-    finalizeBNCA(text);
+    finalizeBNCA(text, false);
 
   } catch (err) {
-    // Fallback: rich mock BNCA
+    // Fallback: rich mock BNCA — NOT a real Groq analysis. finalizeBNCA
+    // is told this is degraded so it can visibly mark the output as
+    // simulated rather than presenting a fabricated report as real.
     const mockBNCA = generateMockBNCA(matterName, matterType, partner, sla, scenario, hoursRisk);
     await streamText(mockBNCA, outputEl);
-    finalizeBNCA(mockBNCA);
+    finalizeBNCA(mockBNCA, true);
   }
 }
 
@@ -1116,8 +1120,12 @@ async function streamText(text, el) {
   el.classList.remove('typing');
 }
 
-function finalizeBNCA(text) {
+function finalizeBNCA(text, degraded) {
   lastBNCA = text;
+  lastBNCADegraded = !!degraded;
+
+  const simBadge = document.getElementById('sim-badge');
+  if (simBadge) simBadge.style.display = degraded ? 'inline-block' : 'none';
 
   // Extract confidence, risk level, and SLA pressure from the AI's own
   // structured output — this is the actual assessment it produced, not a
