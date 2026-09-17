@@ -7089,6 +7089,7 @@ function selectCareerCandidate(candidateId) {
 
   // Keep the existing registry navigation behavior.
   switchTo('profile');
+  renderCrossTrackReadinessProfile();
 
   // If Interview Prep is already open, refresh its candidate context.
   const checkbox = document.getElementById('mortgageInterviewPrepCheckbox');
@@ -7462,6 +7463,86 @@ function candidateReadinessEvidence(candidate) {
   };
 }
 
+
+function renderCrossTrackReadinessProfile() {
+  const candidateId = window._selectedCandidateId;
+  const candidate = window._candidateRegistryById && candidateId
+    ? window._candidateRegistryById[candidateId]
+    : null;
+
+  const nameEl = document.getElementById('cross-track-candidate');
+  const tracks = {
+    sap: document.getElementById('cross-track-sap'),
+    healthcare: document.getElementById('cross-track-healthcare'),
+    automation: document.getElementById('cross-track-automation'),
+    finops: document.getElementById('cross-track-finops')
+  };
+
+  if (!candidate) {
+    if (nameEl) nameEl.textContent = 'NO CANDIDATE';
+    Object.values(tracks).forEach(el => {
+      if (el) el.textContent = 'Candidate Registry evidence pending.';
+    });
+    return;
+  }
+
+  const e = candidateReadinessEvidence(candidate);
+  const trackLabel = String(e.track || '').toLowerCase();
+
+  if (nameEl) {
+    nameEl.textContent = candidate.name || candidate.candidateId || 'SELECTED CANDIDATE';
+  }
+
+  const evidenceLine = (items, fallback) => items.length
+    ? items.map(item => `<div>✓ ${escapeHtml(item)}</div>`).join('')
+    : `<div style="color:var(--text3)">${escapeHtml(fallback)}</div>`;
+
+  const hasTrack = (...terms) => terms.some(term => trackLabel.includes(term));
+
+  if (tracks.sap) {
+    tracks.sap.innerHTML = evidenceLine(
+      hasTrack('sap')
+        ? [`Track: ${e.track}`]
+        : [],
+      'No SAP-specific evidence recorded yet.'
+    );
+  }
+
+  if (tracks.healthcare) {
+    tracks.healthcare.innerHTML = evidenceLine(
+      hasTrack('medical billing', 'healthcare', 'rcm')
+        ? [`Track: ${e.track}`]
+        : [],
+      'No Healthcare / RCM-specific evidence recorded yet.'
+    );
+  }
+
+  if (tracks.automation) {
+    const automationEvidence = [];
+
+    if (hasTrack('automation', 'it support', 'information technology')) {
+      automationEvidence.push(`Track: ${e.track}`);
+    }
+
+    if (e.operational) {
+      automationEvidence.push('L1 operational evidence recorded');
+    }
+
+    tracks.automation.innerHTML = evidenceLine(
+      automationEvidence,
+      'No Automation / IT-specific evidence recorded yet.'
+    );
+  }
+
+  if (tracks.finops) {
+    tracks.finops.innerHTML = evidenceLine(
+      hasTrack('financial operations', 'finops', 'finance')
+        ? [`Track: ${e.track}`]
+        : [],
+      'No FinOps / AI-specific evidence recorded yet.'
+    );
+  }
+}
 function candidateStatusMeta(status) {
   if (status === 'ready_for_placement') return { label: 'APPROVED', cls: 'approved', action: '→ Deployment cleared' };
   if (status === 'needs_review') return { label: 'PENDING', cls: 'pending', action: '⚡ Review now → HITL' };

@@ -115,9 +115,20 @@ async function main() {
   const elements = {
     mortgageInterviewIntel: makeElement(),
     mortgageInterviewSessionStatus: makeElement(),
+    crossTrackCandidate: makeElement(),
+    crossTrackSap: makeElement(),
+    crossTrackHealthcare: makeElement(),
+    crossTrackAutomation: makeElement(),
+    crossTrackFinops: makeElement(),
   };
   global.document = {
-    getElementById: (id) => elements[id] || null,
+    getElementById: (id) => ({
+      'cross-track-candidate': elements.crossTrackCandidate,
+      'cross-track-sap': elements.crossTrackSap,
+      'cross-track-healthcare': elements.crossTrackHealthcare,
+      'cross-track-automation': elements.crossTrackAutomation,
+      'cross-track-finops': elements.crossTrackFinops,
+    }[id] || elements[id] || null),
     addEventListener: () => {},
     querySelectorAll: () => [],
     querySelector: () => null,
@@ -160,7 +171,19 @@ async function main() {
       _candidateRegistryById: {
         cand_test_interview_001: {
           candidateId: 'cand_test_interview_001',
-          name: 'Test Interview Candidate'
+          name: 'Test Interview Candidate',
+          readinessEvidence: {
+            track: 'Medical Billing / Healthcare Admin',
+            strengths: ['Medical Billing'],
+            operational: {
+              l1: {
+                resolution: {
+                  category: 'Software/Access',
+                  status: 'resolved'
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -175,6 +198,11 @@ async function main() {
     context.selectCareerCandidate('cand_test_interview_001');
     check('candidate selection resolves through Candidate Registry lookup', context.window._selectedCandidateId === 'cand_test_interview_001');
     check('selected candidate name comes from the registry snapshot', context.window._selectedCandidateName === 'Test Interview Candidate');
+    check('cross-track profile resolves the selected candidate', elements.crossTrackCandidate.textContent === 'Test Interview Candidate');
+    check('healthcare profile uses explicit registry track evidence', elements.crossTrackHealthcare.innerHTML.includes('Medical Billing / Healthcare Admin'));
+    check('automation profile accepts structured L1 operational evidence', elements.crossTrackAutomation.innerHTML.includes('L1 operational evidence recorded'));
+    check('SAP profile does not infer evidence from generic strengths', elements.crossTrackSap.innerHTML.includes('No SAP-specific evidence recorded yet.'));
+    check('FinOps profile does not infer evidence from generic strengths', elements.crossTrackFinops.innerHTML.includes('No FinOps / AI-specific evidence recorded yet.'));
     // 1. Checking the box loads the real plan
     const checkbox = { checked: true };
     await context.handleMortgageInterviewPrepToggle(checkbox);
