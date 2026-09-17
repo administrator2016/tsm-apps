@@ -765,6 +765,11 @@ window.runInphusionWarRoomScenario = function() {
         <div class="wow-stat-label">Appeal Deadline</div>
         <div class="wow-stat-sub">Days remaining</div>
       </div>
+      <div class="wow-stat">
+        <div class="wow-stat-val" id="ws-timely" style="color:var(--purple)">—</div>
+        <div class="wow-stat-label">Timely Filing</div>
+        <div class="wow-stat-sub">Computed, not narrated</div>
+      </div>
     </div>
     <div class="wow-action">
       <div class="wow-action-txt" id="wow-pitch">TSM recovered this claim analysis in <strong>under 5 minutes</strong>. Traditional analyst time: <strong>2–5 days</strong>.</div>
@@ -1587,6 +1592,42 @@ function resolveAppealDeadline(deadlinePhrase, fullDocText) {
   return { label: fmt + urgency, date: deadline };
 }
 
+// TSM FIX (D-05): timely filing risk was narrative-only — the LLM would say
+// something like "82 days since service date, 90-day limit" as prose, with
+// no real date math backing it and no drift-proofing against "today"
+// changing between page loads. Mirrors resolveAppealDeadline's honesty
+// rule: only computes a real answer when it can confidently find BOTH a
+// day-count filing window (e.g. "90-day timely filing limit") AND an
+// explicit date of service in the source document; otherwise returns null
+// and the caller shows NOT STATED IN SOURCE rather than a guess.
+function resolveTimelyFilingWindow(fullDocText) {
+  if (!fullDocText) return null;
+
+  const windowMatch =
+    fullDocText.match(/(\d{1,3})[- ]days?\s*(?:calendar\s*)?timely filing/i) ||
+    fullDocText.match(/timely filing[^.\n]{0,40}?(\d{1,3})\s*days?/i) ||
+    fullDocText.match(/(\d{1,3})\s*days?\s*from\s*(?:the\s*)?date of service/i);
+  if (!windowMatch) return null;
+  const windowDays = parseInt(windowMatch[1], 10);
+  if (!windowDays || windowDays > 365) return null; // sanity bound, refuse to guess on nonsense
+
+  const anchors = /(date of service|service date|DOS)[:\s]{0,10}[^.\n]{0,40}/i;
+  const anchorMatch = fullDocText.match(anchors);
+  const serviceDate = anchorMatch ? extractExplicitDate(anchorMatch[0]) : null;
+  if (!serviceDate) return null; // no confidently-anchored service date — don't guess which date it is
+
+  const deadline = new Date(serviceDate);
+  deadline.setDate(deadline.getDate() + windowDays);
+  const today = new Date();
+  const daysElapsed = Math.floor((today - serviceDate) / 86400000);
+  const daysLeft = Math.ceil((deadline - today) / 86400000);
+  const deadlineFmt = deadline.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const label = daysLeft < 0
+    ? 'PAST DUE — ' + deadlineFmt + ' (' + Math.abs(daysLeft) + 'd over ' + windowDays + 'd window)'
+    : daysLeft + 'd left of ' + windowDays + 'd window (due ' + deadlineFmt + ')';
+  return { label, deadline, windowDays, daysElapsed, daysLeft };
+}
+
 async function runPipeline() {
   if (!docText || docText.length < 20) { alert('Load a document first.'); return; }
 
@@ -1749,6 +1790,19 @@ async function runPipeline() {
         dlEl.textContent = dlPhrase.slice(0, 60);
       } else {
         dlEl.textContent = 'NOT STATED IN SOURCE';
+      }
+    }
+  } catch (e) {}
+  try {
+    const tfEl = document.getElementById('ws-timely');
+    if (tfEl) {
+      const tf = resolveTimelyFilingWindow(docText);
+      if (tf) {
+        tfEl.textContent = tf.label;
+        tfEl.style.color = tf.daysLeft < 0 ? 'var(--red)' : tf.daysLeft <= 14 ? 'var(--amber)' : 'var(--purple)';
+        tfEl.title = 'Date of service + ' + tf.windowDays + '-day window, computed from source document';
+      } else {
+        tfEl.textContent = 'NOT STATED IN SOURCE';
       }
     }
   } catch (e) {}
@@ -2484,14 +2538,7 @@ function exportAll() {
       </ul>
     </div>
     <div class="howto-section">
-      <h3>STEP 2 — CONFIGURE API KEY</h3>
-      <ul>
-        <li>Enter your Groq API key in the key field and hit Test. A green dot = connected.</li>
-        <li>Key is saved to localStorage — you only need to do this once per browser.</li>
-      </ul>
-    </div>
-    <div class="howto-section">
-      <h3>STEP 3 — FIRE ALL 5 ENGINES</h3>
+      <h3>STEP 2 — FIRE ALL 5 ENGINES</h3>
       <ul>
         <li><strong style="color:var(--cyan)">E1 · DOCUMENT INTEL</strong> — Extracts claim ID, CPT, denial codes, payer, amounts.</li>
         <li><strong style="color:var(--cyan)">E2 · ROOT CAUSE</strong> — Identifies denial reason, policy violation, coding error.</li>
@@ -2501,7 +2548,7 @@ function exportAll() {
       </ul>
     </div>
     <div class="howto-section">
-      <h3>STEP 4 — DOWNSTREAM WORKFLOW</h3>
+      <h3>STEP 3 — DOWNSTREAM WORKFLOW</h3>
       <ul>
         <li>Engine output feeds into the <strong style="color:var(--amber)">HC Strategist</strong> and <strong style="color:var(--amber)">Executive Portal</strong> via sessionStorage relay.</li>
         <li>Navigate using the Ecosystem panel to route to other TSM suites.</li>
@@ -2529,7 +2576,7 @@ const HC_TOUR_STEPS = [
   { title: 'E4 · RECOVERY PLAN', body: 'Builds a step-by-step appeal plan: documents required, appeal letter talking points, payer portal instructions, and submission deadline. Ready to hand off to your billing team.' },
   { title: 'E5 · RECOVERY NAVIGATOR', body: 'Final engine. Routes next actions to the correct staff roles — Billing Coordinator, Office Manager, or Appeals Specialist — with escalation path and priority order.' },
   { title: 'DOWNSTREAM WORKFLOW', body: 'Engine output is relayed via sessionStorage to the HC Strategist and Executive Portal. Use the Ecosystem nav at the bottom of the page to route to other TSM suites or escalate to leadership.' },
-  { title: 'YOU\'RE READY', body: 'Load a denial document (or hit a sample), enter your Groq key, and fire all 5 engines. For a full walkthrough of controls, hit the HOW TO button in the toolbar.' },
+  { title: 'YOU\'RE READY', body: 'Load a denial document (or hit a sample) and fire all 5 engines. For a full walkthrough of controls, hit the HOW TO button in the toolbar.' },
 ];
 
 let tourIdx = 0;
