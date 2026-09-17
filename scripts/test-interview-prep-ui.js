@@ -120,6 +120,11 @@ async function main() {
     crossTrackHealthcare: makeElement(),
     crossTrackAutomation: makeElement(),
     crossTrackFinops: makeElement(),
+    overallScore: makeElement(),
+    readinessBar: makeElement(),
+    placementStatus: makeElement(),
+    globalPct: makeElement(),
+    globalFill: makeElement(),
   };
   global.document = {
     getElementById: (id) => ({
@@ -128,6 +133,11 @@ async function main() {
       'cross-track-healthcare': elements.crossTrackHealthcare,
       'cross-track-automation': elements.crossTrackAutomation,
       'cross-track-finops': elements.crossTrackFinops,
+      'overall-score': elements.overallScore,
+      'readiness-bar': elements.readinessBar,
+      'placement-status': elements.placementStatus,
+      'global-pct': elements.globalPct,
+      'global-fill': elements.globalFill,
     }[id] || elements[id] || null),
     addEventListener: () => {},
     querySelectorAll: () => [],
@@ -172,9 +182,12 @@ async function main() {
         cand_test_interview_001: {
           candidateId: 'cand_test_interview_001',
           name: 'Test Interview Candidate',
+          readinessScore: 63,
+          status: 'needs_review',
           readinessEvidence: {
             track: 'Medical Billing / Healthcare Admin',
             strengths: ['Medical Billing'],
+            recommendation: 'Continue RCM scenario practice before placement.',
             operational: {
               l1: {
                 resolution: {
@@ -203,6 +216,10 @@ async function main() {
     check('automation profile accepts structured L1 operational evidence', elements.crossTrackAutomation.innerHTML.includes('L1 operational evidence recorded'));
     check('SAP profile does not infer evidence from generic strengths', elements.crossTrackSap.innerHTML.includes('No SAP-specific evidence recorded yet.'));
     check('FinOps profile does not infer evidence from generic strengths', elements.crossTrackFinops.innerHTML.includes('No FinOps / AI-specific evidence recorded yet.'));
+    check('readiness panel uses Candidate Registry score', elements.overallScore.textContent === '63%');
+    check('readiness bar uses Candidate Registry score', elements.readinessBar.style.width === '63%');
+    check('placement status uses Candidate Registry recommendation', elements.placementStatus.textContent.includes('Candidate Registry: Continue RCM scenario practice before placement.'));
+    check('global readiness uses Candidate Registry score', elements.globalPct.textContent === '63%' && elements.globalFill.style.width === '63%');
     // 1. Checking the box loads the real plan
     const checkbox = { checked: true };
     await context.handleMortgageInterviewPrepToggle(checkbox);

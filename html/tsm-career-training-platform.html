@@ -6251,8 +6251,8 @@ function renderQuiz(domainId, labelText, questions) {
       <div class="explain-title">▣ TSM EXPLAINABILITY — CANDIDATE READINESS ASSESSMENT</div>
       <div style="text-align:right"><div class="explain-conf" id="overall-score">0%</div><div class="explain-conf-lbl">OVERALL READINESS</div></div>
     </div>
-    <div class="explain-row"><div class="explain-label">Evidence</div><div class="explain-val">Completion scores across 7 sectors · Certification status · Governance checkpoint adherence · Scenario pass rates</div></div>
-    <div class="explain-row"><div class="explain-label">Reasoning</div><div class="explain-val">Readiness score calculated from: (Sector tool completions × 40%) + (Cert prep status × 35%) + (Governance checkpoints × 25%)</div></div>
+    <div class="explain-row"><div class="explain-label">Evidence</div><div class="explain-val">Candidate Registry readiness evidence · Training progress · Certification status · Governance checkpoints · Scenario evidence</div></div>
+    <div class="explain-row"><div class="explain-label">Reasoning</div><div class="explain-val">Selected candidates use the Candidate Registry readiness score and status as the canonical readiness record. The checklist remains a manual training-progress workflow when no candidate is selected.</div></div>
     <div class="explain-row"><div class="explain-label">Placement status</div><div class="explain-val" id="placement-status">Complete sector checklist items below to generate placement recommendation.</div></div>
     <div class="confidence-bar"><div class="confidence-fill" id="readiness-bar" style="width:0%"></div></div>
   </div>
@@ -7090,6 +7090,7 @@ function selectCareerCandidate(candidateId) {
   // Keep the existing registry navigation behavior.
   switchTo('profile');
   renderCrossTrackReadinessProfile();
+  updateReadiness();
 
   // If Interview Prep is already open, refresh its candidate context.
   const checkbox = document.getElementById('mortgageInterviewPrepCheckbox');
@@ -7818,9 +7819,17 @@ function exportManagerReport() {
 
 // ── READINESS TRACKER ──
 function updateReadiness() {
+  const selectedId = window._selectedCandidateId;
+  const candidate = selectedId && window._candidateRegistryById
+    ? window._candidateRegistryById[selectedId]
+    : null;
+
   const checks = document.querySelectorAll('.readiness-check');
   const checked = document.querySelectorAll('.readiness-check:checked');
-  const pct = Math.round((checked.length / checks.length) * 100);
+  const manualPct = checks.length ? Math.round((checked.length / checks.length) * 100) : 0;
+  const pct = candidate
+    ? Math.max(0, Math.min(100, Math.round(candidate.readinessScore || 0)))
+    : manualPct;
 
   document.getElementById('overall-score').textContent = pct + '%';
   const bar = document.getElementById('readiness-bar');
@@ -7830,13 +7839,19 @@ function updateReadiness() {
   else bar.style.background = 'var(--green)';
 
   const status = document.getElementById('placement-status');
-  if (pct < 25) status.textContent = 'Early stage. Continue sector training.';
-  else if (pct < 50) status.textContent = 'In progress. Strong HC and FinOps completion recommended before placement.';
-  else if (pct < 75) status.textContent = 'Approaching placement-ready. Complete remaining cert prep items.';
-  else if (pct < 90) status.textContent = 'PLACEMENT READY — pending certification verification. Export readiness package.';
-  else status.textContent = 'FULLY CERTIFIED AND DEPLOYMENT READY. Export audit trail and schedule placement.';
+  if (candidate) {
+    const meta = candidateStatusMeta(candidate.status);
+    const evidence = candidateReadinessEvidence(candidate);
+    status.textContent = evidence.recommendation
+      ? 'Candidate Registry: ' + evidence.recommendation
+      : 'Candidate Registry status: ' + meta.label + ' — ' + meta.action + '.';
+  } else if (pct < 75) {
+    status.textContent = 'Manual training progress. Select a Candidate Registry candidate for canonical readiness reporting.';
+  } else {
+    status.textContent = 'Manual checklist complete — certification and placement status remain Candidate Registry evidence.';
+  }
 
-  // Update global header
+  // Candidate Registry is canonical when a candidate is selected; otherwise show manual progress.
   document.getElementById('global-pct').textContent = pct + '%';
   document.getElementById('global-fill').style.width = pct + '%';
 }
