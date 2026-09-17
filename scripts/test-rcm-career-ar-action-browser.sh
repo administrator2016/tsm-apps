@@ -33,6 +33,7 @@ fi
 echo "PASS     Playwright package available"
 
 cat > "$TEST_FILE" <<'NODE'
+require("dotenv").config({ override: true });
 const { chromium } = require("playwright");
 
 (async () => {
@@ -66,8 +67,12 @@ const { chromium } = require("playwright");
   try {
     console.log("=== 1. LOAD A/R WAR ROOM ===");
 
+    const loginResponse = await page.request.post(`${base}/api/auth/login`, { data: { password: process.env.TSM_ADMIN_PASSWORD } });
+    if (!loginResponse.ok()) throw new Error(`Test login failed: ${loginResponse.status()}`);
+    console.log("PASS     Test admin session established");
+
     await page.goto(
-      base + "/html/healthcare/ar-recovery-war-room.html",
+      base + "/html/war-rooms/ar-recovery/index.html",
       { waitUntil: "networkidle" }
     );
 
