@@ -291,6 +291,69 @@ const DOMAINS = [
     secondaryExpectSubstr: '12-24 hours',
     secondaryExpectSubstr2: '3-5 weeks',
   },
+  {
+    key: 'aerospace',
+    label: 'Aerospace Maintenance',
+    url: '/html/war-rooms/aerospace-maintenance-readiness.html',
+    sampleBtn: '#sampleBtnAog',
+    relayKey: 'TSM_HONEYWELL_AEROSPACE_RELAY',
+    engines: [
+      null,
+      { kpi: { leadTimeEstimate: '21-30 days' } },
+      null,
+      { kpi: { totalExposureLow: 320000, totalExposureHigh: 540000 } },
+      { deadlineLines: true },
+      { kpi: { riskScore: 58 }, decisions: true },
+    ],
+    riskTileSelector: '#kpiRisk',
+    riskExpect: '58',
+    exposureTileSelector: '#kpiExposure',
+    exposureExpectSubstr: '$320,000',
+    secondaryTileSelector: '#kpiLeadTime',
+    secondaryExpectSubstr: '21-30 days',
+  },
+  {
+    key: 'lifesciences',
+    label: 'Life Sciences Production',
+    url: '/html/war-rooms/life-sciences-production-continuity.html',
+    sampleBtn: '#sampleBtn1',
+    relayKey: 'TSM_HONEYWELL_LIFESCIENCES_RELAY',
+    engines: [
+      null,
+      { kpi: { leadTimeEstimate: '36 hours' } },
+      null,
+      { kpi: { totalExposureLow: 450000, totalExposureHigh: 700000 } },
+      { deadlineLines: true },
+      { kpi: { riskScore: 74 }, decisions: true },
+    ],
+    riskTileSelector: '#kpiRisk',
+    riskExpect: '74',
+    exposureTileSelector: '#kpiExposure',
+    exposureExpectSubstr: '$450,000',
+    secondaryTileSelector: '#kpiLeadTime',
+    secondaryExpectSubstr: '36 hours',
+  },
+  {
+    key: 'capitalproject',
+    label: 'Industrial Capital Project',
+    url: '/html/war-rooms/industrial-capital-project-recovery.html',
+    sampleBtn: '#sampleBtn1',
+    relayKey: 'TSM_HONEYWELL_CAPITALPROJECT_RELAY',
+    engines: [
+      null,
+      { kpi: { leadTimeEstimate: '6 weeks' } },
+      null,
+      { kpi: { totalExposureLow: 650000, totalExposureHigh: 1050000 } },
+      { deadlineLines: true },
+      { kpi: { riskScore: 69 }, decisions: true },
+    ],
+    riskTileSelector: '#kpiRisk',
+    riskExpect: '69',
+    exposureTileSelector: '#kpiExposure',
+    exposureExpectSubstr: '$650,000',
+    secondaryTileSelector: '#kpiLeadTime',
+    secondaryExpectSubstr: '6 weeks',
+  },
 ];
 
 async function installEngineMock(page, domain) {
@@ -457,7 +520,7 @@ async function main() {
     }
 
     console.log('\n=== Console error check ===');
-    ok(consoleErrors.length === 0, `zero unfiltered console/page errors across all 5 domains (found ${consoleErrors.length})`);
+    ok(consoleErrors.length === 0, `zero unfiltered console/page errors across all 8 domains (found ${consoleErrors.length})`);
     if (consoleErrors.length) {
       consoleErrors.forEach((e) => console.log(`    - ${e}`));
     }
