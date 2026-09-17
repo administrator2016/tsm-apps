@@ -1302,6 +1302,12 @@ async function generateReport(){
       timestamp: Date.now(),
       exposure: _expM ? _expM[1] : '$91,800–$112,200',
       riskScore: _riskM ? _riskM[1] : '70/100',
+      // TSM FIX: honesty flags, same convention as confidenceDefaulted
+      // elsewhere in this codebase — true whenever the ticker's regex
+      // extraction missed and this relay is carrying the ERA-batch demo
+      // scenario's numbers instead of a value parsed from real output.
+      exposureDefaulted: !_expM,
+      riskScoreDefaulted: !_riskM,
       duplicatePayments: _dupM ? _dupM[1] : null,
       unapprovedVendors: _vendM ? _vendM[1] : null,
       missingPO: _poM ? _poM[1] : null,
@@ -1332,6 +1338,8 @@ async function generateReport(){
       timestamp: Date.now(),
       exposure: _expM ? _expM[1] : '$91,800–$112,200',
       riskScore: _riskM ? _riskM[1] : '70/100',
+      exposureDefaulted: !_expM,
+      riskScoreDefaulted: !_riskM,
       duplicatePayments: _dupM ? _dupM[1] : null,
       unapprovedVendors: _vendM ? _vendM[1] : null,
       missingPO: _poM ? _poM[1] : null,
@@ -1442,6 +1450,11 @@ function relayToExecutive(){
     timestamp: Date.now(),
     exposure: _expM ? _expM[1] : existing.exposure || '$91,800–$112,200',
     riskScore: _riskM ? _riskM[1] : existing.riskScore || '70/100',
+    // TSM FIX: same honesty-flag convention as generateReport() above —
+    // true whenever this relay's own output had nothing to extract,
+    // whether it fell back to a prior relay's value or the demo default.
+    exposureDefaulted: !_expM,
+    riskScoreDefaulted: !_riskM,
     duplicatePayments: _dupM ? _dupM[1] : existing.duplicatePayments || null,
     unapprovedVendors: _vendM ? _vendM[1] : existing.unapprovedVendors || null,
     missingPO: _poM ? _poM[1] : existing.missingPO || null,
