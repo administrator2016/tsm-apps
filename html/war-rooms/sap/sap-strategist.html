@@ -294,7 +294,8 @@
         <button class="secondary" id="architectureBtn">ARCHITECTURE VIEW</button>
         <button class="secondary" id="otherAppsBtn">SHOW OTHER TSM APPLICATIONS</button>
         <button class="secondary" id="challengeBtn">START ARCHITECT INTERVIEW CHALLENGE</button>
-      <button class="secondary" id="s4FicoChallengeBtn">START S/4HANA + FICO CHALLENGE</button>
+        <button class="secondary" id="s4FicoChallengeBtn">START S/4HANA + FICO CHALLENGE</button>
+        <button class="secondary" id="analyticsHxmChallengeBtn">START ANALYTICS + HXM CHALLENGE</button>
       </div>
     </div>
 
@@ -1012,6 +1013,57 @@
       }
     ];
 
+const ANALYTICS_HXM_CHALLENGES = [
+  {
+    title: 'BW/4HANA — DATA WAREHOUSE',
+    stage: 'BW/4HANA',
+    scenario: 'An executive report is missing current operational data. Explain how you would determine whether the issue originates in the BW/4HANA data warehouse layer or upstream source data.',
+    expected: ['BW/4HANA', 'data warehouse', 'source data', 'data flow']
+  },
+  {
+    title: 'BW/4HANA — DATA MODEL / PROVIDER',
+    stage: 'Data Model / Provider',
+    scenario: 'A report contains the correct business object but incorrect or incomplete analytical values. Explain how you would trace the analytical model, provider and underlying data structure.',
+    expected: ['data model', 'provider', 'business object', 'analytical data']
+  },
+  {
+    title: 'BW/4HANA — EXTRACTION → TRANSFORMATION',
+    stage: 'Extraction → Transformation',
+    scenario: 'Source-system records exist, but transformed analytical data is incomplete. Explain how you would trace extraction, transformation and loading before assuming the reporting layer is defective.',
+    expected: ['extraction', 'transformation', 'loading', 'source system']
+  },
+  {
+    title: 'BW/4HANA — REPORTING / ANALYTICS',
+    stage: 'Reporting / Analytics',
+    scenario: 'Two dashboards show different results for the same business metric. Explain how you would trace the analytical definition, modeled data and reporting layer to isolate the discrepancy.',
+    expected: ['reporting', 'analytics', 'business metric', 'data model']
+  },
+  {
+    title: 'SUCCESSFACTORS — EMPLOYEE DATA',
+    stage: 'Employee Data',
+    scenario: 'An employee record is correct in SuccessFactors but downstream analytics show stale information. Explain which employee data objects and synchronization boundaries you would validate.',
+    expected: ['SuccessFactors', 'employee data', 'employee record', 'synchronization']
+  },
+  {
+    title: 'SUCCESSFACTORS — HR PROCESS / WORKFLOW',
+    stage: 'HR Process / Workflow',
+    scenario: 'An HR transaction is submitted but the expected workflow action does not occur. Explain how you would trace the process, employee data dependency and workflow state.',
+    expected: ['HR process', 'workflow', 'employee data', 'workflow state']
+  },
+  {
+    title: 'SUCCESSFACTORS — INTEGRATION',
+    stage: 'Integration',
+    scenario: 'SuccessFactors contains current employee information, but BW/4HANA has not received the corresponding update. Explain how you would trace the integration boundary and identify where the data stopped progressing.',
+    expected: ['SuccessFactors', 'BW/4HANA', 'integration', 'employee data']
+  },
+  {
+    title: 'SUCCESSFACTORS + BW/4HANA — BUSINESS IMPACT',
+    stage: 'Business Impact',
+    scenario: 'A small employee-data synchronization issue has caused management reporting to use stale workforce information. Explain how you would connect the technical condition to the analytical and business consequence.',
+    expected: ['employee data', 'BW/4HANA', 'reporting', 'business impact']
+  }
+];
+
     const INTERVIEW_CHALLENGES = [
       {
         stage: 'SAP COMMERCE CLOUD / HYBRIS',
@@ -1138,8 +1190,8 @@
 
         <div class="challenge-principle">
           <strong>READINESS PRINCIPLE</strong><br>
-          Do not answer from application names alone. Trace the business object,
-          document relationship, dependency and measurable business consequence.
+          Do not answer from application names alone. Trace the data object,
+          integration boundary, analytical dependency and measurable business consequence.
         </div>
       `;
 
@@ -1211,6 +1263,133 @@
       }
 
       document.getElementById('s4FicoReturnBtn').addEventListener('click', () => {
+        document.getElementById('challengeBtn').click();
+      });
+    }
+
+    function renderAnalyticsHxmChallenge(index) {
+      const challenge = ANALYTICS_HXM_CHALLENGES[index];
+      if (!challenge) return;
+
+      const panel = document.getElementById('challengePanel');
+
+      panel.innerHTML = `
+        <div class="panel-kicker">SPECIALIZED SAP ARCHITECT TRACK — ANALYTICS + HXM</div>
+        <h2>ANALYTICS + HXM ARCHITECT CHALLENGE</h2>
+
+        <div class="challenge-stage">
+          Stage ${index + 1} of ${ANALYTICS_HXM_CHALLENGES.length}
+          · ${challenge.stage}
+        </div>
+
+        <div class="trace-chain">
+          SuccessFactors → Employee Data → Integration → BW/4HANA → Transformation / Modeling → Analytics → Business Impact
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-title">${challenge.title}</div>
+          <p>${challenge.scenario}</p>
+        </div>
+
+        <textarea
+          id="analyticsHxmAnswer"
+          class="challenge-answer"
+          placeholder="Explain your reasoning. Trace the data object, integration boundary, analytical dependency, and business consequence."
+        ></textarea>
+
+        <div class="demo-buttons">
+          <button id="analyticsHxmSubmitBtn">SUBMIT REASONING</button>
+          <button class="secondary" id="analyticsHxmHintBtn">SHOW HINT</button>
+          <button class="secondary" id="analyticsHxmReasoningBtn">SHOW REASONING FRAME</button>
+        </div>
+
+        <div class="feedback-panel" id="analyticsHxmFeedbackPanel"></div>
+
+        <div class="demo-buttons">
+          ${index > 0
+            ? '<button class="secondary" id="analyticsHxmPrevBtn">PREVIOUS</button>'
+            : ''}
+          ${index < ANALYTICS_HXM_CHALLENGES.length - 1
+            ? '<button class="secondary" id="analyticsHxmNextBtn">NEXT STAGE</button>'
+            : ''}
+          <button class="secondary" id="analyticsHxmReturnBtn">RETURN TO SAP JOURNEY</button>
+        </div>
+
+        <div class="challenge-principle">
+          <strong>READINESS PRINCIPLE</strong><br>
+          Do not answer from application names alone. Trace the data object,
+          integration boundary, analytical dependency and measurable business consequence.
+        </div>
+      `;
+
+      const answer = document.getElementById('analyticsHxmAnswer');
+      const feedback = document.getElementById('analyticsHxmFeedbackPanel');
+
+      document.getElementById('analyticsHxmSubmitBtn').addEventListener('click', () => {
+        const response = normalizeInterviewText(answer.value);
+
+        if (!response) {
+          feedback.innerHTML = '<strong>ENTER YOUR REASONING</strong><br>Provide a short architecture explanation before submitting.';
+          return;
+        }
+
+        const matched = challenge.expected.filter(term =>
+          response.includes(normalizeInterviewText(term))
+        );
+
+        const coverage = Math.round(
+          (matched.length / challenge.expected.length) * 100
+        );
+
+        feedback.innerHTML = `
+          <strong>TRACE COVERAGE: ${coverage}%</strong><br>
+          Evidence terms identified: ${matched.length} / ${challenge.expected.length}
+          <br><br>
+          ${matched.length
+            ? `Matched: ${matched.join(', ')}`
+            : 'No expected trace terms identified yet.'}
+          <br><br>
+          This is a deterministic practice aid, not an assessment of real-world SAP experience.
+        `;
+      });
+
+      document.getElementById('analyticsHxmHintBtn').addEventListener('click', () => {
+        feedback.innerHTML = `
+          <strong>HINT</strong><br>
+          Start with the business object. Then identify the document created or
+          consumed at each boundary, the dependency that could break the chain,
+          and the measurable business consequence.
+        `;
+      });
+
+      document.getElementById('analyticsHxmReasoningBtn').addEventListener('click', () => {
+        feedback.innerHTML = `
+          <strong>REASONING FRAME</strong><br>
+          1. Identify the originating data object.<br>
+          2. Trace the next data or integration boundary.<br>
+          3. Validate employee-data, integration and analytical dependencies.<br>
+          4. Identify the BW/4HANA analytical relationship.<br>
+          5. Connect the technical condition to reporting or management impact.
+        `;
+      });
+
+      const prevBtn = document.getElementById('analyticsHxmPrevBtn');
+      if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+          renderAnalyticsHxmChallenge(Math.max(index - 1, 0));
+        });
+      }
+
+      const nextBtn = document.getElementById('analyticsHxmNextBtn');
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          renderAnalyticsHxmChallenge(
+            Math.min(index + 1, ANALYTICS_HXM_CHALLENGES.length - 1)
+          );
+        });
+      }
+
+      document.getElementById('analyticsHxmReturnBtn').addEventListener('click', () => {
         document.getElementById('challengeBtn').click();
       });
     }
@@ -1702,6 +1881,16 @@ Detect → Scope → Trace → Isolate → Resolve → Learn
     );
 
     renderS4FicoChallenge(0);
+  });
+
+  document.getElementById('analyticsHxmChallengeBtn').addEventListener('click', () => {
+    setDemoState(
+      'ANALYTICS + HXM ARCHITECT JOURNEY',
+      'Trace employee data from SuccessFactors through integration and BW/4HANA analytics to measurable business impact.',
+      'trace'
+    );
+
+    renderAnalyticsHxmChallenge(0);
   });
 
   document.getElementById('challengeBtn').addEventListener('click', () => {
