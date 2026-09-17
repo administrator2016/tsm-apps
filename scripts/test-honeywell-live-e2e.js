@@ -334,6 +334,27 @@ const DOMAINS = [
     secondaryExpectSubstr: '36 hours',
   },
   {
+    key: 'healthcare',
+    label: 'Healthcare/Thermal Continuity',
+    url: '/html/war-rooms/healthcare-thermal-continuity.html',
+    sampleBtn: '#sampleBtnCold',
+    relayKey: 'TSM_HONEYWELL_HEALTHCARE_RELAY',
+    engines: [
+      null,
+      { kpi: { leadTimeEstimate: '60 minutes' } },
+      null,
+      { kpi: { totalExposureLow: 340000, totalExposureHigh: 400000 } },
+      { deadlineLines: true },
+      { kpi: { riskScore: 78 }, decisions: true },
+    ],
+    riskTileSelector: '#kpiRisk',
+    riskExpect: '78',
+    exposureTileSelector: '#kpiExposure',
+    exposureExpectSubstr: '$340,000',
+    secondaryTileSelector: '#kpiLeadTime',
+    secondaryExpectSubstr: '60 minutes',
+  },
+  {
     key: 'capitalproject',
     label: 'Industrial Capital Project',
     url: '/html/war-rooms/industrial-capital-project-recovery.html',
@@ -520,7 +541,7 @@ async function main() {
     }
 
     console.log('\n=== Console error check ===');
-    ok(consoleErrors.length === 0, `zero unfiltered console/page errors across all 8 domains (found ${consoleErrors.length})`);
+    ok(consoleErrors.length === 0, `zero unfiltered console/page errors across all 9 domains (found ${consoleErrors.length})`);
     if (consoleErrors.length) {
       consoleErrors.forEach((e) => console.log(`    - ${e}`));
     }
