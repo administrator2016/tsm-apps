@@ -313,6 +313,15 @@ textarea::placeholder{color:var(--faint)}
 .wow-title{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--gold)}
 .wow-sub{font-size:8px;color:var(--muted);letter-spacing:1px;margin-top:2px}
 .wow-body{display:grid;grid-template-columns:repeat(5,1fr);gap:0}
+/* TSM FIX (D-07): no responsive breakpoints existed anywhere in this file —
+   the fixed 2-col input/engine grids and 5-col executive-summary tiles
+   overflowed the viewport on phones/small tablets. Collapse to something
+   readable below 768px without touching desktop layout. */
+@media (max-width: 768px) {
+  .input-zone, .results-grid { grid-template-columns: 1fr !important; }
+  .wow-body { grid-template-columns: repeat(2, 1fr) !important; }
+  .eng-panel { min-height: 220px; }
+}
 .wow-stat{padding:16px 18px;border-right:1px solid rgba(255,215,0,0.1);text-align:center}
 .wow-stat:last-child{border-right:none}
 .wow-stat-val{font-size:18px;font-weight:700;letter-spacing:1px;margin-bottom:4px}
@@ -946,6 +955,18 @@ async function readFile(file){
       const result = await mammoth.extractRawText({ arrayBuffer: ab });
       text = result.value;
       prev.textContent = '✓ ' + file.name + ' (DOCX, ' + text.length + ' chars)';
+    }
+
+    // ── DOC (legacy binary Word, pre-2007) — NOT text-extractable client-
+    // side. Was previously falling through to the generic file.text() path
+    // below, which on a binary .doc silently returns garbled bytes that
+    // still pass the >10-char check — the AI engines would then analyze
+    // that garbage as if it were the real document, with no error shown.
+    // Reject clearly instead of fabricating an extraction. (D-02)
+    else if(ext === 'doc' || mime === 'application/msword'){
+      prev.textContent = '✗ Legacy .doc format (pre-2007 Word) can\'t be reliably read in-browser — please re-save as .docx in Word (File > Save As) or export as PDF, then re-upload.';
+      ingestDone();
+      return;
     }
 
     // ── XLSX / XLS ─────────────────────────────────────────────────────────
