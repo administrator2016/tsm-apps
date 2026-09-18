@@ -3629,7 +3629,13 @@ app.post('/api/mortgage/executive-portal', async (req, res) => {
 
 // ── HOTELOPS: structured maintenance/OTA/compliance analysis ─────────────────
 // Mirrors /api/mortgage/query's shape.
-app.post('/api/hotelops/query', async (req, res) => {
+// TSM FIX: this route had no auth guard at all, unlike /api/hc/* and
+// /api/finops/report — and like NOC's /api/noc/query, this one is
+// genuinely live (html/hotelops/services/hotelops-engine.js calls it
+// directly). Adding requireAnyAuth here doesn't require any front-end
+// change: same-origin fetch() already carries the tsm_session cookie
+// automatically for logged-in users.
+app.post('/api/hotelops/query', requireAnyAuth, async (req, res) => {
   const { kpis, maintenance_breaches, ota_exposure, compliance_risk, context, maxTokens } = req.body || {};
   const summary = JSON.stringify({
     kpis,
@@ -3650,7 +3656,20 @@ app.post('/api/hotelops/query', async (req, res) => {
     return res.json({ ok: true, answer, createdAt: new Date().toISOString() });
   } catch (e) {
     console.error('HOTELOPS GROQ ERROR:', e.message);
-    return res.status(500).json({ ok: false, error: e.message });
+    // TSM FIX: previously surfaced this as a raw 500 with no graceful
+    // degradation, same bug class already found and fixed in
+    // Construction's and NOC's /query routes. Distinguishes "no key
+    // configured" from a genuine upstream failure so the client/UI can
+    // tell them apart, rather than treating both as the same opaque 500.
+    const noKeyConfigured = /No Groq API key configured/i.test(e.message || '');
+    return res.status(200).json({
+      ok: true,
+      fallback: true,
+      degraded: true,
+      reason: noKeyConfigured ? 'ai_not_configured' : 'ai_call_failed',
+      answer: 'AI property analysis is temporarily unavailable. Please try again shortly or escalate manually per standard HotelOps procedure.',
+      createdAt: new Date().toISOString()
+    });
   }
 });
 // ── HOTELOPS: online booking ingestion ────────────────────────────────────────
