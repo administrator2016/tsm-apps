@@ -23,9 +23,28 @@
 // and multiple other live pages call them directly (confirmed via grep
 // across html/). This is a live auth gap, not a dead one.
 
+// TSM FIX (post-f2705330): both findings pinned by the original version of
+// this test are now fixed in routes/construction.js:
+//   1. All three routes are now mounted behind requireAnyAuth (they had no
+//      guard at all before, unlike /api/hc/* and /api/finops/report).
+//   2. POST /api/construction/query now degrades gracefully (200, fallback:
+//      true, degraded:true) instead of surfacing a raw 500 when
+//      GROQ_API_KEY is unset or the Groq call fails — same convention as
+//      /api/construction/report and /api/finops/report.
+// This test now asserts the fixed behavior directly. Since this test
+// mounts routes/construction.js in isolation (not the full server.js with
+// its /api/auth/login route), it builds a valid session cookie directly
+// via signSession — the same primitive requireAnyAuth verifies against.
+
 const express = require('express');
 
+if (!process.env.TSM_SESSION_SECRET) {
+  process.env.TSM_SESSION_SECRET = 'test-only-secret-for-construction-vertical';
+}
+const { signSession } = require('../middleware/require-auth');
+
 const realFetch = global.fetch;
+const TEST_SESSION_COOKIE = 'tsm_session=' + signSession({ role: 'admin', exp: Date.now() + 60 * 60 * 1000 });
 
 async function startTestServer() {
   let currentFetchMock = async () => { throw new Error('no fetch mock configured for this test case'); };
@@ -48,10 +67,14 @@ async function startTestServer() {
   };
 }
 
-async function post(baseUrl, path, body) {
+async function post(baseUrl, path, body, opts) {
+  const authed = !opts || opts.authed !== false;
   const res = await realFetch(`${baseUrl}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authed ? { Cookie: TEST_SESSION_COOKIE } : {}),
+    },
     body: JSON.stringify(body || {}),
   });
   const json = await res.json();
@@ -77,12 +100,21 @@ async function run() {
   global.__TSM_MEMORY__ = {};
 
   try {
-    // --- Auth finding: pin that none of these routes currently reject an
-    // unauthenticated caller, despite being live production endpoints ---
+    // --- Auth: confirm the newly-added guard actually rejects an
+    // unauthenticated caller on all three routes (they had zero guard
+    // before the fix) ---
     {
-      const { status, json } = await post(baseUrl, '/api/construction/report', { workflow: 'Job Cost Report', content: '' });
-      check('FINDING (not fixed): /api/construction/report has no auth guard — unauthenticated call is served, not 401ed',
-        status === 200 && json.ok === true);
+      const r1 = await post(baseUrl, '/api/construction/report', { workflow: 'Job Cost Report', content: '' }, { authed: false });
+      check('FIXED: unauthenticated /api/construction/report is rejected (401)', r1.status === 401 && r1.json.ok === false);
+
+      const r2 = await post(baseUrl, '/api/construction/query', { question: 'test' }, { authed: false });
+      check('FIXED: unauthenticated /api/construction/query is rejected (401)', r2.status === 401 && r2.json.ok === false);
+
+      const form = new FormData();
+      form.append('file', new Blob(['hello'], { type: 'text/plain' }), 'note.txt');
+      const res3 = await realFetch(`${baseUrl}/api/construction/upload-doc`, { method: 'POST', body: form });
+      const json3 = await res3.json();
+      check('FIXED: unauthenticated /api/construction/upload-doc is rejected (401)', res3.status === 401 && json3.ok === false);
     }
 
     // --- /api/construction/report: no content submitted -> generic checklist ---
@@ -145,36 +177,33 @@ async function run() {
       check('query case: memory logging fires for real traffic (global.__TSM_MEMORY__.construction.recent)', Array.isArray(global.__TSM_MEMORY__?.construction?.recent) && global.__TSM_MEMORY__.construction.recent.length === 1);
     }
 
-    // --- /api/construction/query: no GROQ_API_KEY -> groqChat throws -> 500, no graceful fallback ---
+    // --- /api/construction/query: no GROQ_API_KEY -> now degrades gracefully instead of a raw 500 ---
     {
       delete process.env.GROQ_API_KEY;
       const { status, json } = await post(baseUrl, '/api/construction/query', { question: 'test', system: 'test system' });
-      check('FINDING (not fixed): no-key query call surfaces a raw 500 instead of a graceful fallback (unlike /api/construction/report and /api/finops/report, which both degrade gracefully)',
-        status === 500 && json.ok === false);
+      check('FIXED: no-key query call now degrades gracefully (200, fallback:true, degraded:true, reason ai_not_configured) instead of a raw 500',
+        status === 200 && json.ok === true && json.fallback === true && json.degraded === true && json.reason === 'ai_not_configured');
     }
 
-    // --- /api/construction/upload-doc: unsupported file type rejected ---
+    // --- /api/construction/upload-doc: unsupported file type rejected (authenticated) ---
     {
       const form = new FormData();
       form.append('file', new Blob(['hello world'], { type: 'text/plain' }), 'note.xyz');
-      const res = await realFetch(`${baseUrl}/api/construction/upload-doc`, { method: 'POST', body: form });
+      const res = await realFetch(`${baseUrl}/api/construction/upload-doc`, { method: 'POST', headers: { Cookie: TEST_SESSION_COOKIE }, body: form });
       const json = await res.json();
       check('upload-doc: unsupported extension rejected with 400', res.status === 400 && json.ok === false);
     }
 
-    // --- /api/construction/upload-doc: supported file type extracted + classified ---
+    // --- /api/construction/upload-doc: supported file type extracted + classified (authenticated) ---
     {
       const form = new FormData();
       form.append('file', new Blob(['This subcontract agreement covers electrical rough-in work.'], { type: 'text/plain' }), 'subcontract.txt');
-      const res = await realFetch(`${baseUrl}/api/construction/upload-doc`, { method: 'POST', body: form });
+      const res = await realFetch(`${baseUrl}/api/construction/upload-doc`, { method: 'POST', headers: { Cookie: TEST_SESSION_COOKIE }, body: form });
       const json = await res.json();
       check('upload-doc: supported .txt file returns 200 ok:true', res.status === 200 && json.ok === true);
       check('upload-doc: classifies subcontract text correctly', json.docType === 'Subcontractor Agreement');
       check('upload-doc: extracted text matches the uploaded content', json.text.includes('electrical rough-in'));
     }
-
-    // --- /api/construction/upload-doc: no auth guard here either (same finding as above) ---
-    // (already implicitly covered by the two checks above succeeding with no session/cookie at all)
   } finally {
     if (savedKey === undefined) delete process.env.GROQ_API_KEY; else process.env.GROQ_API_KEY = savedKey;
     await close();

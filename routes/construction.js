@@ -2,6 +2,7 @@
 const express = require('express');
 const router  = express.Router();
 const { groqChat, SP } = require('./_shared');
+const { requireAnyAuth } = require('../middleware/require-auth');
 
 // =====================================================
 // CONSTRUCTION DOC UPLOADER — drag/drop analysis intake
@@ -113,7 +114,13 @@ function recordConstructionMemory(prompt, answer) {
   } catch (e) { /* non-fatal — memory logging must never break the response */ }
 }
 
-router.post('/api/construction/query', async function(req, res) {
+// TSM FIX: this route had no auth guard at all, unlike /api/hc/* and
+// /api/finops/report (as of c41fccc6) — and unlike FinOps's report route,
+// this one is genuinely live (construction-war-room.html and other pages
+// call it directly). Adding requireAnyAuth here doesn't require any
+// front-end change: same-origin fetch() already carries the tsm_session
+// cookie automatically for logged-in users.
+router.post('/api/construction/query', requireAnyAuth, async function(req, res) {
   var body = req.body || {};
   var question = body.question || body.query || '';
   var systemPrompt = body.system || SP.construction;
@@ -122,10 +129,27 @@ router.post('/api/construction/query', async function(req, res) {
     recordConstructionMemory(question, a);
     return res.json({ ok:true, answer:a, createdAt:new Date().toISOString() });
   }
-  catch(e) { return res.status(500).json({ ok:false, error:e.message }); }
+  catch(e) {
+    // TSM FIX: groqChat() throws when GROQ_API_KEY is unset, which
+    // previously surfaced as a raw 500 with no graceful degradation —
+    // unlike /api/construction/report and /api/finops/report, which both
+    // fall back to a safe canned response instead of erroring out.
+    // Distinguishes "no key configured" (service simply not enabled here)
+    // from a genuine upstream failure so the client/UI can tell them apart,
+    // rather than treating both as the same opaque 500.
+    const noKeyConfigured = /GROQ_API_KEY not configured/i.test(e.message || '');
+    return res.status(200).json({
+      ok: true,
+      fallback: true,
+      degraded: true,
+      reason: noKeyConfigured ? 'ai_not_configured' : 'ai_call_failed',
+      answer: 'AI analysis is temporarily unavailable. Please try again shortly or route this question to a project manager for manual review.',
+      createdAt: new Date().toISOString()
+    });
+  }
 });
 
-router.post('/api/construction/report', async (req,res) => {
+router.post('/api/construction/report', requireAnyAuth, async (req,res) => {
   const workflow = req.body?.workflow || 'Job Cost Report';
   const content = (req.body?.content || '').trim();
 
@@ -208,7 +232,7 @@ Analyze this specific content. Return JSON only, no markdown fences:
 // file content instead of a generic canned prompt. No AI call happens
 // here — this route only extracts + classifies; analysis is a separate,
 // user-triggered step.
-router.post('/api/construction/upload-doc', upload.single('file'), async (req, res) => {
+router.post('/api/construction/upload-doc', requireAnyAuth, upload.single('file'), async (req, res) => {
   try {
     const file = req.file;
     if (!file) {
