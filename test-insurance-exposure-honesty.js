@@ -5,13 +5,47 @@
 // Confirmed against live source (routes/insurance-claims-financial.js,
 // routes/insurance-compliance-financial.js) before writing, including
 // normalizedSeverity's actual fallback behavior.
+//
+// TSM FIX: both routes are mounted behind requireAnyAuth. This test
+// originally posted with no session at all and still got real data back —
+// that only worked because requireAnyAuth had a live auth-bypass bug
+// (fixed in 9515521d, landed after this test was first written) that let
+// an unauthenticated request through as admin instead of 401ing. Once the
+// bypass was fixed, every request here started 401ing instead, and the
+// crash on `.find()` of an undefined items array was this test correctly
+// failing loudly rather than silently reporting stale green. Now logs in
+// first via /api/auth/login and carries the session cookie on every call.
 
 const BASE_URL = process.env.TSM_BASE_URL || 'http://localhost:3000';
+
+let sessionCookie = null;
+
+async function login() {
+  const password = process.env.TSM_ADMIN_PASSWORD;
+  if (!password) {
+    throw new Error('TSM_ADMIN_PASSWORD must be set in the environment to run this test (needs a real authenticated session).');
+  }
+  const res = await fetch(BASE_URL + '/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  const json = await res.json();
+  if (!res.ok || !json.ok) {
+    throw new Error(`Login failed (status ${res.status}): ${JSON.stringify(json)}`);
+  }
+  const setCookie = res.headers.get('set-cookie');
+  if (!setCookie) throw new Error('Login succeeded but no Set-Cookie header was returned.');
+  sessionCookie = setCookie.split(';')[0]; // tsm_session=<token>
+}
 
 async function post(path, body) {
   const res = await fetch(BASE_URL + path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(sessionCookie ? { Cookie: sessionCookie } : {}),
+    },
     body: JSON.stringify(body),
   });
   const json = await res.json();
@@ -24,6 +58,22 @@ async function run() {
     if (cond) { console.log('OK:', label); passed++; }
     else { console.error('FAIL:', label); process.exitCode = 1; }
   };
+
+  await login();
+
+  // --- Auth: confirm the routes actually reject an unauthenticated caller
+  // (36-route auth-bypass regression check, adjacent to this test's own
+  // job, cheap to assert here since we already know the correct shape) ---
+  {
+    const res = await fetch(BASE_URL + '/api/insurance/claims/financial-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ claims: [], appeals: [] }),
+    });
+    const json = await res.json();
+    check('unauthenticated call to a requireAnyAuth route is rejected (401), not silently served',
+      res.status === 401 && json.ok === false);
+  }
 
   // --- Claims: reserve adequacy risk math ---
   {
