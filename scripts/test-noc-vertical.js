@@ -12,9 +12,13 @@
 // http://localhost:3000) with TSM_SESSION_SECRET and TSM_ADMIN_PASSWORD
 // set — same convention as test-insurance-exposure-honesty.js.
 //
-// Confirmed live caller: html/l1-copilot/noc/noc-war-room.html and
-// html/l1-copilot/noc/services/noc-engine.js both call this endpoint
-// directly (grep across html/).
+// TSM FIX (post-e1ff9a0b): both findings pinned by the original version of
+// this test are now fixed in server.js's POST /api/noc/query:
+//   1. Now mounted behind requireAnyAuth (it had no guard at all before).
+//   2. Now degrades gracefully (200, fallback:true, degraded:true) instead
+//      of surfacing a raw 500 when GROQ_API_KEY is unset or the Groq call
+//      fails — same convention as Construction's /query fix.
+// This test now asserts the fixed behavior directly.
 
 const BASE_URL = process.env.TSM_BASE_URL || 'http://localhost:3000';
 
@@ -62,15 +66,11 @@ async function run() {
 
   await login();
 
-  // --- Auth finding: pin that /api/noc/query currently has no guard at
-  // all, despite being live (noc-war-room.html calls it directly). This
-  // route may still fail for unrelated reasons (e.g. no GROQ_API_KEY
-  // configured on this server), so the check confirms the failure is NOT
-  // an auth rejection, rather than asserting a specific success status. ---
+  // --- Auth: confirm the newly-added guard actually rejects an
+  // unauthenticated caller (it had zero guard before the fix) ---
   {
     const { status, json } = await post('/api/noc/query', { alerts: [], devices_down: [] }, { authed: false });
-    check('FINDING (not fixed): unauthenticated /api/noc/query is never rejected for lack of auth (no 401/"Unauthorized" from requireAnyAuth) — same bug class as the pre-fix FinOps/Construction gaps',
-      status !== 401 && json.error !== 'Unauthorized');
+    check('FIXED: unauthenticated /api/noc/query is rejected (401)', status === 401 && json.ok === false && json.error === 'Unauthorized');
   }
 
   // --- Functional: real payload is actually incorporated into the prompt
@@ -88,16 +88,14 @@ async function run() {
       devices_down: [{ id: 'core-switch-14', site: 'DC-East' }]
     };
     const { status, json } = await post('/api/noc/query', payload);
-    if (status === 200) {
+    if (status === 200 && json.fallback !== true) {
       check('functional: returns 200 ok:true with a real request payload', json.ok === true);
       check('functional: answer is non-empty prose, not an empty/placeholder string', typeof json.answer === 'string' && json.answer.trim().length > 20);
     } else {
-      // FINDING (not fixed): same bug class already found and fixed in
-      // Construction's /query route — no GROQ_API_KEY (or any upstream
-      // failure) surfaces a raw 500 with no graceful fallback, instead of
-      // degrading to a safe canned response.
-      check('FINDING (not fixed): /api/noc/query has no graceful fallback — GROQ_API_KEY appears unset on this server, and the route surfaces a raw 500 instead of degrading gracefully',
-        status === 500 && json.ok === false);
+      // FIXED: no GROQ_API_KEY configured on this server now degrades
+      // gracefully instead of a raw 500 — same convention as
+      // Construction's /query fix.
+      check('FIXED: no-key/upstream-failure case now degrades gracefully (200, fallback:true, degraded:true)', status === 200 && json.ok === true && json.fallback === true && json.degraded === true);
     }
   }
 

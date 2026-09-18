@@ -3403,7 +3403,13 @@ app.post('/api/crm/query', async (req, res) => {
 });
 
 
-app.post('/api/noc/query', async (req, res) => {
+// TSM FIX: this route had no auth guard at all, unlike /api/hc/* and
+// /api/finops/report — and unlike FinOps's orphaned report route, this
+// one is genuinely live (html/l1-copilot/noc/noc-war-room.html calls it
+// directly). Adding requireAnyAuth here doesn't require any front-end
+// change: same-origin fetch() already carries the tsm_session cookie
+// automatically for logged-in users.
+app.post('/api/noc/query', requireAnyAuth, async (req, res) => {
   const { kpis, incident_breaches, alerts, devices_down, context, maxTokens } = req.body || {};
   const summary = JSON.stringify({
     kpis,
@@ -3424,7 +3430,20 @@ app.post('/api/noc/query', async (req, res) => {
     return res.json({ ok: true, answer, createdAt: new Date().toISOString() });
   } catch (e) {
     console.error('NOC GROQ ERROR:', e.message);
-    return res.status(500).json({ ok: false, error: e.message });
+    // TSM FIX: previously surfaced this as a raw 500 with no graceful
+    // degradation, same bug class already found and fixed in
+    // Construction's /query route. Distinguishes "no key configured"
+    // from a genuine upstream failure so the client/UI can tell them
+    // apart, rather than treating both as the same opaque 500.
+    const noKeyConfigured = /No Groq API key configured/i.test(e.message || '');
+    return res.status(200).json({
+      ok: true,
+      fallback: true,
+      degraded: true,
+      reason: noKeyConfigured ? 'ai_not_configured' : 'ai_call_failed',
+      answer: 'AI incident analysis is temporarily unavailable. Please try again shortly or escalate manually per standard NOC runbook procedure.',
+      createdAt: new Date().toISOString()
+    });
   }
 });
 
