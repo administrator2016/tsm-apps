@@ -13,19 +13,36 @@
 //   3. GROQ_API_KEY set, Groq call succeeds but returns non-JSON narrative text
 //   4. GROQ_API_KEY set, Groq call fails (non-ok status)
 //
-// Also pins a real finding (not yet fixed, flagged here rather than
-// silently assumed away): branches 1 and 4 return the exact same
-// hardcoded fallback report shape as branch 2/3's real AI output, with no
-// disclosure flag distinguishing fabricated content from a real Groq
-// analysis — the same bug class fixed for Legal's BNCA report
-// (finalizeBNCA's degraded flag) and FinOps's own exposureDefaulted/
-// riskScoreDefaulted flags elsewhere in this codebase, just not yet
-// applied here. This test does NOT assert that gap is acceptable — it
-// pins the current behavior so any future fix (or regression) is visible.
+// TSM FIX (post-c39f96be): two findings pinned by the original version of
+// this test are now fixed in routes/finops.js:
+//   1. POST /api/finops/report is now mounted behind requireAnyAuth (it had
+//      no guard at all before, unlike /api/hc/* mounted above it).
+//   2. The report now carries an explicit `degraded` disclosure flag —
+//      false for genuine Groq output (parsed JSON or narrative-wrapped),
+//      true for the canned/fabricated fallback — same convention as
+//      Legal's finalizeBNCA degraded flag and FinOps's own
+//      exposureDefaulted/riskScoreDefaulted flags elsewhere in this
+//      codebase.
+// This test now asserts the fixed behavior directly instead of pinning the
+// old gap. Since this test mounts routes/finops.js in isolation (not the
+// full server.js with its /api/auth/login route), it builds a valid
+// session cookie directly via signSession — the same primitive
+// requireAnyAuth verifies against — rather than spinning up a real login
+// flow.
 
 const express = require('express');
 
+// requireAnyAuth throws at require-time if TSM_SESSION_SECRET is unset, and
+// routes/finops.js requires it. Set a fixed test value up front if the
+// environment hasn't already provided one, so this test is runnable
+// standalone.
+if (!process.env.TSM_SESSION_SECRET) {
+  process.env.TSM_SESSION_SECRET = 'test-only-secret-for-finops-groq-inference-layer';
+}
+const { signSession } = require('../middleware/require-auth');
+
 const realFetch = global.fetch;
+const TEST_SESSION_COOKIE = 'tsm_session=' + signSession({ role: 'admin', exp: Date.now() + 60 * 60 * 1000 });
 
 async function startTestServer() {
   // Mock global.fetch BEFORE requiring routes/finops.js's module scope
@@ -52,10 +69,14 @@ async function startTestServer() {
   };
 }
 
-async function postReport(baseUrl, body) {
+async function postReport(baseUrl, body, opts) {
+  const authed = !opts || opts.authed !== false;
   const res = await realFetch(`${baseUrl}/api/finops/report`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authed ? { Cookie: TEST_SESSION_COOKIE } : {}),
+    },
     body: JSON.stringify(body || {}),
   });
   const json = await res.json();
@@ -73,6 +94,14 @@ async function run() {
   const savedKey = process.env.GROQ_API_KEY;
 
   try {
+    // --- Auth: confirm the newly-added guard actually rejects an
+    // unauthenticated caller (this route had zero guard before the fix) ---
+    {
+      const { status, json } = await postReport(baseUrl, { workflow: 'AP Aging', source: 'test' }, { authed: false });
+      check('unauthenticated call to /api/finops/report is rejected (401), not silently served',
+        status === 401 && json.ok === false);
+    }
+
     // --- Case 1: GROQ_API_KEY unset — the route should never even attempt
     // fetch() in this case (confirmed by making the mock throw if called) ---
     {
@@ -82,9 +111,7 @@ async function run() {
       const { status, json } = await postReport(baseUrl, { workflow: 'AP Aging', source: 'test' });
       check('no-key case: returns 200 ok:true', status === 200 && json.ok === true);
       check('no-key case: falls back to the canned MEDIUM/88 report', json.report.risk_level === 'MEDIUM' && json.report.confidence === 88);
-      // Pinning the finding: no field anywhere marks this as fabricated/fallback.
-      check('FINDING (not fixed): no-key fallback carries no disclosure flag (degraded/ai_generated/fallback)',
-        json.fallback === undefined && json.report.ai_generated === undefined && json.report.degraded === undefined);
+      check('FIXED: no-key fallback is now explicitly marked degraded:true', json.report.degraded === true);
     }
 
     // --- Case 2: real key, Groq returns valid structured JSON ---
@@ -108,6 +135,7 @@ async function run() {
       const { status, json } = await postReport(baseUrl, { workflow: 'AR Ledger', source: 'unit-test' });
       check('real-call case: returns 200 ok:true', status === 200 && json.ok === true);
       check('real-call case: report reflects the real parsed Groq JSON, not the fallback', json.report.risk_level === 'HIGH' && json.report.confidence === 77 && json.report.summary === 'Real AI summary.');
+      check('FIXED: real parsed-JSON response is explicitly marked degraded:false', json.report.degraded === false);
     }
 
     // --- Case 3: real key, Groq returns non-JSON narrative text ---
@@ -123,6 +151,7 @@ async function run() {
       const { status, json } = await postReport(baseUrl, { workflow: 'Budget Variance', source: 'unit-test' });
       check('narrative-text case: returns 200 ok:true', status === 200 && json.ok === true);
       check('narrative-text case: wraps the raw text into the narrative-fallback shape (confidence 82)', json.report.confidence === 82 && json.report.summary.includes('narrative paragraph'));
+      check('FIXED: narrative-wrapped real output is marked degraded:false (real Groq content, just non-JSON)', json.report.degraded === false);
     }
 
     // --- Case 4: real key, Groq call itself fails (e.g. upstream 500) ---
@@ -133,8 +162,7 @@ async function run() {
       const { status, json } = await postReport(baseUrl, { workflow: 'AP Aging', source: 'unit-test' });
       check('upstream-failure case: returns 200 ok:true (degrades gracefully, no 500 surfaced to client)', status === 200 && json.ok === true);
       check('upstream-failure case: falls back to the same canned MEDIUM/88 report as the no-key case', json.report.risk_level === 'MEDIUM' && json.report.confidence === 88);
-      check('FINDING (not fixed): upstream-failure fallback ALSO carries no disclosure flag — indistinguishable from a real AI response to the client',
-        json.fallback === undefined && json.report.ai_generated === undefined && json.report.degraded === undefined);
+      check('FIXED: upstream-failure fallback is now explicitly marked degraded:true', json.report.degraded === true);
     }
 
     // --- Case 5: fetch() throws outright (network error, not just a bad status) ---
@@ -145,6 +173,7 @@ async function run() {
       const { status, json } = await postReport(baseUrl, { workflow: 'AP Aging', source: 'unit-test' });
       check('network-error case: still returns 200 ok:true, does not crash the request', status === 200 && json.ok === true);
       check('network-error case: falls back to the same canned report, not a 500', json.report.risk_level === 'MEDIUM' && json.report.confidence === 88);
+      check('FIXED: network-error fallback is also marked degraded:true', json.report.degraded === true);
     }
   } finally {
     if (savedKey === undefined) delete process.env.GROQ_API_KEY; else process.env.GROQ_API_KEY = savedKey;

@@ -4,6 +4,7 @@ const router  = express.Router();
 
 const fs   = require('fs');
 const path = require('path');
+const { requireAnyAuth } = require('../middleware/require-auth');
 const { extractInvoiceFields } = require('../tsm-decision-service/extract-fields');
 const { appendEvent } = require('../tsm-decision-service/events-store');
 const { processEvent } = require('../tsm-decision-service/decision-service');
@@ -277,7 +278,11 @@ ${text.slice(0,2500)}`,
   }
 });
 
-router.post('/api/finops/report', async (req, res) => {
+// TSM FIX: this route had zero auth guard at all — not "bypassed," never
+// gated in the first place, unlike /api/hc/* mounted above it in server.js.
+// Flagged during the Groq-inference-layer test (c39f96be) as a separate
+// finding from the 36-route requireAnyAuth bypass bug; fixing it here.
+router.post('/api/finops/report', requireAnyAuth, async (req, res) => {
   try {
     const body = req.body || {};
     const workflow = body.workflow || body.type || 'Bank Reconciliation';
@@ -330,6 +335,11 @@ Return:
           const text = data?.choices?.[0]?.message?.content || '';
           try {
             report = JSON.parse(text.replace(/```json|```/g, '').trim());
+            // TSM FIX: real Groq-parsed JSON — explicitly mark as not
+            // fabricated, same convention as exposureDefaulted/
+            // riskScoreDefaulted on the FinOps strategist relay and
+            // finalizeBNCA's degraded flag for Legal.
+            report.degraded = false;
           } catch {
             report = {
               workflow,
@@ -339,7 +349,12 @@ Return:
               actions: ['Review output, resolve missing support, and assign follow-up.'],
               controller_note: 'Review summary before close.',
               business_outcome: 'Workflow converted into action-ready finance review.',
-              confidence: 82
+              confidence: 82,
+              // TSM FIX: still real Groq output, just not valid JSON — not
+              // a fabricated fallback, so degraded stays false. See the
+              // canned-fallback branch below for the actually-fabricated
+              // case.
+              degraded: false
             };
           }
         }
@@ -365,7 +380,12 @@ Return:
         ],
         controller_note: 'Prioritize reconciliation support, AP documentation, and tax readiness before close.',
         business_outcome: 'Manual accounting follow-up converted into clear next actions.',
-        confidence: 88
+        confidence: 88,
+        // TSM FIX: this is the canned/fabricated fallback — no key, upstream
+        // failure, or network error all land here. Same bug class as
+        // Legal's original BNCA issue: without this flag the client
+        // couldn't tell fabricated content from a genuine AI response.
+        degraded: true
       };
     }
 
@@ -395,7 +415,8 @@ Return:
         ],
         controller_note: 'Proceed with operator workflow and controller review.',
         business_outcome: 'Workflow converted into visible accounting action.',
-        confidence: 80
+        confidence: 80,
+        degraded: true
       },
       ts: new Date().toISOString()
     });
