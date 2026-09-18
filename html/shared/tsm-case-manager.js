@@ -467,6 +467,19 @@
    * cross-device/cross-session visibility and the exec-portal's own
    * server-side reporting.
    */
+  var syncFailureLog = [];
+  var syncFailureSeen = {};
+  function recordSyncFailure(caseId, status, message) {
+    var key = caseId + '|' + status + '|' + message;
+    if (syncFailureSeen[key]) return;
+    syncFailureSeen[key] = true;
+    syncFailureLog.push({ caseId: caseId, status: status, error: message, at: new Date().toISOString() });
+    if (syncFailureLog.length > 20) syncFailureLog.shift();
+    // Deliberately no console output: the mirror sync stays silent (see
+    // "keep mirror sync silent"). Read the log on demand with
+    // TSMCaseManager.getSyncFailures().
+  }
+
   function syncToServer(rec) {
     if (!rec || serverSyncDenied || typeof global.fetch !== 'function') return;
     try {
@@ -479,6 +492,19 @@
         if (res && (res.status === 401 || res.status === 403)) {
           serverSyncDenied = true;
           return;
+        }
+        // Any other non-2xx used to vanish silently, which made a real
+        // server-side rejection (e.g. a 400 carrying the ledger's error
+        // text) invisible outside the Network tab. Record (silently) once per
+        // distinct caseId/status/message; still never throws into callers.
+        if (res && res.ok === false) {
+          var status = res.status;
+          var read = (typeof res.text === 'function') ? res.text() : Promise.resolve('');
+          return read.then(function (txt) {
+            var msg = txt;
+            try { var j = JSON.parse(txt); msg = (j && (j.error || j.message)) || txt; } catch (e) {}
+            recordSyncFailure(rec.caseId, status, String(msg || '').slice(0, 500));
+          });
         }
       }).catch(function () {});
     } catch (e) {}
@@ -604,6 +630,9 @@
     // local closure directly, unaffected).
     priorityFor: priorityFor,
     syncToServer: syncToServer,
+    // Recent non-401/403 server rejections from syncToServer (max 20, newest
+    // last) -- e.g. TSMCaseManager.getSyncFailures() in the console.
+    getSyncFailures: function () { return syncFailureLog.slice(); },
     hydrateFromServer: hydrateFromServer,
     findByExceptionId: findByExceptionId
   };
