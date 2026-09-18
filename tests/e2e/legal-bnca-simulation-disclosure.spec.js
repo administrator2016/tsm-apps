@@ -4,19 +4,21 @@
 // when its output is simulated (generateMockBNCA fallback) rather than a
 // real Groq analysis.
 //
-// Background: /api/groq — the endpoint runBNCA() calls — is not mounted in
-// server.js (groq-route.js defines it but is never require()'d). This means
-// runBNCA() currently falls into its catch block on every single run, not
-// as a rare degrade path. Before this fix, finalizeBNCA(text) had no way to
-// distinguish mock output from real output, so a fabricated report was
-// presented identically to a real one, badged "GROQ LLAMA-3.3-70B" with a
-// randomized 88-95% confidence score.
+// Background: runBNCA() originally called /api/groq, which was never
+// mounted in server.js (groq-route.js defined it but was never require()'d,
+// and it had zero auth). This meant runBNCA() fell into its catch block on
+// every single run, not as a rare degrade path. Before the disclosure fix,
+// finalizeBNCA(text) had no way to distinguish mock output from real
+// output, so a fabricated report was presented identically to a real one,
+// badged "GROQ LLAMA-3.3-70B" with a randomized 88-95% confidence score.
 //
-// This test does NOT fix or test the missing /api/groq route itself — that
-// is a separate, larger wiring decision (mount groq-route.js for real, or
-// point API_ENDPOINT at the existing /api/legal/query route). It only
-// proves the disclosure gap is closed: whenever the real call fails for any
-// reason, the user-visible output is now marked simulated.
+// API_ENDPOINT now points at the existing, already-authenticated
+// /api/legal/query route (requireAnyAuth-gated) instead of the unmounted
+// /api/groq. This test covers both: (1) the disclosure gap — whenever the
+// real call fails for any reason, the user-visible output is marked
+// simulated — and (2) that the real path parses /api/legal/query's actual
+// response shape ({ok, answer}), not the old raw-Groq {choices:[...]}
+// shape the page never receives.
 //
 // Uses jsdom to load and execute the actual page script (not a source grep)
 // so this fails honestly if the real DOM wiring breaks.
@@ -46,17 +48,21 @@ async function loadPage({ mockFetchFails }) {
   // don't throw and derail the test — this page's global runtime shim.
   window.TSM_KERNEL = window.TSM_KERNEL || { setRelay: () => {}, getRelay: () => null };
 
-  // Mock fetch: simulate /api/groq being unreachable (its real, current
-  // state — confirmed against the live server, not assumed) or, for the
-  // control case, a working response.
+  // Mock fetch: simulate /api/legal/query failing (network error, 401 from
+  // requireAnyAuth, or a 500 from the Groq call itself all hit the same
+  // catch block in runBNCA) or, for the control case, a real success
+  // response in the route's actual shape ({ok, answer}), not raw Groq's
+  // {choices:[...]} — the page never sees that shape directly.
   window.fetch = async (url, opts) => {
     if (mockFetchFails) {
-      return { ok: false, status: 404 };
+      return { ok: false, status: 401, json: async () => ({ ok: false, error: 'Unauthorized' }) };
     }
     return {
       ok: true,
       json: async () => ({
-        choices: [{ message: { content: 'CONFIDENCE: 91%\nRISK LEVEL: HIGH\nSLA PRESSURE: Critical\n(real content)' } }],
+        ok: true,
+        answer: 'CONFIDENCE: 91%\nRISK LEVEL: HIGH\nSLA PRESSURE: Critical\n(real content)',
+        createdAt: new Date().toISOString(),
       }),
     };
   };
@@ -117,20 +123,23 @@ async function run() {
     window.close();
   }
 
-  // --- Canary: confirms /api/groq is still unmounted server-side, i.e. the
-  // degraded path above reflects actual current production behavior, not
-  // a hypothetical. If this ever starts passing, it means someone wired
-  // the real endpoint — good news, but re-verify this test's premise then.
+  // --- Canary: confirms /api/legal/query is genuinely mounted and
+  // requireAnyAuth-gated against a live server, i.e. the fetch mocks above
+  // reflect real current production behavior, not a hypothetical. An
+  // unauthenticated call should get 401 from requireAnyAuth (route exists,
+  // auth enforced) — not 404 (route missing) and not 200 (auth bypassed).
+  // If this ever starts returning 404, API_ENDPOINT has drifted from the
+  // real route again and this test's mocks need re-checking.
   {
     const base = process.env.TSM_BASE_URL || 'http://localhost:3000';
     try {
-      const res = await fetch(base + '/api/groq', {
+      const res = await fetch(base + '/api/legal/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: 'x' }] }),
+        body: JSON.stringify({ message: 'x' }),
       });
-      check('CANARY: /api/groq is still unmounted (404) — Legal BNCA is currently always-simulated in production',
-        res.status === 404);
+      check('CANARY: /api/legal/query is mounted and auth-gated (401 unauthenticated, not 404/200)',
+        res.status === 401);
     } catch (e) {
       console.log('SKIPPED canary check (no server reachable at', base, ') — run with a live server to include it.');
     }
