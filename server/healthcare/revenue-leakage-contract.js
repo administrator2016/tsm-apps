@@ -302,7 +302,38 @@ function buildRevenueLeakageOpportunities(input = {}) {
   ];
 
   const opportunities = [];
-  const seen = new Set();
+  const byClaimId = new Map();
+
+  /*
+   * A claim may appear in multiple portfolio sections.
+   *
+   * Keep one canonical opportunity per claim, but do not let a
+   * generic claim record shadow a richer denial/appeal/AR record.
+   * Prefer the representation carrying the most explicit recovery
+   * evidence. Financial exposure is preserved from the selected
+   * record; duplicate records are never summed.
+   */
+  function evidenceScore(opportunity) {
+    if (!opportunity) return -1;
+
+    let score = 0;
+
+    if (opportunity.payer) score += 1;
+    if (opportunity.denialReasonCode) score += 2;
+    if (opportunity.denialCategory) score += 2;
+    if (opportunity.rootCause) score += 2;
+    if (opportunity.appealable !== null) score += 2;
+    if (opportunity.appealDeadline) score += 2;
+    if (opportunity.recoveryLikelihood) score += 2;
+    if (typeof opportunity.confidence === 'number') score += 1;
+    if (
+      Array.isArray(opportunity.evidenceProvenance) &&
+      opportunity.evidenceProvenance.length
+    ) score += 1;
+    if (opportunity.opportunityType !== 'recovery_review') score += 3;
+
+    return score;
+  }
 
   for (const [source, records] of sources) {
     records.forEach((item, index) => {
@@ -310,15 +341,20 @@ function buildRevenueLeakageOpportunities(input = {}) {
 
       if (!opportunity) return;
 
-      /*
-       * A claim may appear in multiple portfolio sections.
-       * Preserve the first canonical opportunity rather than
-       * duplicating financial exposure.
-       */
-      if (seen.has(opportunity.claimId)) return;
+      const key = opportunity.claimId;
+      const existingIndex = byClaimId.get(key);
 
-      seen.add(opportunity.claimId);
-      opportunities.push(opportunity);
+      if (existingIndex === undefined) {
+        byClaimId.set(key, opportunities.length);
+        opportunities.push(opportunity);
+        return;
+      }
+
+      const existing = opportunities[existingIndex];
+
+      if (evidenceScore(opportunity) > evidenceScore(existing)) {
+        opportunities[existingIndex] = opportunity;
+      }
     });
   }
 

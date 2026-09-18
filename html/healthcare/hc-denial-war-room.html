@@ -1649,7 +1649,41 @@ function resolveTimelyFilingWindow(fullDocText) {
   return { label, deadline, windowDays, daysElapsed, daysLeft };
 }
 
+async function ensureHCSession() {
+  try {
+    const r = await fetch('/api/auth/status', {
+      method: 'GET',
+      credentials: 'same-origin',
+      cache: 'no-store'
+    });
+
+    const data = await r.json();
+
+    if (data && data.authenticated === true) {
+      return true;
+    }
+
+    const next = encodeURIComponent(
+      location.pathname + location.search + location.hash
+    );
+
+    location.href = '/login?next=' + next;
+    return false;
+  } catch (err) {
+    console.warn('[HC Auth Guard] Session check failed:', err);
+
+    const next = encodeURIComponent(
+      location.pathname + location.search + location.hash
+    );
+
+    location.href = '/login?next=' + next;
+    return false;
+  }
+}
+
 async function runPipeline() {
+  if (!(await ensureHCSession())) return;
+
   if (!docText || docText.length < 20) { alert('Load a document first.'); return; }
 
   const outputs = ['','','','',''];

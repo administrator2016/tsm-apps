@@ -34,6 +34,7 @@ const { buildPortfolioTwin: buildConstructionPortfolioTwin } = require('./server
 // insertion point for why they were not built out.
 const { buildDecisionPackage: buildHcDecisionPackage } = require('./server/healthcare/decision-engine');
 const { buildPortfolioTwin: buildHcPortfolioTwin } = require('./server/healthcare/portfolio-intelligence');
+const { buildRecoveryWorkItem } = require('./server/healthcare/recovery-orchestrator');
 const { buildDecisionPackage: buildSchoolsDecisionPackage } = require('./server/schools/decision-engine');
 const { buildPortfolioTwin: buildSchoolsPortfolioTwin } = require('./server/schools/portfolio-intelligence');
 const { buildPortfolioTwin } = require('./server/pm/portfolio-intelligence');
@@ -5753,6 +5754,49 @@ app.post('/api/hc/portfolio-intelligence', requireRole(PM_INTERNAL_ROLES), async
   }
 });
 // ── END HEALTHCARE PORTFOLIO INTELLIGENCE ───────────────────────────────────
+
+// ── HEALTHCARE RECOVERY WORK ITEM (2026-09-18) ─────────────────────────────
+// Converts an already-classified canonical HC revenue-leakage opportunity
+// into a governed Phase 1 recovery execution contract.
+// Classification remains owned by revenue-leakage-contract.js.
+// This route does not submit to payers or clearinghouses.
+app.post('/api/hc/recovery-work-item', requireRole(PM_INTERNAL_ROLES), async (req, res) => {
+  try {
+    const payload = req.body || {};
+
+    const opportunity =
+      payload.opportunity &&
+      typeof payload.opportunity === 'object'
+        ? payload.opportunity
+        : payload;
+
+    const recoveryWorkItem = buildRecoveryWorkItem(opportunity);
+
+    res.json({
+      ok: true,
+      engine: 'hc-recovery-orchestrator-v1',
+      generatedAt: new Date().toISOString(),
+      recoveryWorkItem,
+      governance: {
+        mode: 'DETERMINISTIC',
+        llmRequired: false,
+        humanApprovalRequired: true,
+        targetSystem: 'MANUAL_BPO',
+        submissionMode: 'HUMAN_REVIEW',
+        writeBackToSourceSystems: false
+      }
+    });
+  } catch (err) {
+    console.error('[Healthcare Recovery Work Item]', err);
+    res.status(400).json({
+      ok: false,
+      error: 'Healthcare recovery work item generation failed',
+      message: err.message
+    });
+  }
+});
+// ── END HEALTHCARE RECOVERY WORK ITEM ───────────────────────────────────────
+
 
 // ── SCHOOLS INTELLIGENCE V3 (2026-08-29) ────────────────────────────────────
 // Same pattern as Healthcare above, using Schools' own domain config
