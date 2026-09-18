@@ -865,6 +865,26 @@ function buildHCContext() {
   let ctx = HC_CONTEXT_BASE;
   try {
     const brief = readWarRoomBrief();
+    // TSM FIX: the War Room's structured case holds the deterministic,
+    // provenance-tracked values (explicit appeal date, claim-level exposure,
+    // parsed likelihood). Hand them to the model verbatim so it cannot
+    // re-derive a deadline (e.g. "+60 days") or swap in a portfolio figure.
+    // Only fields that are actually present are emitted; nothing is invented.
+    const sc = brief && brief.structuredCase;
+    if (sc && typeof sc === 'object') {
+      const lines = [];
+      if (sc.claimId) lines.push('Claim ID: ' + sc.claimId);
+      if (sc.payer) lines.push('Payer: ' + sc.payer);
+      if (sc.denialReasonCode) lines.push('Denial code: ' + sc.denialReasonCode);
+      if (sc.denialCategory) lines.push('Denial category: ' + sc.denialCategory);
+      if (sc.appealDeadline) lines.push('Appeal deadline (calendar date): ' + sc.appealDeadline);
+      if (sc.financialExposure != null) lines.push('Financial exposure (USD): ' + sc.financialExposure);
+      if (sc.recoveryLikelihood) lines.push('Recovery likelihood: ' + sc.recoveryLikelihood);
+      if (sc.confidence != null) lines.push('Confidence: ' + sc.confidence);
+      if (lines.length) {
+        ctx += '\n\nVERIFIED STRUCTURED CASE (extracted and validated by the War Room — use these exact values; do not recompute, restate as a relative period, or substitute other figures):\n' + lines.join('\n');
+      }
+    }
     if (brief && brief.engineOutputs) {
       const findings = Object.entries(brief.engineOutputs)
         .filter(([,v]) => v && v.trim())

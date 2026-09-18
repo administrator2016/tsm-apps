@@ -126,11 +126,16 @@
      * STEP 2
      * Store the package as an actual BPO document.
      */
+    // A fixed filename made every relay click look identical in the work
+    // item's document list. Carry the case ID and a relay timestamp so a
+    // reviewer can tell which copy is current.
+    const safe = (v) => String(v)
+      .replace(/[^A-Za-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
     const filename =
       options.filename ||
-      `tsm-${String(vertical)
-        .replace(/[^A-Za-z0-9]+/g, '-')
-        .toLowerCase()}-client-package.json`;
+      `tsm-${safe(vertical).toLowerCase()}-${safe(caseId)}-${stamp}-client-package.json`;
 
     const form = new FormData();
 
