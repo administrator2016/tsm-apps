@@ -46,13 +46,18 @@ try {
 const selfReported = {};
 
 // ── GET /api/rcm/requirements ───────────────────────────────────────────────
-router.get('/requirements', (req, res) => {
+// TSM FIX: no auth guard, same gap class as routes/rcm-relay.js's GET routes.
+// Lower stakes here (a schema spec, no customer data) but same pattern, and
+// this router's own write endpoints already correctly use requireAuth.
+router.get('/requirements', requireAuth, (req, res) => {
   const { _readme, ...phases } = REGISTRY;
   res.json({ phases });
 });
 
 // ── GET /api/rcm/self-reported ──────────────────────────────────────────────
-router.get('/self-reported', (req, res) => {
+// TSM FIX: same auth gap as GET /requirements above — this one does expose
+// EU-entered field values, so worth closing even though they're self-reported.
+router.get('/self-reported', requireAuth, (req, res) => {
   res.json({ data: selfReported });
 });
 

@@ -88,19 +88,29 @@ router.post('/relay', requireAuth, express.json({ limit: '2mb' }), (req, res) =>
 
 // ── GET /api/rcm/relay ───────────────────────────────────────────────────────
 // Returns the latest staged relay, or 204 if nothing has been staged yet.
-router.get('/relay', (req, res) => {
+// TSM FIX: this had no auth guard at all, unlike the write endpoints on this
+// same router (POST/DELETE /relay, POST /guidance), which already correctly
+// use requireAuth. Confirmed as a genuine data exposure, not just a hygiene
+// gap: real staged FinOps document analysis (docName + engine narrative
+// text, which can include account/variance figures) was readable by any
+// unauthenticated caller. No front-end change needed: rcm-relay-client.js's
+// load() already calls fetch() with credentials:'include', so the existing
+// session cookie is carried automatically.
+router.get('/relay', requireAuth, (req, res) => {
   if (!current) return res.status(204).end();
   res.json(current);
 });
 
 // ── GET /api/rcm/relay/history ──────────────────────────────────────────────
 // Metadata only — for an intake history list in the UI.
-router.get('/relay/history', (req, res) => {
+// TSM FIX: same auth gap as GET /relay above.
+router.get('/relay/history', requireAuth, (req, res) => {
   res.json({ items: relayHistory.map(summarize) });
 });
 
 // ── GET /api/rcm/relay/:id ───────────────────────────────────────────────────
-router.get('/relay/:id', (req, res) => {
+// TSM FIX: same auth gap as GET /relay above.
+router.get('/relay/:id', requireAuth, (req, res) => {
   const entry = relayHistory.find(e => e.id === req.params.id);
   if (!entry) return res.status(404).json({ error: { message: 'Not found.' } });
   res.json(entry);

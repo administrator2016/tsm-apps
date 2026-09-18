@@ -2744,14 +2744,21 @@ Dollar amounts and party names required.`;
       try {
         const text = await callAI(prompt);
 
-        // Parse health score from response
+        // TSM FIX: previously defaulted to a hardcoded 62/MEDIUM whenever the
+        // score/risk couldn't be parsed out of the AI response (including the
+        // degraded-fallback text /api/mortgage/query now returns on AI failure)
+        // — presenting a fabricated number as if it were a real analysis result.
+        // Now honestly discloses when a value wasn't actually stated in the
+        // response instead of guessing one.
         const scoreMatch = text.match(/HEALTH_SCORE:\s*(\d+)/) || text.match(/health score[^0-9]*(\d+)/i) || text.match(/(\d+)\/100/i);
-        const rawScore = scoreMatch ? parseInt(scoreMatch[1]) : 62;
-        const score = (rawScore > 0 && rawScore <= 100) ? rawScore : 62;
+        const parsedScore = scoreMatch ? parseInt(scoreMatch[1]) : NaN;
+        const score = (parsedScore > 0 && parsedScore <= 100) ? parsedScore : null;
 
         const riskMatch = text.match(/overall risk[:\s]+(\w+)/i);
-        const risk = riskMatch ? riskMatch[1].toUpperCase() : 'MEDIUM';
-        const riskColor = { LOW: 'var(--green)', MEDIUM: 'var(--acc)', HIGH: 'var(--red)', CRITICAL: 'var(--red)' }[risk] || 'var(--acc)';
+        const risk = riskMatch ? riskMatch[1].toUpperCase() : null;
+        const riskColor = risk ? ({ LOW: 'var(--green)', MEDIUM: 'var(--acc)', HIGH: 'var(--red)', CRITICAL: 'var(--red)' }[risk] || 'var(--acc)') : 'var(--muted)';
+        const scoreLabel = score !== null ? `${score}/100` : 'NOT STATED IN SOURCE DATA';
+        const riskLabel = risk || 'NOT STATED IN SOURCE DATA';
 
         results.innerHTML = `
       <div class="rr-hdr">⚡ RESCUE PACK COMPLETE — ${address.toUpperCase()}</div>
@@ -2759,11 +2766,11 @@ Dollar amounts and party names required.`;
       <div class="health-score-bar">
         <div class="hs-top">
           <div class="hs-label">TRANSACTION HEALTH SCORE</div>
-          <div class="hs-val" style="color:${riskColor}">${score}/100</div>
+          <div class="hs-val" style="color:${riskColor}">${scoreLabel}</div>
         </div>
-        <div class="hs-track"><div class="hs-fill" style="width:${score}%"></div></div>
+        <div class="hs-track"><div class="hs-fill" style="width:${score !== null ? score : 0}%"></div></div>
         <div style="display:flex;justify-content:space-between;margin-top:.3rem;font-family:var(--mono);font-size:.42rem">
-          <span style="color:${riskColor}">OVERALL RISK: ${risk}</span>
+          <span style="color:${riskColor}">OVERALL RISK: ${riskLabel}</span>
           <span style="color:var(--muted)">SCENARIOS: ${scenarios.length || 1} ACTIVE</span>
         </div>
       </div>
@@ -3059,15 +3066,22 @@ Dollar amounts and party names required.`;
     function updateHealthScore(score) {
       const el = document.getElementById('healthScore');
       const ring = document.getElementById('healthRing');
-      if (score !== undefined) {
+      // TSM FIX: the no-score branch previously fabricated a health score from
+      // runCount alone (60 + 4 per node run, capped at 98) — a number with no
+      // relation to any real transaction data that climbed just from clicking
+      // around, displayed as if it were a genuine risk assessment. Now shows
+      // "—" (not computed) unless a real score was actually parsed from an AI
+      // response, same as the pre-any-analysis state.
+      if (typeof score === 'number' && score >= 0 && score <= 100) {
         el.textContent = score;
         const color = score >= 75 ? 'var(--green)' : score >= 50 ? 'var(--acc)' : 'var(--red)';
         el.style.color = color;
         ring.style.borderColor = color.replace(')', ',.4)').replace('var(', 'rgba(').replace(')', '');
         ring.style.borderColor = color;
       } else {
-        const count = runCount;
-        el.textContent = count > 0 ? Math.min(98, 60 + count * 4) : '—';
+        el.textContent = '—';
+        el.style.color = 'var(--muted)';
+        ring.style.borderColor = 'var(--muted)';
       }
     }
 

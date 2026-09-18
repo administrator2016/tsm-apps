@@ -953,17 +953,18 @@
           <tr><td>War Room</td><td><code>html/l1-copilot/noc/noc-war-room.html</code></td></tr>
           <tr><td>Strategist</td><td><code>html/l1-copilot/noc/noc-strategist.html</code></td></tr>
           <tr><td>Exec Portal (BNCA Escalated)</td><td><code>html/l1-copilot/noc/noc-executive-portal.html</code></td></tr>
+          <tr><td>Sentinel Center Feed</td><td>reads via localStorage key <code>TSM_NOC_STRATEGIST_RELAY</code></td></tr>
         </table>
 
         <h4>Troubleshooting</h4>
-        <div class="callout risk">
-          <span class="callout-label">NOC cases never reach Strategist — this is a real wiring gap, not user error</span>
-          <code>relayToStrategist()</code> is defined in <code>noc-war-room.html</code> but has zero call sites anywhere in the file — no button <code>onclick</code>, no auto-trigger, nothing invokes it. If a NOC item isn't showing up in Strategist, don't spend time looking for a missed click or a race condition; the function that would relay it is simply never called. Treat any NOC case that needs to reach Strategist as a manual hand-off for now.
+        <div class="callout">
+          <span class="callout-label">NOC now reaches both Strategist and Sentinel Center (fixed, commit <code>d6ac4f12</code>, 2026-09-06)</span>
+          <code>relayToStrategist()</code> in <code>noc-war-room.html</code> has a live call site (the <code>#btnRelay</code> click handler) — clicking Relay writes the War Room → Strategist payload via <code>TSM.relay.write("NOC", ...)</code> and, as of the same commit, also calls <code>nocPushToSentinel()</code> in the same function, so a single click now drives both hops. If a NOC item isn't showing up in Strategist or on the Sentinel board, this is no longer the wiring gap to suspect first — check whether Relay was actually clicked before treating it as a bug.
         </div>
 
         <div class="callout scope">
           <span class="callout-label">Sentinel Scope Note</span>
-          NOC is not one of the 12 verticals <code>html/sentinel-center.html</code> tracks (schools, healthcare, finops, insurance, construction, legal, realestate, bpo, mortgage, hotelops, pm, concierge) — its Strategist stage does not write a <code>TSM_*_STRATEGIST_RELAY</code> key, so NOC items never surface on the Sentinel Center board. This is a real gap in the wiring, not an omission in this manual.
+          NOC is now tracked by <code>html/sentinel-center.html</code>'s <code>VERTICALS</code> list (added in the same 2026-09-06 fix, via <code>nocPushToSentinel()</code>) — see the Sentinel Center row above for its relay key. See Section 8's Quick-Reference Checklist for how this changes Sentinel's overall vertical count.
         </div>
 
         <div class="callout recovery">
@@ -1136,7 +1137,7 @@
         <li>BPO's Strategist stage is a real, built page (<code>bpo-strategist.html</code>) — a BPO item does get a Strategist hop, same as other verticals; see <code>BPO_Client_Chain_Manual.docx</code> for the full stage-by-stage steps.</li>
         <li>RCM-OS and Property Accounting — Revenue Cycle are searchable but not classifier-routed — a document won't land there automatically (Appendix A).</li>
         <li>HotelOps/Concierge, Honeywell, L1 Ticket, Logistics, and Supplier/Vendor sit entirely outside this pipeline (Appendix B) — don't look for them in doc-search. Mortgage moved into Section 5 as of 2026-09-05, and Schools as of 2026-09-09; both are classifier-routed now, not in Appendix B.</li>
-        <li>Sentinel Center (<code>html/sentinel-center.html</code>) rolls up 11 of the 12 pipeline verticals — every one but NOC — plus HotelOps and Concierge from Appendix B; check Section 5's Sentinel Center Feed rows for the exact relay key.</li>
+        <li>Sentinel Center (<code>html/sentinel-center.html</code>) currently rolls up 18 verticals: all 12 pipeline verticals above, HotelOps and Concierge from Appendix B, College Command's Financial Aid domain (<code>college_finaid</code> — the only College sub-domain registered so far), NOC (fixed 2026-09-06, commit <code>d6ac4f12</code>), and the 4 Insurance Command sub-domains (Claims &amp; Appeals, Property &amp; Casualty, Compliance &amp; Legal, Licensing &amp; CE — see the Insurance Command note under Section 5's Insurance vertical). Check Section 5's Sentinel Center Feed rows, or <code>sentinel-center.html</code>'s <code>VERTICALS</code> array directly, for the exact relay key per vertical — this list has changed several times and is worth re-verifying rather than assuming it's still current.</li>
       </ul>
     </section>
 

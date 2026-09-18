@@ -238,53 +238,103 @@ const mission = {
   variance:35400,
   variancePct:7.3,
   retainageHeld:24100,
-  exceptions:[
-    {priority:"P1",area:"GL / Bank",issue:"Reconciliation out of balance",severity:"high",confidence:92},
-    {priority:"P1",area:"AP",issue:"Duplicate vendor invoice detected",severity:"high",confidence:95},
-    {priority:"P2",area:"General Ledger",issue:"Unexplained GL variance",severity:"med",confidence:86},
-    {priority:"P2",area:"Escrow",issue:"Property tax deadline approaching",severity:"med",confidence:88},
-    {priority:"P2",area:"Insurance",issue:"Insurance certificate missing / expired",severity:"med",confidence:90},
-    {priority:"P3",area:"AP",issue:"3 invoices awaiting approval",severity:"low",confidence:70},
-    {priority:"P3",area:"Revenue Cycle",issue:"Retainage release pending owner sign-off",severity:"low",confidence:65}
-  ],
   timestamp:new Date().toISOString()
 };
 
+// TSM FIX: runClose()/feedExceptions() previously printed a fully static
+// template (fixed $482k/$517.4k/+7.3%, a fixed 7-item exception list
+// including "duplicate vendor invoice"/"GL variance"/"escrow deadline"/
+// "insurance certificate") regardless of the page's actual live state —
+// confirmed by testing: posting journal entries, changing the budget,
+// approving/rejecting AP invoices, and clicking "mark reconciliation
+// resolved" never changed a single word of the close brief, and
+// feedExceptions() fed that same fabricated list into the real
+// TSMExceptions engine every time. This was the "zero real coverage" gap
+// for this vertical — the KPI cards were wired to live state
+// (refreshKpiCards) but the close analysis itself was not.
+//
+// Fix: derive findings from the state this page actually tracks —
+// budget/actual/variance (mission, kept in sync by refreshKpiCards),
+// ledger balance (glEntries debit/credit totals), AP queue (apInvoices,
+// including a real same-vendor+amount duplicate check), and retainage
+// (a static contract term, not a live-tracked field — labeled as such).
+// Escrow/insurance/GL-variance-investigation items are dropped entirely
+// rather than left as fabricated placeholders, since nothing in this
+// page's data model tracks escrow deadlines, insurance certs, or a GL
+// variance sub-ledger.
+function computeReconciliation(){
+  let totalDebit = 0, totalCredit = 0;
+  glEntries.forEach(function(e){
+    if (e.type === 'debit') totalDebit += e.amount; else totalCredit += e.amount;
+  });
+  return {
+    totalDebit: totalDebit,
+    totalCredit: totalCredit,
+    balanced: glEntries.length > 0 && Math.abs(totalDebit - totalCredit) < 0.005
+  };
+}
+
+function findDuplicateInvoices(){
+  const groups = {};
+  apInvoices.forEach(function(inv){
+    if (inv.status === 'rejected') return;
+    const key = inv.vendor + '|' + inv.amount;
+    (groups[key] = groups[key] || []).push(inv);
+  });
+  return Object.keys(groups).filter(function(k){ return groups[k].length > 1; }).map(function(k){ return groups[k]; });
+}
+
+function buildFindings(){
+  refreshKpiCards();
+  const recon = computeReconciliation();
+  const dupes = findDuplicateInvoices();
+  const pending = apInvoices.filter(function(i){ return i.status === 'pending'; });
+  const findings = [];
+  const exceptions = [];
+
+  if (recon.balanced) {
+    findings.push('Ledger reconciled — debits = credits (' + fmtMoney(recon.totalDebit) + ')');
+  } else if (glEntries.length > 0) {
+    findings.push('Reconciliation out of balance (debits ' + fmtMoney(recon.totalDebit) + ' vs credits ' + fmtMoney(recon.totalCredit) + ')');
+    exceptions.push({priority:'P1',area:'GL / Bank',issue:'Reconciliation out of balance',severity:'high',confidence:95});
+  } else {
+    findings.push('No journal entries posted yet this period');
+  }
+
+  dupes.forEach(function(group){
+    findings.push('Duplicate invoice detected: ' + group.map(function(i){ return i.id; }).join(' / ') + ' (' + group[0].vendor + ', ' + fmtMoney(group[0].amount) + ' each)');
+    exceptions.push({priority:'P1',area:'AP',issue:'Duplicate vendor invoice: ' + group[0].vendor,severity:'high',confidence:90});
+  });
+
+  if (pending.length > 0) {
+    findings.push(pending.length + ' AP invoice' + (pending.length === 1 ? '' : 's') + ' awaiting approval (' + fmtMoney(pending.reduce(function(s,i){return s+i.amount;},0)) + ' total)');
+    exceptions.push({priority:'P3',area:'AP',issue:pending.length + ' invoice' + (pending.length === 1 ? '' : 's') + ' awaiting approval',severity:'low',confidence:80});
+  }
+
+  exceptions.push({priority:'P3',area:'Revenue Cycle',issue:'Retainage release pending owner sign-off',severity:'low',confidence:60});
+
+  return { findings: findings, exceptions: exceptions, recon: recon };
+}
+
 function runClose(){
+  const f = buildFindings();
+  mission.exceptions = f.exceptions;
+
   const text =
 `PROPERTY ACCOUNTANT CLOSE ANALYSIS
 
 Property: ${mission.property}
 Period: ${mission.period}
-
-Budget: $482,000
-Actual: $517,400
-Variance: +$35,400 (+7.3%)
-Retainage held: $24,100
+${backendLive ? '' : '(offline mode — figures below reflect this session only, not persisted)\n'}
+Budget: ${fmtMoney(mission.budget)}
+Actual: ${fmtMoney(mission.actual)}
+Variance: ${mission.variance >= 0 ? '+' : ''}${fmtMoney(mission.variance)} (${mission.variancePct >= 0 ? '+' : ''}${mission.variancePct}%)
+Retainage held: ${fmtMoney(mission.retainageHeld)} (per contract terms — not a live-tracked field)
 
 ACCOUNTING FINDINGS
-- 3 AP invoices awaiting approval
-- 1 duplicate vendor invoice
-- 1 unexplained GL variance
-- Property tax escrow deadline approaching
-- Insurance certificate missing/expired
-- Pay application awaiting owner/architect certification
-- Reconciliation is out of balance
+${f.findings.map(function(line){ return '- ' + line; }).join('\n')}
 
-REVENUE CYCLE STATUS
-- Draft pay app coded, awaiting certification
-- Retainage of $24,100 withheld per contract terms
-- No AR invoice posted yet — pending certification
-
-RECOMMENDED ACTION
-1. Resolve reconciliation before close certification.
-2. Hold duplicate invoice from payment.
-3. Obtain GL variance explanation.
-4. Verify tax escrow funding.
-5. Obtain current insurance certificate.
-6. Route pay application for owner/architect certification.
-
-CLOSE STATUS: EXCEPTIONS REQUIRE REVIEW`;
+CLOSE STATUS: ${f.recon.balanced && f.exceptions.filter(function(e){return e.priority!=='P3' || e.area!=='Revenue Cycle';}).length === 0 ? 'CLEAN — ONLY ROUTINE ITEMS OPEN' : 'EXCEPTIONS REQUIRE REVIEW'}`;
 
   document.getElementById("brief").textContent = text;
 }

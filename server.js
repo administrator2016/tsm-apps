@@ -3462,7 +3462,13 @@ app.post('/api/noc/query', requireAnyAuth, async (req, res) => {
 });
 
 
-app.post('/api/mortgage/query', async (req, res) => {
+// TSM FIX: this route had no auth guard at all, unlike /api/hc/*, /api/noc/query,
+// /api/hotelops/query, and /api/legal/query — and unlike FinOps's orphaned report
+// route, this one is genuinely live (html/war-rooms/re-war/re-war-room.html calls
+// it directly as its only AI endpoint). Adding requireAnyAuth here doesn't require
+// any front-end change: same-origin fetch() already carries the tsm_session cookie
+// automatically for logged-in users.
+app.post('/api/mortgage/query', requireAnyAuth, async (req, res) => {
   const { kpis, loan_breaches, conditions, exceptions, context, question, query, maxTokens } = req.body || {};
   const userQuestion = question || query;
   const system = context || SP.mortgage;
@@ -3492,7 +3498,22 @@ app.post('/api/mortgage/query', async (req, res) => {
     return res.json({ ok: true, answer, createdAt: new Date().toISOString() });
   } catch (e) {
     console.error('MORTGAGE GROQ ERROR:', e.message);
-    return res.status(500).json({ ok: false, error: e.message });
+    // TSM FIX: previously surfaced this as a raw 500 with no graceful
+    // degradation, same bug class already found and fixed in Construction's,
+    // NOC's, and HotelOps's /query routes. Distinguishes "no key configured"
+    // from a genuine upstream failure so the client/UI can tell them apart,
+    // rather than treating both as the same opaque 500 — and so re-war-room.html's
+    // rescue-pack score parser sees plain text with no fabricated HEALTH_SCORE
+    // in it, instead of failing the fetch entirely.
+    const noKeyConfigured = /No Groq API key configured/i.test(e.message || '');
+    return res.status(200).json({
+      ok: true,
+      fallback: true,
+      degraded: true,
+      reason: noKeyConfigured ? 'ai_not_configured' : 'ai_call_failed',
+      answer: 'AI mortgage/transaction analysis is temporarily unavailable. Please try again shortly or escalate manually per standard pipeline procedure.',
+      createdAt: new Date().toISOString()
+    });
   }
 });
 
