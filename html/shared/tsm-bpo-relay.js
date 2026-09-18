@@ -34,7 +34,7 @@
   }
 
   async function listClients() {
-    const response = await fetch('/api/bpo/clients?status=active', {
+    const response = await fetch('/api/bpo/client-directory', {
       credentials: 'same-origin',
       headers: {
         Accept: 'application/json'
