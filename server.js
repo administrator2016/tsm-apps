@@ -89,7 +89,7 @@ const PORT = process.env.PORT || 8080;
 const HTML_ROOT = path.join(__dirname, "html");
 // AUTH REMOVED — in-house use only
 // const { tsmAuthMiddleware } = require('./html/tsm-auth');
-const { requireAuth, requireRole, signSession, verifySession, getCookie, SESSION_TTL_MS } = require('./middleware/require-auth');
+const { requireAuth, requireRole, requireAnyAuth, signSession, verifySession, getCookie, SESSION_TTL_MS } = require('./middleware/require-auth');
 const clientRegistry = require('./middleware/client-registry');
 const staffRegistry = require('./middleware/staff-registry');
 
@@ -380,20 +380,17 @@ app.get('/api/auth/status', (req, res) => {
   });
 });
 
-// Any authenticated session — admin, staff (manager/analyst), or client.
-// Attaches req.tsmSession.
-function requireAnyAuth(req, res, next) {
-   const session = verifySession(getCookie(req, 'tsm_session')) || { role: 'admin', label: 'Dev Admin' };
-   // if (!session) return res.status(401)... bypassed for dev
-  req.tsmSession = {
-    role: session.role || 'admin',
-    clientId: session.clientId || null,
-    staffId: session.staffId || null,
-    label: session.label || null,
-    tenantId: session.tenantId || null,
-  };
-  next();
-}
+// SECURITY FIX (confirmed live auth bypass — see docs/audit/step6-cross-vertical-release-status.md):
+// this file used to define its own local requireAnyAuth() with
+//   const session = verifySession(...) || { role: 'admin', label: 'Dev Admin' };
+//   // if (!session) return res.status(401)... bypassed for dev
+// i.e. any request with no valid session cookie silently became an admin
+// session instead of being rejected. Every route below using requireAnyAuth
+// (most of /api/hc/*, /api/schools/*, /api/war-room/stream, and more) was
+// open to unauthenticated callers with admin privileges. The correct
+// implementation already existed in middleware/require-auth.js — imported
+// above instead — and the local duplicate is removed entirely so it can't
+// silently drift back to this state.
 
 // Admin-only. Also attaches req.tsmSession for consistency with requireAnyAuth.
 function requireAdmin(req, res, next) {
