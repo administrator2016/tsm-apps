@@ -1589,27 +1589,64 @@ function extractExplicitDate(text) {
 }
 function resolveAppealDeadline(deadlinePhrase, fullDocText) {
   if (!deadlinePhrase) return null;
-  const dayMatch = deadlinePhrase.match(/\b(\d{1,3})\s*[- ]?(calendar\s+)?days?\b/i);
-  if (!dayMatch) return null; // not a relative window, nothing to compute
-  const dayCount = parseInt(dayMatch[1], 10);
-  if (!dayCount || dayCount > 365) return null; // sanity bound, refuse to guess on nonsense
 
-  // Prefer a date stated within the deadline phrase itself.
-  let baseDate = extractExplicitDate(deadlinePhrase);
-  // Otherwise look for a date near common anchor phrases in the source doc.
-  if (!baseDate && fullDocText) {
+  // If the source phrase already contains an explicit calendar date,
+  // that date is the authoritative deadline. Do NOT add the relative
+  // day count again.
+  const explicitDeadline = extractExplicitDate(deadlinePhrase);
+  if (explicitDeadline) {
+    const today = new Date();
+    const daysLeft = Math.ceil((explicitDeadline - today) / 86400000);
+    const urgency = daysLeft < 0
+      ? ' (PAST DUE)'
+      : daysLeft <= 14
+        ? ' (' + daysLeft + 'd left)'
+        : '';
+
+    const fmt = explicitDeadline.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+
+    return { label: fmt + urgency, date: explicitDeadline };
+  }
+
+  // No explicit deadline date was found. Only calculate from a
+  // relative day window when a confident anchor date exists.
+  const dayMatch = deadlinePhrase.match(/\b(\d{1,3})\s*[- ]?(calendar\s+)?days?\b/i);
+  if (!dayMatch) return null;
+
+  const dayCount = parseInt(dayMatch[1], 10);
+  if (!dayCount || dayCount > 365) return null;
+
+  let baseDate = null;
+
+  if (fullDocText) {
     const anchors = /(date of this notice|notice date|date of denial|EOB date)[^.\n]{0,60}/i;
     const anchorMatch = fullDocText.match(anchors);
     if (anchorMatch) baseDate = extractExplicitDate(anchorMatch[0]);
   }
-  if (!baseDate) return null; // can't confidently locate a base date — don't guess
+
+  if (!baseDate) return null;
 
   const deadline = new Date(baseDate);
   deadline.setDate(deadline.getDate() + dayCount);
-  const fmt = deadline.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  const fmt = deadline.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  });
+
   const today = new Date();
   const daysLeft = Math.ceil((deadline - today) / 86400000);
-  const urgency = daysLeft < 0 ? ' (PAST DUE)' : daysLeft <= 14 ? ' (' + daysLeft + 'd left)' : '';
+  const urgency = daysLeft < 0
+    ? ' (PAST DUE)'
+    : daysLeft <= 14
+      ? ' (' + daysLeft + 'd left)'
+      : '';
+
   return { label: fmt + urgency, date: deadline };
 }
 
@@ -1707,7 +1744,7 @@ async function runPipeline() {
       sys: 'You are a healthcare financial analyst. Calculate: revenue at risk, timely filing risk, total financial exposure. State the appeal deadline exactly as given in KEY FINDINGS below — do not recalculate or estimate a different number or timeframe. Under 300 words.',
       getUserMsg: () => 'KEY FINDINGS:\n' + outputs[0].slice(0, 700) + '\nDENIAL CAUSE:\n' + outputs[1].slice(0, 400), label: 'FINANCIAL IMPACT' },
     { outId: 'out4', badgeId: 'ps4', tokId: 'tok4', idleId: 'idle4', model: LARGE, maxTok: 550,
-      sys: 'You are a denial recovery specialist. Write a step-by-step appeal plan: documents needed, appeal letter points, deadline, payer portal. Use the exact appeal deadline stated in the FINANCIAL input below — do not recalculate or estimate a different one. Also include a line starting exactly with "RECOVERY LIKELIHOOD:" followed by one word — STRONG, MODERATE, or WEAK — then a dash and a one-sentence justification grounded ONLY in the specific denial cause and documentation facts given below. Do not cite a generic industry average or invent a percentage. Under 350 words.',
+      sys: 'You are a denial recovery specialist. Write a step-by-step appeal plan: documents needed, appeal letter points, deadline, payer portal. Use the exact appeal deadline stated in the FINANCIAL input below — do not recalculate or estimate a different one. At the very end of your response, on its own line, output exactly one of these machine-readable lines: RECOVERY LIKELIHOOD: STRONG - <one-sentence justification>; RECOVERY LIKELIHOOD: MODERATE - <one-sentence justification>; or RECOVERY LIKELIHOOD: WEAK - <one-sentence justification>. Choose exactly ONE value. Ground the justification ONLY in the specific denial cause and documentation facts provided below. Do not cite generic industry averages, invent percentages, or invent payer rules. Under 350 words.',
       getUserMsg: () => 'DENIAL:\n' + outputs[1].slice(0, 300) + '\nFINANCIAL:\n' + outputs[2].slice(0, 300), label: 'RECOVERY PLAN' },
     { outId: 'nav-container', badgeId: 'ps5', tokId: 'tok5', idleId: 'idle5', model: SMALL, maxTok: 350,
       sys: 'You are a recovery navigator. List: immediate next steps, staff roles, escalation path. Be brief and actionable. Under 250 words.',
@@ -1814,18 +1851,15 @@ async function runPipeline() {
   }
 
   if (actTxt) actTxt.textContent = '5 / 5 Engines Complete';
-  relay();
+  // TSM FIX: build the structured case BEFORE creating the downstream
+  // War Room brief. buildWarRoomPayload() includes lastStructuredCase,
+  // so writing the relay before this point caused the Strategist to receive
+  // the PREVIOUS run's structuredCase (or null) even though the current
+  // five-engine pipeline had completed successfully.
+  //
+  // The authoritative handoff is now:
+  //   engines complete -> structuredCase -> War Room brief -> Strategist
   try { if (window.TSMWorkflowStage) TSMWorkflowStage.write('dispatch'); } catch (e) {}
-  // TSM FIX: firing the pipeline only ever wrote 'tsmHcWarRoom', a key
-  // nothing downstream reads — readWarRoomBrief() on the Strategist looks
-  // for 'TSM_WAR_ROOM_BRIEF', which was previously written ONLY by the
-  // separate "Escalate to Strategist" button (buildWarRoomPayload). That
-  // meant just firing the 5 engines silently dropped everything, deadline
-  // included, unless the user also clicked escalate. Now both keys get
-  // written on pipeline completion so the live findings (and the exact,
-  // non-recalculated appeal deadline from E1/E3/E4) are already in place
-  // the moment the user lands on the Strategist page.
-  try { sessionStorage.setItem('TSM_WAR_ROOM_BRIEF', JSON.stringify(buildWarRoomPayload())); } catch (e) {}
   // TSM FIX: the "Appeal Deadline" wow-stat box (id="ws-deadline") was
   // never written by any code path — always showed "—" regardless of
   // what the engines actually extracted. Pull it straight out of E1's
@@ -1921,8 +1955,38 @@ async function runPipeline() {
   // few new ones. Nothing here is invented: every field is either
   // pulled verbatim from engine text, or a documented deterministic
   // derivation of a value the engines already stated (see comments).
-  lastStructuredCase = buildHCStructuredCase(outputs, docText, claimDollar);
-  syncStructuredCaseToEngine(lastStructuredCase);
+  try {
+    console.log('[HC Structured Case DEBUG] BEFORE BUILD', {
+      outputsLength: outputs.length,
+      output0Type: typeof outputs[0],
+      output1Type: typeof outputs[1],
+      output2Type: typeof outputs[2],
+      output3Type: typeof outputs[3],
+      docTextType: typeof docText,
+      claimDollarType: typeof claimDollar,
+      claimDollar
+    });
+
+    lastStructuredCase = buildHCStructuredCase(outputs, docText, claimDollar);
+
+    console.log('[HC Structured Case DEBUG] AFTER BUILD', lastStructuredCase);
+
+    syncStructuredCaseToEngine(lastStructuredCase);
+
+    console.log('[HC Structured Case DEBUG] AFTER SYNC', lastStructuredCase);
+  } catch (e) {
+    console.error('[HC Structured Case DEBUG] BUILD/SYNC FAILED', e);
+    throw e;
+  }
+
+  // TSM FIX: write the downstream brief ONLY AFTER lastStructuredCase has
+  // been built from the completed current run. This prevents stale/null
+  // structured cases from crossing the War Room -> Strategist boundary.
+  try {
+    sessionStorage.setItem('TSM_WAR_ROOM_BRIEF', JSON.stringify(buildWarRoomPayload()));
+  } catch (e) {
+    console.warn('[HC War Room] failed to persist completed relay:', e);
+  }
 
   setTimeout(() => {
     try {
@@ -2284,62 +2348,194 @@ function isRefusalText(text) {
 }
 
 function buildHCStructuredCase(outputs, docText, claimDollar) {
-  const e1 = stripMd(outputs[0] || ''), e2 = stripMd(outputs[1] || ''), e3 = stripMd(outputs[2] || ''), e4 = stripMd(outputs[3] || '');
+  const source = String(docText || '');
+  const e1 = stripMd(outputs[0] || '');
+  const e2 = stripMd(outputs[1] || '');
+  const e3 = stripMd(outputs[2] || '');
+  const e4 = stripMd(outputs[3] || '');
   const provenance = [];
 
-  function extractField(text, pattern, label, engineLabel) {
-    const m = text.match(pattern);
-    const val = m ? m[1].trim().replace(/^[-•*]\s*/, '').slice(0, 120) : null;
-    provenance.push({ field: label, source: val ? 'DOCUMENT_EXTRACTED' : 'NOT_FOUND', engine: engineLabel });
-    return val;
+  function clean(value, max = 300) {
+    return value
+      ? String(value).trim().replace(/^[-•*]\s*/, '').replace(/\s+/g, ' ').slice(0, max)
+      : null;
   }
 
-  const claimId = extractField(e1, /claim\s*(?:id)?[:\s#]+([A-Za-z0-9-]+)/i, 'claimId', 'Engine 01');
-  const payer = extractField(e1, /payer[:\s]+([^\n,]+)/i, 'payer', 'Engine 01');
-  const denialReasonCode = extractField(e1, /denial\s*code[s]?[:\s]+([A-Za-z0-9\-,\s]+?)(?:\n|$)/i, 'denialReasonCode', 'Engine 01');
+  function firstMatch(text, patterns, max = 300) {
+    for (const pattern of patterns) {
+      const m = String(text || '').match(pattern);
+      if (m && m[1]) {
+        const value = clean(m[1], max);
+        if (value) return value;
+      }
+    }
+    return null;
+  }
 
-  const dlMatch = e1.match(/appeal deadline[:\s]+(.+)/i);
-  const dlPhrase = dlMatch ? dlMatch[1].trim().slice(0, 120) : '';
-  const resolved = resolveAppealDeadline(dlPhrase, docText);
-  const appealDeadline = resolved ? resolved.date.toISOString().slice(0, 10) : (dlPhrase || null);
-  provenance.push({ field: 'appealDeadline', source: dlPhrase ? 'DOCUMENT_EXTRACTED' : 'NOT_FOUND', engine: 'Engine 01' });
+  function record(field, value, sourceLabel, engineLabel) {
+    provenance.push({
+      field,
+      source: value ? sourceLabel : 'NOT_FOUND',
+      engine: engineLabel
+    });
+    return value;
+  }
 
-  const causeMatch = e2.match(/(?:denial reason|payer policy violated|root cause)[:\s]+(.+)/i);
-  let rootCauseHypothesis = causeMatch ? causeMatch[1].trim().slice(0, 300)
-    : (e2.split('\n').find(l => l.trim().length > 10) || null);
+  // ── DOCUMENT-FIRST EXTRACTION ─────────────────────────────────────
+  // The source document is authoritative for factual case identifiers.
+  // Engine output is only a fallback when the source document does not
+  // contain the field. This keeps the canonical contract usable even when
+  // an LLM engine is unavailable or returns an authorization error.
+
+  const sourceClaimId = firstMatch(source, [
+    /claim\s*(?:id|number|#)\s*[:#-]\s*([A-Za-z0-9][A-Za-z0-9._/-]*)/i,
+    /claim\s*(?:id|number|#)\s+([A-Za-z0-9][A-Za-z0-9._/-]*)/i
+  ]);
+  const engineClaimId = firstMatch(e1, [
+    /claim\s*(?:id|number|#)\s*[:#-]\s*([A-Za-z0-9][A-Za-z0-9._/-]*)/i,
+    /claim\s*(?:id|number|#)\s+([A-Za-z0-9][A-Za-z0-9._/-]*)/i
+  ]);
+  const claimId = record(
+    'claimId',
+    sourceClaimId || engineClaimId,
+    sourceClaimId ? 'DOCUMENT_EXTRACTED' : (engineClaimId ? 'ENGINE_FALLBACK' : 'NOT_FOUND'),
+    'Engine 01'
+  );
+
+  const payer = record(
+    'payer',
+    firstMatch(source, [
+      /payer\s*[:\-]\s*([^\n\r]+)/i,
+      /insurance\s*(?:payer|company|plan)\s*[:\-]\s*([^\n\r]+)/i
+    ]) || firstMatch(e1, [
+      /payer\s*[:\-]\s*([^\n\r]+)/i
+    ]),
+    /(?:^|\n)\s*payer\s*[:\-]/i.test(source) ? 'DOCUMENT_EXTRACTED' : 'ENGINE_FALLBACK',
+    'Engine 01'
+  );
+
+  const denialReasonCode = record(
+    'denialReasonCode',
+    firstMatch(source, [
+      /denial\s*(?:reason\s*)?codes?\s*[:\-]\s*([A-Z]{1,5}-?\d{1,4}(?:\s*[/,&]\s*[A-Z]{1,5}-?\d{1,4})*)/i,
+      /(?:reason\s*)?codes?\s*[:\-]\s*((?:[A-Z]{1,5}-?\d{1,4})(?:\s*[/,&]\s*[A-Z]{1,5}-?\d{1,4})*)/i
+    ]) || firstMatch(e1, [
+      /denial\s*(?:reason\s*)?codes?\s*[:\-]\s*([A-Z]{1,5}-?\d{1,4}(?:\s*[/,&]\s*[A-Z]{1,5}-?\d{1,4})*)/i,
+      /denial\s*code[s]?[:\s]+([A-Za-z0-9\-,\s]+)/i
+    ]),
+    /denial\s*(?:reason\s*)?codes?\s*[:\-]/i.test(source) ? 'DOCUMENT_EXTRACTED' : 'ENGINE_FALLBACK',
+    'Engine 01'
+  );
+
+  // Appeal deadline: prefer an explicit source-document deadline, then
+  // resolve relative language against dates actually present in the source.
+  const sourceDeadlinePhrase = firstMatch(source, [
+    /appeal\s*deadline\s*[:\-]\s*([^\n\r]+)/i,
+    /deadline\s*to\s*appeal\s*[:\-]\s*([^\n\r]+)/i,
+    /appeal\s*(?:must|needs\s*to)\s*be\s*(?:submitted|filed)\s*(?:by|before)\s+([^\n\r.]+)/i
+  ], 120);
+
+  const engineDeadlinePhrase = firstMatch(e1, [
+    /appeal\s*deadline\s*[:\-]\s*([^\n\r]+)/i
+  ], 120);
+
+  const dlPhrase = sourceDeadlinePhrase || engineDeadlinePhrase || '';
+  const resolved = dlPhrase ? resolveAppealDeadline(dlPhrase, source) : null;
+  const appealDeadline = resolved
+    ? resolved.date.toISOString().slice(0, 10)
+    : (dlPhrase || null);
+
+  record(
+    'appealDeadline',
+    appealDeadline,
+    sourceDeadlinePhrase ? 'DOCUMENT_EXTRACTED' : (engineDeadlinePhrase ? 'ENGINE_FALLBACK' : 'NOT_FOUND'),
+    'Engine 01'
+  );
+
+  // Root cause may legitimately remain unavailable if the source does not
+  // explicitly establish it. Do not convert an LLM refusal into a finding.
+  const sourceCause = firstMatch(source, [
+    /denial\s*reason\s*[:\-]\s*([^\n\r]+)/i,
+    /reason\s*for\s*denial\s*[:\-]\s*([^\n\r]+)/i,
+    /(medical\s*necessity\s*(?:was|is)\s*(?:not|insufficient)[^.\n\r]*)/i
+  ]);
+
+  const engineCause = firstMatch(e2, [
+    /(?:denial reason|payer policy violated|root cause)[:\s]+(.+)/i
+  ]);
+
+  let rootCauseHypothesis = sourceCause || engineCause ||
+    clean(e2.split('\n').find(l => l.trim().length > 10), 300);
+
   const rootCauseIsRefusal = isRefusalText(rootCauseHypothesis) || isRefusalText(e2);
   if (rootCauseIsRefusal) rootCauseHypothesis = null;
+
+  record(
+    'rootCauseHypothesis',
+    rootCauseHypothesis,
+    sourceCause ? 'DOCUMENT_EXTRACTED' : (rootCauseIsRefusal ? 'LLM_REFUSED_INSUFFICIENT_DATA' : (rootCauseHypothesis ? 'LLM_INFERENCE' : 'NOT_FOUND')),
+    'Engine 02'
+  );
+
+  // Category is deterministic and may be derived from the source document
+  // even when the LLM engines are unavailable.
+  const categorySource = source + '\n' + e1 + '\n' + e2;
+  const CATEGORY_KEYWORDS = [
+    ['medical_necessity', /medical\s+necessity/i],
+    ['authorization', /(?:prior\s+)?auth(?:orization)?/i],
+    ['coding', /coding|cpt|modifier/i],
+    ['documentation', /documentation\s+gap|missing\s+(?:documentation|notes|records)|insufficient\s+documentation/i],
+    ['eligibility', /eligibility/i],
+    ['timely_filing', /timely\s+filing/i]
+  ];
+
+  let denialCategory = 'other';
+  let categorySourceLabel = 'COMPUTED';
+  for (const [cat, re] of CATEGORY_KEYWORDS) {
+    if (re.test(categorySource)) {
+      denialCategory = cat;
+      categorySourceLabel = re.test(source) ? 'DOCUMENT_COMPUTED' : 'ENGINE_COMPUTED';
+      break;
+    }
+  }
   provenance.push({
-    field: 'rootCauseHypothesis',
-    source: rootCauseIsRefusal ? 'LLM_REFUSED_INSUFFICIENT_DATA' : (rootCauseHypothesis ? 'LLM_INFERENCE' : 'NOT_FOUND'),
-    engine: 'Engine 02'
+    field: 'denialCategory',
+    source: categorySourceLabel,
+    engine: 'derived from source document / Engine 01/02 text'
   });
 
-  const CATEGORY_KEYWORDS = [
-    ['medical_necessity', /medical necessity/i],
-    ['authorization', /(?:prior )?auth(?:orization)?/i],
-    ['coding', /coding|cpt|modifier/i],
-    ['documentation', /documentation gap|missing (?:documentation|notes|records)/i],
-    ['eligibility', /eligibility/i],
-    ['timely_filing', /timely filing/i]
-  ];
-  let denialCategory = 'other';
-  for (const [cat, re] of CATEGORY_KEYWORDS) {
-    if (re.test(e2) || re.test(e1)) { denialCategory = cat; break; }
-  }
-  provenance.push({ field: 'denialCategory', source: 'COMPUTED', engine: 'derived from Engine 01/02 text' });
-
-  const negativeAppealSignal = /\bnot appealable\b|\bnon-appealable\b|\bwrite[- ]off\b/i.test(e1 + e2 + e3 + e4);
+  // Appealability remains a deterministic safety signal. Do not infer a
+  // denial is non-appealable unless the source/engine text explicitly says so.
+  const negativeAppealSignal =
+    /\bnot appealable\b|\bnon-appealable\b|\bwrite[- ]off\b/i.test(source + '\n' + e1 + '\n' + e2 + '\n' + e3 + '\n' + e4);
   const appealable = !negativeAppealSignal;
-  provenance.push({ field: 'appealable', source: 'COMPUTED', engine: 'derived — negative-language scan across all 4 engines' });
+  provenance.push({
+    field: 'appealable',
+    source: 'COMPUTED',
+    engine: 'derived — explicit negative-language scan across source and engine outputs'
+  });
 
+  // Recovery likelihood is intentionally NOT fabricated from denial type,
+  // dollar amount, or generic heuristics. It requires actual Engine 04 output.
   const likelihoodMatch = e4.match(/RECOVERY LIKELIHOOD:\s*(STRONG|MODERATE|WEAK)/i);
-  const recoveryLikelihood = likelihoodMatch ? likelihoodMatch[1].toUpperCase() : null;
-  provenance.push({ field: 'recoveryLikelihood', source: recoveryLikelihood ? 'LLM_INFERENCE' : 'NOT_FOUND', engine: 'Engine 04' });
+  const recoveryLikelihood = likelihoodMatch
+    ? likelihoodMatch[1].toUpperCase()
+    : null;
+
+  provenance.push({
+    field: 'recoveryLikelihood',
+    source: recoveryLikelihood ? 'LLM_INFERENCE' : 'NOT_FOUND',
+    engine: 'Engine 04'
+  });
 
   const CONF_MAP = { STRONG: 85, MODERATE: 65, WEAK: 35 };
   const confidence = recoveryLikelihood ? CONF_MAP[recoveryLikelihood] : null;
-  provenance.push({ field: 'confidence', source: confidence !== null ? 'COMPUTED' : 'NOT_FOUND', engine: 'mapped from Engine 04 RECOVERY LIKELIHOOD' });
+
+  provenance.push({
+    field: 'confidence',
+    source: confidence !== null ? 'COMPUTED' : 'NOT_FOUND',
+    engine: 'mapped from Engine 04 RECOVERY LIKELIHOOD'
+  });
 
   function confidenceTierFor(c) {
     if (typeof c !== 'number') return null;
@@ -2347,18 +2543,75 @@ function buildHCStructuredCase(outputs, docText, claimDollar) {
     if (c >= 70) return 'MEDIUM';
     return 'LOW';
   }
+
   const confidenceTier = confidenceTierFor(confidence);
   const humanReviewRequired = confidenceTier !== 'HIGH';
-  provenance.push({ field: 'confidenceTier', source: 'COMPUTED', engine: 'derived from confidence' });
-  provenance.push({ field: 'humanReviewRequired', source: 'COMPUTED', engine: 'derived from confidenceTier' });
 
-  const financialExposure = claimDollar ? parseFloat(claimDollar.replace(/[$,]/g, '')) : null;
-  provenance.push({ field: 'financialExposure', source: financialExposure !== null ? 'DOCUMENT_EXTRACTED' : 'NOT_FOUND', engine: 'Engine 03' });
+  provenance.push({
+    field: 'confidenceTier',
+    source: 'COMPUTED',
+    engine: 'derived from confidence'
+  });
+
+  provenance.push({
+    field: 'humanReviewRequired',
+    source: 'COMPUTED',
+    engine: 'derived from confidenceTier'
+  });
+
+  // Financial exposure is document-first. Fall back to the existing
+  // Engine-03-derived claimDollar only when the source contains no usable
+  // dollar amount.
+  const labeledExposureMatch = source.match(
+    /(?:billed\s*amount|amount\s*(?:at\s*)?risk|total\s*financial\s*exposure|financial\s*exposure)\s*[:\-]\s*\$?([\d,]+(?:\.\d{2})?)/i
+  );
+  const labeledExposure = labeledExposureMatch
+    ? parseFloat(labeledExposureMatch[1].replace(/,/g, ''))
+    : null;
+
+  const dollarMatches = source.match(/\$[\d,]+(?:\.\d{2})?/g) || [];
+  const sourceAmounts = dollarMatches
+    .map(s => parseFloat(s.replace(/[$,]/g, '')))
+    .filter(Number.isFinite);
+
+  const engineExposure = claimDollar
+    ? parseFloat(String(claimDollar).replace(/[$,]/g, ''))
+    : null;
+
+  let financialExposure = Number.isFinite(labeledExposure)
+    ? labeledExposure
+    : (sourceAmounts.length
+        ? Math.max(...sourceAmounts)
+        : (Number.isFinite(engineExposure) ? engineExposure : null));
+
+  if (!Number.isFinite(financialExposure)) financialExposure = null;
+
+  provenance.push({
+    field: 'financialExposure',
+    source: Number.isFinite(labeledExposure)
+      ? 'DOCUMENT_EXTRACTED'
+      : (sourceAmounts.length
+          ? 'DOCUMENT_EXTRACTED_FALLBACK'
+          : (financialExposure !== null ? 'ENGINE_FALLBACK' : 'NOT_FOUND')),
+    engine: Number.isFinite(labeledExposure)
+      ? 'source document labeled financial amount'
+      : (sourceAmounts.length ? 'source document dollar scan' : 'Engine 03')
+  });
 
   return {
-    claimId, payer, denialReasonCode, denialCategory, rootCauseHypothesis,
-    appealable, appealDeadline, recoveryLikelihood, confidence, confidenceTier,
-    humanReviewRequired, financialExposure, evidenceProvenance: provenance
+    claimId,
+    payer,
+    denialReasonCode,
+    denialCategory,
+    rootCauseHypothesis,
+    appealable,
+    appealDeadline,
+    recoveryLikelihood,
+    confidence,
+    confidenceTier,
+    humanReviewRequired,
+    financialExposure,
+    evidenceProvenance: provenance
   };
 }
 

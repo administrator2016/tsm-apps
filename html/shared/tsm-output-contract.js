@@ -59,7 +59,7 @@ function enforceOutputContract(vertical, payload = {}) {
   const usedDefaultFallback = !Object.prototype.hasOwnProperty.call(VERTICAL_CONTRACTS, key);
   const requiredOutputs = VERTICAL_CONTRACTS[key] || VERTICAL_CONTRACTS.default;
 
-  const missing = requiredOutputs.filter(field => payload[field] === undefined);
+  const missing = requiredOutputs.filter(field => !isPresent(payload[field]));
 
   return {
     contract_outputs: requiredOutputs,

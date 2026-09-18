@@ -793,11 +793,15 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 function readWarRoomBrief() {
   const key = 'TSM_WAR_ROOM_BRIEF';
   try {
-    const stored = sessionStorage.getItem(key) || localStorage.getItem(key);
+    // TSM FIX: TSM_WAR_ROOM_BRIEF is an authoritative same-session
+    // handoff from the current War Room run. Do not resurrect an older
+    // localStorage copy from a previous session; that can make a failed
+    // historical run appear to be the current case.
+    const stored = sessionStorage.getItem(key);
     if (stored) {
       const payload = JSON.parse(stored);
       const age = Date.now() - new Date(payload.timestamp).getTime();
-      if (age < 7200000) return payload;
+      if (Number.isFinite(age) && age >= 0 && age < 7200000) return payload;
     }
   } catch (e) {}
   try {

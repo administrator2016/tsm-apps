@@ -3890,27 +3890,47 @@ setInterval(buildStratBriefTab, 30000);
   var lastStructuredCase = null;
 
   function readRelay() {
-    for (var i = 0; i < RELAY_KEYS.length; i++) {
-      var raw = null;
+    /*
+     * TSM FIX: TSM_EXEC_RELAY is the authoritative Executive Portal
+     * escalation payload. Do not fall through to Sentinel, War Room, or
+     * memory relays here because those are upstream/legacy compatibility
+     * stores and may contain an older case.
+     *
+     * Session storage is preferred so a newly generated same-session
+     * escalation wins. localStorage is retained only as persistence for
+     * the same authoritative relay key.
+     */
+    var raw = null;
 
-      /*
-       * Session-first matches the HC Main Strategist writer and the other
-       * Executive Portal relay consumers on this page. localStorage remains
-       * the persistence fallback so a refreshed portal can still recover the
-       * last relay.
-       */
+    try {
+      raw = sessionStorage.getItem('TSM_EXEC_RELAY');
+    } catch (e) {}
+
+    if (!raw) {
       try {
-        raw = sessionStorage.getItem(RELAY_KEYS[i]) ||
-              localStorage.getItem(RELAY_KEYS[i]);
-      } catch (e) {
-        try { raw = localStorage.getItem(RELAY_KEYS[i]); } catch (_) {}
+        raw = localStorage.getItem('TSM_EXEC_RELAY');
+      } catch (e) {}
+    }
+
+    if (!raw) return null;
+
+    try {
+      var payload = JSON.parse(raw);
+
+      if (!payload || typeof payload !== 'object') return null;
+
+      // A real Executive escalation payload should identify its source.
+      // Reject unrelated/legacy JSON that happens to be stored under the
+      // same key rather than silently rendering it as executive state.
+      if (payload.source && payload.source !== 'HC Main Strategist') {
+        console.warn('[HC Executive Portal] unexpected relay source:', payload.source);
       }
 
-      if (raw) {
-        try { return JSON.parse(raw); } catch(e) { return null; }
-      }
+      return payload;
+    } catch (e) {
+      console.warn('[HC Executive Portal] invalid TSM_EXEC_RELAY JSON:', e);
+      return null;
     }
-    return null;
   }
 
   function mount() {
@@ -4078,6 +4098,68 @@ setInterval(buildStratBriefTab, 30000);
 
     if (!lastStructuredCase) {
       alert('No Healthcare structured case is available. Run the HC Denial War Room analysis first.');
+      return;
+    }
+
+    // TSM RECOVERY GATE:
+    // Do not create or relay a recovery work item from a partial, stale,
+    // or structurally incomplete Healthcare case. The BPO handoff is an
+    // execution boundary, so the canonical case must contain the fields
+    // required to identify the claim, classify the denial, quantify the
+    // exposure, and preserve evidence provenance.
+    var recoveryGateErrors = [];
+
+    if (!lastStructuredCase.claimId) {
+      recoveryGateErrors.push('claim ID');
+    }
+
+    if (!lastStructuredCase.payer) {
+      recoveryGateErrors.push('payer');
+    }
+
+    if (!lastStructuredCase.denialReasonCode) {
+      recoveryGateErrors.push('denial reason code');
+    }
+
+    if (!lastStructuredCase.denialCategory) {
+      recoveryGateErrors.push('denial category');
+    }
+
+    if (typeof lastStructuredCase.financialExposure !== 'number' ||
+        !Number.isFinite(lastStructuredCase.financialExposure) ||
+        lastStructuredCase.financialExposure < 0) {
+      recoveryGateErrors.push('financial exposure');
+    }
+
+    if (!Array.isArray(lastStructuredCase.evidenceProvenance) ||
+        lastStructuredCase.evidenceProvenance.length === 0) {
+      recoveryGateErrors.push('evidence provenance');
+    }
+
+    if (!lastStructuredCase.recoveryLikelihood) {
+      recoveryGateErrors.push('recovery likelihood');
+    }
+
+    if (typeof lastStructuredCase.confidence !== 'number' ||
+        !Number.isFinite(lastStructuredCase.confidence)) {
+      recoveryGateErrors.push('confidence');
+    }
+
+    if (lastStructuredCase.appealable !== true &&
+        lastStructuredCase.appealable !== false) {
+      recoveryGateErrors.push('appealable determination');
+    }
+
+    if (recoveryGateErrors.length) {
+      console.warn('[HC Recovery Gate] blocked incomplete structured case:', {
+        fields: recoveryGateErrors,
+        structuredCase: lastStructuredCase
+      });
+      alert(
+        'Recovery preparation blocked. The current Healthcare case is incomplete: ' +
+        recoveryGateErrors.join(', ') +
+        '. Run the HC Denial War Room analysis again and verify the completed case before relaying to BPO.'
+      );
       return;
     }
 
