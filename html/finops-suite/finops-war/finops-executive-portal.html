@@ -538,8 +538,8 @@ body::before{content:'';position:fixed;top:0;right:0;width:600px;height:400px;ba
   <div class="sec-lbl" style="margin-top:18px">CASE QUEUE</div>
   <div id="tsm-case-queue"></div>
 </div>
-<div class="port-sub">financial liability</div></div>
-  <div class="port-cell"><div class="port-lbl">RISK SCORE</div><div class="port-val amber" id="kpiRisk">—</div><div class="port-sub">war room analysis</div></div>
+<div class="port-sub" id="kpiExposureSub">financial liability</div></div>
+  <div class="port-cell"><div class="port-lbl">RISK SCORE</div><div class="port-val amber" id="kpiRisk">—</div><div class="port-sub" id="kpiRiskSub">war room analysis</div></div>
   <div class="port-cell"><div class="port-lbl">EXCEPTIONS</div><div class="port-val gold" id="kpiExceptions">—</div><div class="port-sub">items flagged</div></div>
   <div class="port-cell"><div class="port-lbl">COMPLIANCE</div><div class="port-val purple" id="kpiCompliance">—</div><div class="port-sub">regulatory posture</div></div>
   <div class="port-cell"><div class="port-lbl">RECOVERY POTENTIAL</div><div class="port-val green" id="kpiRecovery">—</div><div class="port-sub">recoverable amount</div></div>
@@ -710,6 +710,26 @@ const summary = d.summary || engines.e6 || '';
     const _cfo  = (_vendR && _vendR[1]) || d.unapprovedVendors || (cfoM && cfoM[1]) || '—';
   document.getElementById('kpiRisk').textContent = _risk;
   document.getElementById('kpiExposure').textContent = _exp.length > 12 ? _exp.slice(0,22) : _exp;
+
+  // TSM FIX: surface the strategist's own honesty flags (exposureDefaulted/
+  // riskScoreDefaulted) instead of silently displaying demo-scenario
+  // numbers as if they were extracted from this document. Only shown when
+  // the value actually on screen is the fallback the strategist flagged —
+  // if this portal's own regex independently recovered a real number
+  // (_expR/_riskR matched) even though the strategist's extraction missed,
+  // that's a real value, not a defaulted one, so no warning is shown.
+  const expIsDefaulted = !!d.exposureDefaulted && !_expR && _exp === (d.exposure || '');
+  const riskIsDefaulted = !!d.riskScoreDefaulted && !_riskR && _risk === (d.riskScore || '');
+  const expSub = document.getElementById('kpiExposureSub');
+  if (expSub) {
+    expSub.textContent = expIsDefaulted ? '⚠ estimated — not extracted from this document' : 'financial liability';
+    expSub.style.color = expIsDefaulted ? 'var(--amber)' : '';
+  }
+  const riskSub = document.getElementById('kpiRiskSub');
+  if (riskSub) {
+    riskSub.textContent = riskIsDefaulted ? '⚠ estimated — not extracted from this document' : 'war room analysis';
+    riskSub.style.color = riskIsDefaulted ? 'var(--amber)' : '';
+  }
   document.getElementById('kpiExceptions').textContent = _exc.slice(0,8);
   document.getElementById('kpiCompliance').textContent = _comp.slice(0,10);
   document.getElementById('kpiRecovery').textContent = _rec.slice(0,12);
