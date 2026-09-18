@@ -821,7 +821,13 @@ The relay will include:
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 // Uses Railway env var GROQ_API_KEY via your backend proxy at /api/groq
 // For direct use, replace with your key or proxy endpoint
-const API_ENDPOINT = '/api/groq'; // your Railway proxy
+const API_ENDPOINT = '/api/legal/query'; // TSM FIX: was '/api/groq', which was never
+// mounted anywhere (groq-route.js defined it but nothing require()'d that
+// file) — every real call 404'd and silently fell through to the mock BNCA
+// generator below, presented identically to a real analysis. /api/legal/query
+// already exists, is mounted, is requireAnyAuth-gated (unlike groq-route.js,
+// which had no auth at all), and uses the same centralized groqChat() retry/
+// model-fallback logic the rest of the app relies on.
 
 const SCENARIOS = {
   billing: {
@@ -1032,26 +1038,22 @@ ${context}
 Generate the full BNCA report with cross-node synthesis, prioritized actions, owner assignment, and executive relay status.`;
 
   try {
-    // Try Groq via Railway proxy
+    // Try Groq via the real, authenticated /api/legal/query route.
     const response = await fetch(API_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'openai/gpt-oss-120b',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        max_tokens: 800,
-        temperature: 0.4,
-        stream: false
+        message: userPrompt,
+        system: systemPrompt,
+        maxTokens: 800
       })
     });
 
     if (!response.ok) throw new Error('proxy_failed');
 
     const data = await response.json();
-    const text = data.choices?.[0]?.message?.content || '';
+    if (!data.ok || !data.answer) throw new Error('proxy_bad_response');
+    const text = data.answer;
     await streamText(text, outputEl);
     finalizeBNCA(text, false);
 
