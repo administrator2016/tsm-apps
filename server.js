@@ -2417,6 +2417,13 @@ app.post('/api/hc/stream', requireAnyAuth, async (req, res) => {
           model: resolveGroqModel(model),
           stream: true,
           max_tokens: maxTok || 500,
+          // TSM FIX: gpt-oss models are reasoning models and their hidden
+          // reasoning tokens count against max_tokens. With the default effort
+          // the HC War Room engines were cut off mid-answer (finish_reason=length),
+          // dropping the tail of Engines 1, 2, 5 and, before the prompt was
+          // reordered, Engine 04's RECOVERY LIKELIHOOD line. Same setting the
+          // other streaming route in this file already uses.
+          reasoning_effort: 'low',
           messages: [{ role: 'system', content: sys }, { role: 'user', content: user }]
         }),
         signal: controller.signal
