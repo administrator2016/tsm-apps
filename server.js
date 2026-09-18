@@ -2551,7 +2551,14 @@ async function fetchGroqWithRetry(groqKey, body, maxRetries = 3) {
     });
     if (groqRes.ok) return groqRes;
     const err = await groqRes.json().catch(() => ({}));
-    console.error('Groq error response:', JSON.stringify(err)); debugLog('Groq error: ' + JSON.stringify(err));
+    // TSM FIX: Groq's own error bodies can echo back a snippet of the
+    // offending request content (e.g. "invalid character near: '...'").
+    // This endpoint carries denial-letter/claims text, so logging the full
+    // raw error object to an unbounded, unencrypted debug.log file risked
+    // persisting fragments of that content indefinitely. Log only the
+    // structured code/status — never the raw body.
+    const errSummary = `status=${groqRes.status} code=${err.error?.code || 'unknown'}`;
+    console.error('Groq error response:', errSummary); debugLog('Groq error: ' + errSummary);
     const isRateLimit = err.error?.code === 'rate_limit_exceeded';
     if (isRateLimit && attempt < maxRetries) {
       const match = /try again in ([\d.]+)(ms|s)/.exec(err.error.message || '');
@@ -2778,29 +2785,15 @@ app.post('/api/hc/node/:node', requireAnyAuth, async (req, res) => {
 // writes HC_NODE_STATE_FILE instead) — was ungrounded in practice either way.
 // routes/hc.js now handles this route for real, reading HC_NODE_STATE_FILE.
 
-app.post('/api/hc-strategist/bnca', async (req, res) => {
-  const payload = req.body || {};
-  const result = await tsmAIJSON(`HC Strategist synthesis. Memory: ${JSON.stringify(TSM_MEMORY.healthcare).slice(0, 8000)}. Payload: ${JSON.stringify(payload).slice(0, 4000)}. Return JSON: {"suite":"hc-strategist","strategic_summary":"...","priority_actions":[],"bnca":"...","relay_to_main_strategist":true,"confidence":0}`,
-    { suite: 'hc-strategist', strategic_summary: 'HC Strategist review needed.', priority_actions: [], bnca: 'Relay to Main Strategist.', relay_to_main_strategist: true, confidence: 82 });
-  TSM_MEMORY.healthcare.hcStrategist = result;
-  res.json({ ok: true, result, ts: new Date().toISOString() });
-});
-
-app.post('/api/main-strategist/healthcare', async (req, res) => {
-  const payload = req.body || {};
-  const result = await tsmAIJSON(`Main Strategist executive package. Memory: ${JSON.stringify(TSM_MEMORY.healthcare).slice(0, 9000)}. Return JSON: {"suite":"main-strategist","executive_issue":"...","financial_or_operational_impact":"...","recommendation":"...","decision_options":[],"hitl_relay":"...","send_to_executive_portal":true,"confidence":0}`,
-    { suite: 'main-strategist', executive_issue: 'Healthcare readiness needs review.', financial_or_operational_impact: 'Billing pressure may affect throughput.', recommendation: 'Start office manager workflow pilot.', decision_options: ['30-day pilot'], hitl_relay: 'Review BNCA and confirm owner lanes.', send_to_executive_portal: true, confidence: 84 });
-  TSM_MEMORY.healthcare.mainStrategist = result;
-  res.json({ ok: true, result, ts: new Date().toISOString() });
-});
-
-app.post('/api/executive/portal', async (req, res) => {
-  const payload = req.body || {};
-  const result = await tsmAIJSON(`Executive Portal. Memory: ${JSON.stringify(TSM_MEMORY.healthcare).slice(0, 10000)}. Return JSON: {"portal":"executive","audience":"CFO / Decision Maker","decision_summary":"...","bnca_recommendation":"...","hitl_script":"...","approval_path":[],"next_step":"...","confidence":0}`,
-    { portal: 'executive', audience: 'CFO / Decision Maker', decision_summary: 'Healthcare BNCA ready.', bnca_recommendation: 'Approve pilot workflow.', hitl_script: 'Action-ready recommendation and owner lanes for approval.', approval_path: ['Office Manager', 'CFO'], next_step: 'Book walkthrough or approve 30-day pilot.', confidence: 85 });
-  TSM_MEMORY.healthcare.executive = result;
-  res.json({ ok: true, result, ts: new Date().toISOString() });
-});
+// TSM FIX: removed /api/hc-strategist/bnca, /api/main-strategist/healthcare,
+// and /api/executive/portal — dead scaffolding with zero callers anywhere in
+// the codebase (verified via repo-wide grep), no auth middleware (every real
+// /api/hc/* route has requireAnyAuth; these three didn't), and a shared
+// global TSM_MEMORY.healthcare object with no per-user/session/tenant
+// isolation — a second caller's payload would silently clobber and leak into
+// whatever any other caller read back. Nothing wires to these; removing
+// beats "fixing" auth on code nothing uses. The real, in-use strategist flow
+// is /api/hc/strategist (already requireAnyAuth) via hc-main-strategist.html.
 
 // ── TSM Candidate Sync Routes ──
 const candidateStore = []; // swap for DB later
