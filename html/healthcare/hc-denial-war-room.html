@@ -1745,7 +1745,7 @@ async function runPipeline() {
       getUserMsg: () => 'KEY FINDINGS:\n' + outputs[0].slice(0, 700) + '\nDENIAL CAUSE:\n' + outputs[1].slice(0, 400), label: 'FINANCIAL IMPACT' },
     { outId: 'out4', badgeId: 'ps4', tokId: 'tok4', idleId: 'idle4', model: LARGE, maxTok: 550,
       sys: 'You are a denial recovery specialist. Write a step-by-step appeal plan: documents needed, appeal letter points, deadline, payer portal. Use the exact appeal deadline stated in the FINANCIAL input below — do not recalculate or estimate a different one. At the very end of your response, on its own line, output exactly one of these machine-readable lines: RECOVERY LIKELIHOOD: STRONG - <one-sentence justification>; RECOVERY LIKELIHOOD: MODERATE - <one-sentence justification>; or RECOVERY LIKELIHOOD: WEAK - <one-sentence justification>. Choose exactly ONE value. Ground the justification ONLY in the specific denial cause and documentation facts provided below. Do not cite generic industry averages, invent percentages, or invent payer rules. Under 350 words.',
-      getUserMsg: () => 'DENIAL:\n' + outputs[1].slice(0, 300) + '\nFINANCIAL:\n' + outputs[2].slice(0, 300), label: 'RECOVERY PLAN' },
+      getUserMsg: () => 'DENIAL:\n' + outputs[1].slice(0, 800) + '\nFINANCIAL:\n' + outputs[2].slice(0, 1200), label: 'RECOVERY PLAN' },
     { outId: 'nav-container', badgeId: 'ps5', tokId: 'tok5', idleId: 'idle5', model: SMALL, maxTok: 350,
       sys: 'You are a recovery navigator. List: immediate next steps, staff roles, escalation path. Be brief and actionable. Under 250 words.',
       getUserMsg: () => 'SUMMARY:\nDenial: ' + outputs[1].slice(0, 200) + '\nRecovery: ' + outputs[3].slice(0, 200), label: 'RECOVERY NAVIGATOR' },
