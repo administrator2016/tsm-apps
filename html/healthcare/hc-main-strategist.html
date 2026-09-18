@@ -1573,6 +1573,11 @@ async function escalateToExecPortal(){
 
     const payload = {
       ts: Date.now(),
+      // TSM FIX: the Executive Portal (readRelay) validates payload.source
+      // === 'HC Main Strategist', but this producer never set it (the string
+      // only appeared inside the Mission Core classification), so the relay
+      // could not be told apart from unrelated JSON under the same key.
+      source: 'HC Main Strategist',
       enriched: true,
       sourceSnapshot: live,
       verifiedFields,

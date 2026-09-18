@@ -1408,6 +1408,17 @@ function clearAll(){
 }
 
 // ── GROQ STREAM ────────────────────────────────────────────────────────────
+// TSM FIX: single tolerant parser for Engine 04's machine-readable line.
+// The old inline regex required "RECOVERY LIKELIHOOD:" immediately followed
+// by the level, so markdown emphasis ("**RECOVERY LIKELIHOOD:** MODERATE")
+// silently produced null. Returns {level, justification} or null; never
+// guesses a level that isn't literally in the text.
+function parseRecoveryLikelihood(text) {
+  const m = String(text || '').match(/RECOVERY\s+LIKELIHOOD\s*:?[\s*_`]*(STRONG|MODERATE|WEAK)\b[\s*_`]*(?:[-\u2013\u2014:]\s*([^\n]+))?/i);
+  if (!m) return null;
+  return { level: m[1].toUpperCase(), justification: m[2] ? m[2].replace(/[*_`]+/g, '').trim() : '' };
+}
+
 async function groqStreamModel(model, sys, user, onChunk, onDone, onError, maxTok=700, timeoutMs=30000){
   // TSM FIX: no timeout existed on the client side either — a stalled
   // connection OR a stream that stops sending chunks mid-way (server
@@ -1454,15 +1465,15 @@ async function groqStreamModel(model, sys, user, onChunk, onDone, onError, maxTo
       onError(msg);
       return;
     }
-    const reader=res.body.getReader(); const dec=new TextDecoder(); let buf='',total=0;
+    const reader=res.body.getReader(); const dec=new TextDecoder(); let buf='',total=0,finish=null;
     while(true){
       const {done,value}=await reader.read(); resetWatchdog();
-      if(done){onDone(total);break;}
+      if(done){onDone(total,finish);break;}
       buf+=dec.decode(value,{stream:true}); const lines=buf.split('\n'); buf=lines.pop();
       for(const line of lines){
-        const data=line.replace(/^data: /,'').trim(); if(data==='[DONE]'){onDone(total);return;}
+        const data=line.replace(/^data: /,'').trim(); if(data==='[DONE]'){onDone(total,finish);return;}
         if(!data||data[0]===':') continue;
-        try{const j=JSON.parse(data);const tok=j.choices?.[0]?.delta?.content;if(tok){total+=tok.length;onChunk(tok);}}catch{}
+        try{const j=JSON.parse(data);const fr=j.choices?.[0]?.finish_reason;if(fr)finish=fr;const tok=j.choices?.[0]?.delta?.content;if(tok){total+=tok.length;onChunk(tok);}}catch{}
       }
     }
   } catch(e){
@@ -1743,8 +1754,8 @@ async function runPipeline() {
     { outId: 'out3', badgeId: 'ps3', tokId: 'tok3', idleId: 'idle3', model: LARGE, maxTok: 450,
       sys: 'You are a healthcare financial analyst. Calculate: revenue at risk, timely filing risk, total financial exposure. State the appeal deadline exactly as given in KEY FINDINGS below — do not recalculate or estimate a different number or timeframe. Under 300 words.',
       getUserMsg: () => 'SOURCE DOCUMENT:\n' + (document.querySelector('textarea')?.value || '').slice(0, 4000) + '\nKEY FINDINGS:\n' + outputs[0].slice(0, 1000) + '\nDENIAL CAUSE:\n' + outputs[1].slice(0, 800), label: 'FINANCIAL IMPACT' },
-    { outId: 'out4', badgeId: 'ps4', tokId: 'tok4', idleId: 'idle4', model: LARGE, maxTok: 550,
-      sys: 'You are a denial recovery specialist. Create a grounded, step-by-step appeal plan using ONLY the denial facts and source evidence provided in the input. Include documents needed, appeal letter points, deadline, payer workflow, and human-review considerations. Use the exact appeal deadline stated in the FINANCIAL input when present. Do not recalculate or estimate a different deadline. Do not invent payer rules, documentation requirements, percentages, or patient facts. At the very end, output exactly ONE machine-readable line on its own line using this format: RECOVERY LIKELIHOOD: STRONG - <one-sentence justification> OR RECOVERY LIKELIHOOD: MODERATE - <one-sentence justification> OR RECOVERY LIKELIHOOD: WEAK - <one-sentence justification>. Choose exactly one. The justification must be grounded ONLY in the specific denial cause and documentation facts supplied. Under 350 words.', getUserMsg: () => 'DENIAL:\n' + outputs[1].slice(0, 800) + '\nFINANCIAL:\n' + outputs[2].slice(0, 1200), label: 'RECOVERY PLAN' },
+    { outId: 'out4', badgeId: 'ps4', tokId: 'tok4', idleId: 'idle4', model: LARGE, maxTok: 1100,
+      sys: 'You are a denial recovery specialist. Create a grounded, step-by-step appeal plan using ONLY the denial facts and source evidence provided in the input. Include documents needed, appeal letter points, deadline, payer workflow, and human-review considerations. Use the exact appeal deadline stated in the FINANCIAL input when present. Do not recalculate or estimate a different deadline. Do not invent payer rules, documentation requirements, percentages, or patient facts. On the VERY FIRST line of your response, before anything else, output exactly ONE machine-readable line using this format: RECOVERY LIKELIHOOD: STRONG - <one-sentence justification> OR RECOVERY LIKELIHOOD: MODERATE - <one-sentence justification> OR RECOVERY LIKELIHOOD: WEAK - <one-sentence justification>. Choose exactly one. The justification must be grounded ONLY in the specific denial cause and documentation facts supplied. Under 350 words.', getUserMsg: () => 'DENIAL:\n' + outputs[1].slice(0, 800) + '\nFINANCIAL:\n' + outputs[2].slice(0, 1200), label: 'RECOVERY PLAN' },
     { outId: 'nav-container', badgeId: 'ps5', tokId: 'tok5', idleId: 'idle5', model: SMALL, maxTok: 350,
       sys: 'You are a recovery navigator. List: immediate next steps, staff roles, escalation path. Be brief and actionable. Under 250 words.',
       getUserMsg: () => 'SUMMARY:\nDenial: ' + outputs[1].slice(0, 200) + '\nRecovery: ' + outputs[3].slice(0, 200), label: 'RECOVERY NAVIGATOR' },
@@ -1765,7 +1776,7 @@ async function runPipeline() {
       groqStreamModel(
         eng.model, eng.sys, eng.getUserMsg(),
         (chunk) => { outputs[i] += chunk; if (outEl) outEl.textContent += chunk; },
-        (total) => { outputs[i] = outEl ? outEl.textContent : outputs[i]; resolve({ ok: true, total }); },
+        (total, finish) => { outputs[i] = outEl ? outEl.textContent : outputs[i]; resolve({ ok: true, total, truncated: finish === 'length' }); },
         (err) => resolve({ ok: false, err }),
         eng.maxTok
       );
@@ -1807,7 +1818,8 @@ async function runPipeline() {
       }
       const result = await runEngineOnce(eng, i, outputs, outEl);
       if (result.ok) {
-        if (psEl) { psEl.textContent = 'COMPLETE ✓'; psEl.style.color = 'var(--green)'; }
+        if (result.truncated) console.warn('[HC War Room] Engine ' + (i + 1) + ' hit its token limit (finish_reason=length) - output may be cut off.');
+        if (psEl) { psEl.textContent = result.truncated ? 'COMPLETE (TRUNCATED) ⚠' : 'COMPLETE ✓'; psEl.style.color = result.truncated ? 'var(--amber)' : 'var(--green)'; }
         if (tokEl) tokEl.textContent = result.total + ' chars';
         const badge = document.getElementById('badge'+(i+1));
         if (badge) { badge.textContent = 'COMPLETE ✓'; badge.style.color = 'var(--green)'; }
@@ -1924,13 +1936,12 @@ async function runPipeline() {
   } catch (e) {}
   try {
     const probEl = document.getElementById('ws-prob');
-    const probMatch = (outputs[3] || '').match(/RECOVERY LIKELIHOOD:\s*(STRONG|MODERATE|WEAK)/i);
+    const probMatch = parseRecoveryLikelihood(outputs[3]);
     if (probEl && probMatch) {
-      const level = probMatch[1].toUpperCase();
+      const level = probMatch.level;
       probEl.textContent = level;
       probEl.style.color = level === 'STRONG' ? 'var(--green)' : level === 'MODERATE' ? 'var(--amber)' : 'var(--red)';
-      const justMatch = (outputs[3] || '').match(/RECOVERY LIKELIHOOD:\s*(?:STRONG|MODERATE|WEAK)\s*[-–—]\s*(.+)/i);
-      if (justMatch) probEl.title = justMatch[1].trim().slice(0, 200);
+      if (probMatch.justification) probEl.title = probMatch.justification.slice(0, 200);
     }
   } catch (e) {}
   try {
@@ -2516,9 +2527,9 @@ function buildHCStructuredCase(outputs, docText, claimDollar) {
 
   // Recovery likelihood is intentionally NOT fabricated from denial type,
   // dollar amount, or generic heuristics. It requires actual Engine 04 output.
-  const likelihoodMatch = e4.match(/RECOVERY LIKELIHOOD:\s*(STRONG|MODERATE|WEAK)/i);
+  const likelihoodMatch = parseRecoveryLikelihood(e4);
   const recoveryLikelihood = likelihoodMatch
-    ? likelihoodMatch[1].toUpperCase()
+    ? likelihoodMatch.level
     : null;
 
   provenance.push({
