@@ -2083,7 +2083,21 @@ app.post('/api/pm/analysis', requireRole(PM_INTERNAL_ROLES), async (req, res) =>
     return res.json({ ok: true, answer, createdAt: new Date().toISOString() });
   } catch (e) {
     console.error('PM ANALYSIS GROQ ERROR:', e.message);
-    return res.status(500).json({ ok: false, error: e.message });
+    // TSM FIX: previously surfaced this as a raw 500 with no graceful
+    // degradation, same bug class already found and fixed in
+    // Construction's, NOC's, and HotelOps's /query routes. Distinguishes
+    // "no key configured" from a genuine upstream failure so the
+    // client/UI can tell them apart, rather than treating both as the
+    // same opaque 500.
+    const noKeyConfigured = /No Groq API key configured/i.test(e.message || '');
+    return res.status(200).json({
+      ok: true,
+      fallback: true,
+      degraded: true,
+      reason: noKeyConfigured ? 'ai_not_configured' : 'ai_call_failed',
+      answer: 'AI portfolio analysis is temporarily unavailable. Please try again shortly or escalate manually per standard PM Copilot procedure.',
+      createdAt: new Date().toISOString()
+    });
   }
 });
 
@@ -3591,7 +3605,12 @@ app.post('/api/mortgage/bnca', async (req, res) => {
 // server-side node state (its relay payload lives client-side in TSM_PM_RELAY), so the real
 // portfolio data pm-strategist.html already loaded is passed straight through in req.body
 // instead of read back off TSM_MEMORY.pm; only the running strategist output is persisted here.
-app.post('/api/pm-strategist/bnca', async (req, res) => {
+// TSM FIX: this route had no auth guard at all, unlike /api/pm/analysis (which already uses
+// requireRole(PM_INTERNAL_ROLES)) — and it is genuinely live
+// (html/war-rooms/pm-copilot/pm-strategist.html calls it directly). Adding requireAnyAuth here
+// doesn't require any front-end change: same-origin fetch() already carries the tsm_session
+// cookie automatically for logged-in users.
+app.post('/api/pm-strategist/bnca', requireAnyAuth, async (req, res) => {
   const payload = req.body || {};
   const result = await tsmAIJSON(
     `PM Copilot Strategist synthesis. Portfolio relay payload: ${JSON.stringify(payload).slice(0, 8000)}. Return JSON: {"suite":"pm-strategist","strategic_summary":"...","priority_actions":[],"bnca":"...","relay_to_executive":true,"confidence":0}`,
