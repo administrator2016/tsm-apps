@@ -120,6 +120,19 @@ process.env.MONGODB_URI =
   process.env.MONGODB_URI || 'mongodb://fake-host/tsm-consultz-test';
 
 
+// server.js begins with require('dotenv').config({ override: true }) -- a real
+// (gitignored) .env would therefore OVERRIDE the PORT and credentials set below
+// (e.g. PORT=3000 and the real admin password), so the server would listen
+// somewhere the test isn't looking and the login would fail. Neutralize dotenv
+// for this process so the values below are the ones the server actually sees.
+{
+  const dotenvPath = require.resolve('dotenv');
+  const fakeDotenv = new Module(dotenvPath, null);
+  fakeDotenv.exports = { config: () => ({ parsed: {} }), parse: () => ({}) };
+  fakeDotenv.loaded = true;
+  require.cache[dotenvPath] = fakeDotenv;
+}
+
 // Isolation: this test must only ever talk to the server it boots itself.
 // Never inherit a developer's real credentials or PORT -- with an inherited
 // PORT already in use (e.g. a running dev server) the requests below would
