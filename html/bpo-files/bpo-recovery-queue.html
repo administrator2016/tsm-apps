@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TSM · BPO Recovery Queue</title>
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#111826; --border:#1f2937; --border-soft:#1a2332;
+    --text:#e6f1ff; --text-dim:#7c8a9e; --accent:#00e5c7; --warn:#ffb454; --danger:#ff5c6c; --crit:#ff3b5c;
+    --mono:'Share Tech Mono', 'SF Mono', Consolas, monospace;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg); color:var(--text); font-family:var(--mono); margin:0; min-height:100vh;}
+  header{
+    border-bottom:1px solid var(--border); padding:1.1rem 1.5rem;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem;
+  }
+  header h1{font-size:.95rem; color:var(--accent); margin:0; letter-spacing:.06em; text-transform:uppercase}
+  header .who{font-size:.75rem; color:var(--text-dim)}
+  header .who b{color:var(--text)}
+  #logout-btn{
+    background:transparent; border:1px solid var(--border); color:var(--text-dim);
+    font-family:inherit; font-size:.7rem; padding:.4rem .8rem; cursor:pointer; border-radius:4px;
+  }
+  #logout-btn:hover{border-color:var(--danger); color:var(--danger)}
+  main{max-width:1200px; margin:0 auto; padding:1.5rem}
+  .toolbar{display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; flex-wrap:wrap}
+  .toolbar input, .toolbar select{
+    background:var(--panel); border:1px solid var(--border); color:var(--text);
+    font-family:inherit; font-size:.75rem; padding:.45rem .6rem; border-radius:4px;
+  }
+  .toolbar label{font-size:.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.04em}
+  .toolbar .field{display:flex; flex-direction:column; gap:.25rem}
+  #refresh-btn{
+    background:var(--panel); border:1px solid var(--accent); color:var(--accent);
+    font-family:inherit; font-size:.72rem; padding:.45rem .9rem; cursor:pointer; border-radius:4px; align-self:flex-end;
+  }
+  #refresh-btn:hover{background:rgba(0,229,199,.08)}
+  .count{font-size:.7rem; color:var(--text-dim); margin-bottom:.75rem}
+  .count b{color:var(--text)}
+  table{width:100%; border-collapse:collapse; font-size:.78rem}
+  th{
+    text-align:left; color:var(--text-dim); font-weight:normal; text-transform:uppercase;
+    font-size:.63rem; letter-spacing:.04em; padding:.55rem .6rem; border-bottom:1px solid var(--border);
+    position:sticky; top:0; background:var(--bg);
+  }
+  td{padding:.55rem .6rem; border-bottom:1px solid var(--border-soft); vertical-align:top}
+  tbody tr:hover{background:#0f1622}
+  .pill{
+    display:inline-block; padding:.15rem .55rem; border-radius:3px; font-size:.63rem;
+    text-transform:uppercase; letter-spacing:.03em; border:1px solid;
+  }
+  .pill.critical{color:var(--crit); border-color:var(--crit)}
+  .pill.high{color:var(--danger); border-color:var(--danger)}
+  .pill.medium{color:var(--warn); border-color:var(--warn)}
+  .pill.low{color:var(--text-dim); border-color:var(--border)}
+  .exposure{color:var(--accent)}
+  .exposure.unknown{color:var(--text-dim); font-style:italic}
+  .age-old{color:var(--danger)}
+  .empty{color:var(--text-dim); font-size:.85rem; padding:2rem 0; text-align:center}
+  .loading{color:var(--text-dim); font-size:.8rem; padding:1rem 0}
+  .err{color:var(--danger); font-size:.8rem; padding:1rem 0}
+  #gate{
+    display:flex; align-items:center; justify-content:center; height:100vh; text-align:center;
+    flex-direction:column; gap:.5rem;
+  }
+  #gate a{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div id="gate" style="display:none">
+  <div style="color:var(--text-dim); font-size:.85rem">Sign in to view the recovery queue.</div>
+  <a href="/login.html">Go to login →</a>
+</div>
+
+<div id="app" style="display:none">
+  <header>
+    <h1>BPO Recovery Queue</h1>
+    <div style="display:flex; align-items:center; gap:1rem">
+      <span class="who">Signed in as <b id="user-label">—</b></span>
+      <button id="logout-btn">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <div class="field">
+        <label for="f-vertical">Vertical</label>
+        <input id="f-vertical" type="text" placeholder="e.g. healthcare">
+      </div>
+      <div class="field">
+        <label for="f-client">Client ID</label>
+        <input id="f-client" type="text" placeholder="e.g. acme-health">
+      </div>
+      <button id="refresh-btn">Refresh</button>
+    </div>
+
+    <div class="count" id="queue-count"></div>
+    <div id="queue-wrap"><div class="loading">Loading queue…</div></div>
+  </main>
+</div>
+
+<script>
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtMoney(n){
+  if (n === null || n === undefined) return '<span class="exposure unknown">unknown</span>';
+  return '<span class="exposure">$' + Number(n).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span>';
+}
+function fmtAge(h){
+  if (h === null || h === undefined) return '—';
+  const days = h / 24;
+  const cls = days >= 7 ? ' class="age-old"' : '';
+  return '<span' + cls + '>' + (days >= 1 ? days.toFixed(1) + 'd' : h.toFixed(1) + 'h') + '</span>';
+}
+function fmtDate(iso){
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d)) return '—';
+  return d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+}
+
+async function boot(){
+  let session;
+  try {
+    const r = await fetch('/api/auth/status');
+    session = await r.json();
+  } catch (e) {
+    document.getElementById('gate').style.display = 'flex';
+    return;
+  }
+
+  const allowedRoles = ['admin', 'manager', 'analyst'];
+  if (!session.authenticated || !allowedRoles.includes(session.role)) {
+    document.getElementById('gate').style.display = 'flex';
+    return;
+  }
+
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-label').textContent = session.label || session.role;
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    location.href = '/login.html';
+  });
+  document.getElementById('refresh-btn').addEventListener('click', loadQueue);
+
+  await loadQueue();
+}
+
+async function loadQueue(){
+  const wrap = document.getElementById('queue-wrap');
+  const countEl = document.getElementById('queue-count');
+  wrap.innerHTML = '<div class="loading">Loading queue…</div>';
+
+  const vertical = document.getElementById('f-vertical').value.trim();
+  const clientId = document.getElementById('f-client').value.trim();
+  const params = new URLSearchParams();
+  if (vertical) params.set('vertical', vertical);
+  if (clientId) params.set('clientId', clientId);
+
+  try {
+    const r = await fetch('/api/bpo/reports/recovery-queue' + (params.toString() ? '?' + params.toString() : ''));
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error || 'Failed to load queue');
+    countEl.innerHTML = '<b>' + data.count + '</b> open case' + (data.count === 1 ? '' : 's') +
+      ' — sorted by priority, then by longest time open';
+    renderQueue(data.queue || []);
+  } catch (e) {
+    countEl.textContent = '';
+    wrap.innerHTML = '<div class="err">Couldn\'t load the queue right now. ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function renderQueue(queue){
+  const wrap = document.getElementById('queue-wrap');
+  if (!queue.length) {
+    wrap.innerHTML = '<div class="empty">Nothing in the queue — every case has a recovery outcome recorded, or none match this filter.</div>';
+    return;
+  }
+
+  const rows = queue.map(item => `
+    <tr>
+      <td>${escapeHtml(item.caseId)}</td>
+      <td><span class="pill ${escapeHtml(item.priority)}">${escapeHtml(item.priority)}</span></td>
+      <td>${fmtAge(item.slaAgeHours)}</td>
+      <td>${fmtMoney(item.exposure)}</td>
+      <td>${escapeHtml(item.predictedLikelihood || '—')}</td>
+      <td>${escapeHtml(item.vertical || '—')}</td>
+      <td>${escapeHtml(item.clientId || '—')}</td>
+      <td>${escapeHtml(item.stage || '—')}</td>
+      <td>${escapeHtml(item.owner || '—')}</td>
+      <td>${fmtDate(item.dueDate)}</td>
+    </tr>
+  `).join('');
+
+  wrap.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Case</th><th>Priority</th><th>Age</th><th>Exposure</th><th>Predicted</th>
+          <th>Vertical</th><th>Client</th><th>Stage</th><th>Owner</th><th>Due</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+boot();
+</script>
+</body>
+</html>

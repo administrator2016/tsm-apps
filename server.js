@@ -1693,6 +1693,23 @@ app.get('/api/bpo/reports/recovery-dashboard', requireRole(BPO_REPORT_ROLES), as
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
+// Phase 9: BPO recovery queue. A prioritized worklist of open cases (no
+// recovery outcome recorded yet) — companion to the dashboard above,
+// which is a snapshot of totals; this is "what should I work next."
+// Same BPO_REPORT_ROLES gate as the rest of this reporting cluster —
+// analysts are in that set, since they're the ones actually working the
+// queue, not just admins/managers.
+app.get('/api/bpo/reports/recovery-queue', requireRole(BPO_REPORT_ROLES), async (req, res) => {
+  try {
+    const queue = await tsmLedger.bpoBuildRecoveryQueue({
+      vertical: req.query.vertical,
+      clientId: req.query.clientId,
+      limit: req.query.limit ? parseInt(req.query.limit, 10) : 200,
+    });
+    res.json({ ok: true, ...queue });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // Client-facing rollup (Phase 4). Latorrey's call on scope (2026-08-24):
 // full rollup -- same WIP/SLA counts as the internal executive-rollup
 // above, plus a client-safe case-level summary list -- available both

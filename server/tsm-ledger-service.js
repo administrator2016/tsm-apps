@@ -1792,6 +1792,70 @@ async function bpoBuildRecoveryDashboard({ vertical, clientId } = {}) {
   };
 }
 
+// ── Phase 9: BPO Recovery Queue ─────────────────────────────────────────
+// A prioritized worklist of every open case (no recovery outcome recorded
+// yet) so BPO staff can see what to work next, not just what's already
+// been resolved (that's Phase 8's job). Sort order is a composite, same
+// triage logic a supervisor would apply by hand:
+//   1. priority tier, critical first (this is a human/extraction judgment
+//      call about urgency — it outranks the numbers below)
+//   2. SLA age, oldest first, as the tiebreaker within a tier (two
+//      critical cases: the one that's been sitting longer goes first)
+// Exposure is included for context wherever it's known, but does NOT
+// drive sort order — a supervisor triaging a single day doesn't reorder
+// the queue because one case is worth more money; that's what the
+// dashboard's topOpenExposure view (Phase 8) is for. Cases with no
+// parseable exposure still appear in the queue (unlike the dashboard's
+// pipeline bucket) — an unknown dollar figure is not a reason to hide a
+// case that genuinely needs to be worked.
+const BPO_PRIORITY_RANK = { critical: 4, high: 3, medium: 2, low: 1 };
+
+async function bpoBuildRecoveryQueue({ vertical, clientId, limit = 200 } = {}) {
+  const col = await bpoWorkItemsCollection();
+  const query = { recoveryStatus: { $in: [null, undefined] }, status: { $ne: 'resolved' } };
+  if (vertical) query.vertical = vertical;
+  if (clientId) query.clientId = clientId;
+  const items = await col.find(query).limit(5000).toArray();
+
+  const queue = items.map(item => {
+    const structuredCase = bpoExtractStructuredCase(item);
+    const raw = structuredCase && structuredCase.financialExposure;
+    let exposure = null;
+    if (raw !== undefined && raw !== null && raw !== '') {
+      try { exposure = bpoNumber(raw, 'financialExposure'); } catch (e) { exposure = null; }
+    }
+    return {
+      caseId: item.caseId,
+      clientId: item.clientId || null,
+      vertical: item.vertical || null,
+      stage: item.stage || null,
+      status: item.status || null,
+      priority: item.priority || 'medium',
+      owner: item.owner || null,
+      dueDate: item.dueDate || null,
+      slaAgeHours: typeof item.slaAgeHours === 'number' ? item.slaAgeHours : null,
+      exposure,
+      predictedLikelihood: structuredCase && structuredCase.recoveryLikelihood
+        ? String(structuredCase.recoveryLikelihood).toUpperCase()
+        : null,
+    };
+  });
+
+  queue.sort((a, b) => {
+    const rankDiff = (BPO_PRIORITY_RANK[b.priority] || 0) - (BPO_PRIORITY_RANK[a.priority] || 0);
+    if (rankDiff !== 0) return rankDiff;
+    return (b.slaAgeHours || 0) - (a.slaAgeHours || 0);
+  });
+
+  return {
+    vertical: vertical || 'all',
+    clientId: clientId || null,
+    count: queue.length,
+    queue: queue.slice(0, limit),
+    generatedAt: new Date().toISOString(),
+  };
+}
+
 // ── Client-facing rollup + monthly snapshots (Phase 4) ──────────────────
 // Latorrey's call on scope (2026-08-24): full rollup (WIP + SLA +
 // case-level summaries, same shape family as the internal
@@ -2860,6 +2924,7 @@ module.exports = {
   bpoValidateRecoveryOutcome, // pure rules; exported for reuse + testing
   BPO_RECOVERY_STATUSES,
   bpoBuildRecoveryDashboard,
+  bpoBuildRecoveryQueue,
   bpoListAuditLogs,
   bpoWriteAudit,
   // Case Engine (Roadmap #10)
