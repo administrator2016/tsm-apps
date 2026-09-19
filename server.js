@@ -49,6 +49,7 @@ const { buildRecoveryPackage } = require('./server/tsm-operational-os');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const PDFDocument = require('pdfkit'); // Phase 10: evidence/appeal package PDF export
 
 process.on('uncaughtException', (err) => {
   console.error('💥 UNCAUGHT EXCEPTION:', err.message, err.stack);
@@ -1167,6 +1168,118 @@ app.get('/api/bpo/work-items/:caseId/learning-record', requireRole(BPO_CLIENT_VI
     if (!record) return res.status(404).json({ ok: false, error: 'No learning record for this case yet' });
     res.json({ ok: true, learningRecord: record });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Phase 10: evidence/appeal package. Assembles everything staff need to
+// file an appeal on a case — structuredCase summary, outcome (if any),
+// learning record (if any), a merged notes+SLA-events timeline, and the
+// case's stored-document metadata — from data this file already has, no
+// new storage. Internal roles only: this can carry internal fields
+// (owner, internal timeline detail) that have no reason to leave the
+// building, same reasoning as the executive-rollup route above.
+app.get('/api/bpo/work-items/:caseId/evidence-package', requireRole(BPO_INTERNAL_ROLES), async (req, res) => {
+  try {
+    const pkg = await tsmLedger.bpoBuildEvidencePackage(req.params.caseId);
+    res.json({ ok: true, package: pkg });
+  } catch (e) {
+    const notFound = /^BPO work item not found/.test(e.message);
+    res.status(notFound ? 404 : 500).json({ ok: false, error: e.message });
+  }
+});
+
+// Same package, rendered as a downloadable PDF cover sheet — case
+// summary, financial/outcome summary, timeline, and a list of the
+// documents on file (filenames only; staff attach the original files
+// themselves — this is the cover sheet, not a merge of the originals).
+app.get('/api/bpo/work-items/:caseId/evidence-package.pdf', requireRole(BPO_INTERNAL_ROLES), async (req, res) => {
+  let pkg;
+  try {
+    pkg = await tsmLedger.bpoBuildEvidencePackage(req.params.caseId);
+  } catch (e) {
+    const notFound = /^BPO work item not found/.test(e.message);
+    return res.status(notFound ? 404 : 500).json({ ok: false, error: e.message });
+  }
+
+  try {
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="evidence-package-${pkg.caseId}.pdf"`);
+
+    const doc = new PDFDocument({ margin: 50 });
+    doc.pipe(res);
+
+    doc.fontSize(18).text('BPO Evidence / Appeal Package', { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(10).fillColor('#555')
+      .text(`Generated ${pkg.generatedAt}`);
+    doc.fillColor('#000').moveDown();
+
+    doc.fontSize(13).text('Case');
+    doc.fontSize(10)
+      .text(`Case ID: ${pkg.caseId}`)
+      .text(`Vertical: ${pkg.vertical || '—'}`)
+      .text(`Client: ${pkg.clientId || '—'}`)
+      .text(`Stage: ${pkg.stage || '—'}   Status: ${pkg.status || '—'}   Priority: ${pkg.priority || '—'}`)
+      .text(`Opened: ${pkg.createdAt || '—'}`);
+    doc.moveDown();
+
+    doc.fontSize(13).text('Case Summary');
+    if (pkg.caseSummary) {
+      const cs = pkg.caseSummary;
+      doc.fontSize(10)
+        .text(`Financial exposure: ${cs.financialExposure ?? 'not recorded'}`)
+        .text(`Predicted recovery likelihood: ${cs.recoveryLikelihood ?? 'not recorded'}${cs.confidence != null ? ' (confidence ' + cs.confidence + ')' : ''}`)
+        .text(`Recommendation: ${cs.recommendation ?? 'not recorded'}`);
+      if (cs.explainability) doc.text(`Explainability: ${cs.explainability}`);
+    } else {
+      doc.fontSize(10).fillColor('#777').text('No structured case data on file for this work item.').fillColor('#000');
+    }
+    doc.moveDown();
+
+    doc.fontSize(13).text('Outcome');
+    if (pkg.hasOutcome) {
+      const o = pkg.outcome;
+      doc.fontSize(10)
+        .text(`Status: ${o.recoveryStatus}`)
+        .text(`Original exposure: ${o.originalExposure}`)
+        .text(`Recovered: ${o.recoveredAmount}   Remaining: ${o.remainingBalance}   Rate: ${o.recoveryRate}`)
+        .text(`Action taken: ${o.actionTaken || '—'}`)
+        .text(`Payer outcome: ${o.payerOutcome || '—'}`);
+    } else {
+      doc.fontSize(10).fillColor('#777').text('No recovery outcome recorded yet — case is still open.').fillColor('#000');
+    }
+    doc.moveDown();
+
+    doc.fontSize(13).text('Timeline');
+    if (pkg.timeline.length) {
+      doc.fontSize(9);
+      for (const t of pkg.timeline) {
+        if (t.kind === 'note') {
+          doc.text(`${t.ts}  [note]  ${t.text}${t.actor ? '  — ' + t.actor : ''}`);
+        } else {
+          doc.text(`${t.ts}  [${t.type}]  ${t.fromStage || '-'} -> ${t.toStage || '-'}${t.actor ? '  - ' + t.actor : ''}`);
+        }
+      }
+    } else {
+      doc.fontSize(10).fillColor('#777').text('No notes or stage events recorded.').fillColor('#000');
+    }
+    doc.moveDown();
+
+    doc.fontSize(13).text('Documents on File');
+    if (pkg.documents.length) {
+      doc.fontSize(9);
+      for (const d of pkg.documents) {
+        doc.text(`${d.filename}  (${d.mimetype || 'unknown type'}, uploaded ${d.uploadedAt || '—'})`);
+      }
+    } else {
+      doc.fontSize(10).fillColor('#777').text('No documents on file for this case.').fillColor('#000');
+    }
+
+    doc.end();
+  } catch (e) {
+    // Response may already have started streaming — best effort only.
+    if (!res.headersSent) res.status(500).json({ ok: false, error: e.message });
+    else res.end();
+  }
 });
 
 // Portfolio-level calibration report: how well predictedLikelihood tracked

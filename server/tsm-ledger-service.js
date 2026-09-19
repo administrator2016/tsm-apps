@@ -1856,6 +1856,105 @@ async function bpoBuildRecoveryQueue({ vertical, clientId, limit = 200 } = {}) {
   };
 }
 
+// ── Phase 10: Evidence / Appeal Package ─────────────────────────────────
+// Everything BPO staff need on hand to actually file an appeal on a case,
+// assembled from data this file already has -- no new storage. Pulls:
+//   - the case's own structuredCase summary (exposure, extraction,
+//     recovery likelihood -- whatever the war-room captured)
+//   - the outcome, if Phase 7 has recorded one (RECOVERED/DENIED/etc,
+//     recovered amount, remaining balance)
+//   - the learning record, if Phase 6 has built one (predicted vs actual)
+//   - notes and SLA events merged into a single chronological timeline,
+//     so a reviewer sees what happened and when in one pass instead of
+//     two separate lists
+//   - stored document METADATA (filename/type/upload date) -- not the
+//     bytes. This assembles the cover package a human attaches the real
+//     files to; pulling and embedding original PDFs/scans is a separate,
+//     heavier concern (pdf-lib page-merging) deliberately left out of v1.
+// Same honesty rule as the rest of this file: a field that isn't there
+// (no outcome yet, no learning record yet, no notes) is reported as
+// absent, never defaulted to something that looks like real data.
+async function bpoBuildEvidencePackage(caseId) {
+  if (!caseId) throw new Error('caseId required');
+
+  const workItem = await bpoGetWorkItem(caseId);
+  if (!workItem) throw new Error('BPO work item not found: ' + caseId);
+
+  const [notes, slaEvents, documents, learningRecord] = await Promise.all([
+    bpoListNotes({ caseId, limit: 500 }),
+    bpoListSlaEvents({ caseId, limit: 500 }),
+    bpoListDocuments({ caseId, limit: 200 }),
+    bpoGetLearningRecord(caseId),
+  ]);
+
+  const structuredCase = bpoExtractStructuredCase(workItem);
+
+  const hasOutcome = !!workItem.recoveryStatus;
+  const outcome = hasOutcome ? {
+    recoveryStatus: workItem.recoveryStatus,
+    originalExposure: workItem.originalExposure,
+    recoveredAmount: workItem.recoveredAmount,
+    remainingBalance: workItem.remainingBalance,
+    recoveryRate: workItem.recoveryRate,
+    actionTaken: workItem.actionTaken || null,
+    payerOutcome: workItem.payerOutcome || null,
+    outcomeRecordedAt: workItem.outcomeRecordedAt || null,
+  } : null;
+
+  // Timeline: notes + SLA events interleaved by timestamp. Each entry
+  // tagged by kind so a renderer (PDF or otherwise) can style/label them
+  // differently without re-deriving which list an entry came from.
+  const timeline = [
+    ...notes.map(n => ({ kind: 'note', ts: n.ts, text: n.text, actor: n.actor || null })),
+    ...slaEvents.map(e => ({
+      kind: 'sla_event', ts: e.ts, type: e.type,
+      fromStage: e.fromStage || null, toStage: e.toStage || null,
+      status: e.status || null, actor: e.actor || null,
+    })),
+  ].sort((a, b) => new Date(a.ts) - new Date(b.ts));
+
+  return {
+    caseId,
+    vertical: workItem.vertical || null,
+    clientId: workItem.clientId || null,
+    stage: workItem.stage || null,
+    status: workItem.status || null,
+    priority: workItem.priority || null,
+    createdAt: workItem.createdAt || null,
+
+    caseSummary: structuredCase ? {
+      financialExposure: structuredCase.financialExposure ?? null,
+      recoveryLikelihood: structuredCase.recoveryLikelihood ?? null,
+      confidence: structuredCase.confidence ?? null,
+      recommendation: structuredCase.recommendation ?? null,
+      explainability: structuredCase.explainability ?? null,
+    } : null,
+
+    hasOutcome,
+    outcome,
+
+    hasLearningRecord: !!learningRecord,
+    learningRecord: learningRecord ? {
+      predictedLikelihood: learningRecord.predictedLikelihood,
+      actualRecoveryRate: learningRecord.actualRecoveryRate,
+      variance: learningRecord.variance,
+      calibrated: learningRecord.calibrated,
+    } : null,
+
+    timeline,
+
+    documents: documents.map(d => ({
+      docId: d.docId,
+      filename: d.filename,
+      mimetype: d.mimetype || null,
+      uploadedAt: d.uploadedAt || null,
+      hasExtractedText: !!d.hasExtractedText,
+    })),
+
+    generatedAt: new Date().toISOString(),
+  };
+}
+
 // ── Client-facing rollup + monthly snapshots (Phase 4) ──────────────────
 // Latorrey's call on scope (2026-08-24): full rollup (WIP + SLA +
 // case-level summaries, same shape family as the internal
@@ -2988,6 +3087,7 @@ module.exports = {
   BPO_RECOVERY_STATUSES,
   bpoBuildRecoveryDashboard,
   bpoBuildRecoveryQueue,
+  bpoBuildEvidencePackage,
   bpoListAuditLogs,
   bpoWriteAudit,
   // Case Engine (Roadmap #10)
