@@ -1955,6 +1955,230 @@ async function bpoBuildEvidencePackage(caseId) {
   };
 }
 
+// ── Phase 11: Recovery Analytics ─────────────────────────────────────────
+// Connects what's happening now (pipeline) to what actually produced
+// financial results (performance), with the prediction↔actual comparison
+// (Phase 6 learning records) as the bridge between the two, per Latorrey's
+// architecture call (2026-09-19):
+//
+//     bpo_cases pipeline ─┐
+//     BPO outcomes (P7)  ─┼─→ Recovery Analytics ─→ Executive Dashboard
+//     Learning records(P6)┘
+//
+// This is a read/aggregation layer only — it stores nothing. The work
+// item remains the source of truth for a case's actual recovery outcome,
+// and the learning record remains the source of truth for prediction-vs-
+// actual; this function just reads both and rolls them up. Same honesty
+// rule as the rest of this file applies throughout: a group with no
+// parseable exposure, no dueDate, or no learning record is reported as
+// absent/excluded, never defaulted to something that looks like real data.
+// No SLA-breach threshold is invented here (same reasoning as the
+// client-rollup comment below — that's a contract decision, not
+// something to fabricate); "overdue" below means a work item's own
+// explicitly-set dueDate has passed, nothing more.
+const BPO_ZERO_OR_NONE_STATUSES = ['DENIED_AFTER_APPEAL', 'WITHDRAWN', 'NO_RECOVERY'];
+
+function bpoOutcomeBucket(status) {
+  if (status === 'RECOVERED') return 'recovered';
+  if (status === 'PARTIALLY_RECOVERED') return 'partial';
+  if (BPO_ZERO_OR_NONE_STATUSES.includes(status)) return 'none';
+  if (status === 'PENDING') return 'pending';
+  return 'unknown';
+}
+
+// Groups an array of resolved work items by a key-extractor, returning
+// exposure/recovered/rate per group. `label` defaults every falsy key to
+// 'unspecified' — an explicit, visible bucket, never a silently-dropped
+// row — so the drill-down still accounts for every resolved case.
+function bpoGroupOutcomes(items, keyFn) {
+  const groups = {};
+  for (const item of items) {
+    const key = keyFn(item) || 'unspecified';
+    if (!groups[key]) groups[key] = { key, count: 0, exposure: 0, recovered: 0 };
+    const g = groups[key];
+    g.count += 1;
+    g.exposure += bpoNumber(item.originalExposure, 'originalExposure');
+    g.recovered += bpoNumber(item.recoveredAmount, 'recoveredAmount');
+  }
+  return Object.values(groups)
+    .map(g => ({
+      ...g,
+      exposure: Math.round(g.exposure * 100) / 100,
+      recovered: Math.round(g.recovered * 100) / 100,
+      recoveryRate: g.exposure > 0 ? Math.round((g.recovered / g.exposure) * 10000) / 10000 : null,
+    }))
+    .sort((a, b) => b.exposure - a.exposure);
+}
+
+async function bpoBuildRecoveryAnalytics({ vertical, clientId } = {}) {
+  const col = await bpoWorkItemsCollection();
+  const query = {};
+  if (vertical) query.vertical = vertical;
+  if (clientId) query.clientId = clientId;
+  const items = await col.find(query).limit(5000).toArray();
+
+  const resolved = items.filter(i => !!i.recoveryStatus);
+  const open = items.filter(i => !i.recoveryStatus);
+
+  // ── Performance (Phase 7 outcomes) ────────────────────────────────────
+  let totalExposure = 0, totalRecovered = 0;
+  const byOutcome = { recovered: 0, partial: 0, none: 0, pending: 0, unknown: 0 };
+  let resolutionHoursTotal = 0, resolutionHoursCount = 0;
+  const byVerticalResolutionHours = {};
+
+  // Scored resolutions only (RECOVERED/PARTIALLY_RECOVERED/NO_RECOVERY/
+  // DENIED_AFTER_APPEAL/WITHDRAWN) — a PENDING outcome hasn't actually
+  // resolved anything yet, so it's excluded from exposure/rate/resolution-
+  // time math even though it's counted in byOutcome above.
+  const scored = [];
+  for (const item of resolved) {
+    const bucket = bpoOutcomeBucket(item.recoveryStatus);
+    byOutcome[bucket] = (byOutcome[bucket] || 0) + 1;
+    if (bucket === 'pending') continue;
+    scored.push(item);
+    totalExposure += bpoNumber(item.originalExposure, 'originalExposure');
+    totalRecovered += bpoNumber(item.recoveredAmount, 'recoveredAmount');
+
+    if (item.createdAt && item.outcomeRecordedAt) {
+      const hrs = bpoHoursBetween(item.createdAt, item.outcomeRecordedAt);
+      if (hrs !== null) {
+        resolutionHoursTotal += hrs;
+        resolutionHoursCount += 1;
+        const v = item.vertical || 'unspecified';
+        if (!byVerticalResolutionHours[v]) byVerticalResolutionHours[v] = { total: 0, count: 0 };
+        byVerticalResolutionHours[v].total += hrs;
+        byVerticalResolutionHours[v].count += 1;
+      }
+    }
+  }
+
+  const avgResolutionHoursByVertical = {};
+  for (const [v, agg] of Object.entries(byVerticalResolutionHours)) {
+    avgResolutionHoursByVertical[v] = Math.round((agg.total / agg.count) * 100) / 100;
+  }
+
+  const performance = {
+    totalExposure: Math.round(totalExposure * 100) / 100,
+    totalRecovered: Math.round(totalRecovered * 100) / 100,
+    totalRemaining: Math.round((totalExposure - totalRecovered) * 100) / 100,
+    recoveryRate: totalExposure > 0 ? Math.round((totalRecovered / totalExposure) * 10000) / 10000 : null,
+    casesByOutcome: byOutcome,
+    avgResolutionHours: resolutionHoursCount > 0
+      ? Math.round((resolutionHoursTotal / resolutionHoursCount) * 100) / 100
+      : null,
+    avgResolutionHoursByVertical,
+    byPayer: bpoGroupOutcomes(scored, i => {
+      const sc = bpoExtractStructuredCase(i);
+      return sc && sc.payer ? String(sc.payer).trim() : null;
+    }),
+    byDenialCategory: bpoGroupOutcomes(scored, i => {
+      const sc = bpoExtractStructuredCase(i);
+      return sc && sc.denialCategory ? String(sc.denialCategory).trim() : null;
+    }),
+    byAction: bpoGroupOutcomes(scored, i => i.actionTaken ? String(i.actionTaken).trim() : null),
+    byVertical: bpoGroupOutcomes(scored, i => i.vertical || null),
+  };
+
+  // ── Pipeline (open cases — no outcome recorded yet) ───────────────────
+  const stageAgg = {};
+  const now = Date.now();
+  const overdue = [];
+  const openWithExposure = [];
+
+  for (const item of open) {
+    const stageKey = item.stage || 'unspecified';
+    if (!stageAgg[stageKey]) stageAgg[stageKey] = { stage: stageKey, count: 0, exposure: 0, totalAgeHours: 0, ageSamples: 0 };
+    const s = stageAgg[stageKey];
+    s.count += 1;
+
+    const structuredCase = bpoExtractStructuredCase(item);
+    const raw = structuredCase && structuredCase.financialExposure;
+    let exposure = null;
+    if (raw !== undefined && raw !== null && raw !== '') {
+      try { exposure = bpoNumber(raw, 'financialExposure'); } catch (e) { exposure = null; }
+    }
+    if (exposure !== null) s.exposure += exposure;
+
+    const ageHours = typeof item.slaAgeHours === 'number' ? item.slaAgeHours : bpoHoursBetween(item.createdAt);
+    if (ageHours !== null) {
+      s.totalAgeHours += ageHours;
+      s.ageSamples += 1;
+    }
+
+    if (item.dueDate) {
+      const due = new Date(item.dueDate).getTime();
+      if (Number.isFinite(due) && due < now) {
+        overdue.push({
+          caseId: item.caseId, vertical: item.vertical || null, stage: item.stage || null,
+          priority: item.priority || null, dueDate: item.dueDate,
+          daysOverdue: Math.round(((now - due) / 86400000) * 10) / 10,
+        });
+      }
+    }
+
+    openWithExposure.push({
+      caseId: item.caseId, vertical: item.vertical || null, stage: item.stage || null,
+      priority: item.priority || null, ageHours, exposure,
+    });
+  }
+
+  const byStage = Object.values(stageAgg).map(s => ({
+    stage: s.stage,
+    count: s.count,
+    exposure: Math.round(s.exposure * 100) / 100,
+    avgAgeHours: s.ageSamples > 0 ? Math.round((s.totalAgeHours / s.ageSamples) * 100) / 100 : null,
+  })).sort((a, b) => b.count - a.count);
+
+  // Candidate bottleneck: among stages with at least 2 aged samples (a
+  // single old case isn't a "stage" problem), the one with the highest
+  // average age. null when nothing qualifies — never guessed.
+  const bottleneckCandidates = byStage.filter(s => s.avgAgeHours !== null && s.count >= 2);
+  const likelyBottleneckStage = bottleneckCandidates.length
+    ? bottleneckCandidates.reduce((a, b) => (b.avgAgeHours > a.avgAgeHours ? b : a)).stage
+    : null;
+
+  overdue.sort((a, b) => b.daysOverdue - a.daysOverdue);
+  const oldestOpen = openWithExposure
+    .filter(i => i.ageHours !== null)
+    .sort((a, b) => b.ageHours - a.ageHours)
+    .slice(0, 10);
+
+  const pipeline = {
+    openCount: open.length,
+    openExposure: Math.round(openWithExposure.reduce((sum, i) => sum + (i.exposure || 0), 0) * 100) / 100,
+    byStage,
+    likelyBottleneckStage,
+    overdue: overdue.slice(0, 25),
+    oldestOpen,
+  };
+
+  // ── Prediction → Actual (Phase 6 learning records) ────────────────────
+  const [varianceSummary, learningRecords] = await Promise.all([
+    bpoLearningVarianceSummary({ vertical }),
+    bpoListLearningRecords({ vertical, limit: 50 }),
+  ]);
+  const recent = learningRecords
+    .filter(r => !clientId || r.clientId === clientId)
+    .map(r => ({
+      caseId: r.caseId, vertical: r.vertical || null,
+      predictedLikelihood: r.predictedLikelihood, predictedConfidence: r.predictedConfidence,
+      recoveryStatus: r.recoveryStatus, originalExposure: r.originalExposure, recoveredAmount: r.recoveredAmount,
+      actualRecoveryRate: r.actualRecoveryRate, variance: r.variance, calibrated: r.calibrated,
+    }));
+
+  return {
+    vertical: vertical || 'all',
+    clientId: clientId || null,
+    performance,
+    pipeline,
+    predictionVsActual: {
+      summary: varianceSummary,
+      recent,
+    },
+    generatedAt: new Date().toISOString(),
+  };
+}
+
 // ── Client-facing rollup + monthly snapshots (Phase 4) ──────────────────
 // Latorrey's call on scope (2026-08-24): full rollup (WIP + SLA +
 // case-level summaries, same shape family as the internal
@@ -3088,6 +3312,7 @@ module.exports = {
   bpoBuildRecoveryDashboard,
   bpoBuildRecoveryQueue,
   bpoBuildEvidencePackage,
+  bpoBuildRecoveryAnalytics,
   bpoListAuditLogs,
   bpoWriteAudit,
   // Case Engine (Roadmap #10)

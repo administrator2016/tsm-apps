@@ -1823,6 +1823,21 @@ app.get('/api/bpo/reports/recovery-queue', requireRole(BPO_REPORT_ROLES), async 
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
+// Phase 11: Recovery Analytics. The bridge layer connecting pipeline state
+// (bpo_cases/work items + SLA aging), Phase 7 financial outcomes, and
+// Phase 6 prediction-vs-actual learning records into one report — read/
+// aggregation only, nothing new is stored here. Same BPO_REPORT_ROLES gate
+// as the rest of this reporting cluster.
+app.get('/api/bpo/reports/recovery-analytics', requireRole(BPO_REPORT_ROLES), async (req, res) => {
+  try {
+    const analytics = await tsmLedger.bpoBuildRecoveryAnalytics({
+      vertical: req.query.vertical,
+      clientId: req.query.clientId,
+    });
+    res.json({ ok: true, analytics });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // Test/seed data cleanup — removes STRESS-batch-*/TEST-* (or a caller-
 // supplied prefix list) work items + their SLA events from bpo_work_items
 // so load-test and smoke-test residue stops inflating every count-based

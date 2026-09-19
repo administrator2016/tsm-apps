@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TSM · Recovery Analytics</title>
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#111826; --panel2:#0e1420; --border:#1f2937; --border-soft:#1a2332;
+    --text:#e6f1ff; --text-dim:#7c8a9e; --accent:#00e5c7; --warn:#ffb454; --danger:#ff5c6c; --crit:#ff3b5c;
+    --mono:'Share Tech Mono', 'SF Mono', Consolas, monospace;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg); color:var(--text); font-family:var(--mono); margin:0; min-height:100vh;}
+  header{
+    border-bottom:1px solid var(--border); padding:1.1rem 1.5rem;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem;
+  }
+  header h1{font-size:.95rem; color:var(--accent); margin:0; letter-spacing:.06em; text-transform:uppercase}
+  header .who{font-size:.75rem; color:var(--text-dim)}
+  header .who b{color:var(--text)}
+  #logout-btn{
+    background:transparent; border:1px solid var(--border); color:var(--text-dim);
+    font-family:inherit; font-size:.7rem; padding:.4rem .8rem; cursor:pointer; border-radius:4px;
+  }
+  #logout-btn:hover{border-color:var(--danger); color:var(--danger)}
+  main{max-width:1300px; margin:0 auto; padding:1.5rem}
+  .toolbar{display:flex; align-items:center; gap:.75rem; margin-bottom:1.25rem; flex-wrap:wrap}
+  .toolbar input{
+    background:var(--panel); border:1px solid var(--border); color:var(--text);
+    font-family:inherit; font-size:.75rem; padding:.45rem .6rem; border-radius:4px;
+  }
+  .toolbar label{font-size:.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.04em}
+  .toolbar .field{display:flex; flex-direction:column; gap:.25rem}
+  #refresh-btn{
+    background:var(--panel); border:1px solid var(--accent); color:var(--accent);
+    font-family:inherit; font-size:.72rem; padding:.45rem .9rem; cursor:pointer; border-radius:4px; align-self:flex-end;
+  }
+  #refresh-btn:hover{background:rgba(0,229,199,.08)}
+  .generated{font-size:.65rem; color:var(--text-dim); align-self:flex-end; margin-left:auto}
+
+  .tabs{display:flex; gap:.25rem; border-bottom:1px solid var(--border); margin-bottom:1.25rem}
+  .tab{
+    background:none; border:none; color:var(--text-dim); font-family:inherit; font-size:.75rem;
+    text-transform:uppercase; letter-spacing:.05em; padding:.6rem 1rem; cursor:pointer;
+    border-bottom:2px solid transparent;
+  }
+  .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
+  .panel{display:none}
+  .panel.active{display:block}
+
+  .kpi-row{display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:.75rem; margin-bottom:1.25rem}
+  .kpi{background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:.9rem 1rem}
+  .kpi .label{font-size:.62rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.35rem}
+  .kpi .value{font-size:1.15rem; color:var(--text)}
+  .kpi .value.accent{color:var(--accent)}
+  .kpi .value.warn{color:var(--warn)}
+  .kpi .value.danger{color:var(--danger)}
+  .kpi .sub{font-size:.62rem; color:var(--text-dim); margin-top:.3rem}
+
+  .section-title{font-size:.72rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin:1.5rem 0 .6rem}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:1.25rem}
+  @media (max-width:900px){.grid2{grid-template-columns:1fr}}
+
+  table{width:100%; border-collapse:collapse; font-size:.76rem; margin-bottom:1rem}
+  th{
+    text-align:left; color:var(--text-dim); font-weight:normal; text-transform:uppercase;
+    font-size:.6rem; letter-spacing:.04em; padding:.5rem .6rem; border-bottom:1px solid var(--border);
+  }
+  td{padding:.5rem .6rem; border-bottom:1px solid var(--border-soft); vertical-align:top}
+  tbody tr:hover{background:#0f1622}
+  .pill{
+    display:inline-block; padding:.15rem .55rem; border-radius:3px; font-size:.6rem;
+    text-transform:uppercase; letter-spacing:.03em; border:1px solid;
+  }
+  .pill.recovered{color:var(--accent); border-color:var(--accent)}
+  .pill.partial{color:var(--warn); border-color:var(--warn)}
+  .pill.none{color:var(--danger); border-color:var(--danger)}
+  .pill.pending{color:var(--text-dim); border-color:var(--border)}
+  .pill.critical{color:var(--crit); border-color:var(--crit)}
+  .pill.high{color:var(--danger); border-color:var(--danger)}
+  .pill.medium{color:var(--warn); border-color:var(--warn)}
+  .pill.low{color:var(--text-dim); border-color:var(--border)}
+  .num{color:var(--accent)}
+  .num.unknown{color:var(--text-dim); font-style:italic}
+  .bottleneck-flag{color:var(--warn); font-size:.65rem}
+  .empty{color:var(--text-dim); font-size:.8rem; padding:1.25rem 0; text-align:center}
+  .loading{color:var(--text-dim); font-size:.8rem; padding:1rem 0}
+  .err{color:var(--danger); font-size:.8rem; padding:1rem 0}
+  #gate{
+    display:flex; align-items:center; justify-content:center; height:100vh; text-align:center;
+    flex-direction:column; gap:.5rem;
+  }
+  #gate a{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div id="gate" style="display:none">
+  <div style="color:var(--text-dim); font-size:.85rem">Sign in to view Recovery Analytics.</div>
+  <a href="/login.html">Go to login →</a>
+</div>
+
+<div id="app" style="display:none">
+  <header>
+    <h1>Recovery Analytics</h1>
+    <div style="display:flex; align-items:center; gap:1rem">
+      <span class="who">Signed in as <b id="user-label">—</b></span>
+      <button id="logout-btn">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <div class="field">
+        <label for="f-vertical">Vertical</label>
+        <input id="f-vertical" type="text" placeholder="e.g. healthcare">
+      </div>
+      <div class="field">
+        <label for="f-client">Client ID</label>
+        <input id="f-client" type="text" placeholder="e.g. acme-health">
+      </div>
+      <button id="refresh-btn">Refresh</button>
+      <span class="generated" id="generated-at"></span>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="performance">Recovery Performance</button>
+      <button class="tab" data-tab="pipeline">Pipeline</button>
+      <button class="tab" data-tab="prediction">Prediction → Actual</button>
+    </div>
+
+    <div id="wrap"><div class="loading">Loading analytics…</div></div>
+  </main>
+</div>
+
+<script>
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtMoney(n){
+  if (n === null || n === undefined) return '<span class="num unknown">unknown</span>';
+  return '<span class="num">$' + Number(n).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span>';
+}
+function fmtPct(r){
+  if (r === null || r === undefined) return '—';
+  return (r * 100).toFixed(1) + '%';
+}
+function fmtHours(h){
+  if (h === null || h === undefined) return '—';
+  const days = h / 24;
+  return days >= 1 ? days.toFixed(1) + 'd' : h.toFixed(1) + 'h';
+}
+function fmtDate(iso){
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d)) return '—';
+  return d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+}
+
+let LAST_DATA = null;
+
+async function boot(){
+  let session;
+  try {
+    const r = await fetch('/api/auth/status');
+    session = await r.json();
+  } catch (e) {
+    document.getElementById('gate').style.display = 'flex';
+    return;
+  }
+
+  const allowedRoles = ['admin', 'manager', 'analyst'];
+  if (!session.authenticated || !allowedRoles.includes(session.role)) {
+    document.getElementById('gate').style.display = 'flex';
+    return;
+  }
+
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-label').textContent = session.label || session.role;
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    location.href = '/login.html';
+  });
+  document.getElementById('refresh-btn').addEventListener('click', load);
+
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = document.getElementById('panel-' + btn.dataset.tab);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  await load();
+}
+
+async function load(){
+  const wrap = document.getElementById('wrap');
+  wrap.innerHTML = '<div class="loading">Loading analytics…</div>';
+
+  const vertical = document.getElementById('f-vertical').value.trim();
+  const clientId = document.getElementById('f-client').value.trim();
+  const params = new URLSearchParams();
+  if (vertical) params.set('vertical', vertical);
+  if (clientId) params.set('clientId', clientId);
+
+  try {
+    const r = await fetch('/api/bpo/reports/recovery-analytics' + (params.toString() ? '?' + params.toString() : ''));
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error || 'Failed to load analytics');
+    LAST_DATA = data.analytics;
+    document.getElementById('generated-at').textContent = 'Generated ' + fmtDate(LAST_DATA.generatedAt) + ' ' + new Date(LAST_DATA.generatedAt).toLocaleTimeString();
+    render(LAST_DATA);
+  } catch (e) {
+    wrap.innerHTML = '<div class="err">Couldn\'t load analytics right now. ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function render(a){
+  const wrap = document.getElementById('wrap');
+  wrap.innerHTML =
+    '<div class="panel active" id="panel-performance">' + renderPerformance(a.performance) + '</div>' +
+    '<div class="panel" id="panel-pipeline">' + renderPipeline(a.pipeline) + '</div>' +
+    '<div class="panel" id="panel-prediction">' + renderPrediction(a.predictionVsActual) + '</div>';
+}
+
+function outcomeGroupTable(title, groups, keyLabel){
+  if (!groups.length) return '<div class="empty">No resolved cases in this group yet.</div>';
+  const rows = groups.map(g => `
+    <tr>
+      <td>${escapeHtml(g.key)}</td>
+      <td>${g.count}</td>
+      <td>${fmtMoney(g.exposure)}</td>
+      <td>${fmtMoney(g.recovered)}</td>
+      <td>${fmtPct(g.recoveryRate)}</td>
+    </tr>`).join('');
+  return `
+    <table>
+      <thead><tr><th>${escapeHtml(keyLabel)}</th><th>Cases</th><th>Exposure</th><th>Recovered</th><th>Rate</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function renderPerformance(p){
+  const o = p.casesByOutcome;
+  return `
+    <div class="kpi-row">
+      <div class="kpi"><div class="label">Total Exposure</div><div class="value">${fmtMoney(p.totalExposure)}</div></div>
+      <div class="kpi"><div class="label">Recovered</div><div class="value accent">${fmtMoney(p.totalRecovered)}</div></div>
+      <div class="kpi"><div class="label">Remaining</div><div class="value warn">${fmtMoney(p.totalRemaining)}</div></div>
+      <div class="kpi"><div class="label">Recovery Rate</div><div class="value">${fmtPct(p.recoveryRate)}</div></div>
+      <div class="kpi"><div class="label">Avg Time-to-Resolution</div><div class="value">${fmtHours(p.avgResolutionHours)}</div></div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi"><div class="label">Recovered</div><div class="value accent">${o.recovered}</div></div>
+      <div class="kpi"><div class="label">Partially Recovered</div><div class="value warn">${o.partial}</div></div>
+      <div class="kpi"><div class="label">No Recovery</div><div class="value danger">${o.none}</div></div>
+      <div class="kpi"><div class="label">Pending Outcome</div><div class="value">${o.pending}</div></div>
+    </div>
+
+    <div class="section-title">Recovery Performance by Vertical</div>
+    ${outcomeGroupTable('Vertical', p.byVertical, 'Vertical')}
+
+    <div class="grid2">
+      <div>
+        <div class="section-title">By Payer</div>
+        ${outcomeGroupTable('Payer', p.byPayer, 'Payer')}
+      </div>
+      <div>
+        <div class="section-title">By Denial Category</div>
+        ${outcomeGroupTable('Denial Category', p.byDenialCategory, 'Denial Category')}
+      </div>
+    </div>
+
+    <div class="section-title">By Recovery Action</div>
+    ${outcomeGroupTable('Action', p.byAction, 'Action Taken')}
+  `;
+}
+
+function renderPipeline(pl){
+  const stageRows = pl.byStage.map(s => `
+    <tr>
+      <td>${escapeHtml(s.stage)} ${pl.likelyBottleneckStage === s.stage ? '<span class="bottleneck-flag">⚠ likely bottleneck</span>' : ''}</td>
+      <td>${s.count}</td>
+      <td>${fmtMoney(s.exposure)}</td>
+      <td>${fmtHours(s.avgAgeHours)}</td>
+    </tr>`).join('');
+
+  const overdueRows = pl.overdue.length ? pl.overdue.map(c => `
+    <tr>
+      <td>${escapeHtml(c.caseId)}</td>
+      <td>${escapeHtml(c.vertical || '—')}</td>
+      <td>${escapeHtml(c.stage || '—')}</td>
+      <td><span class="pill ${escapeHtml(c.priority || 'medium')}">${escapeHtml(c.priority || '—')}</span></td>
+      <td>${fmtDate(c.dueDate)}</td>
+      <td class="num danger">${c.daysOverdue}d overdue</td>
+    </tr>`).join('') : '';
+
+  const oldestRows = pl.oldestOpen.length ? pl.oldestOpen.map(c => `
+    <tr>
+      <td>${escapeHtml(c.caseId)}</td>
+      <td>${escapeHtml(c.vertical || '—')}</td>
+      <td>${escapeHtml(c.stage || '—')}</td>
+      <td><span class="pill ${escapeHtml(c.priority || 'medium')}">${escapeHtml(c.priority || '—')}</span></td>
+      <td>${fmtHours(c.ageHours)}</td>
+      <td>${fmtMoney(c.exposure)}</td>
+    </tr>`).join('') : '';
+
+  return `
+    <div class="kpi-row">
+      <div class="kpi"><div class="label">Open Cases</div><div class="value">${pl.openCount}</div></div>
+      <div class="kpi"><div class="label">Open Exposure</div><div class="value">${fmtMoney(pl.openExposure)}</div></div>
+      <div class="kpi"><div class="label">Overdue (past due date)</div><div class="value danger">${pl.overdue.length}</div></div>
+      <div class="kpi"><div class="label">Likely Bottleneck Stage</div><div class="value warn">${escapeHtml(pl.likelyBottleneckStage || '—')}</div></div>
+    </div>
+
+    <div class="section-title">Cases by Stage</div>
+    <table>
+      <thead><tr><th>Stage</th><th>Cases</th><th>Exposure</th><th>Avg Age</th></tr></thead>
+      <tbody>${stageRows || '<tr><td colspan="4"><div class="empty">No open cases.</div></td></tr>'}</tbody>
+    </table>
+
+    <div class="section-title">Deadline Risk — Past Due Date</div>
+    <table>
+      <thead><tr><th>Case</th><th>Vertical</th><th>Stage</th><th>Priority</th><th>Due Date</th><th>Overdue By</th></tr></thead>
+      <tbody>${overdueRows || '<tr><td colspan="6"><div class="empty">No open cases past their due date.</div></td></tr>'}</tbody>
+    </table>
+
+    <div class="section-title">Oldest Open Cases</div>
+    <table>
+      <thead><tr><th>Case</th><th>Vertical</th><th>Stage</th><th>Priority</th><th>Age</th><th>Exposure</th></tr></thead>
+      <tbody>${oldestRows || '<tr><td colspan="6"><div class="empty">Nothing open.</div></td></tr>'}</tbody>
+    </table>
+  `;
+}
+
+function renderPrediction(pv){
+  const tiers = Object.entries(pv.summary.byPredictedLikelihood || {});
+  const tierRows = tiers.map(([tier, t]) => `
+    <tr>
+      <td>${escapeHtml(tier)}</td>
+      <td>${t.predicted}</td>
+      <td>${t.calibrated}</td>
+      <td>${t.calibrationRate === null ? '—' : fmtPct(t.calibrationRate)}</td>
+      <td>${t.avgVariance === undefined ? '—' : (t.avgVariance * 100).toFixed(1) + ' pts'}</td>
+    </tr>`).join('');
+
+  const recentRows = pv.recent.length ? pv.recent.map(r => `
+    <tr>
+      <td>${escapeHtml(r.caseId)}</td>
+      <td>${escapeHtml(r.vertical || '—')}</td>
+      <td>${escapeHtml(r.predictedLikelihood || '—')}${r.predictedConfidence != null ? ' (' + r.predictedConfidence + ')' : ''}</td>
+      <td>${fmtMoney(r.originalExposure)}</td>
+      <td>${fmtMoney(r.recoveredAmount)}</td>
+      <td>${fmtPct(r.actualRecoveryRate)}</td>
+      <td><span class="pill ${r.calibrated === true ? 'recovered' : r.calibrated === false ? 'none' : 'pending'}">${r.calibrated === null ? 'unscored' : r.calibrated ? 'calibrated' : 'off-target'}</span></td>
+    </tr>`).join('') : '';
+
+  return `
+    <div class="kpi-row">
+      <div class="kpi"><div class="label">Learning Records</div><div class="value">${pv.summary.totalRecords}</div></div>
+      <div class="kpi"><div class="label">Scored</div><div class="value">${pv.summary.scoredRecords}</div></div>
+    </div>
+
+    <div class="section-title">Calibration by Predicted Likelihood</div>
+    <table>
+      <thead><tr><th>Predicted Tier</th><th>Predicted Count</th><th>Calibrated</th><th>Calibration Rate</th><th>Avg Variance</th></tr></thead>
+      <tbody>${tierRows || '<tr><td colspan="5"><div class="empty">No scored learning records yet.</div></td></tr>'}</tbody>
+    </table>
+
+    <div class="section-title">Recent Predicted vs. Actual (last 50)</div>
+    <table>
+      <thead><tr><th>Case</th><th>Vertical</th><th>Predicted</th><th>Exposure</th><th>Recovered</th><th>Actual Rate</th><th>Calibration</th></tr></thead>
+      <tbody>${recentRows || '<tr><td colspan="7"><div class="empty">No learning records yet.</div></td></tr>'}</tbody>
+    </table>
+  `;
+}
+
+boot();
+</script>
+</body>
+</html>
