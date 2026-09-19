@@ -981,6 +981,10 @@ function bpoExtractStructuredCase(workItem) {
     payload && payload.opportunity && payload.opportunity.structuredCase,
     payload && payload.recovery && payload.recovery.structuredCase,
     payload && payload.extraction && payload.extraction.structuredCase,
+    // Healthcare Executive Portal handoff: executive-portal.html stores the
+    // canonical War Room case at sections.healthcareRevenueRecovery.structuredCase.
+    payload && payload.sections && payload.sections.healthcareRevenueRecovery
+      && payload.sections.healthcareRevenueRecovery.structuredCase,
   ];
 
   for (const candidate of candidates) {
