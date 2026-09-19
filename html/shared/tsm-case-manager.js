@@ -478,6 +478,7 @@
       }).then(function (res) {
         if (res && (res.status === 401 || res.status === 403)) {
           serverSyncDenied = true;
+          return;
         }
       }).catch(function () {});
     } catch (e) {}
