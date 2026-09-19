@@ -1966,6 +1966,177 @@ app.get('/api/bpo/reports/client-monthly/history', requireRole(BPO_REPORT_ROLES)
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
+// Phase 13: Provider Reporting. One data contract (bpoBuildProviderReport)
+// behind the live API, the dashboard, the PDF and the monthly snapshots.
+// Role scoping: a 'client' session is locked to its own clientId and to
+// the client-safe projection no matter what query params are sent; staff
+// get the internal projection by default and may pass ?view=client to
+// preview exactly what a provider sees.
+function bpoProviderScope(req) {
+  const isClient = req.tsmSession.role === 'client';
+  return {
+    isClient,
+    clientId: isClient ? req.tsmSession.clientId : (req.query.clientId || undefined),
+    view: isClient ? 'client' : (req.query.view === 'client' ? 'client' : 'internal'),
+  };
+}
+function bpoProviderError(res, e) {
+  res.status(e.isValidation ? 400 : 500).json({ ok: false, error: e.message });
+}
+
+app.get('/api/bpo/reports/provider', requireRole(BPO_CLIENT_VIEW_ROLES), async (req, res) => {
+  try {
+    const scope = bpoProviderScope(req);
+    if (scope.isClient && !scope.clientId) return res.status(403).json({ ok: false, error: 'client session has no clientId' });
+    const report = await tsmLedger.bpoBuildProviderReport({
+      clientId: scope.clientId, vertical: req.query.vertical, period: req.query.period,
+      sections: req.query.sections, view: scope.view,
+    });
+    res.json({ ok: true, report });
+  } catch (e) { bpoProviderError(res, e); }
+});
+
+function bpoRenderProviderReportPdf(doc, report) {
+  const money = n => (n === null || n === undefined ? '-' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  const pct = r => (r === null || r === undefined ? '-' : (r * 100).toFixed(1) + '%');
+  const hrs = h => (h === null || h === undefined ? '-' : (h >= 24 ? (h / 24).toFixed(1) + ' days' : h.toFixed(1) + ' hours'));
+  const h1 = t => { doc.moveDown(0.8); doc.fontSize(13).fillColor('#000').text(t); doc.fontSize(10); };
+  const rows = (arr, fn) => { if (!arr || !arr.length) { doc.fillColor('#777').text('No data for this scope.').fillColor('#000'); return; } arr.forEach(r => doc.text(fn(r))); };
+
+  doc.fontSize(18).text('Provider Recovery Report', { underline: true });
+  doc.moveDown(0.4);
+  doc.fontSize(10).fillColor('#555')
+    .text(`Provider: ${report.clientId || 'All providers'}   Period: ${report.period}   View: ${report.view}`)
+    .text(`Generated ${report.generatedAt}`);
+  doc.fillColor('#000');
+
+  if (report.executiveSummary) {
+    const e = report.executiveSummary;
+    h1('Executive Summary');
+    doc.text(e.headline);
+    doc.text(`Exposure: ${money(e.exposure.resolvedExposure)} resolved + ${money(e.exposure.openExposure)} open`);
+    doc.text(`Work: ${e.work.claimsWorked} worked, ${e.work.resolved} resolved, ${e.work.openNow} open`);
+    if (e.action.topAction) doc.text(`Top action: ${e.action.topAction.action} (${pct(e.action.topAction.recoveryRate)} over ${e.action.topAction.cases} case(s))`);
+    doc.text(`Recovery: ${money(e.recovery.recovered)} (${pct(e.recovery.recoveryRate)}), average resolution ${hrs(e.recovery.avgResolutionHours)}`);
+    doc.text(`Remaining risk: ${money(e.remainingRisk.remainingBalance)} unrecovered, ${money(e.remainingRisk.openExposure)} open exposure, ${e.remainingRisk.overdueOpen} past due`);
+  }
+  if (report.periodOverPeriod) {
+    const p = report.periodOverPeriod;
+    h1(`Period over Period (${p.previousPeriod} -> ${p.currentPeriod})`);
+    doc.text(`Recovered: ${money(p.previous.recovered)} -> ${money(p.current.recovered)}   Recovery rate: ${pct(p.previous.recoveryRate)} -> ${pct(p.current.recoveryRate)}   Resolved: ${p.previous.resolved} -> ${p.current.resolved}`);
+  }
+  if (report.denialRecovery) {
+    const d = report.denialRecovery;
+    h1('Denial & Recovery');
+    doc.text(`Denials: ${d.denialVolume} new, ${d.claimsWorked} worked, ${d.resolved} resolved`);
+    doc.text(`Exposure ${money(d.totalExposure)}   Recovered ${money(d.totalRecovered)}   Remaining ${money(d.remainingBalance)}   Rate ${pct(d.recoveryRate)}`);
+    doc.text(`Open recovery: ${d.openRecovery.openCount} case(s), ${money(d.openRecovery.openExposure)} exposure. Aging: <1d ${d.openRecovery.aging.under1d}, 1-3d ${d.openRecovery.aging.d1to3}, 3-7d ${d.openRecovery.aging.d3to7}, 7d+ ${d.openRecovery.aging.over7d}`);
+    doc.text(`Deadline risk: ${d.slaRisk.overdueOpen} past due, ${d.slaRisk.dueWithin48h} due within 48h`);
+    doc.moveDown(0.3).text('By denial category');
+    rows(d.byDenialCategory, r => `  ${r.key}: ${r.count} case(s), ${money(r.recovered)} of ${money(r.exposure)} (${pct(r.recoveryRate)})`);
+  }
+  if (report.payerPerformance) {
+    h1('Payer Performance');
+    rows(report.payerPerformance.byPayer, r => `${r.key}: ${r.count} case(s), ${money(r.recovered)} of ${money(r.exposure)} (${pct(r.recoveryRate)}), turnaround ${hrs(r.turnaroundHours)}` +
+      (r.recurringDenialReasons.length ? `\n  Recurring reasons: ${r.recurringDenialReasons.map(x => x.reason + ' x' + x.count).join(', ')}` : ''));
+  }
+  if (report.appealEffectiveness) {
+    h1('Appeal & Evidence Effectiveness');
+    rows(report.appealEffectiveness.byAction, r => `${r.key}: ${r.count} case(s), ${money(r.recovered)} of ${money(r.exposure)} (${pct(r.recoveryRate)}), ${hrs(r.avgResolutionHours)}`);
+    doc.fillColor('#777').fontSize(8).text(report.appealEffectiveness.note).fillColor('#000').fontSize(10);
+  }
+  if (report.internal) {
+    const n = report.internal;
+    doc.addPage();
+    doc.fontSize(14).text('Internal - TSM staff only', { underline: true }).fontSize(10);
+    h1('Pipeline');
+    doc.text(`Likely bottleneck stage: ${n.pipeline.likelyBottleneckStage || 'none identified'}`);
+    rows(n.pipeline.byStage, s => `  ${s.stage}: ${s.count} open, avg age ${hrs(s.avgAgeHours)}`);
+    h1('Queue performance');
+    rows(n.queuePerformance, q => `${q.owner}: ${q.count} resolved, ${pct(q.recoveryRate)}, ${hrs(q.avgResolutionHours)}, ${q.openNow} open`);
+    h1('SLA failures');
+    doc.text(`Overdue open: ${n.slaFailures.overdueOpen}   Resolved late: ${n.slaFailures.resolvedLate}`);
+    h1('Prediction -> actual');
+    const tiers = Object.entries(n.predictionVsActual.byPredictedLikelihood);
+    if (!tiers.length) doc.fillColor('#777').text('No learning records in scope.').fillColor('#000');
+    tiers.forEach(([t, v]) => doc.text(`${t}: ${v.predicted} predicted, calibration rate ${pct(v.calibrationRate)}, avg variance ${v.avgVariance ?? '-'}`));
+    if (n.calibrationSignals) doc.text(`Calibration signals (${n.calibrationSignals.scope}): ${n.calibrationSignals.flagged.length} flagged, ${n.calibrationSignals.eligibleForReview} eligible for review`);
+    h1('Governance');
+    doc.text(`Automatic production application: ${n.governance.calibrationConfig.automaticProductionApplication ? 'ENABLED' : 'DISABLED'}   Human approval required: ${n.governance.calibrationConfig.humanApprovalRequired ? 'TRUE' : 'FALSE'}`);
+    doc.fontSize(8);
+    n.governance.recentAudit.forEach(a => doc.text(`${a.ts}  ${a.actor || '-'}  ${a.action}  ${a.entityId}`));
+  }
+}
+
+app.get('/api/bpo/reports/provider.pdf', requireRole(BPO_CLIENT_VIEW_ROLES), async (req, res) => {
+  let report;
+  try {
+    const scope = bpoProviderScope(req);
+    if (scope.isClient && !scope.clientId) return res.status(403).json({ ok: false, error: 'client session has no clientId' });
+    report = await tsmLedger.bpoBuildProviderReport({
+      clientId: scope.clientId, vertical: req.query.vertical, period: req.query.period,
+      sections: req.query.sections, view: scope.view,
+    });
+  } catch (e) { return bpoProviderError(res, e); }
+
+  try {
+    const safe = s => String(s || 'all').replace(/[^a-zA-Z0-9_-]/g, '');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="provider-report-${safe(report.clientId)}-${safe(report.period)}.pdf"`);
+    const doc = new PDFDocument({ margin: 50 });
+    doc.pipe(res);
+    bpoRenderProviderReportPdf(doc, report);
+    doc.end();
+  } catch (e) {
+    if (!res.headersSent) res.status(500).json({ ok: false, error: e.message });
+    else res.end();
+  }
+});
+
+// Saved monthly snapshots (generated by the admin route below or
+// scripts/generate-bpo-provider-monthly-reports.js). Clients only ever
+// receive the client projection.
+app.get('/api/bpo/reports/provider-monthly', requireRole(BPO_CLIENT_VIEW_ROLES), async (req, res) => {
+  try {
+    const scope = bpoProviderScope(req);
+    if (!scope.clientId) return res.status(400).json({ ok: false, error: 'clientId is required' });
+    let snap;
+    if (req.query.period) {
+      snap = await tsmLedger.bpoGetProviderSnapshot(scope.clientId, req.query.period);
+    } else {
+      const list = await tsmLedger.bpoListProviderSnapshots({ clientId: scope.clientId, limit: 1 });
+      snap = list[0];
+    }
+    if (!snap) return res.status(404).json({ ok: false, error: 'No provider report snapshot found' });
+    res.json({ ok: true, periodLabel: snap.periodLabel, generatedAt: snap.generatedAt, report: snap.views[scope.view] });
+  } catch (e) { bpoProviderError(res, e); }
+});
+
+app.get('/api/bpo/reports/provider-monthly/history', requireRole(BPO_REPORT_ROLES), async (req, res) => {
+  try {
+    if (!req.query.clientId) return res.status(400).json({ ok: false, error: 'clientId is required' });
+    const snaps = await tsmLedger.bpoListProviderSnapshots({ clientId: req.query.clientId, limit: req.query.limit ? parseInt(req.query.limit, 10) : 24 });
+    res.json({ ok: true, periods: snaps.map(s => ({ periodLabel: s.periodLabel, generatedAt: s.generatedAt })) });
+  } catch (e) { bpoProviderError(res, e); }
+});
+
+// Generate snapshots on demand (single client, or every active client).
+app.post('/api/bpo/admin/provider-reports/generate', requireRole(BPO_MANAGE_ROLES), async (req, res) => {
+  try {
+    const { clientId, period } = req.body || {};
+    const clients = clientId ? [{ id: clientId }] : await tsmLedger.bpoListClients({ status: 'active' });
+    const results = [];
+    for (const c of clients) {
+      const id = c.id || c.clientId;
+      try {
+        const snap = await tsmLedger.bpoSaveProviderSnapshot(id, period || undefined, req.tsmSession.label || req.tsmSession.role);
+        results.push({ clientId: id, ok: true, periodLabel: snap.periodLabel });
+      } catch (e) { results.push({ clientId: id, ok: false, error: e.message }); }
+    }
+    res.json({ ok: true, results });
+  } catch (e) { bpoProviderError(res, e); }
+});
+
 // Case Engine (Roadmap #10) summary — same shape family as the work-item
 // executive-rollup above, but scoped to bpo_cases so an exec portal can
 // show real case-queue numbers server-side instead of only whatever one

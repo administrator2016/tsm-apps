@@ -2481,6 +2481,422 @@ async function bpoBuildLearningLoopReport({ vertical } = {}) {
   };
 }
 
+// ── Phase 13: Provider Reporting ────────────────────────────────────────
+// One reporting function, one data contract. The live API, the dashboard,
+// the PDF export and the monthly snapshots all call bpoBuildProviderReport
+// -- there is no second calculation engine (locked architecture call,
+// 2026-09-19).
+//
+// Two role-scoped projections of the same measured data:
+//   view 'client'   -- business outcomes only, built from a whitelist of
+//                      aggregate fields. Never includes case-level rows,
+//                      owners, payloads, learning records or calibration.
+//   view 'internal' -- everything in the client view PLUS an `internal`
+//                      block (queue/analyst performance, bottlenecks, SLA
+//                      failures, prediction-vs-actual, calibration signals,
+//                      governance/audit).
+//
+// Period semantics (YYYY-MM, UTC, or 'all'):
+//   claimsWorked = created in period OR outcome recorded in period
+//   resolved     = outcome recorded in period (drives exposure/recovered/
+//                  rate/time-to-resolution/payer/action/category figures)
+//   open*        = current state of unresolved items (not period-bound)
+// No SLA-breach threshold is invented: "overdue" means past the item's own
+// dueDate, same as Phase 11.
+const BPO_PROVIDER_SECTION_KEYS = {
+  'executive-summary': 'executiveSummary',
+  'denial-recovery': 'denialRecovery',
+  'payer-performance': 'payerPerformance',
+  'appeal-evidence': 'appealEffectiveness',
+};
+const BPO_PROVIDER_SNAPSHOTS_COLLECTION = 'bpo_provider_report_snapshots';
+
+function bpoProviderValidationError(message) {
+  const e = new Error(message);
+  e.isValidation = true;
+  return e;
+}
+
+function bpoProviderPeriodBounds(period) {
+  if (!period || period === 'all') return null;
+  const m = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(String(period));
+  if (!m) throw bpoProviderValidationError('period must be YYYY-MM or "all"');
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  return { label: String(period), start: Date.UTC(y, mo - 1, 1), end: Date.UTC(y, mo, 1) };
+}
+
+function bpoProviderPreviousPeriodLabel(label) {
+  const [y, m] = label.split('-').map(Number);
+  return bpoCurrentPeriodLabel(new Date(Date.UTC(y, m - 2, 1)));
+}
+
+function bpoProviderInWindow(iso, bounds) {
+  if (!bounds) return true;
+  const t = new Date(iso).getTime();
+  return Number.isFinite(t) && t >= bounds.start && t < bounds.end;
+}
+
+function bpoProviderNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function bpoProviderRound2(n) { return Math.round(n * 100) / 100; }
+function bpoProviderRate(recovered, exposure) {
+  return exposure > 0 ? Math.round((recovered / exposure) * 10000) / 10000 : null;
+}
+
+function bpoProviderResolvedInWindow(items, bounds) {
+  return items.filter(i => i.recoveryStatus && bpoProviderInWindow(i.outcomeRecordedAt, bounds));
+}
+
+function bpoProviderScored(resolved) {
+  return resolved.filter(i => bpoOutcomeBucket(i.recoveryStatus) !== 'pending');
+}
+
+function bpoProviderResolutionHours(item) {
+  if (!item.createdAt || !item.outcomeRecordedAt) return null;
+  return bpoHoursBetween(item.createdAt, item.outcomeRecordedAt);
+}
+
+function bpoProviderAggregate(scored, keyFn) {
+  const groups = {};
+  for (const item of scored) {
+    const key = keyFn(item) || 'unspecified';
+    if (!groups[key]) groups[key] = { key, count: 0, exposure: 0, recovered: 0, hours: 0, hoursN: 0, outcomes: { recovered: 0, partial: 0, none: 0, unknown: 0 } };
+    const g = groups[key];
+    g.count += 1;
+    g.exposure += bpoProviderNum(item.originalExposure);
+    g.recovered += bpoProviderNum(item.recoveredAmount);
+    const h = bpoProviderResolutionHours(item);
+    if (h !== null) { g.hours += h; g.hoursN += 1; }
+    const b = bpoOutcomeBucket(item.recoveryStatus);
+    g.outcomes[b === 'recovered' || b === 'partial' || b === 'none' ? b : 'unknown'] += 1;
+  }
+  return Object.values(groups).map(g => ({
+    key: g.key,
+    count: g.count,
+    exposure: bpoProviderRound2(g.exposure),
+    recovered: bpoProviderRound2(g.recovered),
+    remaining: bpoProviderRound2(g.exposure - g.recovered),
+    recoveryRate: bpoProviderRate(g.recovered, g.exposure),
+    avgResolutionHours: g.hoursN > 0 ? bpoProviderRound2(g.hours / g.hoursN) : null,
+    outcomes: g.outcomes,
+  })).sort((a, b) => b.exposure - a.exposure);
+}
+
+function bpoProviderMetrics(items, bounds) {
+  const worked = items.filter(i => bpoProviderInWindow(i.createdAt, bounds) || (i.recoveryStatus && bpoProviderInWindow(i.outcomeRecordedAt, bounds)));
+  const created = items.filter(i => bpoProviderInWindow(i.createdAt, bounds));
+  const resolved = bpoProviderResolvedInWindow(items, bounds);
+  const scored = bpoProviderScored(resolved);
+  const exposure = scored.reduce((s, i) => s + bpoProviderNum(i.originalExposure), 0);
+  const recovered = scored.reduce((s, i) => s + bpoProviderNum(i.recoveredAmount), 0);
+  const hrs = scored.map(bpoProviderResolutionHours).filter(h => h !== null);
+  const casesByOutcome = { recovered: 0, partial: 0, none: 0, pending: 0, unknown: 0 };
+  for (const i of resolved) casesByOutcome[bpoOutcomeBucket(i.recoveryStatus)] += 1;
+  return {
+    claimsWorked: worked.length,
+    newClaims: created.length,
+    resolved: resolved.length,
+    exposure: bpoProviderRound2(exposure),
+    recovered: bpoProviderRound2(recovered),
+    remaining: bpoProviderRound2(exposure - recovered),
+    recoveryRate: bpoProviderRate(recovered, exposure),
+    avgResolutionHours: hrs.length ? bpoProviderRound2(hrs.reduce((a, b) => a + b, 0) / hrs.length) : null,
+    casesByOutcome,
+    _scored: scored,
+  };
+}
+
+function bpoProviderDelta(cur, prev) {
+  if (cur === null || cur === undefined || prev === null || prev === undefined) return null;
+  return Math.round((cur - prev) * 10000) / 10000;
+}
+
+async function bpoBuildProviderReport({ clientId, vertical, period, sections, view = 'client' } = {}) {
+  if (view !== 'client' && view !== 'internal') throw bpoProviderValidationError('view must be "client" or "internal"');
+  if (view === 'client' && !clientId) throw bpoProviderValidationError('clientId is required for the client view');
+
+  const bounds = bpoProviderPeriodBounds(period);
+
+  let wanted = Object.keys(BPO_PROVIDER_SECTION_KEYS);
+  if (sections !== undefined && sections !== null && sections !== '') {
+    const list = Array.isArray(sections) ? sections : String(sections).split(',');
+    wanted = list.map(s => String(s).trim()).filter(Boolean);
+    const unknown = wanted.filter(s => !BPO_PROVIDER_SECTION_KEYS[s]);
+    if (unknown.length) throw bpoProviderValidationError('unknown section(s): ' + unknown.join(', ') + ' (valid: ' + Object.keys(BPO_PROVIDER_SECTION_KEYS).join(', ') + ')');
+    if (!wanted.length) wanted = Object.keys(BPO_PROVIDER_SECTION_KEYS);
+  }
+
+  const col = await bpoWorkItemsCollection();
+  const query = {};
+  if (clientId) query.clientId = clientId;
+  if (vertical) query.vertical = vertical;
+  const items = await col.find(query).limit(5000).toArray();
+
+  const cur = bpoProviderMetrics(items, bounds);
+  const scored = cur._scored;
+  delete cur._scored;
+
+  // ── Open recovery opportunities + deadline risk (current state) ──────
+  const open = items.filter(i => !i.recoveryStatus);
+  const now = Date.now();
+  let openExposure = 0;
+  let overdueOpen = 0;
+  let dueWithin48h = 0;
+  const overdueByPriority = {};
+  const aging = { under1d: 0, d1to3: 0, d3to7: 0, over7d: 0 };
+  for (const item of open) {
+    const sc = bpoExtractStructuredCase(item);
+    const exp = sc && sc.financialExposure;
+    if (exp !== undefined && exp !== null && exp !== '') {
+      try { openExposure += bpoNumber(exp, 'financialExposure'); } catch (e) { /* unknown exposure stays out of the sum */ }
+    }
+    const ageH = typeof item.slaAgeHours === 'number' ? item.slaAgeHours : bpoHoursBetween(item.createdAt);
+    if (ageH !== null) {
+      if (ageH < 24) aging.under1d += 1;
+      else if (ageH < 72) aging.d1to3 += 1;
+      else if (ageH < 168) aging.d3to7 += 1;
+      else aging.over7d += 1;
+    }
+    if (item.dueDate) {
+      const due = new Date(item.dueDate).getTime();
+      if (Number.isFinite(due)) {
+        if (due < now) {
+          overdueOpen += 1;
+          const p = item.priority || 'unspecified';
+          overdueByPriority[p] = (overdueByPriority[p] || 0) + 1;
+        } else if (due - now <= 48 * 3600000) dueWithin48h += 1;
+      }
+    }
+  }
+  openExposure = bpoProviderRound2(openExposure);
+
+  // ── Section 1: Denial & Recovery ─────────────────────────────────────
+  const denialRecovery = {
+    denialVolume: cur.newClaims,
+    claimsWorked: cur.claimsWorked,
+    resolved: cur.resolved,
+    totalExposure: cur.exposure,
+    totalRecovered: cur.recovered,
+    remainingBalance: cur.remaining,
+    recoveryRate: cur.recoveryRate,
+    avgResolutionHours: cur.avgResolutionHours,
+    casesByOutcome: cur.casesByOutcome,
+    byDenialCategory: bpoProviderAggregate(scored, i => {
+      const sc = bpoExtractStructuredCase(i);
+      return sc && sc.denialCategory ? String(sc.denialCategory).trim() : null;
+    }),
+    openRecovery: { openCount: open.length, openExposure, aging },
+    slaRisk: { overdueOpen, dueWithin48h, overdueByPriority },
+  };
+
+  // ── Section 2: Payer Performance ─────────────────────────────────────
+  const payerOf = i => {
+    const sc = bpoExtractStructuredCase(i);
+    return sc && sc.payer ? String(sc.payer).trim() : null;
+  };
+  const byPayer = bpoProviderAggregate(scored, payerOf).map(row => {
+    const reasons = {};
+    for (const i of scored) {
+      if ((payerOf(i) || 'unspecified') !== row.key) continue;
+      const sc = bpoExtractStructuredCase(i);
+      const code = sc && sc.denialReasonCode ? String(sc.denialReasonCode).trim() : 'unspecified';
+      reasons[code] = (reasons[code] || 0) + 1;
+    }
+    const recurringDenialReasons = Object.entries(reasons)
+      .map(([reason, count]) => ({ reason, count }))
+      .sort((a, b) => b.count - a.count).slice(0, 5);
+    return Object.assign({}, row, { turnaroundHours: row.avgResolutionHours, recurringDenialReasons });
+  });
+  const payerPerformance = { byPayer };
+
+  // ── Section 3: Appeal & Evidence Effectiveness ───────────────────────
+  const actionOf = i => (i.actionTaken ? String(i.actionTaken).trim() : null);
+  const categoryOf = i => {
+    const sc = bpoExtractStructuredCase(i);
+    return sc && sc.denialCategory ? String(sc.denialCategory).trim() : null;
+  };
+  const appealEffectiveness = {
+    byAction: bpoProviderAggregate(scored, actionOf),
+    byActionAndDenialCategory: bpoProviderAggregate(scored, i => (actionOf(i) || 'unspecified') + ' | ' + (categoryOf(i) || 'unspecified')),
+    evidencePackageTypeRecorded: false,
+    note: 'Evidence/package type is not captured on recovery outcomes yet, so effectiveness is reported by action taken.',
+  };
+
+  // ── Period over period ───────────────────────────────────────────────
+  let periodOverPeriod = null;
+  if (bounds) {
+    const prevLabel = bpoProviderPreviousPeriodLabel(bounds.label);
+    const prev = bpoProviderMetrics(items, bpoProviderPeriodBounds(prevLabel));
+    delete prev._scored;
+    const pick = m => ({ claimsWorked: m.claimsWorked, resolved: m.resolved, exposure: m.exposure, recovered: m.recovered, recoveryRate: m.recoveryRate, avgResolutionHours: m.avgResolutionHours });
+    const c = pick(cur);
+    const p = pick(prev);
+    periodOverPeriod = {
+      currentPeriod: bounds.label,
+      previousPeriod: prevLabel,
+      current: c,
+      previous: p,
+      delta: {
+        claimsWorked: c.claimsWorked - p.claimsWorked,
+        resolved: c.resolved - p.resolved,
+        exposure: bpoProviderRound2(c.exposure - p.exposure),
+        recovered: bpoProviderRound2(c.recovered - p.recovered),
+        recoveryRate: bpoProviderDelta(c.recoveryRate, p.recoveryRate),
+        avgResolutionHours: bpoProviderDelta(c.avgResolutionHours, p.avgResolutionHours),
+      },
+    };
+  }
+
+  // ── Executive Summary: Exposure → Work → Action → Recovery → Risk ────
+  const topAction = appealEffectiveness.byAction.length
+    ? appealEffectiveness.byAction.reduce((a, b) => ((b.recoveryRate || 0) > (a.recoveryRate || 0) ? b : a))
+    : null;
+  const money = n => '$' + bpoProviderRound2(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const pct = r => (r === null ? 'n/a' : (r * 100).toFixed(1) + '%');
+  const executiveSummary = {
+    exposure: { resolvedExposure: cur.exposure, openExposure, totalTracked: bpoProviderRound2(cur.exposure + openExposure) },
+    work: { claimsWorked: cur.claimsWorked, newClaims: cur.newClaims, resolved: cur.resolved, openNow: open.length },
+    action: { topAction: topAction ? { action: topAction.key, cases: topAction.count, recoveryRate: topAction.recoveryRate } : null },
+    recovery: { recovered: cur.recovered, recoveryRate: cur.recoveryRate, avgResolutionHours: cur.avgResolutionHours },
+    remainingRisk: { remainingBalance: cur.remaining, openExposure, overdueOpen },
+    headline: `${cur.resolved} claim(s) resolved: ${money(cur.recovered)} recovered of ${money(cur.exposure)} exposure (${pct(cur.recoveryRate)}); ` +
+      `${money(cur.remaining)} unrecovered on resolved claims; ${open.length} open (${money(openExposure)} exposure), ${overdueOpen} past due.`,
+  };
+
+  const full = { executiveSummary, denialRecovery, payerPerformance, appealEffectiveness };
+  const report = {
+    view,
+    clientId: clientId || null,
+    vertical: vertical || 'all',
+    period: bounds ? bounds.label : 'all',
+    sections: wanted,
+    periodOverPeriod,
+  };
+  for (const s of wanted) report[BPO_PROVIDER_SECTION_KEYS[s]] = full[BPO_PROVIDER_SECTION_KEYS[s]];
+
+  // ── Internal-only block ──────────────────────────────────────────────
+  if (view === 'internal') {
+    const byStage = {};
+    const stageOldest = [];
+    for (const item of open) {
+      const k = item.stage || 'unspecified';
+      if (!byStage[k]) byStage[k] = { stage: k, count: 0, ageTotal: 0, ageN: 0 };
+      byStage[k].count += 1;
+      const ageH = typeof item.slaAgeHours === 'number' ? item.slaAgeHours : bpoHoursBetween(item.createdAt);
+      if (ageH !== null) { byStage[k].ageTotal += ageH; byStage[k].ageN += 1; stageOldest.push({ caseId: item.caseId, stage: item.stage || null, priority: item.priority || null, ageHours: ageH }); }
+    }
+    const stages = Object.values(byStage).map(s => ({ stage: s.stage, count: s.count, avgAgeHours: s.ageN ? bpoProviderRound2(s.ageTotal / s.ageN) : null }))
+      .sort((a, b) => b.count - a.count);
+    const cands = stages.filter(s => s.avgAgeHours !== null && s.count >= 2);
+
+    const openByOwner = {};
+    for (const item of open) { const o = item.owner || 'unassigned'; openByOwner[o] = (openByOwner[o] || 0) + 1; }
+    const queuePerformance = bpoProviderAggregate(scored, i => i.owner || 'unassigned').map(r => Object.assign({}, r, { owner: r.key, openNow: openByOwner[r.key] || 0 }));
+
+    const resolvedLate = scored.filter(i => {
+      if (!i.dueDate || !i.outcomeRecordedAt) return false;
+      const d = new Date(i.dueDate).getTime();
+      const o = new Date(i.outcomeRecordedAt).getTime();
+      return Number.isFinite(d) && Number.isFinite(o) && o > d;
+    }).length;
+
+    const records = (await bpoListLearningRecords({ vertical, limit: 10000 }))
+      .filter(r => (!clientId || r.clientId === clientId) && bpoProviderInWindow(r.recordedAt, bounds));
+    const tiers = {};
+    for (const r of records) {
+      const t = r.predictedLikelihood;
+      if (!t) continue;
+      if (!tiers[t]) tiers[t] = { predicted: 0, calibrated: 0, varianceTotal: 0, varianceN: 0 };
+      tiers[t].predicted += 1;
+      if (r.calibrated) tiers[t].calibrated += 1;
+      if (typeof r.variance === 'number') { tiers[t].varianceTotal += r.variance; tiers[t].varianceN += 1; }
+    }
+    const predictionVsActual = {
+      records: records.length,
+      byPredictedLikelihood: Object.fromEntries(Object.entries(tiers).map(([t, v]) => [t, {
+        predicted: v.predicted,
+        calibrated: v.calibrated,
+        calibrationRate: v.predicted ? Math.round((v.calibrated / v.predicted) * 10000) / 10000 : null,
+        avgVariance: v.varianceN ? Math.round((v.varianceTotal / v.varianceN) * 10000) / 10000 : null,
+      }])),
+    };
+
+    let calibrationSignals = null;
+    try {
+      const loop = await bpoBuildLearningLoopReport({ vertical });
+      calibrationSignals = {
+        scope: 'all-clients', // the Phase 12 calibration engine is not client-scoped
+        flagged: loop.calibrationBreakdown.filter(r => r.signal === 'DOWNWARD' || r.signal === 'UPWARD').slice(0, 10),
+        eligibleForReview: loop.calibrationBreakdown.filter(r => r.eligibleForReview).length,
+      };
+    } catch (e) { calibrationSignals = null; }
+
+    const caseIds = new Set(items.map(i => i.caseId));
+    const auditAll = await bpoListAuditLogs({ limit: 500 });
+    const recentAudit = auditAll
+      .filter(a => !clientId || caseIds.has(a.entityId))
+      .slice(0, 25)
+      .map(a => ({ ts: a.ts, actor: a.actor || null, action: a.action, entityType: a.entityType, entityId: a.entityId }));
+    const cfg = await bpoGetCalibrationConfig();
+
+    report.internal = {
+      pipeline: {
+        byStage: stages,
+        likelyBottleneckStage: cands.length ? cands.reduce((a, b) => (b.avgAgeHours > a.avgAgeHours ? b : a)).stage : null,
+        oldestOpen: stageOldest.sort((a, b) => b.ageHours - a.ageHours).slice(0, 10),
+      },
+      queuePerformance,
+      slaFailures: { overdueOpen, resolvedLate },
+      predictionVsActual,
+      calibrationSignals,
+      governance: {
+        calibrationConfig: { automaticProductionApplication: cfg.automaticProductionApplication, humanApprovalRequired: cfg.humanApprovalRequired },
+        recentAudit,
+      },
+    };
+  }
+
+  report.generatedAt = new Date().toISOString();
+  return report;
+}
+
+// Monthly snapshots: generated by calling bpoBuildProviderReport itself
+// (both projections), so a snapshot can never disagree with the live API
+// about how a number is computed -- only about when it was taken.
+async function bpoProviderSnapshotsCollection() {
+  const database = await getDb();
+  return database.collection(BPO_PROVIDER_SNAPSHOTS_COLLECTION);
+}
+
+async function bpoSaveProviderSnapshot(clientId, period = bpoCurrentPeriodLabel(), actor) {
+  if (!clientId) throw bpoProviderValidationError('clientId is required');
+  if (!bpoProviderPeriodBounds(period)) throw bpoProviderValidationError('period must be YYYY-MM');
+  const [client, internal] = await Promise.all([
+    bpoBuildProviderReport({ clientId, period, view: 'client' }),
+    bpoBuildProviderReport({ clientId, period, view: 'internal' }),
+  ]);
+  const doc = { clientId, periodLabel: period, views: { client, internal }, generatedAt: new Date().toISOString(), generatedBy: actor || 'system' };
+  const col = await bpoProviderSnapshotsCollection();
+  await col.updateOne({ clientId, periodLabel: period }, { $set: doc }, { upsert: true });
+  return doc;
+}
+
+async function bpoGetProviderSnapshot(clientId, periodLabel) {
+  const col = await bpoProviderSnapshotsCollection();
+  return col.findOne({ clientId, periodLabel });
+}
+
+async function bpoListProviderSnapshots({ clientId, limit = 24 } = {}) {
+  const col = await bpoProviderSnapshotsCollection();
+  const query = {};
+  if (clientId) query.clientId = clientId;
+  return col.find(query).sort({ periodLabel: -1 }).limit(limit).toArray();
+}
+
 // ── Client-facing rollup + monthly snapshots (Phase 4) ──────────────────
 // Latorrey's call on scope (2026-08-24): full rollup (WIP + SLA +
 // case-level summaries, same shape family as the internal
@@ -3618,6 +4034,10 @@ module.exports = {
   bpoGetCalibrationConfig,
   bpoUpdateCalibrationConfig,
   bpoBuildLearningLoopReport,
+  bpoBuildProviderReport,
+  bpoSaveProviderSnapshot,
+  bpoGetProviderSnapshot,
+  bpoListProviderSnapshots,
   bpoListAuditLogs,
   bpoWriteAudit,
   // Case Engine (Roadmap #10)
