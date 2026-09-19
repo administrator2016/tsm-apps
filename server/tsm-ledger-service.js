@@ -865,12 +865,94 @@ const BPO_RECOVERY_STATUSES = [
   'NO_RECOVERY',
 ];
 
+// Strict money parsing. Number() is far too forgiving for a financial record:
+// Number(null) === 0, Number('') === 0, Number(true) === 1, Number([]) === 0,
+// Number('0x10') === 16 -- each of which would silently turn "no value" into a
+// real dollar figure. Accept only a finite number, or a plain numeric string
+// ("2000", "$2,000.50"), >= 0, with at most 2 decimal places. Returned rounded
+// to whole cents so later comparisons are exact.
 function bpoNumber(value, fieldName) {
-  const n = Number(value);
+  let n;
+  if (typeof value === 'number') {
+    n = value;
+  } else if (typeof value === 'string' && /^\s*\$?\s*\d[\d,]*(\.\d+)?\s*$/.test(value)) {
+    n = Number(value.replace(/[$,\s]/g, ''));
+  } else {
+    throw new Error(fieldName + ' must be a finite number >= 0');
+  }
   if (!Number.isFinite(n) || n < 0) {
     throw new Error(fieldName + ' must be a finite number >= 0');
   }
-  return n;
+  const cents = Math.round(n * 100);
+  if (Math.abs(n * 100 - cents) > 1e-6) {
+    throw new Error(fieldName + ' must have at most 2 decimal places');
+  }
+  return cents / 100;
+}
+
+// Statuses whose recovered amount is, by definition, zero.
+const BPO_ZERO_RECOVERY_STATUSES = [
+  'PENDING',
+  'NO_RECOVERY',
+  'DENIED_AFTER_APPEAL',
+  'WITHDRAWN',
+];
+
+// Pure consistency rules for a recovery outcome (Phase 7). Throws on any
+// impossible or contradictory combination; returns cents-exact derived values
+// otherwise. Kept separate from the DB path so it can be reused (learning
+// records, dashboards) and tested exhaustively without a database.
+//
+//   recoveredAmount <= originalExposure
+//   PENDING / NO_RECOVERY / DENIED_AFTER_APPEAL / WITHDRAWN  -> recovered = 0
+//   RECOVERED             -> recovered = originalExposure (exactly)
+//   PARTIALLY_RECOVERED   -> 0 < recovered < originalExposure
+//   remainingBalance = originalExposure - recovered  (never negative)
+//   recoveryRate     = recovered / originalExposure
+function bpoValidateRecoveryOutcome(o) {
+  const status = String((o && o.status) || '').trim().toUpperCase();
+  if (!BPO_RECOVERY_STATUSES.includes(status)) {
+    throw new Error('recoveryStatus must be one of: ' + BPO_RECOVERY_STATUSES.join(', '));
+  }
+
+  const originalExposure = bpoNumber(o.originalExposure, 'originalExposure');
+  const recoveredAmount = bpoNumber(o.recoveredAmount, 'recoveredAmount');
+
+  if (originalExposure <= 0) {
+    throw new Error('originalExposure must be greater than 0');
+  }
+
+  const expC = Math.round(originalExposure * 100);
+  const recC = Math.round(recoveredAmount * 100);
+
+  if (recC > expC) {
+    throw new Error('recoveredAmount cannot exceed originalExposure (' + originalExposure + ')');
+  }
+
+  if (BPO_ZERO_RECOVERY_STATUSES.includes(status) && recC !== 0) {
+    throw new Error(status + ' outcome must have recoveredAmount = 0');
+  }
+
+  if (status === 'RECOVERED' && recC !== expC) {
+    throw new Error(
+      'RECOVERED outcome must have recoveredAmount equal to originalExposure (' + originalExposure + ')'
+    );
+  }
+
+  if (status === 'PARTIALLY_RECOVERED' && !(recC > 0 && recC < expC)) {
+    throw new Error(
+      'PARTIALLY_RECOVERED outcome must have recoveredAmount greater than 0 and less than originalExposure (' +
+      originalExposure + ')'
+    );
+  }
+
+  return {
+    status,
+    originalExposure,
+    recoveredAmount,
+    remainingBalance: (expC - recC) / 100,
+    recoveryRate: recC / expC,
+  };
 }
 
 function bpoExtractStructuredCase(workItem) {
@@ -918,34 +1000,33 @@ async function bpoRecordWorkItemOutcome(caseId, fields, actor) {
   }
 
   // Authoritative claim-level exposure comes from the canonical structured
-  // case. Do NOT use quarterly/program exposure such as $187,000.
-  const originalExposure = bpoNumber(
-    structuredCase.financialExposure,
-    'structuredCase.financialExposure'
-  );
-
-  let recoveredAmount = input.recoveredAmount;
-  if (recoveredAmount === undefined || recoveredAmount === null || recoveredAmount === '') {
-    recoveredAmount = 0;
-  }
-  recoveredAmount = bpoNumber(recoveredAmount, 'recoveredAmount');
-
-  if (recoveredAmount > originalExposure) {
-    throw new Error(
-      'recoveredAmount cannot exceed originalExposure (' +
-      originalExposure +
-      ')'
-    );
+  // case. Do NOT use quarterly/program exposure such as $187,000, and never
+  // treat a missing exposure as $0.
+  if (structuredCase.financialExposure === undefined || structuredCase.financialExposure === null || structuredCase.financialExposure === '') {
+    throw new Error('structuredCase.financialExposure missing from BPO work item: ' + caseId);
   }
 
-  if (status === 'PENDING' && recoveredAmount !== 0) {
-    throw new Error('PENDING outcome must have recoveredAmount = 0');
+  // recoveredAmount may be omitted only where the status itself implies $0.
+  // For RECOVERED / PARTIALLY_RECOVERED an omitted amount is an error, never a
+  // silent zero (that would record a "recovery" that recovered nothing).
+  let recoveredInput = input.recoveredAmount;
+  if (recoveredInput === undefined || recoveredInput === null || recoveredInput === '') {
+    if (BPO_ZERO_RECOVERY_STATUSES.includes(status)) {
+      recoveredInput = 0;
+    } else {
+      throw new Error('recoveredAmount is required for ' + status + ' outcomes');
+    }
   }
 
-  const remainingBalance = Math.max(originalExposure - recoveredAmount, 0);
-  const recoveryRate = originalExposure > 0
-    ? recoveredAmount / originalExposure
-    : 0;
+  const checked = bpoValidateRecoveryOutcome({
+    status,
+    originalExposure: structuredCase.financialExposure,
+    recoveredAmount: recoveredInput,
+  });
+  const originalExposure = checked.originalExposure;
+  const recoveredAmount = checked.recoveredAmount;
+  const remainingBalance = checked.remainingBalance;
+  const recoveryRate = checked.recoveryRate;
 
   const now = new Date().toISOString();
 
@@ -2477,6 +2558,8 @@ module.exports = {
   bpoGetWorkItem,
   bpoUpsertWorkItem,
   bpoRecordWorkItemOutcome,
+  bpoValidateRecoveryOutcome, // pure rules; exported for reuse + testing
+  BPO_RECOVERY_STATUSES,
   bpoListAuditLogs,
   bpoWriteAudit,
   // Case Engine (Roadmap #10)

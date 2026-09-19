@@ -1131,6 +1131,22 @@ app.post('/api/bpo/work-items/:caseId', requireRole(BPO_INTERNAL_ROLES), async (
   } catch (e) { res.status(400).json({ ok: false, error: e.message }); }
 });
 
+// Record the measured recovery outcome (what the payer/BPO actually
+// recovered) against the SAME work item. Prediction (payload.structuredCase)
+// is never modified; the ledger enforces the status/amount consistency rules
+// and derives originalExposure from the claim-level structured case - the
+// caller cannot supply or override it. Internal roles only: this is the
+// governed human/BPO step, never something an AI or a client session writes.
+app.post('/api/bpo/work-items/:caseId/outcome', requireRole(BPO_INTERNAL_ROLES), async (req, res) => {
+  try {
+    const result = await tsmLedger.bpoRecordWorkItemOutcome(req.params.caseId, req.body || {}, req.tsmSession.label || req.tsmSession.role);
+    res.json({ ok: true, reconciliation: result.reconciliation, workItem: result.workItem });
+  } catch (e) {
+    const notFound = /^BPO work item not found/.test(e.message);
+    res.status(notFound ? 404 : 400).json({ ok: false, error: e.message });
+  }
+});
+
 // Cases (Universal Case Engine, Roadmap #10) — server mirror of the
 // browser's TSMCaseManager (tsm_cases_v1 localStorage). Same read/write
 // role split as work items above: any internal role can create/sync a
