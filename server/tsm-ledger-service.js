@@ -343,6 +343,16 @@ const BPO_DOC_CHUNKS_COLLECTION = 'bpo_document_chunks';
 // is needed here).
 const BPO_CASES_COLLECTION = 'bpo_cases';
 
+// Phase 6: learning records. Append-only — one doc per caseId, written once
+// a work item reaches a terminal recovery outcome (anything but PENDING).
+// Captures the AI's original prediction (recoveryLikelihood/confidence from
+// structuredCase) against the realized outcome (originalExposure/
+// recoveredAmount/recoveryRate as locked in by Phase 7's
+// bpoRecordWorkItemOutcome) so the gap between the two is measurable
+// instead of anecdotal. Not upserted/overwritten on repeat calls for the
+// same caseId — see bpoBuildLearningRecord below for why.
+const BPO_LEARNING_RECORDS_COLLECTION = 'bpo_learning_records';
+
 // SMB Member layer — a Member is a cross-vertical demo tenant (e.g. one
 // SMB using Construction + Healthcare + Mortgage under one roof), keyed
 // by the same tenantId that bpo_cases already carries. Deliberately a
@@ -401,6 +411,11 @@ async function bpoBncaReportsCollection() {
 async function bpoCasesCollection() {
   const database = await getDb();
   return database.collection(BPO_CASES_COLLECTION);
+}
+
+async function bpoLearningRecordsCollection() {
+  const database = await getDb();
+  return database.collection(BPO_LEARNING_RECORDS_COLLECTION);
 }
 
 async function tsmMembersCollection() {
@@ -1085,6 +1100,185 @@ async function bpoRecordWorkItemOutcome(caseId, fields, actor) {
     caseId,
     reconciliation: outcome,
     workItem: updated,
+  };
+}
+
+// ── Phase 6: Learning Record (prediction vs. actual outcome) ───────────────
+// The AI's prediction (structuredCase.recoveryLikelihood / confidence) is
+// made at handoff time, before any human works the case. The outcome
+// (Phase 7, bpoRecordWorkItemOutcome above) is recorded afterward,
+// independently, by BPO staff. A learning record is the permanent pairing
+// of the two — it exists so prediction quality can be measured against
+// reality instead of assumed, giving a future calibration pass (Roadmap
+// #12, Strategist learning loop) real data to train against.
+
+// Expected recovery-rate band per predicted likelihood tier. A prediction
+// is "calibrated" if the realized recoveryRate lands inside its own band;
+// variance is the distance (in recoveryRate units, 0-1) from the nearest
+// band edge when it doesn't. Bands are deliberately coarse — this is a
+// three-bucket confidence label, not a regression target, so scoring it to
+// more precision than that would manufacture false rigor.
+const BPO_LIKELIHOOD_BANDS = {
+  LIKELY: [0.6, 1.0],
+  MODERATE: [0.3, 0.6],
+  UNLIKELY: [0, 0.3],
+};
+
+function bpoLikelihoodVariance(likelihood, actualRate) {
+  const band = BPO_LIKELIHOOD_BANDS[String(likelihood || '').toUpperCase()];
+  if (!band) return null; // unrecognized/missing prediction — can't score it
+  const [lo, hi] = band;
+  if (actualRate >= lo && actualRate <= hi) return 0;
+  return actualRate < lo ? lo - actualRate : actualRate - hi;
+}
+
+/**
+ * Builds and permanently stores the learning record for a resolved case.
+ *
+ * Deliberately NOT an upsert: once a caseId has a learning record, calling
+ * this again throws rather than overwriting it. Silently overwriting would
+ * let a later re-recorded outcome quietly erase the original prediction-
+ * vs-actual pairing this exists to preserve — if a case's outcome is ever
+ * corrected, that's a new fact worth its own record, not a reason to lose
+ * the first one.
+ */
+async function bpoBuildLearningRecord(caseId, actor) {
+  if (!caseId) throw new Error('caseId required');
+
+  const workItems = await bpoWorkItemsCollection();
+  const workItem = await workItems.findOne({ caseId });
+  if (!workItem) throw new Error('BPO work item not found: ' + caseId);
+
+  if (!workItem.recoveryStatus) {
+    throw new Error(
+      'No recovery outcome recorded yet for ' + caseId +
+      ' — call bpoRecordWorkItemOutcome first'
+    );
+  }
+  if (workItem.recoveryStatus === 'PENDING') {
+    throw new Error(
+      'Cannot build a learning record while recoveryStatus is PENDING — outcome is not yet resolved'
+    );
+  }
+
+  const records = await bpoLearningRecordsCollection();
+  const existing = await records.findOne({ caseId });
+  if (existing) {
+    throw new Error(
+      'Learning record already exists for ' + caseId +
+      ' (recorded ' + existing.recordedAt + ')'
+    );
+  }
+
+  const structuredCase = bpoExtractStructuredCase(workItem);
+  const predictedLikelihood = structuredCase && structuredCase.recoveryLikelihood
+    ? String(structuredCase.recoveryLikelihood).toUpperCase()
+    : null;
+  const predictedConfidence = structuredCase && Number.isFinite(Number(structuredCase.confidence))
+    ? Number(structuredCase.confidence)
+    : null;
+
+  // Fixed exposure baseline: read from the work item's own persisted
+  // fields, which Phase 7 locked in at outcome-recording time from the
+  // claim-level structuredCase.financialExposure — NOT re-derived from
+  // whatever the structuredCase says right now, so a later edit to the
+  // case can't retroactively rewrite what was actually predicted/recovered.
+  const originalExposure = bpoNumber(workItem.originalExposure, 'workItem.originalExposure');
+  const recoveredAmount = bpoNumber(workItem.recoveredAmount, 'workItem.recoveredAmount');
+  const actualRecoveryRate = typeof workItem.recoveryRate === 'number'
+    ? workItem.recoveryRate
+    : (originalExposure > 0 ? recoveredAmount / originalExposure : 0);
+
+  const variance = bpoLikelihoodVariance(predictedLikelihood, actualRecoveryRate);
+
+  const record = {
+    caseId,
+    vertical: workItem.vertical || null,
+    clientId: workItem.clientId || null,
+
+    predictedLikelihood,
+    predictedConfidence,
+
+    recoveryStatus: workItem.recoveryStatus,
+    originalExposure,
+    recoveredAmount,
+    actualRecoveryRate,
+
+    predictionBand: predictedLikelihood ? (BPO_LIKELIHOOD_BANDS[predictedLikelihood] || null) : null,
+    variance,
+    calibrated: variance === null ? null : variance === 0,
+
+    outcomeRecordedAt: workItem.outcomeRecordedAt || null,
+    recordedAt: new Date().toISOString(),
+    recordedBy: actor || 'unknown',
+  };
+
+  await records.insertOne(record);
+
+  await bpoWriteAudit({
+    actor,
+    action: 'work_item.learning_record',
+    entityType: 'work_item',
+    entityId: caseId,
+    detail: {
+      predictedLikelihood,
+      actualRecoveryRate,
+      variance,
+      calibrated: record.calibrated,
+    },
+  });
+
+  return record;
+}
+
+async function bpoGetLearningRecord(caseId) {
+  const records = await bpoLearningRecordsCollection();
+  return records.findOne({ caseId });
+}
+
+async function bpoListLearningRecords({ vertical, limit = 200 } = {}) {
+  const records = await bpoLearningRecordsCollection();
+  const query = {};
+  if (vertical) query.vertical = vertical;
+  return records.find(query).sort({ recordedAt: -1 }).limit(limit).toArray();
+}
+
+/**
+ * Aggregate calibration accuracy: for each predicted likelihood tier, what
+ * fraction of resolved cases actually landed inside that tier's expected
+ * recovery-rate band. This is the number Roadmap #12 (Strategist learning
+ * loop) would eventually train against — Phase 6 only measures it.
+ */
+async function bpoLearningVarianceSummary({ vertical } = {}) {
+  const all = await bpoListLearningRecords({ vertical, limit: 10000 });
+
+  const byTier = {};
+  for (const tier of Object.keys(BPO_LIKELIHOOD_BANDS)) {
+    byTier[tier] = { predicted: 0, calibrated: 0, avgVariance: 0, totalVariance: 0 };
+  }
+
+  let scored = 0;
+  for (const rec of all) {
+    const tier = rec.predictedLikelihood;
+    if (!tier || !byTier[tier] || rec.variance === null || rec.variance === undefined) continue;
+    byTier[tier].predicted += 1;
+    byTier[tier].totalVariance += rec.variance;
+    if (rec.calibrated) byTier[tier].calibrated += 1;
+    scored += 1;
+  }
+
+  for (const tier of Object.keys(byTier)) {
+    const t = byTier[tier];
+    t.avgVariance = t.predicted > 0 ? t.totalVariance / t.predicted : 0;
+    t.calibrationRate = t.predicted > 0 ? t.calibrated / t.predicted : null;
+    delete t.totalVariance;
+  }
+
+  return {
+    vertical: vertical || 'all',
+    totalRecords: all.length,
+    scoredRecords: scored,
+    byPredictedLikelihood: byTier,
   };
 }
 
@@ -2558,6 +2752,10 @@ module.exports = {
   bpoGetWorkItem,
   bpoUpsertWorkItem,
   bpoRecordWorkItemOutcome,
+  bpoBuildLearningRecord,
+  bpoGetLearningRecord,
+  bpoListLearningRecords,
+  bpoLearningVarianceSummary,
   bpoValidateRecoveryOutcome, // pure rules; exported for reuse + testing
   BPO_RECOVERY_STATUSES,
   bpoListAuditLogs,

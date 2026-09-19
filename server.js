@@ -1147,6 +1147,40 @@ app.post('/api/bpo/work-items/:caseId/outcome', requireRole(BPO_INTERNAL_ROLES),
   }
 });
 
+// Phase 6: learning record. Separate call from the outcome route above —
+// building the prediction-vs-actual pairing is a deliberate, one-time
+// action taken once a case is resolved, not an automatic side effect of
+// recording the outcome (bpoBuildLearningRecord is insert-only, on
+// purpose — see its comment in server/tsm-ledger-service.js).
+app.post('/api/bpo/work-items/:caseId/learning-record', requireRole(BPO_INTERNAL_ROLES), async (req, res) => {
+  try {
+    const record = await tsmLedger.bpoBuildLearningRecord(req.params.caseId, req.tsmSession.label || req.tsmSession.role);
+    res.json({ ok: true, learningRecord: record });
+  } catch (e) {
+    const notFound = /^BPO work item not found/.test(e.message);
+    res.status(notFound ? 404 : 400).json({ ok: false, error: e.message });
+  }
+});
+
+app.get('/api/bpo/work-items/:caseId/learning-record', requireRole(BPO_CLIENT_VIEW_ROLES), async (req, res) => {
+  try {
+    const record = await tsmLedger.bpoGetLearningRecord(req.params.caseId);
+    if (!record) return res.status(404).json({ ok: false, error: 'No learning record for this case yet' });
+    res.json({ ok: true, learningRecord: record });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Portfolio-level calibration report: how well predictedLikelihood tracked
+// actual recoveryRate, per vertical. Internal-role only (same set as
+// BPO_REPORT_ROLES elsewhere) — this is an operating metric about
+// prediction quality, not something a client tenant needs scoped access to.
+app.get('/api/bpo/reports/learning-variance', requireRole(BPO_INTERNAL_ROLES), async (req, res) => {
+  try {
+    const summary = await tsmLedger.bpoLearningVarianceSummary({ vertical: req.query.vertical });
+    res.json({ ok: true, summary });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // Cases (Universal Case Engine, Roadmap #10) — server mirror of the
 // browser's TSMCaseManager (tsm_cases_v1 localStorage). Same read/write
 // role split as work items above: any internal role can create/sync a
