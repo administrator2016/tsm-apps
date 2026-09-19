@@ -2225,7 +2225,9 @@ async function bpoGetCalibrationConfig() {
   // step -- same "read gets a default, write persists an override"
   // pattern used nowhere else in this file only because nothing else
   // here has needed a tunable global config before.
-  return Object.assign({}, BPO_CALIBRATION_CONFIG_DEFAULTS, existing || {}, { _id: undefined });
+  const merged = Object.assign({}, BPO_CALIBRATION_CONFIG_DEFAULTS, existing || {});
+  delete merged._id; // never leak the storage key into callers (it would clobber _id on the next $set)
+  return merged;
 }
 
 /**
@@ -2386,7 +2388,7 @@ async function bpoBuildLearningLoopReport({ vertical } = {}) {
     g.recovered += r.recoveredAmount || 0;
   });
 
-  const calibrationBreakdown = Object.values(groups).map(g => {
+  const evaluateGroup = (g) => {
     const band = BPO_LIKELIHOOD_BANDS[g.predictedLikelihood] || null;
     const observedRecoveryRate = g.exposure > 0 ? g.recovered / g.exposure : null;
     const signal = observedRecoveryRate === null ? 'INSUFFICIENT_DATA' : bpoCalibrationSignal(observedRecoveryRate, band);
@@ -2412,7 +2414,6 @@ async function bpoBuildLearningLoopReport({ vertical } = {}) {
     }
 
     return {
-      vertical: g.vertical, payer: g.payer, denialCategory: g.denialCategory, action: g.actionTaken,
       predictedLikelihood: g.predictedLikelihood,
       sampleSize: g.sampleSize,
       exposure: Math.round(g.exposure * 100) / 100,
@@ -2424,7 +2425,44 @@ async function bpoBuildLearningLoopReport({ vertical } = {}) {
       ineligibleReasons: reasons,
       proposedAdjustment,
     };
+  };
+
+  const calibrationBreakdown = Object.values(groups).map(g => {
+    const out = evaluateGroup(g);
+    return Object.assign({
+      vertical: g.vertical, payer: g.payer, denialCategory: g.denialCategory, action: g.actionTaken,
+    }, out);
   }).sort((a, b) => b.sampleSize - a.sampleSize);
+
+  // Single-dimension rollups (by vertical / payer / denial category /
+  // action). The full four-way breakdown above fragments samples fast, so
+  // these are where minSampleSize is realistically reached first.
+  const dimensionGroups = { vertical: {}, payer: {}, denialCategory: {}, action: {} };
+  windowed.forEach((r, i) => {
+    if (!r.predictedLikelihood) return;
+    const e = enrichments[i];
+    const vals = {
+      vertical: r.vertical || 'unspecified',
+      payer: e.payer,
+      denialCategory: e.denialCategory,
+      action: e.actionTaken,
+    };
+    for (const dim of Object.keys(vals)) {
+      const key = vals[dim] + '|' + r.predictedLikelihood;
+      const bucket = dimensionGroups[dim];
+      if (!bucket[key]) bucket[key] = { value: vals[dim], predictedLikelihood: r.predictedLikelihood, sampleSize: 0, exposure: 0, recovered: 0 };
+      bucket[key].sampleSize += 1;
+      bucket[key].exposure += r.originalExposure || 0;
+      bucket[key].recovered += r.recoveredAmount || 0;
+    }
+  });
+  const calibrationByDimension = {};
+  for (const dim of Object.keys(dimensionGroups)) {
+    calibrationByDimension[dim] = Object.values(dimensionGroups[dim]).map(g => {
+      const out = evaluateGroup(g);
+      return Object.assign({ value: g.value }, out);
+    }).sort((a, b) => b.sampleSize - a.sampleSize);
+  }
 
   return {
     vertical: vertical || 'all',
@@ -2437,6 +2475,7 @@ async function bpoBuildLearningLoopReport({ vertical } = {}) {
       days: config.recalibrationWindowDays,
       recordsInWindow: windowed.length,
     },
+    calibrationByDimension,
     calibrationBreakdown,
     generatedAt: new Date().toISOString(),
   };

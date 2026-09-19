@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TSM · Strategist Learning Loop</title>
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#111826; --panel2:#0e1420; --border:#1f2937; --border-soft:#1a2332;
+    --text:#e6f1ff; --text-dim:#7c8a9e; --accent:#00e5c7; --warn:#ffb454; --danger:#ff5c6c; --crit:#ff3b5c;
+    --mono:'Share Tech Mono', 'SF Mono', Consolas, monospace;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg); color:var(--text); font-family:var(--mono); margin:0; min-height:100vh;}
+  header{
+    border-bottom:1px solid var(--border); padding:1.1rem 1.5rem;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem;
+  }
+  header h1{font-size:.95rem; color:var(--accent); margin:0; letter-spacing:.06em; text-transform:uppercase}
+  header .who{font-size:.75rem; color:var(--text-dim)}
+  header .who b{color:var(--text)}
+  #logout-btn{
+    background:transparent; border:1px solid var(--border); color:var(--text-dim);
+    font-family:inherit; font-size:.7rem; padding:.4rem .8rem; cursor:pointer; border-radius:4px;
+  }
+  #logout-btn:hover{border-color:var(--danger); color:var(--danger)}
+  main{max-width:1300px; margin:0 auto; padding:1.5rem}
+  .toolbar{display:flex; align-items:center; gap:.75rem; margin-bottom:1.25rem; flex-wrap:wrap}
+  .toolbar input{
+    background:var(--panel); border:1px solid var(--border); color:var(--text);
+    font-family:inherit; font-size:.75rem; padding:.45rem .6rem; border-radius:4px;
+  }
+  .toolbar label{font-size:.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.04em}
+  .toolbar .field{display:flex; flex-direction:column; gap:.25rem}
+  #refresh-btn{
+    background:var(--panel); border:1px solid var(--accent); color:var(--accent);
+    font-family:inherit; font-size:.72rem; padding:.45rem .9rem; cursor:pointer; border-radius:4px; align-self:flex-end;
+  }
+  #refresh-btn:hover{background:rgba(0,229,199,.08)}
+  .generated{font-size:.65rem; color:var(--text-dim); align-self:flex-end; margin-left:auto}
+
+  .tabs{display:flex; gap:.25rem; border-bottom:1px solid var(--border); margin-bottom:1.25rem}
+  .tab{
+    background:none; border:none; color:var(--text-dim); font-family:inherit; font-size:.75rem;
+    text-transform:uppercase; letter-spacing:.05em; padding:.6rem 1rem; cursor:pointer;
+    border-bottom:2px solid transparent;
+  }
+  .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
+  .panel{display:none}
+  .panel.active{display:block}
+
+  .kpi-row{display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:.75rem; margin-bottom:1.25rem}
+  .kpi{background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:.9rem 1rem}
+  .kpi .label{font-size:.62rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.35rem}
+  .kpi .value{font-size:1.15rem; color:var(--text)}
+  .kpi .value.accent{color:var(--accent)}
+  .kpi .value.warn{color:var(--warn)}
+  .kpi .value.danger{color:var(--danger)}
+  .kpi .sub{font-size:.62rem; color:var(--text-dim); margin-top:.3rem}
+
+  .section-title{font-size:.72rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin:1.5rem 0 .6rem}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:1.25rem}
+  @media (max-width:900px){.grid2{grid-template-columns:1fr}}
+
+  table{width:100%; border-collapse:collapse; font-size:.76rem; margin-bottom:1rem}
+  th{
+    text-align:left; color:var(--text-dim); font-weight:normal; text-transform:uppercase;
+    font-size:.6rem; letter-spacing:.04em; padding:.5rem .6rem; border-bottom:1px solid var(--border);
+  }
+  td{padding:.5rem .6rem; border-bottom:1px solid var(--border-soft); vertical-align:top}
+  tbody tr:hover{background:#0f1622}
+  .pill{
+    display:inline-block; padding:.15rem .55rem; border-radius:3px; font-size:.6rem;
+    text-transform:uppercase; letter-spacing:.03em; border:1px solid;
+  }
+  .pill.recovered{color:var(--accent); border-color:var(--accent)}
+  .pill.partial{color:var(--warn); border-color:var(--warn)}
+  .pill.none{color:var(--danger); border-color:var(--danger)}
+  .pill.pending{color:var(--text-dim); border-color:var(--border)}
+  .pill.critical{color:var(--crit); border-color:var(--crit)}
+  .pill.high{color:var(--danger); border-color:var(--danger)}
+  .pill.medium{color:var(--warn); border-color:var(--warn)}
+  .pill.low{color:var(--text-dim); border-color:var(--border)}
+  .num{color:var(--accent)}
+  .num.unknown{color:var(--text-dim); font-style:italic}
+  .bottleneck-flag{color:var(--warn); font-size:.65rem}
+  .empty{color:var(--text-dim); font-size:.8rem; padding:1.25rem 0; text-align:center}
+  .loading{color:var(--text-dim); font-size:.8rem; padding:1rem 0}
+  .err{color:var(--danger); font-size:.8rem; padding:1rem 0}
+  #gate{
+    display:flex; align-items:center; justify-content:center; height:100vh; text-align:center;
+    flex-direction:column; gap:.5rem;
+  }
+  #gate a{color:var(--accent)}
+
+  .pill.down{color:var(--danger); border-color:var(--danger)}
+  .pill.up{color:var(--warn); border-color:var(--warn)}
+  .pill.stable{color:var(--accent); border-color:var(--accent)}
+  .pill.na{color:var(--text-dim); border-color:var(--border)}
+  .banner{background:var(--panel2); border:1px solid var(--border); border-left:3px solid var(--warn); border-radius:4px; padding:.7rem 1rem; font-size:.72rem; color:var(--text-dim); margin-bottom:1.25rem}
+  .banner b{color:var(--text)}
+  .reason{color:var(--text-dim); font-size:.62rem}
+</style>
+</head>
+<body>
+
+<div id="gate" style="display:none">
+  <div style="color:var(--text-dim); font-size:.85rem">Sign in to view the Learning Loop.</div>
+  <a href="/login.html">Go to login →</a>
+</div>
+
+<div id="app" style="display:none">
+  <header>
+    <h1>Strategist Learning Loop</h1>
+    <div style="display:flex; align-items:center; gap:1rem">
+      <span class="who">Signed in as <b id="user-label">—</b></span>
+      <button id="logout-btn">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="banner"><b>Advisory only.</b> Nothing on this page changes a prediction or rewrites a historical learning record. Proposed adjustments require human review; automatic production application is locked off.</div>
+
+    <div class="toolbar">
+      <div class="field">
+        <label for="f-vertical">Vertical</label>
+        <input id="f-vertical" type="text" placeholder="e.g. healthcare">
+      </div>
+      <button id="refresh-btn">Refresh</button>
+      <span class="generated" id="generated-at"></span>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="overview">Calibration Overview</button>
+      <button class="tab" data-tab="dimension">By Dimension</button>
+      <button class="tab" data-tab="breakdown">Full Breakdown</button>
+      <button class="tab" data-tab="config">Config</button>
+    </div>
+
+    <div id="wrap"><div class="loading">Loading learning loop…</div></div>
+  </main>
+</div>
+
+<script>
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtMoney(n){
+  if (n === null || n === undefined) return '<span class="num unknown">unknown</span>';
+  return '<span class="num">$' + Number(n).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span>';
+}
+function fmtPct(r){
+  if (r === null || r === undefined) return '—';
+  return (r * 100).toFixed(1) + '%';
+}
+function signalPill(sig){
+  const cls = sig === 'DOWNWARD' ? 'down' : sig === 'UPWARD' ? 'up' : sig === 'STABLE' ? 'stable' : 'na';
+  return '<span class="pill ' + cls + '">' + escapeHtml(sig) + '</span>';
+}
+function bandStr(b){ return b ? Math.round(b[0]*100) + '–' + Math.round(b[1]*100) + '%' : '—'; }
+function adjStr(row){
+  const a = row.proposedAdjustment;
+  if (!a) return '<span class="reason">' + escapeHtml((row.ineligibleReasons || []).join('; ') || (row.signal === 'STABLE' ? 'in band' : '—')) + '</span>';
+  const d = a.suggestedConfidencePointsDelta;
+  return '<span class="num">' + (d > 0 ? '+' : '') + d + ' pts</span>' + (a.cappedAtCeiling ? ' <span class="reason">(capped)</span>' : '') +
+         '<div class="reason">pending human review</div>';
+}
+
+function rowsTable(rows, labelCols, labelFn){
+  if (!rows || !rows.length) return '<div class="empty">No calibration data in the recalibration window.</div>';
+  const head = labelCols.map(c => '<th>' + c + '</th>').join('');
+  const body = rows.map(r =>
+    '<tr>' + labelFn(r).map(v => '<td>' + escapeHtml(v) + '</td>').join('') +
+    '<td>' + escapeHtml(r.predictedLikelihood) + '</td>' +
+    '<td>' + r.sampleSize + '</td>' +
+    '<td>' + fmtMoney(r.exposure) + '</td>' +
+    '<td>' + fmtMoney(r.recovered) + '</td>' +
+    '<td>' + fmtPct(r.observedRecoveryRate) + '</td>' +
+    '<td>' + bandStr(r.predictedBand) + '</td>' +
+    '<td>' + signalPill(r.signal) + '</td>' +
+    '<td>' + adjStr(r) + '</td></tr>'
+  ).join('');
+  return '<table><thead><tr>' + head +
+    '<th>Predicted</th><th>Cases</th><th>Exposure</th><th>Recovered</th><th>Observed rate</th><th>Expected band</th><th>Signal</th><th>Proposed adjustment</th></tr></thead><tbody>' + body + '</tbody></table>';
+}
+
+function renderOverview(rep){
+  const tiers = rep.overall.byPredictedLikelihood;
+  const rows = Object.keys(tiers).map(name => {
+    const t = tiers[name];
+    const d = t.outcomeDistribution;
+    return '<tr><td>' + name + '</td><td>' + t.cases + '</td><td>' + fmtMoney(t.predictedExposure) + '</td><td>' + fmtMoney(t.actualRecovered) + '</td><td>' +
+      fmtPct(t.actualRecoveryRate) + '</td><td>' +
+      (d ? 'Full ' + fmtPct(d.full) + ' · Partial ' + fmtPct(d.partial) + ' · None ' + fmtPct(d.none) : '—') + '</td></tr>';
+  }).join('');
+  return '<div class="kpi-row">' +
+    '<div class="kpi"><div class="label">Learning records</div><div class="value accent">' + rep.overall.totalRecords + '</div></div>' +
+    '<div class="kpi"><div class="label">In recalibration window</div><div class="value">' + rep.recalibrationWindow.recordsInWindow + '</div><div class="sub">last ' + rep.recalibrationWindow.days + ' days</div></div>' +
+    '<div class="kpi"><div class="label">Eligible for review</div><div class="value warn">' + rep.calibrationBreakdown.filter(r => r.eligibleForReview).length + '</div><div class="sub">of ' + rep.calibrationBreakdown.length + ' groups</div></div>' +
+    '</div>' +
+    '<div class="section-title">Prediction tier vs. actual outcome (all time)</div>' +
+    '<table><thead><tr><th>Predicted tier</th><th>Cases</th><th>Predicted exposure</th><th>Actual recovered</th><th>Actual rate</th><th>Outcome distribution</th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+function renderDimension(rep){
+  const dims = [['vertical','Vertical'],['payer','Payer'],['denialCategory','Denial category'],['action','Recovery action']];
+  return dims.map(([k, label]) =>
+    '<div class="section-title">By ' + label + '</div>' +
+    rowsTable(rep.calibrationByDimension[k], [label], r => [r.value])
+  ).join('');
+}
+
+function renderBreakdown(rep){
+  return '<div class="section-title">Vertical → payer → denial category → action</div>' +
+    rowsTable(rep.calibrationBreakdown, ['Vertical','Payer','Denial category','Action'], r => [r.vertical, r.payer, r.denialCategory, r.action]);
+}
+
+function renderConfig(rep){
+  const c = rep.config;
+  const row = (k, v) => '<tr><td>' + k + '</td><td>' + escapeHtml(v) + '</td></tr>';
+  return '<div class="section-title">Recovery calibration config (read-only here)</div><table><tbody>' +
+    row('Minimum sample size', c.minSampleSize) +
+    row('Recalibration window (days)', c.recalibrationWindowDays) +
+    row('Confidence adjustment ceiling', '±' + c.confidenceAdjustmentCeiling) +
+    row('Likelihood recalibration', c.likelihoodRecalibrationEnabled ? 'ENABLED' : 'DISABLED') +
+    row('Automatic production application', c.automaticProductionApplication ? 'ENABLED' : 'DISABLED') +
+    row('Human approval required', c.humanApprovalRequired ? 'TRUE' : 'FALSE') +
+    '</tbody></table>';
+}
+
+let ACTIVE_TAB = 'overview';
+let LAST = null;
+function paint(){
+  if (!LAST) return;
+  const fn = { overview: renderOverview, dimension: renderDimension, breakdown: renderBreakdown, config: renderConfig }[ACTIVE_TAB];
+  document.getElementById('wrap').innerHTML = fn(LAST);
+}
+
+async function load(){
+  const wrap = document.getElementById('wrap');
+  wrap.innerHTML = '<div class="loading">Loading learning loop…</div>';
+  const v = document.getElementById('f-vertical').value.trim();
+  try {
+    const r = await fetch('/api/bpo/reports/learning-loop' + (v ? '?vertical=' + encodeURIComponent(v) : ''));
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || 'request failed');
+    LAST = j.report;
+    document.getElementById('generated-at').textContent = 'Generated ' + new Date(LAST.generatedAt).toLocaleString();
+    paint();
+  } catch (e) {
+    wrap.innerHTML = '<div class="err">Could not load report: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+async function boot(){
+  let session;
+  try {
+    session = await (await fetch('/api/auth/status')).json();
+  } catch (e) {
+    document.getElementById('gate').style.display = 'flex';
+    return;
+  }
+  if (!session.authenticated || !['admin','manager','analyst'].includes(session.role)) {
+    document.getElementById('gate').style.display = 'flex';
+    return;
+  }
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-label').textContent = session.label || session.role;
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    location.href = '/login.html';
+  });
+  document.getElementById('refresh-btn').addEventListener('click', load);
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      ACTIVE_TAB = btn.dataset.tab;
+      paint();
+    });
+  });
+  load();
+}
+boot();
+</script>
+</body>
+</html>
