@@ -120,9 +120,12 @@ process.env.MONGODB_URI =
   process.env.MONGODB_URI || 'mongodb://fake-host/tsm-consultz-test';
 
 
-process.env.TSM_SESSION_SECRET = process.env.TSM_SESSION_SECRET || 'test-session-secret-for-route-test';
-process.env.TSM_ADMIN_PASSWORD = process.env.TSM_ADMIN_PASSWORD || 'route-test-admin-pw';
-process.env.PORT = process.env.PORT || '18099';
+// Isolation: this test must only ever talk to the server it boots itself.
+// Never inherit a developer's real credentials or PORT -- with an inherited
+// PORT already in use (e.g. a running dev server) the requests below would
+// land on THAT server and seed a test work item into whatever it points at.
+process.env.TSM_SESSION_SECRET = 'test-session-secret-for-route-test';
+process.env.TSM_ADMIN_PASSWORD = 'route-test-admin-pw';
 
 let passed = 0;
 let failed = 0;
@@ -131,7 +134,20 @@ function ok(cond, msg) {
   else { failed += 1; console.error('FAIL: ' + msg); }
 }
 
-const BASE = 'http://127.0.0.1:' + process.env.PORT;
+let BASE = '';
+
+// Ask the OS for a free port so nothing already listening can be mistaken for
+// the server under test.
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const srv = require('net').createServer();
+    srv.once('error', reject);
+    srv.listen(0, '127.0.0.1', () => {
+      const { port } = srv.address();
+      srv.close(() => resolve(port));
+    });
+  });
+}
 
 async function waitForServer() {
   let last;
@@ -146,6 +162,9 @@ async function waitForServer() {
 }
 
 async function main() {
+  const port = await freePort();
+  process.env.PORT = String(port);
+  BASE = 'http://127.0.0.1:' + port;
   require('../server.js');
   await waitForServer();
 
