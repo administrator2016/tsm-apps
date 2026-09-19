@@ -63,7 +63,8 @@ function caseVertical(c) {
 }
 
 function caseExposure(c) {
-  return num(
+  // Direct case-level exposure fields remain the first source.
+  const direct = num(
     c.revenueExposure,
     c.revenue_exposure,
     c.recoveryExposure,
@@ -74,6 +75,23 @@ function caseExposure(c) {
     c.amount_at_risk,
     c.exposure,
     c.amount
+  );
+
+  if (direct !== null) return direct;
+
+  // Healthcare recovery work items preserve the canonical structuredCase
+  // inside payload. This is the authoritative claim-level exposure emitted
+  // by the HC Denial War Room and carried through the Strategist/Executive
+  // Portal -> BPO relay. Do not use unrelated portfolio/quarterly exposure.
+  const structuredCase =
+    c.payload &&
+    c.payload.structuredCase &&
+    typeof c.payload.structuredCase === 'object'
+      ? c.payload.structuredCase
+      : null;
+
+  return num(
+    structuredCase && structuredCase.financialExposure
   );
 }
 

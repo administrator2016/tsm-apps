@@ -843,6 +843,170 @@ async function bpoUpsertWorkItem(caseId, fields, actor) {
   return doc;
 }
 
+
+// ── Recovery Outcome / Reconciliation (Phase 5) ─────────────────────────
+// Records the measured BPO/payer outcome against the SAME work item created
+// by the HC recovery flow. AI may recommend recovery, but only this governed
+// human/BPO outcome establishes what was actually recovered.
+//
+// Controlled statuses:
+//   PENDING
+//   RECOVERED
+//   PARTIALLY_RECOVERED
+//   DENIED_AFTER_APPEAL
+//   WITHDRAWN
+//   NO_RECOVERY
+const BPO_RECOVERY_STATUSES = [
+  'PENDING',
+  'RECOVERED',
+  'PARTIALLY_RECOVERED',
+  'DENIED_AFTER_APPEAL',
+  'WITHDRAWN',
+  'NO_RECOVERY',
+];
+
+function bpoNumber(value, fieldName) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) {
+    throw new Error(fieldName + ' must be a finite number >= 0');
+  }
+  return n;
+}
+
+function bpoExtractStructuredCase(workItem) {
+  const payload = workItem && workItem.payload;
+
+  // HC Executive Portal / BPO relay preserves the canonical structuredCase
+  // inside the work-item payload. Support the known nested shapes without
+  // guessing from free-form text or the quarterly exposure.
+  const candidates = [
+    payload && payload.structuredCase,
+    payload && payload.opportunity && payload.opportunity.structuredCase,
+    payload && payload.recovery && payload.recovery.structuredCase,
+    payload && payload.extraction && payload.extraction.structuredCase,
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate && typeof candidate === 'object') return candidate;
+  }
+
+  return null;
+}
+
+async function bpoRecordWorkItemOutcome(caseId, fields, actor) {
+  if (!caseId) throw new Error('caseId required');
+
+  const input = fields || {};
+  const status = (input.recoveryStatus || input.status || '').toString().trim().toUpperCase();
+
+  if (!BPO_RECOVERY_STATUSES.includes(status)) {
+    throw new Error(
+      'recoveryStatus must be one of: ' + BPO_RECOVERY_STATUSES.join(', ')
+    );
+  }
+
+  const col = await bpoWorkItemsCollection();
+  const existing = await col.findOne({ caseId });
+
+  if (!existing) {
+    throw new Error('BPO work item not found: ' + caseId);
+  }
+
+  const structuredCase = bpoExtractStructuredCase(existing);
+  if (!structuredCase) {
+    throw new Error('structuredCase missing from BPO work item: ' + caseId);
+  }
+
+  // Authoritative claim-level exposure comes from the canonical structured
+  // case. Do NOT use quarterly/program exposure such as $187,000.
+  const originalExposure = bpoNumber(
+    structuredCase.financialExposure,
+    'structuredCase.financialExposure'
+  );
+
+  let recoveredAmount = input.recoveredAmount;
+  if (recoveredAmount === undefined || recoveredAmount === null || recoveredAmount === '') {
+    recoveredAmount = 0;
+  }
+  recoveredAmount = bpoNumber(recoveredAmount, 'recoveredAmount');
+
+  if (recoveredAmount > originalExposure) {
+    throw new Error(
+      'recoveredAmount cannot exceed originalExposure (' +
+      originalExposure +
+      ')'
+    );
+  }
+
+  if (status === 'PENDING' && recoveredAmount !== 0) {
+    throw new Error('PENDING outcome must have recoveredAmount = 0');
+  }
+
+  const remainingBalance = Math.max(originalExposure - recoveredAmount, 0);
+  const recoveryRate = originalExposure > 0
+    ? recoveredAmount / originalExposure
+    : 0;
+
+  const now = new Date().toISOString();
+
+  const outcome = {
+    originalExposure,
+    actionTaken: input.actionTaken !== undefined
+      ? String(input.actionTaken).trim()
+      : '',
+    payerOutcome: input.payerOutcome !== undefined
+      ? String(input.payerOutcome).trim()
+      : '',
+    recoveredAmount,
+    remainingBalance,
+    recoveryStatus: status,
+    recoveryRate,
+    outcomeRecordedAt: now,
+    outcomeRecordedBy: actor || 'unknown',
+  };
+
+  await col.updateOne(
+    { caseId },
+    {
+      $set: {
+        originalExposure: outcome.originalExposure,
+        actionTaken: outcome.actionTaken,
+        payerOutcome: outcome.payerOutcome,
+        recoveredAmount: outcome.recoveredAmount,
+        remainingBalance: outcome.remainingBalance,
+        recoveryStatus: outcome.recoveryStatus,
+        recoveryRate: outcome.recoveryRate,
+        outcomeRecordedAt: outcome.outcomeRecordedAt,
+        outcomeRecordedBy: outcome.outcomeRecordedBy,
+        updatedAt: now,
+      },
+    }
+  );
+
+  const updated = await col.findOne({ caseId });
+
+  await bpoWriteAudit({
+    actor,
+    action: 'work_item.recovery_outcome',
+    entityType: 'work_item',
+    entityId: caseId,
+    detail: {
+      recoveryStatus: status,
+      originalExposure,
+      recoveredAmount,
+      remainingBalance,
+      recoveryRate,
+      payerOutcome: outcome.payerOutcome,
+    },
+  });
+
+  return {
+    caseId,
+    reconciliation: outcome,
+    workItem: updated,
+  };
+}
+
 // ── Case Engine (Roadmap #10) ───────────────────────────────────────────
 // Server-side mirror of TSMCaseManager's tsm_cases_v1 localStorage store.
 // Whole-document upsert on caseId — same "replace on every mutation"
@@ -2312,6 +2476,7 @@ module.exports = {
   bpoListWorkItems,
   bpoGetWorkItem,
   bpoUpsertWorkItem,
+  bpoRecordWorkItemOutcome,
   bpoListAuditLogs,
   bpoWriteAudit,
   // Case Engine (Roadmap #10)
