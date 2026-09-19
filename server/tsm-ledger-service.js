@@ -2179,6 +2179,269 @@ async function bpoBuildRecoveryAnalytics({ vertical, clientId } = {}) {
   };
 }
 
+// ── Phase 12: Strategist Learning Loop ───────────────────────────────────
+// Three deliberately separate layers, per the architecture call
+// (2026-09-19):
+//
+//   PHASE 6  Learning Records      "What happened vs. what we predicted?"
+//        ↓
+//   PHASE 12 Calibration Engine    "What does the accumulated evidence
+//        ↓                          suggest changing?"
+//   PREDICTION PATH                "What should a NEW case be predicted
+//                                    as?" -- NOT built here. Phase 12 only
+//                                    surfaces insights + a proposed
+//                                    adjustment for a human to review.
+//
+// A historical learning record is never rewritten by this file -- the
+// original prediction (e.g. today's real MODERATE/65/$4,850 case) stays
+// exactly what it was. Calibration output here is advisory only: a report
+// plus a config a human can tune, with automaticProductionApplication
+// hard-locked to false (see bpoUpdateCalibrationConfig below) until the
+// fast-follow that actually wires an approved calibration into new
+// predictions is built. Nothing in this section can change how a new
+// case gets scored.
+const BPO_CALIBRATION_CONFIG_COLLECTION = 'bpo_calibration_config';
+const BPO_CALIBRATION_CONFIG_ID = 'default';
+
+const BPO_CALIBRATION_CONFIG_DEFAULTS = {
+  minSampleSize: 50,
+  recalibrationWindowDays: 90,
+  confidenceAdjustmentCeiling: 10, // points, 0-100 scale (same scale as structuredCase.confidence)
+  likelihoodRecalibrationEnabled: true, // computes proposed adjustments; does NOT apply them
+  automaticProductionApplication: false, // hard safety rail -- see bpoUpdateCalibrationConfig
+  humanApprovalRequired: true,
+};
+
+async function bpoCalibrationConfigCollection() {
+  const database = await getDb();
+  return database.collection(BPO_CALIBRATION_CONFIG_COLLECTION);
+}
+
+async function bpoGetCalibrationConfig() {
+  const col = await bpoCalibrationConfigCollection();
+  const existing = await col.findOne({ _id: BPO_CALIBRATION_CONFIG_ID });
+  // Merge over defaults rather than requiring an explicit seed doc, so a
+  // fresh environment reads sane values on day one without a migration
+  // step -- same "read gets a default, write persists an override"
+  // pattern used nowhere else in this file only because nothing else
+  // here has needed a tunable global config before.
+  return Object.assign({}, BPO_CALIBRATION_CONFIG_DEFAULTS, existing || {}, { _id: undefined });
+}
+
+/**
+ * Updates the calibration config. admin/manager only (route-level gate).
+ * automaticProductionApplication cannot be set to true here -- that flag
+ * only becomes meaningful once a fast-follow phase actually wires an
+ * approved calibration into the prediction path; until that exists,
+ * flipping it on would silently do nothing except create a false sense
+ * that recalibration is live. Reject the attempt loudly instead.
+ */
+async function bpoUpdateCalibrationConfig(fields, actor) {
+  const input = fields || {};
+  if (input.automaticProductionApplication === true) {
+    throw new Error(
+      'automaticProductionApplication cannot be enabled yet -- Phase 12 ' +
+      'only builds the calibration report and config; the prediction-path ' +
+      'integration that would make this flag do anything is a separate, ' +
+      'not-yet-built fast-follow.'
+    );
+  }
+
+  const current = await bpoGetCalibrationConfig();
+  const next = Object.assign({}, current);
+
+  if (input.minSampleSize !== undefined) {
+    const n = Number(input.minSampleSize);
+    if (!Number.isInteger(n) || n < 1) throw new Error('minSampleSize must be a positive integer');
+    next.minSampleSize = n;
+  }
+  if (input.recalibrationWindowDays !== undefined) {
+    const n = Number(input.recalibrationWindowDays);
+    if (!Number.isInteger(n) || n < 1) throw new Error('recalibrationWindowDays must be a positive integer');
+    next.recalibrationWindowDays = n;
+  }
+  if (input.confidenceAdjustmentCeiling !== undefined) {
+    const n = Number(input.confidenceAdjustmentCeiling);
+    if (!Number.isFinite(n) || n < 0 || n > 100) throw new Error('confidenceAdjustmentCeiling must be between 0 and 100');
+    next.confidenceAdjustmentCeiling = n;
+  }
+  if (input.likelihoodRecalibrationEnabled !== undefined) {
+    next.likelihoodRecalibrationEnabled = !!input.likelihoodRecalibrationEnabled;
+  }
+  if (input.humanApprovalRequired !== undefined) {
+    next.humanApprovalRequired = !!input.humanApprovalRequired;
+  }
+  next.automaticProductionApplication = false; // always, regardless of input -- see guard above
+
+  const col = await bpoCalibrationConfigCollection();
+  await col.updateOne(
+    { _id: BPO_CALIBRATION_CONFIG_ID },
+    // _id restated explicitly in $set (not left to upsert-from-filter)
+    // same convention bpoUpsertWorkItem uses for caseId -- keeps this
+    // correct even against a query-execution stub that doesn't merge
+    // filter fields into an upserted doc the way real MongoDB does.
+    { $set: Object.assign({ _id: BPO_CALIBRATION_CONFIG_ID }, next, { updatedAt: new Date().toISOString(), updatedBy: actor || 'unknown' }) },
+    { upsert: true }
+  );
+
+  await bpoWriteAudit({
+    actor, action: 'calibration_config.update', entityType: 'calibration_config', entityId: BPO_CALIBRATION_CONFIG_ID,
+    detail: next,
+  });
+
+  return bpoGetCalibrationConfig();
+}
+
+// Best-effort join from a Phase 6 learning record back to the payer/
+// denial-category/action fields Phase 12 groups by -- these live on the
+// work item (structuredCase / actionTaken), not on the learning record
+// itself, and are deliberately NOT copied onto the immutable record.
+async function bpoEnrichLearningRecordForCalibration(record) {
+  const workItem = await bpoGetWorkItem(record.caseId);
+  const structuredCase = workItem ? bpoExtractStructuredCase(workItem) : null;
+  return {
+    payer: (structuredCase && structuredCase.payer) ? String(structuredCase.payer).trim() : 'unspecified',
+    denialCategory: (structuredCase && structuredCase.denialCategory) ? String(structuredCase.denialCategory).trim() : 'unspecified',
+    actionTaken: (workItem && workItem.actionTaken) ? String(workItem.actionTaken).trim() : 'unspecified',
+  };
+}
+
+function bpoCalibrationSignal(observedRate, band) {
+  if (!band) return 'INSUFFICIENT_DATA'; // unrecognized/missing predicted tier
+  const [lo, hi] = band;
+  if (observedRate < lo) return 'DOWNWARD'; // predictions in this tier are overestimating recovery
+  if (observedRate > hi) return 'UPWARD';   // predictions in this tier are underestimating recovery
+  return 'STABLE';
+}
+
+/**
+ * Builds the Phase 12 learning-loop report: overall calibration by
+ * predicted tier (case counts, exposure, recovery rate, outcome mix),
+ * plus a vertical -> payer -> denial category -> action -> predicted-
+ * tier calibration breakdown with an advisory (never applied) proposed
+ * adjustment where the evidence clears the config's own safeguards
+ * (minimum sample size + recalibration window). Read/aggregation only --
+ * see the file-level comment above this section.
+ */
+async function bpoBuildLearningLoopReport({ vertical } = {}) {
+  const config = await bpoGetCalibrationConfig();
+  const allRecords = await bpoListLearningRecords({ vertical, limit: 10000 });
+
+  // ── Overall, all-time, per predicted tier ─────────────────────────────
+  const overallByTier = {};
+  for (const tier of Object.keys(BPO_LIKELIHOOD_BANDS)) {
+    overallByTier[tier] = {
+      cases: 0, predictedExposure: 0, actualRecovered: 0,
+      outcomeCounts: { full: 0, partial: 0, none: 0 },
+    };
+  }
+  for (const r of allRecords) {
+    const tier = r.predictedLikelihood;
+    if (!tier || !overallByTier[tier]) continue;
+    const t = overallByTier[tier];
+    t.cases += 1;
+    t.predictedExposure += r.originalExposure || 0;
+    t.actualRecovered += r.recoveredAmount || 0;
+    const bucket = bpoOutcomeBucket(r.recoveryStatus);
+    if (bucket === 'recovered') t.outcomeCounts.full += 1;
+    else if (bucket === 'partial') t.outcomeCounts.partial += 1;
+    else if (bucket === 'none') t.outcomeCounts.none += 1;
+  }
+  for (const tier of Object.keys(overallByTier)) {
+    const t = overallByTier[tier];
+    t.predictedExposure = Math.round(t.predictedExposure * 100) / 100;
+    t.actualRecovered = Math.round(t.actualRecovered * 100) / 100;
+    t.actualRecoveryRate = t.predictedExposure > 0 ? Math.round((t.actualRecovered / t.predictedExposure) * 10000) / 10000 : null;
+    t.outcomeDistribution = t.cases > 0 ? {
+      full: Math.round((t.outcomeCounts.full / t.cases) * 10000) / 10000,
+      partial: Math.round((t.outcomeCounts.partial / t.cases) * 10000) / 10000,
+      none: Math.round((t.outcomeCounts.none / t.cases) * 10000) / 10000,
+    } : null;
+  }
+
+  // ── Calibration breakdown, windowed by config.recalibrationWindowDays ──
+  const windowCutoff = Date.now() - config.recalibrationWindowDays * 86400000;
+  const windowed = allRecords.filter(r => {
+    const t = new Date(r.recordedAt).getTime();
+    return Number.isFinite(t) && t >= windowCutoff;
+  });
+
+  const enrichments = await Promise.all(windowed.map(r => bpoEnrichLearningRecordForCalibration(r)));
+
+  const groups = {};
+  windowed.forEach((r, i) => {
+    if (!r.predictedLikelihood) return; // unscoreable, same as Phase 6's own variance summary
+    const { payer, denialCategory, actionTaken } = enrichments[i];
+    const key = [r.vertical || 'unspecified', payer, denialCategory, actionTaken, r.predictedLikelihood].join('|');
+    if (!groups[key]) {
+      groups[key] = {
+        vertical: r.vertical || 'unspecified', payer, denialCategory, actionTaken,
+        predictedLikelihood: r.predictedLikelihood,
+        sampleSize: 0, exposure: 0, recovered: 0,
+      };
+    }
+    const g = groups[key];
+    g.sampleSize += 1;
+    g.exposure += r.originalExposure || 0;
+    g.recovered += r.recoveredAmount || 0;
+  });
+
+  const calibrationBreakdown = Object.values(groups).map(g => {
+    const band = BPO_LIKELIHOOD_BANDS[g.predictedLikelihood] || null;
+    const observedRecoveryRate = g.exposure > 0 ? g.recovered / g.exposure : null;
+    const signal = observedRecoveryRate === null ? 'INSUFFICIENT_DATA' : bpoCalibrationSignal(observedRecoveryRate, band);
+
+    const reasons = [];
+    if (g.sampleSize < config.minSampleSize) reasons.push(`sample size ${g.sampleSize} below configured minimum ${config.minSampleSize}`);
+    if (!config.likelihoodRecalibrationEnabled) reasons.push('likelihood recalibration is disabled in config');
+    const eligibleForReview = reasons.length === 0 && signal !== 'STABLE' && signal !== 'INSUFFICIENT_DATA';
+
+    let proposedAdjustment = null;
+    if (eligibleForReview && band) {
+      const [lo, hi] = band;
+      const distanceFromBand = signal === 'DOWNWARD' ? (lo - observedRecoveryRate) : (observedRecoveryRate - hi);
+      const magnitude = Math.min(Math.round(distanceFromBand * 100 * 10) / 10, config.confidenceAdjustmentCeiling);
+      proposedAdjustment = {
+        direction: signal,
+        suggestedConfidencePointsDelta: signal === 'DOWNWARD' ? -magnitude : magnitude,
+        cappedAtCeiling: (distanceFromBand * 100) > config.confidenceAdjustmentCeiling,
+        // Never applied by this function -- requires bpoUpdateCalibrationConfig's
+        // approval workflow (not yet built) before it could reach production.
+        status: 'PROPOSED_PENDING_HUMAN_REVIEW',
+      };
+    }
+
+    return {
+      vertical: g.vertical, payer: g.payer, denialCategory: g.denialCategory, action: g.actionTaken,
+      predictedLikelihood: g.predictedLikelihood,
+      sampleSize: g.sampleSize,
+      exposure: Math.round(g.exposure * 100) / 100,
+      recovered: Math.round(g.recovered * 100) / 100,
+      observedRecoveryRate: observedRecoveryRate === null ? null : Math.round(observedRecoveryRate * 10000) / 10000,
+      predictedBand: band,
+      signal,
+      eligibleForReview,
+      ineligibleReasons: reasons,
+      proposedAdjustment,
+    };
+  }).sort((a, b) => b.sampleSize - a.sampleSize);
+
+  return {
+    vertical: vertical || 'all',
+    config,
+    overall: {
+      totalRecords: allRecords.length,
+      byPredictedLikelihood: overallByTier,
+    },
+    recalibrationWindow: {
+      days: config.recalibrationWindowDays,
+      recordsInWindow: windowed.length,
+    },
+    calibrationBreakdown,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
 // ── Client-facing rollup + monthly snapshots (Phase 4) ──────────────────
 // Latorrey's call on scope (2026-08-24): full rollup (WIP + SLA +
 // case-level summaries, same shape family as the internal
@@ -3313,6 +3576,9 @@ module.exports = {
   bpoBuildRecoveryQueue,
   bpoBuildEvidencePackage,
   bpoBuildRecoveryAnalytics,
+  bpoGetCalibrationConfig,
+  bpoUpdateCalibrationConfig,
+  bpoBuildLearningLoopReport,
   bpoListAuditLogs,
   bpoWriteAudit,
   // Case Engine (Roadmap #10)
