@@ -1,4 +1,3 @@
-
 const { runRealEstateControlPlane } = require('./server/real-estate/real-estate-control-plane');
 
 // Mute MongoDB connection warnings from HITL Gates during local dev
@@ -1675,6 +1674,22 @@ app.get('/api/bpo/reports/executive-rollup', requireRole(BPO_REPORT_ROLES), asyn
         generatedAt: new Date().toISOString(),
       },
     });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Phase 8: executive recovery dashboard. Financial rollup companion to
+// executive-rollup above (which is WIP/SLA counts only, no dollars) — this
+// is exposure/recovered/remaining, split into pipeline (no outcome
+// recorded yet) vs. resolved (Phase 7 outcome locked in), plus the top
+// open-exposure cases so an executive can see what's biggest before it's
+// worked, not just after.
+app.get('/api/bpo/reports/recovery-dashboard', requireRole(BPO_REPORT_ROLES), async (req, res) => {
+  try {
+    const dashboard = await tsmLedger.bpoBuildRecoveryDashboard({
+      vertical: req.query.vertical,
+      clientId: req.query.clientId,
+    });
+    res.json({ ok: true, dashboard });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
