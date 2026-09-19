@@ -1838,6 +1838,34 @@ app.get('/api/bpo/reports/recovery-analytics', requireRole(BPO_REPORT_ROLES), as
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
+// Phase 12: Strategist Learning Loop. Advisory only -- see the file-level
+// comment in tsm-ledger-service.js above bpoBuildLearningLoopReport. This
+// report never changes a prediction; it surfaces calibration signal so a
+// human can decide whether one's warranted.
+app.get('/api/bpo/reports/learning-loop', requireRole(BPO_REPORT_ROLES), async (req, res) => {
+  try {
+    const report = await tsmLedger.bpoBuildLearningLoopReport({ vertical: req.query.vertical });
+    res.json({ ok: true, report });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Calibration config: read is available to the same reporting cluster;
+// writes are admin/manager only, since this tunes production behavior
+// (well, will, once the fast-follow prediction-path wiring exists).
+app.get('/api/bpo/admin/calibration-config', requireRole(BPO_REPORT_ROLES), async (req, res) => {
+  try {
+    const config = await tsmLedger.bpoGetCalibrationConfig();
+    res.json({ ok: true, config });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/bpo/admin/calibration-config', requireRole(BPO_MANAGE_ROLES), async (req, res) => {
+  try {
+    const config = await tsmLedger.bpoUpdateCalibrationConfig(req.body || {}, req.tsmSession.label || req.tsmSession.role);
+    res.json({ ok: true, config });
+  } catch (e) { res.status(400).json({ ok: false, error: e.message }); }
+});
+
 // Test/seed data cleanup — removes STRESS-batch-*/TEST-* (or a caller-
 // supplied prefix list) work items + their SLA events from bpo_work_items
 // so load-test and smoke-test residue stops inflating every count-based
