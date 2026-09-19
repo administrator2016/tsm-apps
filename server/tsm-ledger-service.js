@@ -2374,6 +2374,69 @@ async function bpoDeleteDocument(docId, actor) {
   return updated;
 }
 
+// ── Test/seed data cleanup ───────────────────────────────────────────────
+// Load-testing and manual smoke-testing (e.g. scripts/*stress*, ad-hoc
+// TEST-* upserts) leave real documents behind in bpo_work_items and
+// bpo_sla_events -- there's no separate "test mode" collection, so these
+// are indistinguishable from real cases except by caseId naming
+// convention. This exists to remove them explicitly, by prefix, rather
+// than leaving them to silently inflate every count-based report (Phase
+// 8/9's queue and dashboard, the executive-rollup) forever.
+//
+// Dry-run by default (dryRun !== false) -- returns exactly what WOULD be
+// deleted without touching anything, so the caller can review the list
+// before committing to it. Deliberately prefix-matched and explicit
+// (default ['STRESS-batch-', 'TEST-']) rather than a blanket "delete
+// anything without a client" rule, which would also catch legitimate
+// non-client-linked internal cases.
+const BPO_TEST_CASE_PREFIXES_DEFAULT = ['STRESS-batch-', 'TEST-'];
+
+async function bpoFindTestWorkItems({ prefixes } = {}) {
+  const pfx = (prefixes && prefixes.length ? prefixes : BPO_TEST_CASE_PREFIXES_DEFAULT);
+  const col = await bpoWorkItemsCollection();
+  const regex = new RegExp('^(' + pfx.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')');
+  const matches = await col.find({ caseId: regex }).toArray();
+  return { prefixes: pfx, matches };
+}
+
+async function bpoDeleteTestWorkItems({ prefixes, dryRun = true } = {}, actor) {
+  const { prefixes: pfx, matches } = await bpoFindTestWorkItems({ prefixes });
+  const caseIds = matches.map(m => m.caseId);
+
+  if (dryRun || caseIds.length === 0) {
+    return { dryRun: true, prefixes: pfx, matchedCount: caseIds.length, caseIds, deleted: false };
+  }
+
+  const workItems = await bpoWorkItemsCollection();
+  const slaEvents = await bpoSlaEventsCollection();
+  const workItemsResult = await workItems.deleteMany({ caseId: { $in: caseIds } });
+  const slaEventsResult = await slaEvents.deleteMany({ caseId: { $in: caseIds } });
+
+  await bpoWriteAudit({
+    actor,
+    action: 'work_items.test_data_cleanup',
+    entityType: 'work_item',
+    entityId: 'bulk',
+    detail: {
+      prefixes: pfx,
+      matchedCount: caseIds.length,
+      workItemsDeleted: workItemsResult.deletedCount,
+      slaEventsDeleted: slaEventsResult.deletedCount,
+      caseIds,
+    },
+  });
+
+  return {
+    dryRun: false,
+    prefixes: pfx,
+    matchedCount: caseIds.length,
+    caseIds,
+    deleted: true,
+    workItemsDeleted: workItemsResult.deletedCount,
+    slaEventsDeleted: slaEventsResult.deletedCount,
+  };
+}
+
 // =====================================================
 // CONCIERGE TRANSPORT PERSISTENCE
 // Same ledger-service-first, routes-second pattern as BPO above. Maps a
@@ -2961,6 +3024,8 @@ module.exports = {
   bpoGetDocumentText,
   truncateUtf8Safe, // exported for testing only — internal helper, not part of the public ledger API
   bpoDeleteDocument,
+  bpoFindTestWorkItems,
+  bpoDeleteTestWorkItems,
   // Concierge transport persistence
   conciergeListMissions,
   conciergeGetMission,

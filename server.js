@@ -1710,6 +1710,38 @@ app.get('/api/bpo/reports/recovery-queue', requireRole(BPO_REPORT_ROLES), async 
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
+// Test/seed data cleanup — removes STRESS-batch-*/TEST-* (or a caller-
+// supplied prefix list) work items + their SLA events from bpo_work_items
+// so load-test and smoke-test residue stops inflating every count-based
+// BPO report. admin/manager only (not analyst) since this deletes data.
+// GET is always a dry run (preview what would be deleted, never mutates —
+// no query param can turn a GET into a delete). POST actually deletes,
+// and only when the body explicitly sets execute:true — a bare POST with
+// no body is also just a preview, so an accidental POST can't delete
+// anything either.
+app.get('/api/bpo/admin/test-data-cleanup', requireRole(BPO_MANAGE_ROLES), async (req, res) => {
+  try {
+    const prefixes = req.query.prefixes
+      ? String(req.query.prefixes).split(',').map(s => s.trim()).filter(Boolean)
+      : undefined;
+    const result = await tsmLedger.bpoDeleteTestWorkItems({ prefixes, dryRun: true });
+    res.json({ ok: true, ...result });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/bpo/admin/test-data-cleanup', requireRole(BPO_MANAGE_ROLES), async (req, res) => {
+  try {
+    const body = req.body || {};
+    const prefixes = Array.isArray(body.prefixes) && body.prefixes.length ? body.prefixes : undefined;
+    const execute = body.execute === true;
+    const result = await tsmLedger.bpoDeleteTestWorkItems(
+      { prefixes, dryRun: !execute },
+      req.tsmSession && (req.tsmSession.label || req.tsmSession.role)
+    );
+    res.json({ ok: true, ...result });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // Client-facing rollup (Phase 4). Latorrey's call on scope (2026-08-24):
 // full rollup -- same WIP/SLA counts as the internal executive-rollup
 // above, plus a client-safe case-level summary list -- available both
