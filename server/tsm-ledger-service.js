@@ -1691,6 +1691,107 @@ async function bpoListBncaReports({ caseId, limit = 50 } = {}) {
   return col.find(query).sort({ ts: -1 }).limit(limit).toArray();
 }
 
+// ── Phase 8: Executive Recovery Dashboard ───────────────────────────────
+// Financial companion to executive-rollup (which is WIP/SLA counts only,
+// no dollars). Splits work items into two honest buckets instead of one
+// blended number:
+//   pipeline — a structuredCase exposure exists but no recovery outcome
+//              has been recorded yet (Phase 5/7 hasn't run for it)
+//   resolved — Phase 7 has locked in originalExposure/recoveredAmount/
+//              remainingBalance/recoveryRate on the work item itself
+// Pipeline exposure is read from the live structuredCase (it can still
+// change until an outcome is recorded); resolved figures are read from
+// the work item's own persisted outcome fields, same source Phase 6's
+// learning record uses, so this dashboard and that report never disagree
+// about what a resolved case's numbers were. Items with no parseable
+// exposure are skipped rather than counted as $0 — an unknown exposure
+// is not the same fact as a zero exposure.
+async function bpoBuildRecoveryDashboard({ vertical, clientId } = {}) {
+  const col = await bpoWorkItemsCollection();
+  const query = {};
+  if (vertical) query.vertical = vertical;
+  if (clientId) query.clientId = clientId;
+  const items = await col.find(query).limit(5000).toArray();
+
+  let pipelineCount = 0;
+  let pipelineExposure = 0;
+  const topOpenExposure = [];
+
+  let resolvedCount = 0;
+  let resolvedExposure = 0;
+  let resolvedRecovered = 0;
+  let resolvedRemaining = 0;
+  const byStatus = {};
+
+  for (const item of items) {
+    if (item.recoveryStatus) {
+      // Resolved: use the figures Phase 7 already validated and locked in.
+      resolvedCount += 1;
+      const exposure = bpoNumber(item.originalExposure, 'originalExposure');
+      const recovered = bpoNumber(item.recoveredAmount, 'recoveredAmount');
+      const remaining = typeof item.remainingBalance === 'number'
+        ? item.remainingBalance
+        : exposure - recovered;
+      resolvedExposure += exposure;
+      resolvedRecovered += recovered;
+      resolvedRemaining += remaining;
+      byStatus[item.recoveryStatus] = (byStatus[item.recoveryStatus] || 0) + 1;
+      continue;
+    }
+
+    // Pipeline: no outcome recorded yet — read exposure from the live
+    // structuredCase, skip silently if it's missing or not a real number
+    // (never fabricate a placeholder exposure for a case that has none).
+    const structuredCase = bpoExtractStructuredCase(item);
+    const raw = structuredCase && structuredCase.financialExposure;
+    if (raw === undefined || raw === null || raw === '') continue;
+    let exposure;
+    try {
+      exposure = bpoNumber(raw, 'financialExposure');
+    } catch (e) {
+      continue; // unparseable exposure — excluded, not zeroed
+    }
+
+    pipelineCount += 1;
+    pipelineExposure += exposure;
+    topOpenExposure.push({
+      caseId: item.caseId,
+      clientId: item.clientId || null,
+      vertical: item.vertical || null,
+      stage: item.stage || null,
+      priority: item.priority || null,
+      slaAgeHours: typeof item.slaAgeHours === 'number' ? item.slaAgeHours : null,
+      exposure,
+      predictedLikelihood: structuredCase.recoveryLikelihood
+        ? String(structuredCase.recoveryLikelihood).toUpperCase()
+        : null,
+    });
+  }
+
+  topOpenExposure.sort((a, b) => b.exposure - a.exposure);
+
+  return {
+    vertical: vertical || 'all',
+    clientId: clientId || null,
+    pipeline: {
+      count: pipelineCount,
+      totalExposure: Math.round(pipelineExposure * 100) / 100,
+    },
+    resolved: {
+      count: resolvedCount,
+      totalOriginalExposure: Math.round(resolvedExposure * 100) / 100,
+      totalRecovered: Math.round(resolvedRecovered * 100) / 100,
+      totalRemaining: Math.round(resolvedRemaining * 100) / 100,
+      recoveryRate: resolvedExposure > 0
+        ? Math.round((resolvedRecovered / resolvedExposure) * 10000) / 10000
+        : null,
+      byStatus,
+    },
+    topOpenExposure: topOpenExposure.slice(0, 10),
+    generatedAt: new Date().toISOString(),
+  };
+}
+
 // ── Client-facing rollup + monthly snapshots (Phase 4) ──────────────────
 // Latorrey's call on scope (2026-08-24): full rollup (WIP + SLA +
 // case-level summaries, same shape family as the internal
@@ -2758,6 +2859,7 @@ module.exports = {
   bpoLearningVarianceSummary,
   bpoValidateRecoveryOutcome, // pure rules; exported for reuse + testing
   BPO_RECOVERY_STATUSES,
+  bpoBuildRecoveryDashboard,
   bpoListAuditLogs,
   bpoWriteAudit,
   // Case Engine (Roadmap #10)
