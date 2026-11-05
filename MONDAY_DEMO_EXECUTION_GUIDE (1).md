@@ -351,7 +351,7 @@
 - **Say:** "This is a network issue on our end, not a product issue. Let me show you the same flow on a cached version."
 
 ### If Someone Asks About Data Security
-- **Say:** "Healthcare data is HIPAA Business Associate agreement protected. Financial data is encrypted at rest and in transit. All data is in AWS [region], SOC 2 Type II certified, with audit trail immutability. You can verify this in our security documentation." → Offer to share the security brief after the meeting.
+- **Say:** "Designed with HIPAA safeguards in mind; pilots use synthetic or de-identified data only. A BAA and security review are required before any PHI is processed." → Offer to share the security brief after the meeting.
 
 ### If Someone Asks About Pricing Mid-Demo
 - **Say:** "Pricing depends on modules, seats, and data volume. Construction property accounting is [X], healthcare denial recovery is [Y], RCM-OS is [Z]. I have a quote template we can populate after this call once you scope the use case." → Don't lock a number in the room unless you're authorized to.

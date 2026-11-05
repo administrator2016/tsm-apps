@@ -430,7 +430,7 @@
 ## BONUS: Common Payer/Client Objections + Your 30-Second Rebuttal
 
 ### Q: "It's cloud-based. Where is our data?"
-**Your Counter:** "[Specify your data residency—AWS us-east-1, encrypted at rest, ISO 27001 certified, HIPAA Business Associate Agreement for healthcare data]. Data never leaves the region. Audit trail is immutable."
+**Your Counter:** "Designed with HIPAA safeguards in mind; pilots use synthetic or de-identified data only. A BAA and security review are required before any PHI is processed."
 
 ### Q: "What if it goes down? Our close can't wait."
 **Your Counter:** "The system is not your system of record. Your GL is. This system surfaces exceptions; it doesn't *store* your ledger. If the service is down, you close the old way. You just lose the AI assistant, not the data."
