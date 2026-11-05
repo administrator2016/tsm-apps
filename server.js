@@ -1,3 +1,5 @@
+
+const { externalLlmFetch } = require('./server/external-llm-policy');
 const { runRealEstateControlPlane } = require('./server/real-estate/real-estate-control-plane');
 
 // Mute MongoDB connection warnings from HITL Gates during local dev
@@ -71,6 +73,7 @@ const sentinelUpload = multer({
 });
 
 const app = express();
+app.use(require('./server/external-llm-policy').middleware);
 
 const { verifySession: __verifySessionForUser, getCookie: __getCookieForUser } = require('./middleware/require-auth');
 app.use((req, res, next) => {
@@ -620,7 +623,7 @@ async function groqChat(system, message, maxTokens, clientKey, jsonMode) {
           const timeoutId = setTimeout(() => controller.abort(), 20000); // fail fast on a hung/slow upstream response rather than blocking indefinitely
           let r;
           try {
-            r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            r = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
               method: 'POST',
               headers: { 'Authorization': 'Bearer ' + groqKey, 'Content-Type': 'application/json' },
               body: JSON.stringify(body),
@@ -733,7 +736,7 @@ async function tsmAIJSON(prompt, fallback) {
 
   for (let attempt = 0; attempt <= TSM_AI_MAX_RETRIES; attempt++) {
     try {
-      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const r = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer ' + groqKey,
@@ -2848,7 +2851,7 @@ app.post('/api/hc/stream', requireAnyAuth, async (req, res) => {
     const timeoutId = setTimeout(() => controller.abort(), 25000);
     let groqRes;
     try {
-      groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      groqRes = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2956,7 +2959,7 @@ app.post('/api/hc/ocr', requireAnyAuth, async (req, res) => {
       const timeoutId = setTimeout(() => controller.abort(), 25000);
       let groqRes;
       try {
-        groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        groqRes = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey },
           body: JSON.stringify({
@@ -3001,7 +3004,7 @@ function debugLog(msg) {
 
 async function fetchGroqWithRetry(groqKey, body, maxRetries = 3) {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const groqRes = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3042,7 +3045,7 @@ app.post('/api/groq/validate-key', async (req, res) => {
   const clientKey = (req.body && req.body.apiKey || '').trim();
   if (!clientKey) return res.status(400).json({ ok: false, error: 'No API key provided.' });
   try {
-    const r = await fetch('https://api.groq.com/openai/v1/models', {
+    const r = await externalLlmFetch('https://api.groq.com/openai/v1/models', {
       headers: { 'Authorization': 'Bearer ' + clientKey }
     });
     return res.json({ ok: r.ok });
@@ -3093,7 +3096,7 @@ app.post('/api/war-room/stream', requireAnyAuth, async (req, res) => {
     // the client, since the model occasionally emitted a stray/unescaped
     // character with no structural JSON guarantee in place.
     if (forceJsonMode) body.response_format = { type: 'json_object' };
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const groqRes = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3870,7 +3873,7 @@ app.post('/api/crm/query', async (req, res) => {
 // /api/finops/report — and unlike FinOps's orphaned report route, this
 // one is genuinely live (html/l1-copilot/noc/noc-war-room.html calls it
 // directly). Adding requireAnyAuth here doesn't require any front-end
-// change: same-origin fetch() already carries the tsm_session cookie
+// change: same-origin externalLlmFetch() already carries the tsm_session cookie
 // automatically for logged-in users.
 app.post('/api/noc/query', requireAnyAuth, async (req, res) => {
   const { kpis, incident_breaches, alerts, devices_down, context, maxTokens } = req.body || {};
@@ -3915,7 +3918,7 @@ app.post('/api/noc/query', requireAnyAuth, async (req, res) => {
 // /api/hotelops/query, and /api/legal/query — and unlike FinOps's orphaned report
 // route, this one is genuinely live (html/war-rooms/re-war/re-war-room.html calls
 // it directly as its only AI endpoint). Adding requireAnyAuth here doesn't require
-// any front-end change: same-origin fetch() already carries the tsm_session cookie
+// any front-end change: same-origin externalLlmFetch() already carries the tsm_session cookie
 // automatically for logged-in users.
 app.post('/api/mortgage/query', requireAnyAuth, async (req, res) => {
   const { kpis, loan_breaches, conditions, exceptions, context, question, query, maxTokens } = req.body || {};
@@ -4078,7 +4081,7 @@ app.post('/api/mortgage/bnca', async (req, res) => {
 // TSM FIX: this route had no auth guard at all, unlike /api/pm/analysis (which already uses
 // requireRole(PM_INTERNAL_ROLES)) — and it is genuinely live
 // (html/war-rooms/pm-copilot/pm-strategist.html calls it directly). Adding requireAnyAuth here
-// doesn't require any front-end change: same-origin fetch() already carries the tsm_session
+// doesn't require any front-end change: same-origin externalLlmFetch() already carries the tsm_session
 // cookie automatically for logged-in users.
 app.post('/api/pm-strategist/bnca', requireAnyAuth, async (req, res) => {
   const payload = req.body || {};
@@ -4122,7 +4125,7 @@ app.post('/api/mortgage/executive-portal', async (req, res) => {
 // /api/finops/report — and like NOC's /api/noc/query, this one is
 // genuinely live (html/hotelops/services/hotelops-engine.js calls it
 // directly). Adding requireAnyAuth here doesn't require any front-end
-// change: same-origin fetch() already carries the tsm_session cookie
+// change: same-origin externalLlmFetch() already carries the tsm_session cookie
 // automatically for logged-in users.
 app.post('/api/hotelops/query', requireAnyAuth, async (req, res) => {
   const { kpis, maintenance_breaches, ota_exposure, compliance_risk, context, maxTokens } = req.body || {};
@@ -5558,7 +5561,7 @@ app.post('/api/l1-copilot/onboarding/image', async (req, res) => {
     return res.status(503).json({ ok: false, error: 'No imaging platform is configured (set L1_COPILOT_IMAGING_WEBHOOK_URL to your MDT/SCCM/Intune/JAMF trigger).' });
   }
   try {
-    const hookRes = await fetch(process.env.L1_COPILOT_IMAGING_WEBHOOK_URL, {
+    const hookRes = await externalLlmFetch(process.env.L1_COPILOT_IMAGING_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ assetTag, profileId })
@@ -5592,7 +5595,7 @@ app.post('/api/l1-copilot/onboarding/provision', async (req, res) => {
     return res.status(503).json({ ok: false, error: 'No identity provider write-integration is configured (set L1_COPILOT_PROVISIONING_WEBHOOK_URL to your Entra ID/Okta/Workspace provisioning flow).' });
   }
   try {
-    const hookRes = await fetch(process.env.L1_COPILOT_PROVISIONING_WEBHOOK_URL, {
+    const hookRes = await externalLlmFetch(process.env.L1_COPILOT_PROVISIONING_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, department, role })
@@ -6715,7 +6718,7 @@ app.post('/api/doc-router/classify', async (req, res) => {
       userContent = `Filename: ${fileName || 'unknown'}\n\nDocument content:\n${String(textContent).slice(0, 12000)}\n\n${DOC_ROUTER_PROMPT}`;
     }
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const groqRes = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -7167,7 +7170,7 @@ defectFlags: ${(defectFlags || []).join(', ')}
 ${rawText ? '\nOriginal document text (truncated):\n' + String(rawText).slice(0, 6000) : ''}`.trim();
 
   try {
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const groqRes = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -7337,7 +7340,7 @@ ${JSON.stringify(scopedSignals.slice(0, 50), null, 2)}`;
     // the first rate-limit or momentary 5xx with no retry at all.
     let data, lastErrMsg = 'Groq error';
     for (let attempt = 0; attempt <= TSM_AI_MAX_RETRIES; attempt++) {
-      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const groqRes = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
         body: JSON.stringify({

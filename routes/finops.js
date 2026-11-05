@@ -1,4 +1,6 @@
 'use strict';
+const { externalLlmFetch } = require('../server/external-llm-policy');
+
 const express = require('express');
 const router  = express.Router();
 
@@ -313,7 +315,7 @@ Return:
   "confidence": 0-100
 }`;
 
-        const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const aiRes = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,

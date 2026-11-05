@@ -1,3 +1,5 @@
+
+const { externalLlmFetch } = require('../server/external-llm-policy');
 // routes/college-endowment-financial.js
 //
 // Server-side fund exposure computation AND AI fund-compliance analysis for
@@ -101,7 +103,7 @@ async function callGroq(systemPrompt, message, maxTokens = 900) {
   const key = process.env.GROQ_API_KEY;
   if (!key) return { text: null, degraded: true, reason: 'GROQ_API_KEY not configured on server' };
   try {
-    const res = await fetch(GROQ_API, {
+    const res = await externalLlmFetch(GROQ_API, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({

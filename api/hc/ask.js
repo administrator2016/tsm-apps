@@ -1,3 +1,5 @@
+
+const { externalLlmFetch } = require('../../server/external-llm-policy');
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -21,7 +23,7 @@ export default async function handler(req, res) {
     'main-strategist':'You are TSM Neural Core Executive Engine for HonorHealth. Executive-level intelligence across full HC mesh. Strategic actions for leadership.',
   };
   try {
-    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const r = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

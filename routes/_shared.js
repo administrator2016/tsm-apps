@@ -1,4 +1,6 @@
 'use strict';
+const { externalLlmFetch } = require('../server/external-llm-policy');
+
 const fs = require('fs');
 const path = require('path');
 
@@ -140,7 +142,7 @@ async function groqChat(systemPrompt, userMessage, maxTokens = 1024) {
   let lastErr = null;
 
   for (let attempt = 0; attempt <= GROQ_MAX_RETRIES; attempt++) {
-    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const r = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

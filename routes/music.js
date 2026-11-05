@@ -1,4 +1,6 @@
 'use strict';
+const { externalLlmFetch } = require('../server/external-llm-policy');
+
 const express = require('express');
 const router  = express.Router();
 
@@ -172,7 +174,7 @@ async function musicGroqCall(systemPrompt, userPrompt, maxTokens){
   const groqKey = process.env.GROQ_API_KEY;
   if(!groqKey) throw new Error("GROQ_API_KEY not configured on server.");
 
-  const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const r = await externalLlmFetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + groqKey },
     body: JSON.stringify({

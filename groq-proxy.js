@@ -1,3 +1,5 @@
+
+const { externalLlmFetch } = require('./server/external-llm-policy');
 /**
  * groq-proxy.js
  * 
@@ -57,7 +59,7 @@ router.post('/', express.json({ limit: '25mb' }), async (req, res) => {
   };
 
   try {
-    const upstream = await fetch(GROQ_API, {
+    const upstream = await externalLlmFetch(GROQ_API, {
       method:  'POST',
       headers: {
         'Content-Type':  'application/json',

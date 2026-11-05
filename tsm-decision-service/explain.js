@@ -1,3 +1,5 @@
+
+const { externalLlmFetch } = require('../server/external-llm-policy');
 // explain.js
 // The LLM's ONLY job here is to turn a rule that has already fired
 // (deterministically, in rules/*.js) into a plain-language explanation
@@ -68,7 +70,7 @@ async function explainDecision(ruleResult, triggerEvent, entityContext = {}) {
   });
 
   try {
-    const response = await fetch(GROQ_API_URL, {
+    const response = await externalLlmFetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

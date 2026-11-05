@@ -1,3 +1,5 @@
+
+const { externalLlmFetch } = require('../external-llm-policy');
 require('dotenv').config();
 const express = require('express');
 const router = express.Router();
@@ -19,7 +21,7 @@ const NODE_PERSONAS = {
 };
 
 const groq = async (systemPrompt, userQuery, maxTokens=900) => {
-  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const r = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': 'Bearer ' + process.env.GROQ_API_KEY,

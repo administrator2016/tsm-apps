@@ -1,3 +1,5 @@
+
+const { externalLlmFetch } = require('./server/external-llm-policy');
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 module.exports = function(app) {
   app.post("/api/groq", async (req, res) => {
@@ -5,7 +7,7 @@ module.exports = function(app) {
     if (!messages) return res.status(400).json({ error: "messages required" });
     if (!GROQ_API_KEY) return res.status(500).json({ error: "GROQ_API_KEY not set" });
     try {
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      const response = await externalLlmFetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
