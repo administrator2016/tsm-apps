@@ -126,7 +126,7 @@ const STATIC_MISSIONS = {
     title: "Review documentation and contract-risk exceptions",
     domain: "LEGAL / REGULATORY",
     objectives: [
-      { id: 0, label: "Review HIPAA contract compliance", node: "denial-lab", domain: "denials", riskDelta: -10, strat: "BAA updated for 3 vendors. HIPAA compliance restored.", workflow: 0 },
+      { id: 0, label: "Review HIPAA contract compliance", node: "denial-lab", domain: "denials", riskDelta: -10, strat: "Designed with HIPAA safeguards in mind; pilots use synthetic or de-identified data only. A BAA and security review are required before any PHI is processed.", workflow: 0 },
       { id: 1, label: "Identify contract-risk exceptions", node: "coding-review", domain: "coding", riskDelta: -14, strat: "2 contract exceptions flagged for legal review.", workflow: 0 },
       { id: 2, label: "Escalate regulatory defense items", node: "medical-node", domain: "medical", riskDelta: -18, strat: "Defense memo prepared. Outside counsel notified.", workflow: 1 },
       { id: 3, label: "Close open compliance tickets", node: "ar-followup", domain: "ar", riskDelta: -16, strat: "4 compliance tickets closed. Regulatory risk score reduced.", workflow: 2 }

@@ -371,11 +371,11 @@ Verified: 2026-08-06 03:22 PM (DSO = 34 days) ✓ Cleared
 vs. 'The auditor found this on day 25 and we scrambled to fix it.' ✗ Messy
 
 **Security:**
-- All data is encrypted in transit and at rest
+- Deployment-specific encryption and key custody require verification before client data use.
 - Role-based access control (controller can see/resolve AP exceptions, CFO can override thresholds)
-- SOC 2 Type II certified
-- HIPAA Business Associate Agreement for healthcare clients
-- Compliance with your internal audit policies (we support signed audit trail, immutable logs, etc.)"
+- Security certification has not been established for this pilot.
+- Designed with HIPAA safeguards in mind; pilots use synthetic or de-identified data only. A BAA and security review are required before any PHI is processed.
+- Audit controls and retention must be reviewed against your internal policies before operational use."
 
 **The Line:** "Every exception is auditable. Your auditor will see we caught and fixed issues proactively."
 
@@ -729,7 +729,7 @@ If you're evaluating from scratch, we're faster to value and broader in scope."
 'We're implementing proactive exception management for our close process. It gives us real-time visibility into covenant compliance (current ratio, cash balance, debt ratios). Your auditor will see that we're surfacing and remediating issues early, which is a control improvement.'
 
 **For your IT team:**
-'RCM-OS reads from our existing systems (GL, AP, AR, Compliance). It doesn't modify them or store our ledger. It's a read-only integration at the data layer. Implementation is 4 weeks. We can architect it on AWS [or your cloud] with encryption and SOC 2 compliance.'
+'RCM-OS reads from our existing systems (GL, AP, AR, Compliance). It doesn't modify them or store our ledger. It's a read-only integration at the data layer. Implementation is 4 weeks. Hosting, encryption and security-review requirements must be agreed before operational use.'
 
 **What we'll send you:**
 - One-pager (board version): ROI, timeline, risk mitigation

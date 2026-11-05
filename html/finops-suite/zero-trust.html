@@ -322,7 +322,7 @@ async function tsmAI(s,u,m){try{const r=await fetch('/api/chat',{method:'POST',h
   <div class="snode"><div class="snd" style="background:var(--c3)"></div><div><div class="snl">Zero-Trust Gateway</div><div class="snv">320 req/min · Warning</div></div></div>
   <div class="snode"><div class="snd" style="background:var(--c2)"></div><div><div class="snl">DLP Scanner</div><div class="snv">2.1 MB/s · Active</div></div></div>
   <div class="snode"><div class="snd" style="background:var(--c2)"></div><div><div class="snl">MFA Enforcement</div><div class="snv">99.1% coverage</div></div></div>
-  <div class="snode"><div class="snd" style="background:var(--c2)"></div><div><div class="snl">Compliance Score</div><div class="snv">99.8% · SOC-2 / HIPAA</div></div></div>
+  <div class="snode"><div class="snd" style="background:var(--c2)"></div><div><div class="snl">Illustrative Demo Score</div><div class="snv">Illustrative demo score; security review required</div></div></div>
   <div class="snode"><div class="snd" style="background:var(--c5)"></div><div><div class="snl">Risk Mitigated</div><div class="snv">$2.4M this quarter</div></div></div>
 </div>
 
@@ -380,7 +380,7 @@ main {
 <!-- ══ DASHBOARD ══ -->
 <div id="sec-dashboard" class="sec on">
   <div class="mrow">
-    <div class="mc a2"><div class="ml">Compliance Score</div><div class="mv">99.8%</div><div class="ms">SOC-2 · HIPAA · IRS-1075</div><div class="mt up">▲ +0.2% this month</div></div>
+    <div class="mc a2"><div class="ml">Illustrative Demo Score</div><div class="mv">99.8%</div><div class="ms">Designed with HIPAA safeguards in mind; pilots use synthetic or de-identified data only. A BAA and security review are required before any PHI is processed.</div><div class="mt up">▲ +0.2% this month</div></div>
     <div class="mc a1"><div class="ml">Active Sessions</div><div class="mv">847</div><div class="ms">Across all domains</div><div class="mt up">▲ +34 today</div></div>
     <div class="mc a4"><div class="ml">Threats Blocked</div><div class="mv">23</div><div class="ms">Today · 847 this month</div><div class="mt dn">▼ 2 critical events</div></div>
     <div class="mc a5"><div class="ml">Risk Mitigated</div><div class="mv">$2.4M</div><div class="ms">This quarter</div><div class="mt up">▲ +12% vs Q3</div></div>
@@ -437,7 +437,7 @@ main {
         </div>
         <div class="pl">
           <button class="pr" data-p="Generate a SOC-2 Type II evidence package summary covering the last 12 months of controls." data-tsm-action="firePreset" data-tsm-args="this">SOC-2 Evidence Package</button>
-          <button class="pr" data-p="Perform a HIPAA Security Rule gap analysis against current technical safeguard controls." data-tsm-action="firePreset" data-tsm-args="this">HIPAA Security Gap Analysis</button>
+          <button class="pr" data-p="Perform a HIPAA Security Rule gap analysis against current technical safeguard controls." data-tsm-action="firePreset" data-tsm-args="this">HIPAA Safeguards Gap Analysis</button>
           <button class="pr" data-p="Review IRS Publication 1075 compliance posture for federal tax data handling." data-tsm-action="firePreset" data-tsm-args="this">IRS-1075 Compliance Review</button>
           <button class="pr" data-p="Audit GDPR data processing activities and identify consent management gaps." data-tsm-action="firePreset" data-tsm-args="this">GDPR Data Processing Audit</button>
           <button class="pr" data-p="Generate a CCPA consumer data rights compliance report with remediation priorities." data-tsm-action="firePreset" data-tsm-args="this">CCPA Rights Compliance Report</button>
@@ -541,7 +541,7 @@ main {
           <div class="fi"><div class="fd" style="background:var(--c2)"></div><div class="fc"><div class="ft">✅ Password Reset — UID-1002</div><div class="fd2">Bob Smith · MFA verified</div></div><div class="ftm">15m</div></div>
           <div class="fi"><div class="fd" style="background:var(--c2)"></div><div class="fc"><div class="ft">✅ MFA Enabled — UID-1005</div><div class="fd2">Eve Davis · Compliance: OK</div></div><div class="ftm">1hr</div></div>
           <div class="fi"><div class="fd" style="background:var(--c5)"></div><div class="fc"><div class="ft">🔺 Privilege Escalation Attempt</div><div class="fd2">UID-3421 · Blocked by PAM vault</div></div><div class="ftm">2hr</div></div>
-          <div class="fi"><div class="fd" style="background:var(--c1)"></div><div class="fc"><div class="ft">📋 SOC-2 Evidence Exported</div><div class="fd2">Q4 audit package compiled</div></div><div class="ftm">3hr</div></div>
+          <div class="fi"><div class="fd" style="background:var(--c1)"></div><div class="fc"><div class="ft">📋 Illustrative SOC-2 Evidence Example</div><div class="fd2">Demo package; no audit completion asserted</div></div><div class="ftm">3hr</div></div>
         </div>
         <div style="padding:10px 16px;border-top:1px solid var(--bdr);display:flex;flex-wrap:wrap;gap:6px;">
           <button class="btn btn-p btn-sm" data-tsm-action="qa" data-tsm-args="'audit'">🔍 Security Audit</button>
@@ -555,23 +555,23 @@ main {
 
   <div class="g3">
     <div class="pnl">
-      <div class="ph"><div class="pt"><span>SOC-2</span> Type II Status</div><span class="bdg b2">Active</span></div>
+      <div class="ph"><div class="pt"><span>SOC-2</span> Review Scope</div><span class="bdg b2">Not assessed</span></div>
       <div class="pb">
-        <div class="li"><div class="li-l"><div class="li-ico">🔒</div><div><div class="li-t">Security (CC6–CC9)</div><div class="li-s">98/100 controls passing</div></div></div><span class="bdg b2">98%</span></div>
-        <div class="li"><div class="li-l"><div class="li-ico">⚡</div><div><div class="li-t">Availability (A1)</div><div class="li-s">99.99% uptime · SLA met</div></div></div><span class="bdg b2">Pass</span></div>
+        <div class="li"><div class="li-l"><div class="li-ico">🔒</div><div><div class="li-t">Security (CC6–CC9)</div><div class="li-s">Illustrative control scenario; independent review required</div></div></div><span class="bdg b2">98%</span></div>
+        <div class="li"><div class="li-l"><div class="li-ico">⚡</div><div><div class="li-t">Availability (A1)</div><div class="li-s">Availability and SLA evidence require deployment verification</div></div></div><span class="bdg b2">Not assessed</span></div>
         <div class="li"><div class="li-l"><div class="li-ico">🔐</div><div><div class="li-t">Confidentiality (C1)</div><div class="li-s">Legacy relay gap · Remediation open</div></div></div><span class="bdg b3">Gap</span></div>
-        <div class="li"><div class="li-l"><div class="li-ico">✅</div><div><div class="li-t">Processing Integrity (PI1)</div><div class="li-s">All pipelines validated</div></div></div><span class="bdg b2">Pass</span></div>
-        <div style="margin-top:10px;"><div class="pbar-wrap"><div class="pbar" style="width:99.8%;background:var(--c2);"></div></div><div style="font-size:9px;color:var(--txt3);margin-top:3px;">Overall: 99.8%</div></div>
+        <div class="li"><div class="li-l"><div class="li-ico">✅</div><div><div class="li-t">Processing Integrity (PI1)</div><div class="li-s">All pipelines validated</div></div></div><span class="bdg b2">Not assessed</span></div>
+        <div style="margin-top:10px;"><div class="pbar-wrap"><div class="pbar" style="width:99.8%;background:var(--c2);"></div></div><div style="font-size:9px;color:var(--txt3);margin-top:3px;">Overall: Not assessed</div></div>
       </div>
     </div>
     <div class="pnl">
-      <div class="ph"><div class="pt"><span>HIPAA</span> Security Rule</div><span class="bdg b2">Compliant</span></div>
+      <div class="ph"><div class="pt"><span>HIPAA</span> Safeguards Review</div><span class="bdg b2">Review required</span></div>
       <div class="pb">
-        <div class="li"><div class="li-l"><div class="li-ico">🔐</div><div><div class="li-t">Access Controls (§164.312a)</div><div class="li-s">RBAC + MFA enforced</div></div></div><span class="bdg b2">Pass</span></div>
-        <div class="li"><div class="li-l"><div class="li-ico">📋</div><div><div class="li-t">Audit Controls (§164.312b)</div><div class="li-s">All access logged · 90-day retention</div></div></div><span class="bdg b2">Pass</span></div>
-        <div class="li"><div class="li-l"><div class="li-ico">🌐</div><div><div class="li-t">Transmission Security (§164.312e)</div><div class="li-s">TLS 1.3 · Zero plaintext</div></div></div><span class="bdg b2">Pass</span></div>
-        <div class="li"><div class="li-l"><div class="li-ico">🔒</div><div><div class="li-t">PHI Encryption at Rest</div><div class="li-s">AES-256 · All datastores</div></div></div><span class="bdg b2">Pass</span></div>
-        <div style="margin-top:10px;"><div class="pbar-wrap"><div class="pbar" style="width:100%;background:var(--c2);"></div></div><div style="font-size:9px;color:var(--txt3);margin-top:3px;">Overall: 100%</div></div>
+        <div class="li"><div class="li-l"><div class="li-ico">🔐</div><div><div class="li-t">Access Controls (§164.312a)</div><div class="li-s">Illustrative access-control scenario; verification required</div></div></div><span class="bdg b2">Review required</span></div>
+        <div class="li"><div class="li-l"><div class="li-ico">📋</div><div><div class="li-t">Audit Controls (§164.312b)</div><div class="li-s">Audit scope and retention require owner approval</div></div></div><span class="bdg b2">Review required</span></div>
+        <div class="li"><div class="li-l"><div class="li-ico">🌐</div><div><div class="li-t">Transmission Security (§164.312e)</div><div class="li-s">Transport security requires deployment verification</div></div></div><span class="bdg b2">Review required</span></div>
+        <div class="li"><div class="li-l"><div class="li-ico">🔒</div><div><div class="li-t">PHI Encryption at Rest</div><div class="li-s">Storage encryption and key custody require deployment verification</div></div></div><span class="bdg b2">Review required</span></div>
+        <div style="margin-top:10px;"><div class="pbar-wrap"><div class="pbar" style="width:100%;background:var(--c2);"></div></div><div style="font-size:9px;color:var(--txt3);margin-top:3px;">Overall: Not assessed</div></div>
       </div>
     </div>
     <div class="pnl">
@@ -733,8 +733,8 @@ main {
 <!-- ══ COMPLIANCE ══ -->
 <div id="sec-compliance" class="sec">
   <div class="g3">
-    <div class="pnl"><div class="ph"><div class="pt"><span>SOC-2</span> Controls</div><span class="bdg b2">99.8%</span></div><div class="pb">
-      <div class="li"><div class="li-l"><div class="li-ico">🔒</div><div><div class="li-t">CC6 — Logical Access</div><div class="li-s">RBAC + MFA enforced</div></div></div><span class="bdg b2">Pass</span></div>
+    <div class="pnl"><div class="ph"><div class="pt"><span>SOC-2</span> Illustrative Controls</div><span class="bdg b2">99.8%</span></div><div class="pb">
+      <div class="li"><div class="li-l"><div class="li-ico">🔒</div><div><div class="li-t">CC6 — Logical Access</div><div class="li-s">Illustrative access-control scenario; verification required</div></div></div><span class="bdg b2">Pass</span></div>
       <div class="li"><div class="li-l"><div class="li-ico">⚙</div><div><div class="li-t">CC7 — System Operations</div><div class="li-s">Monitoring active · Alerts configured</div></div></div><span class="bdg b2">Pass</span></div>
       <div class="li"><div class="li-l"><div class="li-ico">📝</div><div><div class="li-t">CC8 — Change Management</div><div class="li-s">All changes logged · Peer reviewed</div></div></div><span class="bdg b2">Pass</span></div>
       <div class="li"><div class="li-l"><div class="li-ico">⚠</div><div><div class="li-t">CC9 — Risk Mitigation</div><div class="li-s">Vendor risk feed gap · Legacy relay</div></div></div><span class="bdg b3">Gap</span></div>
@@ -854,7 +854,7 @@ main {
           <div class="guide-step"><div class="step-num">01</div><div class="step-content"><div class="step-title">Check Current Posture</div><div class="step-detail">Navigate to the Compliance tab for a real-time view of SOC-2, GDPR/CCPA, and NIST CSF maturity. Any "Gap" items require remediation before generating an evidence package.</div></div></div>
           <div class="guide-step"><div class="step-num">02</div><div class="step-content"><div class="step-title">Use AI Compliance Presets</div><div class="step-detail">In the Neural Processor, expand "Compliance &amp; Regulatory" and select the relevant framework: SOC-2 Evidence Package, HIPAA Gap Analysis, IRS-1075 Review, GDPR Audit, CCPA Report, or NIST CSF Assessment.</div></div></div>
           <div class="guide-step"><div class="step-num">03</div><div class="step-content"><div class="step-title">Generate Evidence Package</div><div class="step-detail">Go to the Audit Log tab and click "Evidence Package." This compiles WORM-locked log entries, control documentation, and access records into a formatted package for auditors.</div></div></div>
-          <div class="guide-step"><div class="step-num">04</div><div class="step-content"><div class="step-title">Export to SIEM</div><div class="step-detail">Use "Export SIEM" to generate a structured log file compatible with Splunk, QRadar, or Sentinel. This provides the 90-day retention evidence required under HIPAA §164.312b.</div></div></div>
+          <div class="guide-step"><div class="step-num">04</div><div class="step-content"><div class="step-title">Export to SIEM</div><div class="step-detail">Use "Export SIEM" to generate a structured log file compatible with Splunk, QRadar, or Sentinel. Retention requirements and evidence must be defined in the approved security review; this demo does not establish a HIPAA retention period.</div></div></div>
           <div class="guide-step"><div class="step-num">05</div><div class="step-content"><div class="step-title">Schedule Regular Reviews</div><div class="step-detail">The platform auto-triggers quarterly access certification campaigns. Use the "Access Certification Report" AI preset before each campaign to identify accounts needing review before the auditor does.</div></div></div>
         </div>
       </div>

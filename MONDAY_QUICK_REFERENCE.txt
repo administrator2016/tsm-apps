@@ -100,8 +100,7 @@ COMMON OBJECTIONS + 30-SECOND REBUTTALS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Q: "It's cloud-based. Where's our data?"
-A: "AWS [region], encrypted at rest, ISO 27001, HIPAA BAA for healthcare. Data never 
-   leaves the region. Audit trail is immutable."
+A: "Designed with HIPAA safeguards in mind; pilots use synthetic or de-identified data only. A BAA and security review are required before any PHI is processed."
 
 Q: "What if it goes down?"
 A: "System isn't your system of record. Your GL/EOB is. If we go down, you close the 
