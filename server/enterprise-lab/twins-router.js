@@ -1,3 +1,5 @@
+
+const { externalLlmFetch } = require('../external-llm-policy');
 /**
  * Twins Router
  * Mounts VMware and Network digital-twin endpoints under /api/twins.
@@ -392,7 +394,7 @@ async function matchScenarioToQuery(query, entries) {
   let lastErr;
   for (const model of AI_WIDGET_MODELS) {
     try {
-      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const r = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { Authorization: 'Bearer ' + groqKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({

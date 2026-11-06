@@ -1,3 +1,5 @@
+
+const { externalLlmFetch } = require('./server/external-llm-policy');
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -27,7 +29,7 @@ export async function runAI({ agent, input }) {
     ]
   };
 
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const response = await externalLlmFetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

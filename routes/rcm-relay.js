@@ -1,3 +1,5 @@
+
+const { externalLlmFetch } = require('../server/external-llm-policy');
 // routes/rcm-relay.js
 //
 // Server-side staging for the FinOps Doc Showcase → TSM RCM OS relay.
@@ -94,7 +96,7 @@ router.post('/relay', requireAuth, express.json({ limit: '2mb' }), (req, res) =>
 // gap: real staged FinOps document analysis (docName + engine narrative
 // text, which can include account/variance figures) was readable by any
 // unauthenticated caller. No front-end change needed: rcm-relay-client.js's
-// load() already calls fetch() with credentials:'include', so the existing
+// load() already calls externalLlmFetch() with credentials:'include', so the existing
 // session cookie is carried automatically.
 router.get('/relay', requireAuth, (req, res) => {
   if (!current) return res.status(204).end();
@@ -155,7 +157,7 @@ router.post('/guidance', requireAuth, express.json({ limit: '1mb' }), async (req
   const prompt = buildGuidancePrompt(engines, stats, selfReported);
 
   try {
-    const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const upstream = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,

@@ -1,3 +1,5 @@
+
+const { externalLlmFetch } = require('../server/external-llm-policy');
 // routes/finance-chat.js
 //
 // Backend for html/finops-suite/finance-index.html ("TSM Financial
@@ -150,7 +152,7 @@ async function callGroq(systemPrompt, messages, { max_tokens = 900, temperature 
     return { text: null, degraded: true, reason: 'GROQ_API_KEY not configured on server' };
   }
   try {
-    const res = await fetch(GROQ_API, {
+    const res = await externalLlmFetch(GROQ_API, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${key}`,

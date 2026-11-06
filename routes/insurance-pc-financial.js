@@ -1,3 +1,5 @@
+
+const { externalLlmFetch } = require('../server/external-llm-policy');
 // routes/insurance-pc-financial.js
 //
 // Server-side underwriting-review-cost + liability-reserve-risk computation
@@ -62,7 +64,7 @@ async function callGroq(systemPrompt, message, maxTokens = 900) {
   const key = process.env.GROQ_API_KEY;
   if (!key) return { text: null, degraded: true, reason: 'GROQ_API_KEY not configured on server' };
   try {
-    const res = await fetch(GROQ_API, {
+    const res = await externalLlmFetch(GROQ_API, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({

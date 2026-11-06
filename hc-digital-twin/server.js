@@ -1,3 +1,5 @@
+
+const { externalLlmFetch } = require('../server/external-llm-policy');
 const express = require('express');
 const path = require('path');
 const app = express();
@@ -18,7 +20,7 @@ app.post('/api/hc/stream', async (req, res) => {
   if (!withinDailyLimit(req)) return res.status(429).json({ error: 'Daily analysis limit reached for this demo.' });
   if (!GROQ_KEY) return res.status(500).json({ error: 'GROQ_API_KEY not configured on server.' });
   try {
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const groqRes = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
       body: JSON.stringify({ model: model || 'openai/gpt-oss-120b', stream: true, max_tokens: maxTok || 500, messages: [{ role: 'system', content: sys }, { role: 'user', content: user }] })
@@ -46,7 +48,7 @@ app.post('/api/hc/ocr', async (req, res) => {
       const t = setTimeout(() => controller.abort(), 25000);
       let groqRes;
       try {
-        groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY }, body: JSON.stringify({ model, max_tokens: 2000, messages: [{ role: 'user', content: [{ type: 'text', text: ocrPrompt }, { type: 'image_url', image_url: { url: dataUrl } }] }] }), signal: controller.signal });
+        groqRes = await externalLlmFetch('https://api.groq.com/openai/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY }, body: JSON.stringify({ model, max_tokens: 2000, messages: [{ role: 'user', content: [{ type: 'text', text: ocrPrompt }, { type: 'image_url', image_url: { url: dataUrl } }] }] }), signal: controller.signal });
       } finally { clearTimeout(t); }
       if (!groqRes.ok) { const err = await groqRes.text(); lastErr = err; if ([429,500,502,503].includes(groqRes.status)) continue; return res.status(502).json({ error: 'Groq OCR error ' + groqRes.status + ': ' + err }); }
       const data = await groqRes.json();

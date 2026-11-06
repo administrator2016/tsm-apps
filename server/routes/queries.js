@@ -14,6 +14,7 @@ global.MUSIC_SUITE_STATE = global.MUSIC_SUITE_STATE || {
 };
 
 function groqChat(system, user, maxTokens) {
+  require('../external-llm-policy').assertEnabled();
   maxTokens = maxTokens || 1024;
   return new Promise(function(resolve, reject) {
     var body = JSON.stringify({
